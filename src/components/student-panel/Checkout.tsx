@@ -458,6 +458,7 @@ export function PaymentsView({
   packageId?: string;
 }) {
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+  const [acceptedAlternativeFor, setAcceptedAlternativeFor] = useState<string | null>(null);
   const pendingId = session.mode === "prospect" ? session.pendingOrderId : null;
   const orderId = createdOrderId || pendingId;
   const plan = useLearningPlan(api, session);
@@ -478,7 +479,13 @@ export function PaymentsView({
   return (
     <QueryView query={plan}>
       {(data) =>
-        data ? (
+        data ? packageId && !data.packages.some(tier => tier.id === packageId) && acceptedAlternativeFor !== packageId ? (
+          <Card>
+            <h2 className="text-xl font-semibold">The selected package is unavailable</h2>
+            <p className="my-4 text-sm leading-7 text-slate-600">The package you selected is not included in your current learning plan. Review the academy recommendation before continuing; no order has been created.</p>
+            <Button onClick={() => setAcceptedAlternativeFor(packageId)}>Review recommended package</Button>
+          </Card>
+        ) : (
           <CheckoutForm
             key={`${data.id}-${data.version}-${packageId || data.recommendedPackageId}`}
             api={api}

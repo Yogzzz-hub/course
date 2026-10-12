@@ -1,4 +1,6 @@
 import { lazy, Suspense, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { checkoutHref, requestedCheckoutPackage } from '../utils/checkoutIntent';
 import {
   StudentPanel,
   createHttpStudentApi,
@@ -19,13 +21,18 @@ const gateway = createHostedPaymentGateway(
     .filter(Boolean),
 );
 export default function StudentPanelPage() {
+  const [search] = useSearchParams();
+  const checkoutPackageId = requestedCheckoutPackage(search);
+  const signInUrl = import.meta.env.VITE_STUDENT_SIGN_IN_URL || (checkoutPackageId ? `/auth/sign-in?returnTo=${encodeURIComponent(checkoutHref(checkoutPackageId))}` : undefined);
   const [preview, setPreview] = useState(false);
   if (preview && LocalPreview) return <Suspense fallback={<StudentPanelLoading/>}><LocalPreview onExit={() => setPreview(false)}/></Suspense>;
   return (
     <StudentPanel
+      key={checkoutPackageId ?? 'workspace'}
       api={api}
       gateway={gateway}
-      signInUrl={import.meta.env.VITE_STUDENT_SIGN_IN_URL || undefined}
+      signInUrl={signInUrl}
+      checkoutPackageId={checkoutPackageId}
       unavailableAction={LocalPreview ? <div className="mt-6 border-t border-slate-200 pt-5"><p className="mb-3 text-sm text-slate-600">Explore the interface with sample data while local services are being connected.</p><button type="button" className="inline-flex min-h-11 items-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800" onClick={() => setPreview(true)}>Open local demo</button></div> : undefined}
     />
   );

@@ -75,8 +75,8 @@ test('scroll reveals the journey and updates reading progress', async ({ page })
   await expect(stage).toHaveAttribute('data-revealed', 'true');
   await expect.poll(() => page.locator('.reading-progress').evaluate(element => getComputedStyle(element).transform)).not.toBe('matrix(0, 0, 0, 1, 0, 0)');
   await page.goto('/programmes/python-full-stack');
-  await page.locator('.pricing-card').last().scrollIntoViewIfNeeded();
-  await expect(page.locator('.pricing-card').last()).toHaveAttribute('data-revealed', 'true');
+  await page.getByRole('article', { name: 'Elite master package' }).scrollIntoViewIfNeeded();
+  await expect(page.getByRole('article', { name: 'Elite master package' })).toHaveAttribute('data-revealed', 'true');
 });
 
 test('accordion animates height and remains correct on rapid toggles', async ({ page }) => {
@@ -107,9 +107,10 @@ test('device reduced motion prevents decorative animations and preserves content
   await expect(page.getByRole('button', { name: 'Animations disabled by your device settings' }).first()).toBeDisabled();
   expect(await page.locator('.plate-float').first().evaluate(element => element.getAnimations().length)).toBe(0);
   await page.goto('/programmes/python-full-stack');
-  await page.locator('.pricing-card').first().scrollIntoViewIfNeeded();
-  expect(await page.locator('.pricing-card').first().evaluate(element => getComputedStyle(element).opacity)).toBe('1');
-  await expect(page.locator('.pricing-card').first()).toBeVisible();
+  const standard = page.getByRole('article', { name: 'Standard master package' });
+  await standard.scrollIntoViewIfNeeded();
+  expect(await standard.evaluate(element => getComputedStyle(element).opacity)).toBe('1');
+  await expect(standard).toBeVisible();
   expect(errors).toEqual([]);
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await expect(page.locator('html')).toHaveAttribute('data-motion', 'active');

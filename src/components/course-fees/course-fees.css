@@ -1,0 +1,11 @@
+/* Isolate the reusable Tailwind module from the legacy pages' unlayered styles. */
+.course-fees :where(h3, p, button, input, fieldset, legend, ul, li, table, caption, th, td, a, svg) { all: revert-layer; }
+.course-fees { font-family: 'Manrope Variable', ui-sans-serif, system-ui, sans-serif; color: var(--text); overflow-wrap: anywhere; }
+.course-fees h3 { font-family: 'Space Grotesk Variable', ui-sans-serif, system-ui, sans-serif; }
+.course-fees :focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.course-fees .fees-table { border-collapse: collapse; }
+.course-fees .fees-table th, .course-fees .fees-table td { padding: 16px; border-bottom: 1px solid var(--border); text-align: left; }
+.course-fees .fees-table .fees-money { text-align: right; white-space: nowrap; }
+.course-fees .fees-table tfoot th, .course-fees .fees-table tfoot td { border-bottom: none; }
+@media (max-width: 359px) { .course-fees .fees-table th, .course-fees .fees-table td { padding: 12px 8px; } }
+@media (prefers-reduced-motion: reduce) { .course-fees *, .course-fees *::before, .course-fees *::after { animation: none !important; transition: none !important; } }

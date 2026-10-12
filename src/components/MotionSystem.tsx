@@ -85,7 +85,7 @@ export function MotionToggle() {
 const revealSelectors = [
   '.section-heading', '.section-intro', '[data-reveal]', '.principle', '.programme-feature',
   '.journey li', '.spotlight > div:first-child', '.foundation-list > div', '.project-diagram',
-  '.project-points', '.support-section > div:first-child', '.support-list > div', '.pricing-card',
+  '.project-points', '.support-section > div:first-child', '.support-list > div', '.pricing-card', '.course-fees article',
   '.pricing-note', '.booking-cta', '.editorial-grid > div', '.support-editorial article',
   '.about-layout > div:first-child', '.fee-breakdown > div', '.outcomes',
   '.contact-call', '.booking-panel', '.enquiry-form', '.legal-content > section',

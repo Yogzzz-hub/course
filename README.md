@@ -8,6 +8,8 @@ The Admin Panel at `/admin-panel` uses TanStack Table and Query for the leads pi
 
 The homepage and counselling page now use the Shadow Sphere v2 experience: programme comparison, fee calculation, validated personal details, email OTP, session holds and a pre-session brief. See [Direct booking and API contract](docs/DIRECT-BOOKING.md). Booking APIs must be connected before live OTP or booking is available; the existing enquiry API is separate.
 
+The [course fees and master package module](docs/COURSE-FEES.md) at `/programmes/python-full-stack#pricing` provides tabs for all eleven individual fees, selectable Standard/Premium/Elite packages and the computed savings matrix. Package actions carry selection into authenticated Student Panel checkout; the server learning plan determines the final price.
+
 ## Run locally
 
 Requires Node 22.12+ (developed with Node 24).

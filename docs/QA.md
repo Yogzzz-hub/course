@@ -9,15 +9,16 @@ Tested 12 October 2026, Windows, Node 24, installed Google Chrome. Current check
 | TypeScript | Passed as part of `npm run build` |
 | ESLint | `npm run lint` passed without warnings |
 | Production build | Passed; fifteen prerendered routes plus a static 404; student and admin routes contain only private loading shells; local demo modules and sample data are excluded |
-| Unit / endpoint tests | `npm test`: 50 passed, including Admin Panel contracts/security/operation registry and local demo contract/read-only checks |
-| Browser tests | Final `npx playwright test --workers=1`: 95 passed in 3.4 minutes, zero failures or skips (including seven shared-palette and local-demo checks) |
+| Unit / endpoint tests | `npm test`: 57 passed, including supplied course fees, exact package savings, safe integer formatting, invalid/empty pricing, checkout intent, Admin Panel contracts/security and local demo read-only checks |
+| Browser tests | Final `npx playwright test --workers=1`: 102 passed in 2.9 minutes, zero failures or skips (including seven course-fee/checkout checks and seven shared-palette/local-demo checks) |
 | Shared palettes | All four palettes passed accessibility checks on the homepage, Contact, authenticated Student Panel and Admin Panel; selections persist across navigation and reloads, and survive component remounts with storage blocked |
 | Local demo | Explicit opt-in on the development Student Panel, Prospect/Enrolled mode controls, sample-data banner, rejected writes without network traffic, exit to real session service, and no production demo entry verified |
 | Sign-in routes | Student and admin sign-in destination pages render successfully, remain noindex, and explain the missing authentication integration; unknown routes retain a genuine 404 |
+| Course fees module | All eleven course fees, ₹1,57,000 total, three package prices/inclusions, exact savings, keyboard tabs, retained selection, server-priced checkout, unavailable-package review, sign-in return intent, async retry and duplicate-click protection passed; all three views passed accessibility checks in all four palettes at 320–1440px |
 | Admin Panel | Two-factor gate and expiry, permission revocation, Kanban dragging/keyboard moves, owner filtering, timeline, independent offer/proof/refund approvals, reconciliation, frozen financial retries and reload recovery, blocked storage, TanStack Table sorting/pagination/filtering, CMS revision conflicts and rebuilds, reports/export, search/notifications, sign-out and render-boundary recovery passed |
 | Final Student Panel regression | All 21 existing Student Panel browser checks passed within the final complete run |
 | Short-screen sidebar follow-up | Build and lint passed; both modes verified at 1280×400 with keyboard access to collapse/expand and enrolled mentorship, then at 390×640 with five mobile tabs and no horizontal overflow |
-| Internal links | `node scripts/check-links.mjs`: 270 links and 38 fragment destinations verified |
+| Internal links | `node scripts/check-links.mjs`: 273 links and 41 fragment destinations verified |
 | Dependency audit | `npm audit --omit=dev`: 0 reported vulnerabilities. Full audit: 33 development-tooling issues (8 moderate, 24 high, 1 critical); critical package `tar`. Toolchain upgrades remain outstanding and were not force-applied in this UI change |
 | Screenshots | Final full run generated 44 public-route captures and two admin captures; visual inspection corrected cramped mobile table columns and search layout |
 | Accessibility | Axe scans passed on public routes, Student Panel checkout/dashboard/mentorship and the mobile Admin Panel financial ledger; admin navigation also verified at 390×640 and 1280×400 |

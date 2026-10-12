@@ -56,6 +56,8 @@ export interface StudentPanelProps {
   academyName?: string;
   /** Optional development preview entry; never substitutes an authenticated session. */
   unavailableAction?: ReactNode;
+  /** Untrusted public catalogue intent; matched against the server learning plan. */
+  checkoutPackageId?: string;
 }
 function SignIn({ url, expired = false, action }: { url: string; expired?: boolean; action?: ReactNode }) {
   return (
@@ -147,15 +149,16 @@ function Workspace({
   gateway,
   supportUrl,
   academyName,
+  checkoutPackageId,
 }: StudentPanelProps & {
   session: StudentSession;
   supportUrl: string;
   academyName: string;
 }) {
   const [collapsed, setCollapsed] = useState(false);
-  const [tab, setTab] = useState<PanelTab>("home");
+  const [tab, setTab] = useState<PanelTab>(session.mode === 'prospect' && checkoutPackageId ? 'payments' : 'home');
   const [showMentorship, setShowMentorship] = useState(false);
-  const [packageId, setPackageId] = useState<string>();
+  const [packageId, setPackageId] = useState(checkoutPackageId);
   const client = useQueryClient();
   const enrolled = session.mode === "enrolled";
   const navigate = (next: PanelTab) => {

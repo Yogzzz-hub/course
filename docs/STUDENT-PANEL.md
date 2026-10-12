@@ -32,6 +32,8 @@ The route accepts `VITE_STUDENT_API_URL`, `VITE_STUDENT_SIGN_IN_URL` and comma-s
 
 All panel screens and session states use the same four palettes as the public website. Palette selection is global and persists in `academy-theme` when browser storage is available.
 
+The public fee module links to `/student-panel?package=<id>&checkout=1`. `checkoutPackageId` on the reusable `StudentPanel` opens the prospect payment view with that intent. The ID must match a package in the server learning plan; an unavailable selection requires explicit review before an alternative is shown. Public prices and query-string amounts are never used for orders. Enrolled sessions and existing pending orders retain their usual paths. The built-in sign-in destination preserves the package ID; real provider integrations must restore and validate the return URL. See [COURSE-FEES.md](COURSE-FEES.md).
+
 The gateway adapter redirects to a server-created hosted checkout. It never collects card details or asserts payment success. A different integration can implement `PaymentGateway.open(order)`, while retaining server order verification. Provider secrets and webhook credentials belong exclusively on the server.
 
 For a cross-origin API, explicitly configure its origin in the deployed CSP `connect-src`, enable credentialed CORS for the exact frontend origin, and configure the cookie policy. The supplied CSP permits same-origin APIs. Hosted top-level checkout redirects need no provider script or iframe permissions.
