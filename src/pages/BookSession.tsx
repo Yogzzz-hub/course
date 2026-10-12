@@ -1,0 +1,19 @@
+import { AnimatedText } from '../components/AnimatedText';
+import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { CalendarDays, ArrowUpRight, Check, Globe2 } from 'lucide-react';
+import { academy } from '../config/academy';
+import { packages } from '../data/programmes';
+import { PageHero, Button } from '../components/ui';
+
+export default function BookSession() {
+  const [search] = useSearchParams();
+  const selected = packages.find(p => p.name.toLowerCase() === search.get('package'));
+  const [load, setLoad] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [slow, setSlow] = useState(false);
+  const frame = useRef<HTMLIFrameElement>(null);
+  const bookingUrl = academy.legalApproved ? academy.calendlyUrl : '';
+  useEffect(() => { if (!load || loaded) return; const timer = setTimeout(() => setSlow(true), 12000); return () => clearTimeout(timer); }, [load, loaded]);
+  return <><PageHero eyebrow="ONE-ON-ONE COUNSELLING" title={<>Your goals.<br/><span className="muted">Let's talk them through.</span></>} description="A conversation to help you understand the programme, explore your options and make a more informed next step."/><section className="container section section-first booking-layout"><div><h2><AnimatedText>Bring your questions.</AnimatedText></h2><p>Tell us where you are starting and what you hope to learn.</p><ul className="check-list">{['Your education or professional background','The skills you want to develop','Curriculum, fees and package differences','Delivery format, timings and prerequisites','Internship and career-support conditions'].map(t=><li key={t}><Check size={17}/>{t}</li>)}</ul>{selected && <p className="notice">You're exploring the <strong>{selected.name}</strong> package. Mention it during your conversation.</p>}<p className="small">Session duration and any counselling fee are awaiting confirmation. Please check these details before booking.</p></div><div className="booking-panel">{!bookingUrl ? <div className="booking-empty"><CalendarDays size={35} strokeWidth={1.3}/><span className="eyebrow">SCHEDULING NOT YET AVAILABLE</span><h2><AnimatedText>A little clarity<br/>before you book.</AnimatedText></h2><p>Online appointment scheduling is not available yet. No appointment has been created. You can still explore the programme and its fees.</p><Button to="/programmes/python-full-stack">Explore programme details</Button>{academy.email && <a className="text-link" href={`mailto:${academy.email}`}>Email the academy <ArrowUpRight size={17}/></a>}</div> : <><div className="booking-provider-intro"><Globe2 size={20}/><p>Scheduling is provided by Calendly. Check the displayed time zone before choosing a slot. Your booking is confirmed only by Calendly.</p></div>{!load ? <div className="booking-empty"><CalendarDays size={35}/><h2><AnimatedText>Find a time that works.</AnimatedText></h2><p>Loading the scheduler connects to Calendly, which processes booking information under its privacy policy.</p><button className="button button-primary" onClick={()=>setLoad(true)}>Load available appointments<ArrowUpRight size={17}/></button><a className="text-link" href="https://calendly.com/privacy" target="_blank" rel="noreferrer">Calendly privacy policy</a></div> : <><iframe ref={frame} title="Book a counselling session with Calendly" src={`${bookingUrl}?hide_gdpr_banner=0`} onLoad={()=>setLoaded(true)} className="calendly-frame"/>{slow && <p role="status">If the scheduler is not displaying, use the direct booking link below.</p>}<a className="text-link" href={bookingUrl} target="_blank" rel="noreferrer">Open scheduler in a new tab <ArrowUpRight size={17}/></a><p className="small">Cancellation, rescheduling, reminders and calendar invitations are managed through the provider's confirmation.</p></>}</>}</div></section></>;
+}

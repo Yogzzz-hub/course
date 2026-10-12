@@ -1,0 +1,20 @@
+import { AnimatedText } from '../components/AnimatedText';
+import { useLocation } from 'react-router-dom';
+import { PageHero, TextLink } from '../components/ui';
+export default function Legal() {
+  const privacy = useLocation().pathname === '/privacy-policy';
+  const sections = privacy ? [
+    ['Information used for an enquiry','The implemented form asks for a name, email, programme, preferred contact method, optional phone number and optional message. A phone number is required when phone contact is selected. Do not submit sensitive personal information.'],
+    ['Purpose and external services','The intended purpose is responding to programme questions. The proposed integration uses Cloudflare Turnstile for spam protection and Resend for enquiry email delivery. Calendly handles scheduling only after the visitor loads the scheduler. The academy must approve these providers and their processing terms before activation.'],
+    ['Technical storage','The implementation does not store enquiry contents in a website database or browser storage. The proposed endpoint uses hashed identifiers in Cloudflare KV for abuse controls and duplicate handling, with a 24-hour technical expiry. Email and booking provider retention, backups and academy mailbox practices still require confirmation.'],
+    ['Cookies and analytics','No advertising or analytics integration is enabled by this build. When activated, external spam protection and scheduling providers may process technical data under their own terms. The academy must review applicable disclosures and consent requirements.'],
+    ['Business information requiring approval','The legal entity, privacy contact, final retention schedule, permitted recipients, applicable rights process and international data-transfer disclosures have not been supplied. They must be confirmed and incorporated before collecting enquiries.'],
+  ] : [
+    ['Website and programme information','This website presents the supplied programme outline and listed fees for information. The academy must confirm delivery mode, timetable, entry requirements and final enrolment terms before accepting learners.'],
+    ['Fees, payment and refunds','Listed package prices and individual-course fees come from the supplied build brief. Applicable taxes, instalments, payment terms, refund policy and cancellation conditions have not been approved. This website does not collect payments.'],
+    ['Internships and career preparation','Placement support describes preparation and guidance. Internships depend on eligibility, availability and confirmed conditions. No employment, salary or internship guarantee is provided. The “free internship” and “paid internship” package descriptions require specific approved terms.'],
+    ['Counselling appointments','Appointments are managed by the configured booking provider. Only the provider can confirm a booking; an enquiry or a button click is not a confirmed appointment. Duration, fees and cancellation conditions must be confirmed.'],
+    ['Business information requiring approval','Legal entity, contact address, governing terms, jurisdiction, intellectual-property terms, service obligations and dispute procedures require business and legal review. No unprovided entitlement or obligation is asserted by this draft.'],
+  ];
+  return <><PageHero eyebrow="REVIEW-REQUIRED DRAFT" title={privacy ? 'Privacy notice.' : 'Terms & conditions.'} description="This document is an implementation draft. It is not an approved academy policy and must be replaced with reviewed business-specific text before launch."/><section className="container section section-first legal-content"><div className="notice"><strong>Awaiting academy and legal approval.</strong><p>Enquiry collection remains unavailable until the contact service and legal approval are configured.</p></div>{sections.map(([title,text])=><section key={title}><h2><AnimatedText>{title}</AnimatedText></h2><p>{text}</p></section>)}<TextLink to="/contact">Return to contact & questions</TextLink></section></>;
+}

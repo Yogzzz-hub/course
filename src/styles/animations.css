@@ -1,0 +1,201 @@
+/* One motion language: precise assembly, soft elevation and measured progression. */
+:root {
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  --motion-quick: 220ms;
+  --motion-enter: 700ms;
+}
+
+.engineering-stage { position: relative; min-width: 0; width: 100%; }
+.engineering-stage > .motion-toggle { margin: 0 0 0 auto; display: flex; }
+.motion-toggle {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px;
+  padding: 8px 10px; border: 1px solid transparent; border-radius: 4px;
+  background: transparent; color: var(--muted); font-size: .7rem;
+  transition: color var(--motion-quick), border-color var(--motion-quick);
+}
+.motion-toggle:hover { color: var(--accent-soft); border-color: var(--border); }
+.motion-toggle:disabled { cursor: default; }
+.site-footer .motion-toggle { margin-top: 12px; padding-left: 0; }
+.layer-art { transform: perspective(900px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)); transition: transform 650ms var(--ease-out); }
+.art-layer-4 { animation: none; }
+[data-motion="active"] .plate-float { animation: engineered-float 6s ease-in-out infinite; }
+[data-motion="active"] .art-tag-top { animation: annotation-float 6s ease-in-out -1s infinite; }
+[data-motion="active"] .art-tag-bottom { animation: annotation-float 6s ease-in-out -3s infinite; }
+[data-motion="active"] .trace-line { stroke-dasharray: 1; animation: draw-trace 1.6s var(--ease-out) both; }
+.engineering-visual[data-visible="false"] .plate-float,
+.engineering-visual[data-visible="false"] .art-tag { animation-play-state: paused; }
+@keyframes engineered-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes annotation-float { 0%,100% { translate: 0 0; } 50% { translate: 0 -5px; } }
+@keyframes draw-trace { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+
+/* Header depth and a quiet, content-driven reading indicator. */
+.site-header { transition: background 300ms, box-shadow 300ms, border-color 300ms; }
+.header-scrolled { background: var(--header-scrolled); box-shadow: 0 8px 28px rgba(36, 25, 33, 0.08); border-bottom-color: var(--border-strong); }
+.reading-progress,.route-indicator { position: absolute; inset: auto 0 -1px; height: 2px; background: var(--accent-soft); transform: scaleX(0); transform-origin: left; pointer-events: none; }
+.reading-progress { opacity: .7; }
+.route-indicator { opacity: 0; height: 2px; }
+.desktop-nav a::before { content: ''; position: absolute; bottom: 2px; left: 0; width: 100%; height: 1px; background: var(--accent-soft); transform: scaleX(0); transform-origin: right; transition: transform 350ms var(--ease-out); }
+.desktop-nav a:hover::before,.desktop-nav a:focus-visible::before { transform: scaleX(1); transform-origin: left; }
+.desktop-nav a.active::before { display: none; }
+[data-motion="active"] .desktop-nav .active::after { animation: nav-line 400ms var(--ease-out) both; transform-origin: left; }
+@keyframes nav-line { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* Visible feedback on actual controls; content is never dependent on hover. */
+.button { position: relative; isolation: isolate; overflow: hidden; transition: background 250ms, border-color 250ms, box-shadow 250ms, translate 250ms var(--ease-out); }
+.button::before { content: ''; position: absolute; inset: 0; background: linear-gradient(110deg,transparent 20%,rgb(244 240 241 / .22) 48%,transparent 75%); transform: translateX(-130%); pointer-events: none; }
+[data-motion="active"] .button:hover::before { animation: button-sheen 650ms var(--ease-out); }
+.button svg { transition: transform 300ms var(--ease-out); }
+.button:hover svg { transform: translate(3px,-3px); }
+.button:active { translate: 0 1px; }
+@keyframes button-sheen { to { transform: translateX(130%); } }
+.text-link { position: relative; }
+.text-link::after { content: ''; position: absolute; bottom: 4px; left: 0; right: 33px; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: right; transition: transform 350ms var(--ease-out); }
+.text-link:hover { text-decoration: none; }
+.text-link:hover::after { transform: scaleX(1); transform-origin: left; }
+.icon-button,.back-top { transition: background 250ms,border-color 250ms; }
+.icon-button:hover,.back-top:hover { border-color: var(--accent-soft); background: var(--bg-secondary); }
+.back-top svg { transition: translate 250ms var(--ease-out); }
+.back-top:hover svg { translate: 0 -3px; }
+.field input,.field textarea,.field select { transition: border-color 220ms, box-shadow 220ms, background 220ms; }
+.field input:focus,.field textarea:focus,.field select:focus { border-color: var(--accent-soft); box-shadow: 0 0 0 3px rgb(216 167 181 / .08); }
+
+.principle,.pricing-card,.programme-feature,.project-diagram { transition: border-color 350ms, box-shadow 350ms, translate 450ms var(--ease-out); }
+.principle-top svg { transition: transform 500ms var(--ease-out),color 300ms; }
+@media (hover:hover) and (pointer:fine) {
+  [data-motion="active"] .pricing-card:hover { translate: 0 -6px; box-shadow: 0 16px 32px rgb(0 0 0 / .16); }
+  .programme-feature:hover,.project-diagram:hover { border-color: #70505e; }
+  [data-motion="active"] .principle:hover .principle-top svg { transform: translateY(-4px) rotate(-6deg); }
+  [data-motion="active"] .button:hover { translate: 0 -2px; }
+}
+.stack-row { transition: background 250ms,border-color 250ms; }
+.stack-row:hover { background: rgb(216 167 181 / .035); border-color: rgb(216 167 181 / .4); }
+.journey-dot { transition: color 300ms, background 300ms,border-color 300ms; }
+[data-motion="active"] .journey li[data-revealed="true"] .journey-dot { animation: journey-node 900ms ease-out both; }
+[data-motion="active"] .journey li[data-revealed="true"]::before { background: linear-gradient(to bottom,var(--accent),var(--border)); transform-origin: top; animation: journey-line-y 900ms var(--ease-out) both; }
+.journey li:hover .journey-dot { background: var(--accent-soft); color: var(--ink); border-color: var(--accent-soft); }
+@keyframes journey-node { from { box-shadow: 0 0 0 0 rgb(216 167 181 / .2); border-color: var(--accent-soft); } to { box-shadow: 0 0 0 12px rgb(216 167 181 / 0); border-color: var(--border); } }
+@keyframes journey-line-y { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes journey-line-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@media (min-width:768px) {
+  [data-motion="active"] .journey li[data-revealed="true"]::before { background: linear-gradient(to right,var(--accent),var(--border)); transform-origin: left; animation-name: journey-line-x; }
+}
+.booking-cta::after { content: ''; position: absolute; right: -45px; top: -50px; width: 240px; height: 240px; border: 1px solid rgb(216 167 181 / .1); transform: rotate(45deg); pointer-events: none; }
+.booking-cta::before { content: ''; position: absolute; right: -20px; top: -25px; width: 190px; height: 190px; border: 1px solid rgb(216 167 181 / .08); transform: rotate(45deg); pointer-events: none; }
+.booking-cta>div { position: relative; z-index: 1; }
+.accordion details { transition: border-color 250ms,background 250ms; }
+.accordion details[open] { border-color: #70505e; }
+.accordion summary:hover { color: var(--accent-soft); }
+.accordion-icon { transition: transform 320ms var(--ease-out); }
+[data-motion="active"] details[open] .accordion-body { animation: answer-enter 350ms var(--ease-out) both; }
+@keyframes answer-enter { from { transform: translateY(-6px); } to { transform: translateY(0); } }
+
+/* Native dialog retains its focus trap and exits the top layer after its transition. */
+.mobile-drawer { opacity: 0; transform: translateX(32px); transition: opacity 240ms ease, transform 320ms var(--ease-out), display 320ms allow-discrete, overlay 320ms allow-discrete; }
+.mobile-drawer[open] { opacity: 1; transform: translateX(0); }
+.mobile-drawer::backdrop { opacity: 0; transition: opacity 240ms, display 320ms allow-discrete, overlay 320ms allow-discrete; }
+.mobile-drawer[open]::backdrop { opacity: 1; }
+@starting-style { .mobile-drawer[open] { opacity: 0; transform: translateX(32px); } .mobile-drawer[open]::backdrop { opacity: 0; } }
+[data-motion="active"] .mobile-drawer[open] nav a { animation: drawer-link 420ms var(--ease-out) both; }
+.mobile-drawer nav a:nth-child(2) { animation-delay: 35ms; }.mobile-drawer nav a:nth-child(3) { animation-delay: 70ms; }.mobile-drawer nav a:nth-child(4) { animation-delay: 105ms; }.mobile-drawer nav a:nth-child(5) { animation-delay: 140ms; }.mobile-drawer nav a:nth-child(6) { animation-delay: 175ms; }
+@keyframes drawer-link { from { translate: 15px 0; } to { translate: 0 0; } }
+
+/* Typographic choreography: actual words remain readable throughout the entrance. */
+.text-motion { display: inline; }
+.motion-word { display: inline-block; transform-origin: 0 100%; }
+.hero h1 > .text-motion,.detail-hero h1 > .text-motion { color: inherit; }
+.hero-emphasis { color: var(--accent-soft); }
+.detail-hero h1 > .text-motion > span:not(.motion-word) { color: var(--accent-soft); }
+[data-motion="active"] .text-motion[data-entered="true"] .motion-word { animation: word-arrive 850ms var(--ease-out) both; }
+@keyframes word-arrive { from { transform: translateY(.28em) rotateX(18deg) rotateZ(1deg); } to { transform: translateY(0) rotateX(0) rotateZ(0); } }
+.hero-emphasis { background: linear-gradient(var(--accent-soft),var(--accent-soft)) left bottom / 100% 1px no-repeat; padding-bottom: .055em; }
+[data-motion="active"] .text-motion[data-entered="true"] .hero-emphasis { animation: emphasis-line 1600ms var(--ease-out) 300ms both; }
+@keyframes emphasis-line { from { background-size: 0 1px; } to { background-size: 100% 1px; } }
+[data-motion="active"] .eyebrow .small-line { transform-origin: left; animation: nav-line 1000ms var(--ease-out) both; }
+[data-motion="active"] .principle[data-revealed="true"] .principle-top svg path { stroke-dasharray: 80; animation: icon-ink 1600ms var(--ease-out) both; }
+@keyframes icon-ink { from { stroke-dashoffset: 80; } to { stroke-dashoffset: 0; } }
+
+/* Vector signals connect the independent engineering plates. */
+.orbit-rail { stroke: var(--accent-soft); stroke-opacity: .11; stroke-dasharray: 2 7; }
+.orbit-signal { stroke: var(--accent-soft); stroke-width: 1.5; stroke-dasharray: .035 .465; stroke-linecap: round; stroke-opacity: .65; }
+.signal-beacon { fill: var(--accent-soft); transform-box: fill-box; transform-origin: center; }
+.circuit-signal { stroke-dasharray: .07 .93; stroke-linecap: round; }
+[data-motion="active"] .orbit-signal { animation: orbital-signal 16s linear infinite; }
+[data-motion="active"] .circuit-signal { animation: orbital-signal 5s linear infinite; }
+[data-motion="active"] .signal-beacon { animation: beacon-breathe 4s ease-in-out infinite; }
+[data-motion="active"] .signal-beacon-late { animation-delay: -2s; }
+[data-motion="active"] .plate-outline { stroke-dasharray: 1; animation: draw-trace 1800ms var(--ease-out) both; }
+@keyframes orbital-signal { to { stroke-dashoffset: -1; } }
+@keyframes beacon-breathe { 0%,100% { transform: scale(.75); opacity: .45; } 50% { transform: scale(1.3); opacity: 1; } }
+.engineering-visual[data-visible="false"] .orbit-signal,
+.engineering-visual[data-visible="false"] .circuit-signal,
+.engineering-visual[data-visible="false"] .signal-beacon { animation-play-state: paused; }
+
+/* One continuous process: idea, implementation, feedback, repeat. */
+.build-flow { padding: 18px 0; border-block: 1px solid var(--border); }
+.build-flow svg { display: block; width: 100%; height: auto; overflow: visible; }
+.flow-track { stroke: var(--border); }
+.flow-signal { stroke: var(--accent-soft); stroke-width: 2; stroke-dasharray: .075 .925; stroke-linecap: round; }
+.flow-node > circle,.flow-node > rect { fill: var(--surface); stroke: var(--accent); }
+.flow-icon { stroke: var(--accent-soft); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.build-flow text { fill: var(--muted); font: 10px var(--font-body); letter-spacing: 2px; text-anchor: middle; }
+[data-motion="active"] .build-flow[data-in-view="true"] .flow-signal { animation: orbital-signal 6s linear infinite; }
+[data-motion="active"] .build-flow[data-in-view="true"] .flow-node > circle,
+[data-motion="active"] .build-flow[data-in-view="true"] .flow-node > rect { animation: flow-focus 6s ease-in-out infinite; }
+.flow-node-2 > rect { animation-delay: 1.5s !important; }.flow-node-3 > rect { animation-delay: 3s !important; }
+@keyframes flow-focus { 0%,65%,100% { stroke: var(--accent); } 20%,35% { stroke: var(--light); } }
+[data-motion="active"] .project-diagram[data-revealed="true"] .diagram-code p { animation: code-line-enter 850ms var(--ease-out) both; }
+.diagram-code p:nth-of-type(2) { animation-delay: 140ms !important; }.diagram-code p:nth-of-type(3) { animation-delay: 280ms !important; }
+@keyframes code-line-enter { from { translate: 16px 0; } to { translate: 0 0; } }
+.diagram-code p:last-child::after { content: ''; display: inline-block; height: .9em; width: 2px; margin-left: 6px; background: var(--accent-soft); vertical-align: -.05em; }
+[data-motion="active"] .project-diagram[data-revealed="true"] .diagram-code p:last-child::after { animation: code-caret 1200ms ease-in-out 4; }
+@keyframes code-caret { 0%,100% { opacity: 1; } 50% { opacity: .2; } }
+
+/* Connected-stack motion follows the learning sequence, without implying live status. */
+.stack-signal { width: 100%; height: auto; max-height: 64px; display: block; margin: -8px 0 12px; }
+.stack-track { stroke: var(--border); }
+.stack-packet { stroke: var(--accent-soft); stroke-width: 2; stroke-dasharray: .12 .88; }
+.stack-node rect { fill: var(--bg-secondary); stroke: var(--accent); }
+.stack-node path { stroke: var(--accent-soft); stroke-linecap: round; }
+[data-motion="active"] .programme-map[data-in-view="true"] .stack-packet { animation: orbital-signal 6s linear infinite; }
+[data-motion="active"] .programme-map[data-in-view="true"] .stack-node { animation: stack-node-focus 6s ease-in-out infinite; }
+@keyframes stack-node-focus { 0%,40%,100% { filter: none; } 15%,25% { filter: drop-shadow(0 0 4px rgb(216 167 181 / .5)); } }
+.programme-map .stack-row { position: relative; isolation: isolate; }
+.programme-map .stack-row::before { content: ''; position: absolute; left: -12px; top: 20%; height: 60%; width: 2px; background: var(--accent-soft); opacity: 0; transform: scaleY(.2); transform-origin: top; pointer-events: none; }
+[data-motion="active"] .programme-map[data-in-view="true"] .stack-row::before { animation: stack-step 6s ease-in-out var(--stack-delay,0s) infinite; }
+.programme-map .stack-row:nth-of-type(3) { --stack-delay: 1.5s; --row-delay: 90ms; }
+.programme-map .stack-row:nth-of-type(4) { --stack-delay: 3s; --row-delay: 180ms; }
+.programme-map .stack-row:nth-of-type(5) { --stack-delay: 4.5s; --row-delay: 270ms; }
+@keyframes stack-step { 0%,40%,100% { opacity: 0; transform: scaleY(.2); } 12%,28% { opacity: .7; transform: scaleY(1); } }
+[data-motion="active"] .programme-map[data-entered="true"] .stack-row { animation: stack-row-enter 750ms var(--ease-out) var(--row-delay,0ms) both; }
+@keyframes stack-row-enter { from { transform: translateX(12px); } to { transform: translateX(0); } }
+
+/* Seven drawn arcs echo the stated course duration; the actual duration stays static. */
+.duration-art { overflow: hidden; isolation: isolate; }
+.duration-art > :not(svg) { position: relative; z-index: 1; }
+.duration-dial { position: absolute; width: 290px; height: 290px; right: -135px; top: -70px; z-index: 0; opacity: .5; pointer-events: none; }
+.dial-track { stroke: var(--border); }
+.dial-segment { stroke: var(--accent-soft); stroke-width: 2; stroke-dasharray: .82 6.18; stroke-linecap: round; }
+.dial-orbit { stroke: var(--accent); stroke-dasharray: 3 25; transform-origin: 150px 150px; }
+.dial-tick,.dial-cross { stroke: var(--accent); }
+[data-motion="active"] .duration-art[data-entered="true"] .dial-segment { animation: dial-draw 1400ms var(--ease-out) both; }
+[data-motion="active"] .duration-art[data-in-view="true"] .dial-orbit { animation: dial-turn 40s linear infinite; }
+@keyframes dial-draw { from { stroke-dashoffset: .82; } to { stroke-dashoffset: 0; } }
+@keyframes dial-turn { to { transform: rotate(360deg); } }
+[data-motion="active"] .duration-art[data-entered="true"] > strong { animation: numeral-arrive 1s var(--ease-out) both; }
+@keyframes numeral-arrive { from { transform: translateY(12px); } to { transform: translateY(0); } }
+
+/* In-view accents carry motion into the lower sections and final call to action. */
+[data-motion="active"] .section-heading[data-revealed="true"] .small-line { animation: section-rule 1100ms var(--ease-out) both; }
+@keyframes section-rule { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+[data-motion="active"] .booking-cta[data-in-view="true"]::before { animation: cta-contour 14s ease-in-out infinite; }
+[data-motion="active"] .booking-cta[data-in-view="true"]::after { animation: cta-contour 14s ease-in-out -7s infinite reverse; }
+@keyframes cta-contour { 0%,100% { transform: rotate(45deg) translateY(0); } 50% { transform: rotate(58deg) translateY(12px); } }
+.pricing-card ul li { transition: translate 250ms var(--ease-out); }
+@media (hover:hover) and (pointer:fine) { [data-motion="active"] .pricing-card:hover ul li { translate: 3px 0; } }
+.pricing-card ul li:nth-child(2) { transition-delay: 30ms; }.pricing-card ul li:nth-child(3) { transition-delay: 60ms; }.pricing-card ul li:nth-child(4) { transition-delay: 90ms; }.pricing-card ul li:nth-child(5) { transition-delay: 120ms; }
+
+/* User choice and OS preference both disable decorative motion across the site. */
+[data-motion="paused"] *,[data-motion="paused"] *::before,[data-motion="paused"] *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+[data-motion="paused"] .layer-art { transform: none; }
+@media(prefers-reduced-motion:reduce) { html:not([data-motion="active"]) *,html:not([data-motion="active"]) *::before,html:not([data-motion="active"]) *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } html:not([data-motion="active"]) .layer-art { transform: none; } }
+@media print { .motion-toggle,.reading-progress,.route-indicator { display: none; } }

@@ -1,0 +1,25 @@
+import { describe, expect, it, vi, afterEach } from 'vitest';
+import { onRequest, type Env } from '../functions/api/enquiry';
+import { emptyEnquiry, validateEnquiry } from '../src/utils/enquiry';
+import { courseTotal, packages } from '../src/data/programmes';
+const valid={...emptyEnquiry,name:'Test Learner',email:'learner@example.test',consent:true,token:'test-token'};
+function environment(){const values=new Map<string,string>();return {RESEND_API_KEY:'test',ENQUIRY_FROM:'test@example.test',ENQUIRY_TO:'academy@example.test',TURNSTILE_SECRET_KEY:'test',TURNSTILE_SITE_KEY:'test',ALLOWED_ORIGIN:'https://academy.example.test',RATE_LIMIT_SALT:'test-salt',LEGAL_APPROVED:'true',ENQUIRY_LIMITS:{get:async(key:string)=>values.get(key)||null,put:async(key:string,value:string)=>{values.set(key,value);}}} satisfies Env;}
+function request(body:unknown=valid,id=crypto.randomUUID(),origin='https://academy.example.test'){return new Request('https://academy.example.test/api/enquiry',{method:'POST',headers:{'Content-Type':'application/json','Origin':origin,'Idempotency-Key':id,'CF-Connecting-IP':'192.0.2.1'},body:JSON.stringify(body)});}
+afterEach(()=>vi.unstubAllGlobals());
+describe('Programme facts',()=>{it('preserves supplied prices and calculated total',()=>{expect(courseTotal).toBe(157000);expect(packages.map(p=>p.price)).toEqual([59999,79999,99999]);});});
+describe('Enquiry validation',()=>{
+ it('rejects empty fields, invalid email, missing consent and phone contact without a number',()=>{expect(validateEnquiry(emptyEnquiry)).toHaveProperty('name');expect(validateEnquiry({...valid,email:'invalid'})).toHaveProperty('email');expect(validateEnquiry({...valid,contactMethod:'phone'})).toHaveProperty('phone');expect(validateEnquiry({...valid,consent:false})).toHaveProperty('consent');});
+ it('accepts minimal valid data',()=>{expect(validateEnquiry(valid)).toEqual({});});
+});
+describe('Secure enquiry endpoint',()=>{
+ it('fails closed when unconfigured',async()=>{expect((await onRequest({request:request(),env:{} as Env})).status).toBe(503);});
+ it('does not expose secrets in public status',async()=>{const result=await onRequest({request:new Request('https://academy.example.test/api/enquiry'),env:environment()});expect(await result.json()).toEqual({available:true,siteKey:'test'});});
+ it('rejects cross-origin requests before delivery',async()=>{expect((await onRequest({request:request(valid,crypto.randomUUID(),'https://other.test'),env:environment()})).status).toBe(403);});
+ it('requires legal approval',async()=>{expect((await onRequest({request:request(),env:{...environment(),LEGAL_APPROVED:'false'}})).status).toBe(503);});
+ it('rejects invalid types, honeypot and oversized payloads',async()=>{const env=environment();expect((await onRequest({request:request({...valid,name:[]}),env})).status).toBe(400);expect((await onRequest({request:request({...valid,website:'spam'}),env})).status).toBe(400);expect((await onRequest({request:request({...valid,message:'x'.repeat(17000)}),env})).status).toBe(413);});
+ it('rejects failed challenges and incorrect hostnames',async()=>{const fake=vi.fn().mockResolvedValue(new Response(JSON.stringify({success:true,hostname:'other.test',action:'enquiry'})));vi.stubGlobal('fetch',fake);expect((await onRequest({request:request(),env:environment()})).status).toBe(400);expect(fake).toHaveBeenCalledTimes(1);});
+ it('reports success only after provider acceptance and suppresses retries',async()=>{const fake=vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({success:true,hostname:'academy.example.test',action:'enquiry'}))).mockResolvedValueOnce(new Response(JSON.stringify({id:'accepted-email-id'})));vi.stubGlobal('fetch',fake);const env=environment();const id=crypto.randomUUID();const first=await onRequest({request:request(valid,id),env});expect(await first.json()).toEqual({success:true});expect(await (await onRequest({request:request(valid,id),env})).json()).toEqual({success:true});expect(fake).toHaveBeenCalledTimes(2);expect((await onRequest({request:request({...valid,message:'changed'},id),env})).status).toBe(409);});
+ it('returns an actionable error for provider failure',async()=>{vi.stubGlobal('fetch',vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({success:true,hostname:'academy.example.test',action:'enquiry'}))).mockResolvedValueOnce(new Response('{}',{status:500})));expect((await onRequest({request:request(),env:environment()})).status).toBe(502);});
+ it('limits repeated attempts',async()=>{vi.stubGlobal('fetch',vi.fn().mockImplementation(async()=>new Response(JSON.stringify({success:false}))));const env=environment();for(let i=0;i<5;i++)await onRequest({request:request(),env});expect((await onRequest({request:request(),env})).status).toBe(429);});
+ it('rejects success without a delivery receipt',async()=>{vi.stubGlobal('fetch',vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({success:true,hostname:'academy.example.test',action:'enquiry'}))).mockResolvedValueOnce(new Response('{}')));expect((await onRequest({request:request(),env:environment()})).status).toBe(502);});
+});

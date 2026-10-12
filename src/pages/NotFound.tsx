@@ -1,0 +1,2 @@
+import { PageHero, Button } from '../components/ui';
+export default function NotFound(){return <PageHero eyebrow="404 / A DIFFERENT PATH" title={<>This page isn't<br/><span className="muted">on the curriculum.</span></>} description="The address may have changed, or the page may not exist. Let's get you back to a useful starting point."><div className="hero-actions"><Button to="/">Back to home</Button><Button to="/programmes" secondary>Explore programmes</Button></div></PageHero>;}
