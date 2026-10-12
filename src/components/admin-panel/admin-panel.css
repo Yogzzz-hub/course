@@ -1,0 +1,98 @@
+.ss-admin {
+  font-family: "Manrope Variable", ui-sans-serif, system-ui, sans-serif;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.ss-admin
+  :where(
+    h1,
+    h2,
+    h3,
+    p,
+    button,
+    input,
+    select,
+    textarea,
+    a,
+    svg,
+    table,
+    thead,
+    tbody,
+    tr,
+    th,
+    td,
+    fieldset,
+    legend,
+    label,
+    ol,
+    ul,
+    li,
+    dl,
+    dt,
+    dd,
+    nav,
+    header,
+    main,
+    aside,
+    section,
+    article
+  ) {
+  all: revert-layer;
+}
+.ss-admin *,
+.ss-admin *::before,
+.ss-admin *::after {
+  box-sizing: border-box;
+}
+.ss-admin :where(button, input, select, textarea) {
+  font-family: inherit;
+}
+.ss-admin :where(button, select, input[type="checkbox"]) {
+  cursor: pointer;
+}
+.ss-admin
+  :where(button:disabled, input:disabled, select:disabled, textarea:disabled) {
+  cursor: not-allowed;
+}
+.ss-admin :where(h1, h2, h3) {
+  font-family: "Space Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
+}
+.ss-admin :where(svg) {
+  display: inline-block;
+  vertical-align: middle;
+}
+.ss-admin :where(table) {
+  border-collapse: collapse;
+  overflow-wrap: normal;
+}
+.ss-admin :where(fieldset) {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.ss-admin :where(:focus-visible) {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+.ss-admin .admin-skip {
+  position: fixed;
+  top: -5rem;
+  left: 1rem;
+  z-index: 100;
+  background: var(--accent);
+  color: white;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+}
+.ss-admin .admin-skip:focus {
+  top: 1rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ss-admin *,
+  .ss-admin *::before,
+  .ss-admin *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -4,37 +4,42 @@ import { animate } from 'motion/mini';
 import { Pause, Play } from 'lucide-react';
 
 const MotionSettings = createContext({ enabled: true, reduced: false, paused: false, toggle: () => {} });
+const reducedMotionQuery = '(prefers-reduced-motion: reduce)';
+function subscribeReducedMotion(update: () => void) {
+  const query = window.matchMedia(reducedMotionQuery);
+  query.addEventListener('change', update);
+  return () => query.removeEventListener('change', update);
+}
+const getReducedMotion = () => window.matchMedia(reducedMotionQuery).matches;
+const getServerReducedMotion = () => false;
 
 export function MotionProvider({ children }: { children: ReactNode }) {
   const [motionState, setMotionState] = useState<'active' | 'paused'>('active');
+  const reduced = useSyncExternalStore(subscribeReducedMotion, getReducedMotion, getServerReducedMotion);
 
   useEffect(() => {
-    const saved = typeof window !== 'undefined' ? localStorage.getItem('academy-motion') : null;
-    if (saved === 'paused' || saved === 'active') {
-      setMotionState(saved);
-      document.documentElement.dataset.motion = saved;
-    } else {
-      setMotionState('active');
-      document.documentElement.dataset.motion = 'active';
-    }
+    try {
+      const saved = localStorage.getItem('academy-motion');
+      if (saved === 'paused' || saved === 'active') setMotionState(saved);
+    } catch { /* Preferences are optional when browser storage is unavailable. */ }
   }, []);
+  useEffect(() => { document.documentElement.dataset.motion = reduced ? 'paused' : motionState; }, [reduced, motionState]);
 
   const toggle = () => {
     setMotionState(prev => {
       const next = prev === 'active' ? 'paused' : 'active';
       if (typeof window !== 'undefined') {
-        localStorage.setItem('academy-motion', next);
-        document.documentElement.dataset.motion = next;
+        try { localStorage.setItem('academy-motion', next); } catch { /* Keep the in-memory preference. */ }
       }
       return next;
     });
   };
 
-  const enabled = motionState === 'active';
-  const paused = motionState === 'paused';
+  const enabled = !reduced && motionState === 'active';
+  const paused = reduced || motionState === 'paused';
 
   return (
-    <MotionSettings.Provider value={{ enabled, reduced: false, paused, toggle }}>
+    <MotionSettings.Provider value={{ enabled, reduced, paused, toggle }}>
       {children}
     </MotionSettings.Provider>
   );
@@ -60,17 +65,19 @@ export function useMotionVisibility<T extends HTMLElement>(once = false) {
 }
 
 export function MotionToggle() {
-  const { enabled, paused, toggle } = useSiteMotion();
+  const { enabled, reduced, paused, toggle } = useSiteMotion();
+  const label = reduced ? 'Animations disabled by your device settings' : enabled ? 'Pause animations' : 'Resume animations';
   return (
     <button
       className="motion-toggle"
       type="button"
       onClick={toggle}
+      disabled={reduced}
       aria-pressed={paused}
-      aria-label={enabled ? 'Pause animations' : 'Play animations'}
+      aria-label={label}
     >
       {enabled ? <Pause size={13} aria-hidden="true"/> : <Play size={13} aria-hidden="true"/>}
-      <span>{enabled ? 'Pause animations' : 'Play animations'}</span>
+      <span>{label}</span>
     </button>
   );
 }

@@ -1,0 +1,93 @@
+.ss-student
+  :where(
+    h1,
+    h2,
+    h3,
+    h4,
+    p,
+    fieldset,
+    legend,
+    table,
+    th,
+    td,
+    button,
+    input,
+    select,
+    textarea,
+    a,
+    svg,
+    progress
+  ) {
+  all: revert-layer;
+}
+.ss-student {
+  font-family: "Manrope Variable", ui-sans-serif, system-ui, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  overflow-wrap: anywhere;
+}
+.ss-student h1,
+.ss-student h2,
+.ss-student h3 {
+  font-family: "Space Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
+}
+.ss-student :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.ss-student [tabindex="-1"]:focus {
+  outline: none;
+}
+.ss-student input[aria-invalid="true"] {
+  border-color: #b91c1c;
+}
+.ss-student th,
+.ss-student td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  font-size: 13px;
+}
+.ss-student .student-skip {
+  position: fixed;
+  z-index: 100;
+  top: -100px;
+  left: 16px;
+  padding: 12px;
+  background: var(--surface);
+  color: var(--accent);
+}
+.ss-student .student-skip:focus {
+  top: 10px;
+}
+.ss-student .student-bottom-nav {
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+}
+.ss-student progress {
+  display: block;
+  width: 100%;
+  height: 8px;
+  border: none;
+  border-radius: 99px;
+  overflow: hidden;
+  background: var(--border);
+  accent-color: var(--accent);
+}
+.ss-student progress::-webkit-progress-bar {
+  background: var(--border);
+}
+.ss-student progress::-webkit-progress-value {
+  background: var(--accent);
+  border-radius: 99px;
+}
+.ss-student progress::-moz-progress-bar {
+  background: var(--accent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ss-student *,
+  .ss-student *::before,
+  .ss-student *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

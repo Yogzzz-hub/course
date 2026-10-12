@@ -1,5 +1,5 @@
 import { readFile, access } from 'node:fs/promises';
-const paths=['','programmes','programmes/python-full-stack','learning-experience','career-support','about','book-session','contact','privacy-policy','terms-and-conditions'];
+const paths=['','programmes','programmes/python-full-stack','learning-experience','career-support','about','book-session','direct-booking','contact','privacy-policy','terms-and-conditions'];
 let links=0,fragments=0;
 for(const path of paths){
  const html=await readFile(`dist/${path?`${path}/`:''}index.html`,'utf8');

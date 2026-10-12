@@ -21,9 +21,9 @@ test('programme graphics animate in view while duration stays accurate and reduc
 });
 
 test('animated headings preserve real readable text and stagger their words', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/about');
   const heading = page.getByRole('heading', { level: 1 });
-  await expect(heading).toHaveText("Don't just learn technology.Build with it.");
+  await expect(heading).toHaveText('Learning should leadto something you can build.');
   const words = heading.locator('.motion-word');
   expect(await words.count()).toBeGreaterThan(5);
   await expect(heading.locator('.text-motion')).toHaveAttribute('data-entered', 'true');
@@ -32,50 +32,49 @@ test('animated headings preserve real readable text and stagger their words', as
   expect(timing.every(word => word.opacity === '1')).toBe(true);
   await page.getByRole('button', { name: 'Pause animations', exact: true }).first().click();
   expect(await words.first().evaluate(element => element.getAnimations().length)).toBe(0);
-  await expect(heading).toContainText('Build with it.');
+  await expect(heading).toContainText('something you can build.');
 });
 
-test('SVG process signals animate in view and respect pause and reduced motion', async ({ page }) => {
-  await page.goto('/');
+test('SVG orbit signals animate in view and respect pause and reduced motion', async ({ page }) => {
+  await page.goto('/about');
   const orbit = page.locator('.orbit-signal');
+  await orbit.scrollIntoViewIfNeeded();
   await expect.poll(() => orbit.evaluate(element => element.getAnimations().some(animation => animation.playState === 'running'))).toBe(true);
-  const graphic = page.locator('.build-flow');
-  await graphic.scrollIntoViewIfNeeded();
-  await expect(graphic).toHaveAttribute('data-in-view', 'true');
-  const signal = graphic.locator('.flow-signal');
-  await expect.poll(() => signal.evaluate(element => element.getAnimations().some(animation => animation.playState === 'running'))).toBe(true);
-  const first = await signal.evaluate(element => getComputedStyle(element).strokeDashoffset);
-  await expect.poll(() => signal.evaluate(element => getComputedStyle(element).strokeDashoffset)).not.toBe(first);
+  const first = await orbit.evaluate(element => getComputedStyle(element).strokeDashoffset);
+  await expect.poll(() => orbit.evaluate(element => getComputedStyle(element).strokeDashoffset)).not.toBe(first);
+  await page.locator('footer').scrollIntoViewIfNeeded();
   await expect.poll(() => orbit.evaluate(element => element.getAnimations().every(animation => animation.playState === 'paused'))).toBe(true);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(page.locator('html')).toHaveAttribute('data-motion', 'paused');
-  expect(await signal.evaluate(element => element.getAnimations().length)).toBe(0);
-  await expect(graphic).toBeVisible();
+  expect(await orbit.evaluate(element => element.getAnimations().length)).toBe(0);
+  await expect(page.getByRole('heading', { level: 1 })).toBeAttached();
 });
 
 test('hero moves, can be paused, and the preference survives navigation', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/about');
   await expect(page.locator('html')).toHaveAttribute('data-motion', 'active');
   const plate = page.locator('.plate-float').first();
+  await page.locator('.engineering-stage').scrollIntoViewIfNeeded();
   await expect.poll(() => plate.evaluate(element => element.getAnimations().some(animation => animation.playState === 'running'))).toBe(true);
   const initial = await plate.evaluate(element => getComputedStyle(element).transform);
   await expect.poll(() => plate.evaluate(element => getComputedStyle(element).transform)).not.toBe(initial);
   await page.getByRole('button', { name: 'Pause animations', exact: true }).first().click();
   await expect(page.locator('html')).toHaveAttribute('data-motion', 'paused');
   expect(await plate.evaluate(element => element.getAnimations().length)).toBe(0);
-  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'About', exact: true }).click();
-  await expect(page.locator('h1')).toContainText('Learning should lead');
+  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Programmes', exact: true }).click();
+  await expect(page.locator('h1')).toContainText('One focused programme.');
   await expect(page.locator('html')).toHaveAttribute('data-motion', 'paused');
   await page.getByRole('button', { name: 'Resume animations', exact: true }).first().click();
   await expect(page.locator('html')).toHaveAttribute('data-motion', 'active');
 });
 
 test('scroll reveals the journey and updates reading progress', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/learning-experience');
   const stage = page.locator('.journey li').first();
   await stage.scrollIntoViewIfNeeded();
   await expect(stage).toHaveAttribute('data-revealed', 'true');
   await expect.poll(() => page.locator('.reading-progress').evaluate(element => getComputedStyle(element).transform)).not.toBe('matrix(0, 0, 0, 1, 0, 0)');
+  await page.goto('/programmes/python-full-stack');
   await page.locator('.pricing-card').last().scrollIntoViewIfNeeded();
   await expect(page.locator('.pricing-card').last()).toHaveAttribute('data-revealed', 'true');
 });
@@ -103,10 +102,11 @@ test('device reduced motion prevents decorative animations and preserves content
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/');
+  await page.goto('/about');
   await expect(page.locator('html')).toHaveAttribute('data-motion', 'paused');
   await expect(page.getByRole('button', { name: 'Animations disabled by your device settings' }).first()).toBeDisabled();
   expect(await page.locator('.plate-float').first().evaluate(element => element.getAnimations().length)).toBe(0);
+  await page.goto('/programmes/python-full-stack');
   await page.locator('.pricing-card').first().scrollIntoViewIfNeeded();
   expect(await page.locator('.pricing-card').first().evaluate(element => getComputedStyle(element).opacity)).toBe('1');
   await expect(page.locator('.pricing-card').first()).toBeVisible();
@@ -119,7 +119,7 @@ test('device reduced motion prevents decorative animations and preserves content
 
 test('mobile drawer animates without losing focus containment', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await page.goto('/about');
   await page.getByRole('button', { name: 'Open navigation' }).click();
   const drawer = page.getByRole('dialog');
   await expect(drawer).toBeVisible();
@@ -131,12 +131,12 @@ test('mobile drawer animates without losing focus containment', async ({ page })
 });
 
 test('page navigation settles to fully visible content and shows the correct title', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/programmes');
   await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'About', exact: true }).click();
-  await expect(page).toHaveTitle('About the Academy | Academy');
+  await expect(page).toHaveTitle('About the Academy | Shadow Sphere Technical Academy');
   await expect(page.locator('h1')).toBeVisible();
   await expect.poll(() => page.locator('main').evaluate(element => getComputedStyle(element).opacity)).toBe('1');
   await page.goBack();
-  await expect(page.locator('h1')).toContainText('Build with it.');
+  await expect(page.locator('h1')).toContainText('One focused programme.');
   await expect.poll(() => page.locator('main').evaluate(element => getComputedStyle(element).opacity)).toBe('1');
 });

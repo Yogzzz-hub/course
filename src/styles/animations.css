@@ -103,8 +103,8 @@
 .text-motion { display: inline; }
 .motion-word { display: inline-block; transform-origin: 0 100%; }
 .hero h1 > .text-motion,.detail-hero h1 > .text-motion { color: inherit; }
-.hero-emphasis { color: var(--accent-soft); }
-.detail-hero h1 > .text-motion > span:not(.motion-word) { color: var(--accent-soft); }
+.hero-emphasis { color: var(--accent); }
+.detail-hero h1 > .text-motion > span:not(.motion-word) { color: var(--accent); }
 [data-motion="active"] .text-motion[data-entered="true"] .motion-word { animation: word-arrive 850ms var(--ease-out) both; }
 @keyframes word-arrive { from { transform: translateY(.28em) rotateX(18deg) rotateZ(1deg); } to { transform: translateY(0) rotateX(0) rotateZ(0); } }
 .hero-emphasis { background: linear-gradient(var(--accent-soft),var(--accent-soft)) left bottom / 100% 1px no-repeat; padding-bottom: .055em; }
@@ -197,5 +197,5 @@
 /* User choice and OS preference both disable decorative motion across the site. */
 [data-motion="paused"] *,[data-motion="paused"] *::before,[data-motion="paused"] *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 [data-motion="paused"] .layer-art { transform: none; }
-@media(prefers-reduced-motion:reduce) { html:not([data-motion="active"]) *,html:not([data-motion="active"]) *::before,html:not([data-motion="active"]) *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } html:not([data-motion="active"]) .layer-art { transform: none; } }
+@media(prefers-reduced-motion:reduce) { html *,html *::before,html *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } html .layer-art { transform: none; } }
 @media print { .motion-toggle,.reading-progress,.route-indicator { display: none; } }

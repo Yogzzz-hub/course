@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useSyncExternalStore } from 'react';
 import { Palette, Check } from 'lucide-react';
 
 export interface ThemeOption {
@@ -52,21 +52,21 @@ export const themes: ThemeOption[] = [
   },
 ];
 
+function normaliseTheme(value: string | null | undefined) { return themes.some(theme => theme.id === value) ? value! : 'theme-1'; }
+function getThemeSnapshot() { return normaliseTheme(document.documentElement.dataset.theme); }
+function subscribeTheme(update: () => void) {
+  const storageChanged = (event: StorageEvent) => { if (event.key === 'academy-theme') { document.documentElement.dataset.theme = normaliseTheme(event.newValue); update(); } };
+  window.addEventListener('academy-theme-change', update);
+  window.addEventListener('storage', storageChanged);
+  return () => { window.removeEventListener('academy-theme-change', update); window.removeEventListener('storage', storageChanged); };
+}
 export function useTheme() {
-  const [currentTheme, setCurrentTheme] = useState<string>('theme-1');
-
-  useEffect(() => {
-    const saved = (typeof window !== 'undefined' && localStorage.getItem('academy-theme')) || 'theme-1';
-    setCurrentTheme(saved);
-    if (typeof document !== 'undefined') {
-      document.documentElement.dataset.theme = saved;
-    }
-  }, []);
+  const currentTheme = useSyncExternalStore(subscribeTheme, getThemeSnapshot, () => 'theme-1');
 
   const setTheme = (themeId: string) => {
-    setCurrentTheme(themeId);
     if (typeof document !== 'undefined') {
-      document.documentElement.dataset.theme = themeId;
+      document.documentElement.dataset.theme = normaliseTheme(themeId);
+      window.dispatchEvent(new Event('academy-theme-change'));
       document.documentElement.dataset.themeTransitioning = 'true';
       try {
         localStorage.setItem('academy-theme', themeId);
@@ -105,6 +105,7 @@ export function ThemeSwitcher({ compact = false }: { compact?: boolean }) {
               className={`theme-btn ${isActive ? 'active' : ''}`}
               onClick={() => setTheme(t.id)}
               aria-pressed={isActive}
+              aria-label={t.name}
               title={`${t.name} — ${t.tagline}`}
             >
               <span className="theme-swatch" style={{ background: t.bg }}>

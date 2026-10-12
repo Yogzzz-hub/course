@@ -1,6 +1,6 @@
-# Executed QA and release status
+﻿# Executed QA and release status
 
-Tested 10?11 October 2026, Windows, Node 24, installed Google Chrome. Results below describe the local production build, not a deployed service.
+Tested 12 October 2026, Windows, Node 24, installed Google Chrome. Current checks cover the Shadow Sphere v2 public website, booking journey, dual-mode Student Panel, Admin Panel and retained pages. Results describe the local production build, not a deployed service. The Lighthouse measurements and older design notes below are historical and predate v2.
 
 ## Final executed checks
 
@@ -8,19 +8,38 @@ Tested 10?11 October 2026, Windows, Node 24, installed Google Chrome. Results be
 | --- | --- |
 | TypeScript | Passed as part of `npm run build` |
 | ESLint | `npm run lint` passed without warnings |
-| Production build | Passed; ten prerendered routes plus a static 404 |
-| Unit / endpoint tests | `npm test`: 13 passed |
-| Browser tests | `npm run test:e2e -- --workers=1`: 34 passed in 1.0 minute, zero failures or skips (including nine motion checks) |
-| Internal links | `node scripts/check-links.mjs`: 319 links and 35 fragment destinations verified |
-| Dependency install audit | 0 reported vulnerabilities at installation time; this is a point-in-time dependency check, not a security certification |
-| Screenshots | 40 captures: viewport and full-page images for all ten routes at 390px and 1440px |
-| Accessibility | Axe WCAG A/AA scans passed on home, programme details, learning experience, contact and booking pages |
+| Production build | Passed; fifteen prerendered routes plus a static 404; student and admin routes contain only private loading shells; local demo modules and sample data are excluded |
+| Unit / endpoint tests | `npm test`: 50 passed, including Admin Panel contracts/security/operation registry and local demo contract/read-only checks |
+| Browser tests | Final `npx playwright test --workers=1`: 95 passed in 3.4 minutes, zero failures or skips (including seven shared-palette and local-demo checks) |
+| Shared palettes | All four palettes passed accessibility checks on the homepage, Contact, authenticated Student Panel and Admin Panel; selections persist across navigation and reloads, and survive component remounts with storage blocked |
+| Local demo | Explicit opt-in on the development Student Panel, Prospect/Enrolled mode controls, sample-data banner, rejected writes without network traffic, exit to real session service, and no production demo entry verified |
+| Sign-in routes | Student and admin sign-in destination pages render successfully, remain noindex, and explain the missing authentication integration; unknown routes retain a genuine 404 |
+| Admin Panel | Two-factor gate and expiry, permission revocation, Kanban dragging/keyboard moves, owner filtering, timeline, independent offer/proof/refund approvals, reconciliation, frozen financial retries and reload recovery, blocked storage, TanStack Table sorting/pagination/filtering, CMS revision conflicts and rebuilds, reports/export, search/notifications, sign-out and render-boundary recovery passed |
+| Final Student Panel regression | All 21 existing Student Panel browser checks passed within the final complete run |
+| Short-screen sidebar follow-up | Build and lint passed; both modes verified at 1280×400 with keyboard access to collapse/expand and enrolled mentorship, then at 390×640 with five mobile tabs and no horizontal overflow |
+| Internal links | `node scripts/check-links.mjs`: 270 links and 38 fragment destinations verified |
+| Dependency audit | `npm audit --omit=dev`: 0 reported vulnerabilities. Full audit: 33 development-tooling issues (8 moderate, 24 high, 1 critical); critical package `tar`. Toolchain upgrades remain outstanding and were not force-applied in this UI change |
+| Screenshots | Final full run generated 44 public-route captures and two admin captures; visual inspection corrected cramped mobile table columns and search layout |
+| Accessibility | Axe scans passed on public routes, Student Panel checkout/dashboard/mentorship and the mobile Admin Panel financial ledger; admin navigation also verified at 390×640 and 1280×400 |
 
 The HTML Playwright report is `playwright-report/index.html`. Screenshots are under `test-results/screenshots/`; both directories are generated and ignored by Git.
 
+## Shadow Sphere v2 checks
+
+Admin Panel checks use synthetic fixtures and mocked services, with no live approvals, captures, refunds or website publishes. Runtime validation checks verified sessions, consistent prices, independent refund approval and safe links; monetary parsing and formatting preserve exact minor units up to the safe integer limit. Financial recovery persists only opaque request IDs and hashes; unresolved or `not_found` outcomes block new financial actions. The server must enforce MFA, current permissions, independent reviewers, durable idempotency and atomic record-version checks. Backend and worker integration remains outstanding; see [ADMIN-PANEL.md](ADMIN-PANEL.md).
+
+Student Panel checks cover authenticated/anonymous shells; all prospect statuses through contract tests; package comparison, exact fees and consent; ambiguous checkout and submission retries; server-verified enrolment with gateway return flags ignored; enrolled classes, progress, deadlines, onboarding and instalments; multipart attachment submission and attempt history; entitlement updates, slot conflicts, uncertain mentor booking recovery and attendance; session expiry and sign-out; private prerendering; resettable render boundaries; mobile/desktop navigation at 320, 390, 768 and 1440px; and accessibility. Providers and student APIs are mocked; no live charges, uploads or appointments were made. The integration contract is in [STUDENT-PANEL.md](STUDENT-PANEL.md).
+
+- Homepage and counselling replacement; preserved package deep links; CMS comparison and extras calculation.
+- Personal-field validation and first-error focus; invalid OTP and resend handling; availability loading and empty/unavailable states.
+- Full booking; server-clock hold expiry; slot conflicts and hold release; selected time zone passed to the server.
+- A failed confirmation remains locked through hold expiry and resolves through status without another booking request.
+- Axe accessibility across all four steps, phone/desktop reflow, and a readable no-JavaScript snapshot with booking fields disabled until hydration.
+- Shared legacy controls now synchronise themes, tolerate blocked browser storage, honor reduced motion and fit desktop headers. Preference initialization uses a CSP-compatible external script.
+
 ## Browser coverage
 
-- All ten routes: direct navigation, refresh, unique title/description, one main heading, no browser JavaScript errors, valid internal destinations and no empty/hash-only links.
+- All eleven routes: direct navigation, refresh, unique title/description, one main heading, no browser JavaScript errors, valid internal destinations and no empty/hash-only links.
 - All ten requested widths on every route: **320, 360, 375, 390, 430, 768, 1024, 1280, 1440, 1920px**. No horizontal page overflow detected.
 - Mobile drawer: open/close, focus containment, initial close-button focus, Escape, focus restoration, scroll lock and automatic close after navigation.
 - Curriculum: expand/collapse and readable topics. Individual-course pricing: expand and verify ₹1,57,000 total. Package CTA: selected package preserved in the counselling URL. Browser back navigation verified.
@@ -31,7 +50,7 @@ The HTML Playwright report is `playwright-report/index.html`. Screenshots are un
 
 The narrower reflow checks exercise the viewport widths associated with desktop zoom. They do **not** substitute for a manual native-browser 200%/400% zoom test. Physical devices, Firefox, Safari, screen-reader speech output and live provider flows remain prelaunch checks.
 
-## Local Lighthouse measurements (before the text/SVG follow-up)
+## Historical Lighthouse measurements (before the text/SVG follow-up and v2 replacement)
 
 Lighthouse 13.5.0. Mobile runs used the tool's default simulated mobile throttling; desktop used 1440×1000, 1× CPU and the desktop throttling configuration in `scripts/audit.mjs`. The static preview served compressed HTML/CSS/JS. Raw JSON reports are retained in `docs/audits/`.
 
@@ -45,7 +64,7 @@ The audited pages meet the 2.5-second LCP target in this local run. Lighthouse u
 
 All three SEO scores are 63 because the unapproved build deliberately blocks indexing with robots/noindex. Unique metadata, static body content and route generation are implemented. A confirmed canonical domain, approved brand and reviewed legal text are required before enabling indexing and generating public sitemap entries.
 
-## Refinements made after inspection
+## Earlier refinements made after inspection (historical notes)
 
 - Increased mobile body, form, technology-tag, pricing and supporting-text sizes.
 - Preserved the hero's actions above the illustration and added immediate curriculum/counselling access to the programme hero.
@@ -55,7 +74,7 @@ All three SEO scores are 63 because the unapproved build deliberately blocks ind
 - Resolve the initial route before hydration, removing the large transient layout shift caught during the first code-splitting audit. Static rendering now also resolves the route before synchronous rendering, eliminating deferred duplicate page fragments; all ten generated pages were verified.
 - Confirmed no final hydration errors in route checks. Earlier Chrome navigation/teardown failures prompted a single-worker run with GPU disabled; the final 34-test report passed without failures or retries.
 
-## Motion enhancement
+## Legacy motion enhancement notes
 
 The programme-motion pass adds a four-node SVG signal map, sequential learning-area highlights, seven drawn course-duration arcs, a rotating outer dial, in-view CTA contours and cascading pricing-list hover feedback. All loops are gated by viewport visibility and the shared motion preference. Course duration and prices remain static text.
 
@@ -72,7 +91,9 @@ The text/SVG follow-up adds real-text staggered heading reveals across pages, dr
 ## Implemented but awaiting external configuration
 
 - Cloudflare enquiry function with validation, origin check, bounded request body, honeypot, Turnstile server verification, best-effort KV rate limits, provider idempotency and success tied to email API acceptance.
-- Calendly scheduler loaded by visitor action, with a direct-provider fallback and no fabricated booking confirmation.
+- Shadow Sphere direct booking UI with a configurable typed API: email OTP, session holds, pre-session brief, authoritative confirmation and ambiguous-outcome recovery. CMS, OTP delivery and booking endpoints are not connected; see DIRECT-BOOKING.md.
+- Dual-mode Student Panel with a configurable authenticated API, hosted payment adapter and server-verified enrolment gate. Sign-in, private storage, student endpoints and provider webhooks are not connected; see STUDENT-PANEL.md.
+- Admin Panel with typed HTTP contracts, current permission/MFA gates, independent financial approvals, idempotent recovery, versioned pricing and rebuild hooks, audit and report exports. Auth-provider, admin services, payment processor, private proof storage and build/export workers are not connected; see ADMIN-PANEL.md.
 - Environment template, Cloudflare security headers, deployment instructions and indexing controls.
 
 These integrations are not claimed to have delivered a real email, shown live appointment availability or completed a real appointment. The endpoint was exercised with mocked provider responses; the live Cloudflare runtime and configured provider accounts still require verification.

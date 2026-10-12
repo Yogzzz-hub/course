@@ -184,6 +184,41 @@
   --code-color: #201A1E;
 }
 
+:root {
+  --accent-tint: color-mix(in srgb, var(--accent-soft) 18%, var(--surface));
+  --accent-tint-strong: color-mix(in srgb, var(--accent-soft) 30%, var(--surface));
+  --accent-border: color-mix(in srgb, var(--accent-soft) 65%, var(--surface));
+  --muted-soft: color-mix(in srgb, var(--muted) 80%, var(--surface));
+  --text-soft: color-mix(in srgb, var(--text) 75%, var(--surface));
+}
+
+/* Tailwind consumers share the same semantic tokens as the legacy pages.
+   Status colours (red, amber, green) deliberately retain their meaning. */
+@theme inline {
+  --color-indigo-50: var(--accent-tint);
+  --color-indigo-100: var(--accent-tint-strong);
+  --color-indigo-200: var(--accent-border);
+  --color-indigo-300: var(--accent-soft);
+  --color-indigo-400: var(--accent-soft-dark);
+  --color-indigo-500: var(--accent);
+  --color-indigo-600: var(--accent);
+  --color-indigo-700: var(--btn-primary-bg);
+  --color-indigo-800: var(--btn-primary-hover);
+  --color-indigo-900: var(--btn-primary-hover);
+  --color-indigo-950: var(--ink);
+  --color-slate-50: var(--bg);
+  --color-slate-100: var(--bg-secondary);
+  --color-slate-200: var(--border);
+  --color-slate-300: var(--border-strong);
+  --color-slate-400: var(--muted-soft);
+  --color-slate-500: var(--muted);
+  --color-slate-600: var(--muted);
+  --color-slate-700: var(--text-soft);
+  --color-slate-800: var(--text);
+  --color-slate-900: var(--text);
+  --color-slate-950: var(--ink);
+}
+
 html[data-theme-transitioning="true"] * {
   transition: background-color 300ms cubic-bezier(0.22, 1, 0.36, 1),
               border-color 300ms cubic-bezier(0.22, 1, 0.36, 1),

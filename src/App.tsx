@@ -11,6 +11,11 @@ const pageLoaders: Record<string, () => Promise<{ default: ComponentType }>> = {
  '/career-support': () => import('./pages/CareerSupport'),
  '/about': () => import('./pages/About'),
  '/book-session': () => import('./pages/BookSession'),
+ '/direct-booking': () => import('./pages/DirectBooking'),
+ '/student-panel': () => import('./pages/StudentPanel'),
+ '/admin-panel': () => import('./pages/AdminPanel'),
+ '/auth/sign-in': () => import('./pages/SignIn'),
+ '/auth/admin/sign-in': () => import('./pages/SignIn'),
  '/contact': () => import('./pages/Contact'),
  '/privacy-policy': () => import('./pages/Legal'),
  '/terms-and-conditions': () => import('./pages/Legal'),
@@ -26,7 +31,8 @@ function RouteEffects() {
   const firstRender = useRef(true);
   useEffect(() => {
     const route = routes.find(route=>route.path===pathname);
-    document.title = `${route?.title || 'Page not found'} | ${academy.name}`;
+    const titleBrand = ['/', '/book-session', '/direct-booking'].includes(pathname) ? 'Technical Academy' : academy.name;
+    document.title = `${route?.title || 'Page not found'} | ${titleBrand}`;
     const meta = (name:string, value:string, property = false) => {
       const attr = property ? 'property' : 'name';
       let element = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${name}"]`);
@@ -35,11 +41,11 @@ function RouteEffects() {
     };
     const description=route?.description || 'Find your way back to programme information and academy guidance.';
     meta('description',description);meta('og:title',document.title,true);meta('og:description',description,true);meta('og:type','website',true);
-    meta('robots',!academy.siteUrl || !academy.legalApproved || !academy.brandApproved || !route || pathname.includes('policy') || pathname.includes('terms') ? 'noindex, nofollow' : 'index, follow');
+    meta('robots',['/student-panel', '/admin-panel', '/auth/sign-in', '/auth/admin/sign-in'].includes(pathname) || !academy.siteUrl || !academy.legalApproved || !academy.brandApproved || !route || pathname.includes('policy') || pathname.includes('terms') ? 'noindex, nofollow' : 'index, follow');
     let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
     if(academy.siteUrl && route){ if(!canonical){canonical=document.createElement('link');canonical.rel='canonical';document.head.append(canonical);} canonical.href=academy.siteUrl+pathname;meta('og:url',canonical.href,true); }else{canonical?.remove();}
     document.querySelector('#academy-structured-data')?.remove();
-    if (academy.siteUrl && academy.brandApproved) {const script=document.createElement('script');script.type='application/ld+json';script.id='academy-structured-data';script.textContent=JSON.stringify({'@context':'https://schema.org','@type':'WebPage',name:document.title,url:academy.siteUrl+pathname,description});document.head.append(script);}
+    if (academy.siteUrl && academy.brandApproved && !['/student-panel', '/admin-panel', '/auth/sign-in', '/auth/admin/sign-in'].includes(pathname)) {const script=document.createElement('script');script.type='application/ld+json';script.id='academy-structured-data';script.textContent=JSON.stringify({'@context':'https://schema.org','@type':'WebPage',name:document.title,url:academy.siteUrl+pathname,description});document.head.append(script);}
     if(hash){requestAnimationFrame(()=>document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView());}
     else {window.scrollTo({top:0,behavior:'instant'});if (!firstRender.current) document.querySelector<HTMLElement>('h1')?.focus({preventScroll:true});}
     firstRender.current = false;
@@ -52,5 +58,10 @@ class PageErrorBoundary extends Component<{children:ReactNode},{failed:boolean}>
   render(){if(this.state.failed)return <section className="container page-hero"><h1>Something didn't load.</h1><p>Please reload the page to try again.</p><button className="button button-primary" onClick={()=>window.location.reload()}>Reload page</button></section>;return this.props.children;}
 }
 export default function App({initialPage: InitialPage, initialPath}: {initialPage?: ComponentType; initialPath?: string}) {
+ const { pathname } = useLocation();
+ if (['/', '/book-session', '/direct-booking', '/student-panel', '/admin-panel'].includes(pathname)) {
+   const Page = pageComponents.find(page => page.path === pathname)!.Page;
+   return <PageErrorBoundary><Suspense fallback={<main className="container page-hero" role="status">Loading counselling…</main>}>{InitialPage && initialPath === pathname ? <InitialPage/> : <Page/>}<RouteEffects/></Suspense></PageErrorBoundary>;
+ }
  return <MotionConfig reducedMotion="user"><MotionProvider><Header/><main id="main" tabIndex={-1}><PageErrorBoundary><Suspense fallback={<div className="container page-hero" role="status">Loading your next step…</div>}><Routes>{pageComponents.map(({path, Page}) => <Route key={path} path={path} element={InitialPage && (path === initialPath || (path === '*' && initialPath && !pageLoaders[initialPath])) ? <InitialPage/> : <Page/>}/>)}</Routes><RouteEffects/></Suspense></PageErrorBoundary></main><Footer/></MotionProvider></MotionConfig>;
 }

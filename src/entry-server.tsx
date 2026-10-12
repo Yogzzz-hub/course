@@ -7,12 +7,13 @@ export { routes, academy };
 const escape=(text:string)=>text.replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]!));
 export async function render(path:string){
  const route=routes.find(r=>r.path===path);
- const title=`${route?.title || 'Page not found'} | ${academy.name}`;
+ const titleBrand=['/', '/book-session', '/direct-booking'].includes(path)?'Technical Academy':academy.name;
+ const title=`${route?.title || 'Page not found'} | ${titleBrand}`;
  const description=route?.description || 'Find your way back to the academy.';
  const launchReady=academy.siteUrl && academy.brandApproved && academy.legalApproved;
- const noindex=!launchReady || !route || path.includes('policy') || path.includes('terms');
+ const noindex=['/student-panel', '/admin-panel', '/auth/sign-in', '/auth/admin/sign-in'].includes(path) || !launchReady || !route || path.includes('policy') || path.includes('terms');
  const canonical=academy.siteUrl && route ? `<link rel="canonical" href="${escape(academy.siteUrl+path)}"/><meta property="og:url" content="${escape(academy.siteUrl+path)}"/>` : '';
- const structured=academy.siteUrl && academy.brandApproved && route ? `<script id="academy-structured-data" type="application/ld+json">${JSON.stringify({'@context':'https://schema.org','@type':'WebPage',name:title,url:academy.siteUrl+path,description}).replace(/</g,'\\u003c')}</script>` : '';
+ const structured=academy.siteUrl && academy.brandApproved && route && !['/student-panel', '/admin-panel', '/auth/sign-in', '/auth/admin/sign-in'].includes(path) ? `<script id="academy-structured-data" type="application/ld+json">${JSON.stringify({'@context':'https://schema.org','@type':'WebPage',name:title,url:academy.siteUrl+path,description}).replace(/</g,'\\u003c')}</script>` : '';
  // Match the client's resolved route and avoid deferred streaming fragments in static HTML.
  const initialPage = await loadInitialPage(path);
  const html = renderToString(<StaticRouter location={path}><App initialPage={initialPage} initialPath={path}/></StaticRouter>);

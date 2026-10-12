@@ -1,4 +1,4 @@
-# Content provenance and launch requirements
+﻿# Content provenance and launch requirements
 
 The primary PDF `Academy!.pdf` was **not attached**. All programme facts below are transcribed from the user's detailed text brief and have not been independently compared with the PDF. The brief is retained in the user's attachments, not duplicated into public assets.
 
@@ -31,7 +31,9 @@ Central unconfirmed values are in `src/config/academy.ts`. Pricing is in `src/da
 
 ## External configuration required
 
-1. Create a Calendly event. Configure name, email, education/professional status, programme of interest and optional learning goal questions; make phone required only if justified. Confirm slot time zone, cancellations, rescheduling, invitations and reminders in the actual account. Enter its HTTPS `calendly.com` event URL in `VITE_CALENDLY_URL`.
+The Student Panel additionally requires authenticated student endpoints, a sign-in route, private upload storage and a payment gateway with verified webhook reconciliation. Follow [STUDENT-PANEL.md](STUDENT-PANEL.md) for the typed API, CSRF, quote/terms versions, idempotency, hosted checkout origins and atomic mentorship entitlement rules. No live student backend or gateway is configured by this build.
+
+1. Implement or connect the CMS and direct-booking endpoints in [DIRECT-BOOKING.md](DIRECT-BOOKING.md). Configure approved email OTP delivery, verification sessions, atomic slot holds, booking confirmation and status recovery. Set `VITE_BOOKING_API_URL` if the base differs from `/api/booking`. Confirm session duration, fees, time zones, cancellations and rescheduling in the actual service. The v2 journey replaces the earlier Calendly embed.
 2. Authorise a receiving mailbox, verify a sender domain in Resend and configure its API key and sender/recipient server secrets.
 3. Create a Turnstile widget restricted to the production hostname; configure its public site key and private server secret.
 4. Bind `ENQUIRY_LIMITS` to a Cloudflare KV namespace. Set a random `RATE_LIMIT_SALT`. The code keeps only hashed abuse/idempotency identifiers with a 24-hour technical TTL, not enquiry bodies. KV is eventually consistent; configure an edge WAF rate rule for strict burst limits.
@@ -43,6 +45,7 @@ Central unconfirmed values are in `src/config/academy.ts`. Pricing is in `src/da
 - Reconcile the PDF and approve factual copy.
 - Replace the legal drafts and confirm provider processing, mailbox retention/access, cancellation and refund terms.
 - Verify real appointment availability and a genuine confirmation/reschedule/cancellation flow on a phone and desktop.
+- Verify student authentication, account isolation, provider sandbox payment and enrolment transitions, instalment recovery, private uploads and mentor booking conflicts against the live backend.
 - Send one authorised enquiry, confirm mailbox receipt, provider failure handling, Turnstile and edge rate policy.
 - Run automated checks against the release build, then check physical iOS Safari, Android Chrome and desktop Firefox/Safari, including native zoom and assistive technology.
 - Verify the HTTPS custom domain, static direct routes, 404 status, security headers, public canonical, sitemap and indexing configuration.
