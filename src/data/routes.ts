@@ -27,6 +27,7 @@ export const routes = [
   { path: '/terms-and-conditions', title: 'Terms & Conditions — Review Draft', description: 'Review draft website terms and the enrolment, fee and internship conditions awaiting academy approval.' },
 ];
 export const navigation = [
+  { to: '/', label: 'Home' },
   { to: '/programmes', label: 'Programmes' }, { to: '/learning-experience', label: 'Learning experience' },
   { to: '/about', label: 'About' }, { to: '/contact', label: 'Contact' },
 ];

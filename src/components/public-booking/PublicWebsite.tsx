@@ -72,6 +72,7 @@ export function PublicWebsite({ api, initialProgrammes = emptyProgrammes, academ
         </a>
         <div className="flex items-center gap-2 sm:gap-6">
           <nav className="hidden md:flex items-center gap-6" aria-label="Main navigation">
+            <a href="/" className="text-sm font-medium text-slate-700 hover:text-[var(--accent)] transition-colors">Home</a>
             <a href="/programmes" className="text-sm font-medium text-slate-700 hover:text-[var(--accent)] transition-colors">Programmes</a>
             <a href="/learning-experience" className="text-sm font-medium text-slate-700 hover:text-[var(--accent)] transition-colors">Learning experience</a>
             <a href="/about" className="text-sm font-medium text-slate-700 hover:text-[var(--accent)] transition-colors">About</a>
