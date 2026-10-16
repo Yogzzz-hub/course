@@ -2,6 +2,63 @@
 .ss-public :where(h1, h2, h3, h4, p, fieldset, legend, table, th, td, button, input, select, textarea, a, svg) {
   all: revert-layer;
 }
+
+/* Enforce parallel (side-by-side) alignment for brand logo */
+.ss-public .logo,
+.logo {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  gap: 10px !important;
+  text-decoration: none !important;
+  color: var(--text) !important;
+  flex-shrink: 0 !important;
+}
+
+.ss-public .logo svg,
+.logo svg {
+  flex-shrink: 0 !important;
+  color: var(--accent) !important;
+  display: block !important;
+}
+
+.ss-public .logo .logo-wordmark,
+.logo .logo-wordmark {
+  display: inline-flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 2px !important;
+  line-height: 1.15 !important;
+  white-space: nowrap !important;
+  text-align: left !important;
+}
+
+.ss-public .logo .logo-name,
+.logo .logo-name {
+  font-family: var(--font-display, inherit) !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.04em !important;
+  color: var(--text) !important;
+  line-height: 1.15 !important;
+  white-space: nowrap !important;
+  text-align: left !important;
+}
+
+.ss-public .logo .logo-subtitle,
+.logo .logo-subtitle {
+  font-family: var(--font-body, inherit) !important;
+  font-size: 9px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+  color: var(--muted) !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  text-align: left !important;
+}
+
 .ss-public {
   font-family: 'Manrope Variable', ui-sans-serif, system-ui, sans-serif;
   color: var(--text);

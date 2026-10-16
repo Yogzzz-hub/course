@@ -8,7 +8,7 @@ import { ReadingProgress } from './MotionSystem';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { PaletteMenu } from './PaletteMenu';
 
-export function Logo() { return <Link to="/" className="logo" aria-label={`${academy.name} home`}><Orbit size={35} aria-hidden="true"/><span className="logo-wordmark"><span className="logo-name">{academy.name.replace(/\s+Technical Academy$/i, "")}</span><span className="logo-subtitle">Technical Academy</span></span></Link>; }
+export function Logo() { return <Link to="/" className="logo flex flex-row items-center flex-nowrap gap-2.5 shrink-0" aria-label={`${academy.name} home`}><Orbit size={35} aria-hidden="true" className="shrink-0 text-[var(--accent)]"/><span className="logo-wordmark flex flex-col justify-center leading-tight"><span className="logo-name whitespace-nowrap">{academy.name.replace(/\s+Technical Academy$/i, "")}</span><span className="logo-subtitle whitespace-nowrap">Technical Academy</span></span></Link>; }
 export function Header() {
   const [open, setOpen] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);

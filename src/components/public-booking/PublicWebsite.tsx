@@ -91,11 +91,11 @@ export function PublicWebsite({
     <a href="#ss-main" className="ss-skip-link">Skip to content</a>
     <header className="fixed inset-x-0 top-0 z-50 border-b border-[var(--border)] bg-[var(--header-bg)] backdrop-blur-xl">
       <nav aria-label="Primary navigation" className="mx-auto flex min-h-20 max-w-7xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 sm:px-8">
-        <a href="/" className="logo" aria-label={`${academyName} home`}>
-          <Orbit size={35} aria-hidden="true"/>
-          <span className="logo-wordmark">
-            <span className="logo-name">{academyName.replace(/\s+Technical Academy$/i, "")}</span>
-            <span className="logo-subtitle">Technical Academy</span>
+        <a href="/" className="logo flex flex-row items-center flex-nowrap gap-2.5 shrink-0 text-inherit no-underline" aria-label={`${academyName} home`}>
+          <Orbit size={35} aria-hidden="true" className="shrink-0 text-[var(--accent)]"/>
+          <span className="logo-wordmark flex flex-col justify-center leading-tight">
+            <span className="logo-name whitespace-nowrap">{academyName.replace(/\s+Technical Academy$/i, "")}</span>
+            <span className="logo-subtitle whitespace-nowrap">Technical Academy</span>
           </span>
         </a>
         <div className="flex items-center gap-2 sm:gap-6">

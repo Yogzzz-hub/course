@@ -440,12 +440,12 @@ function Workspace({ academyName }: { academyName: string }) {
         className={`fixed inset-y-0 left-0 z-30 hidden flex-col overflow-y-auto border-r border-slate-200 bg-white lg:flex ${collapsed ? "w-20" : "w-64"}`}
       >
         <div className="flex min-h-20 shrink-0 items-center gap-3 border-b border-slate-100 p-5">
-          <a href="/" className="logo" aria-label={`${academyName} home`}>
-            <Orbit size={32} aria-hidden="true" />
+          <a href="/" className="logo flex flex-row items-center flex-nowrap gap-2.5 shrink-0" aria-label={`${academyName} home`}>
+            <Orbit size={32} aria-hidden="true" className="shrink-0 text-[var(--accent)]" />
             {!collapsed && (
-              <span className="logo-wordmark">
-                <span className="logo-name">{academyName.replace(/\s+Technical Academy$/i, "")}</span>
-                <span className="logo-subtitle">Technical Academy</span>
+              <span className="logo-wordmark flex flex-col justify-center leading-tight">
+                <span className="logo-name whitespace-nowrap">{academyName.replace(/\s+Technical Academy$/i, "")}</span>
+                <span className="logo-subtitle whitespace-nowrap">Technical Academy</span>
               </span>
             )}
           </a>
