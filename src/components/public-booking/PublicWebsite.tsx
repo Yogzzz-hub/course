@@ -127,6 +127,6 @@ export function PublicWebsite({
       <ProgrammeShowcase {...catalogue} onRetry={() => setRevision(value => value + 1)} onBook={goToBooking} bookingStarted={journey.state.step !== 'about'}/>
       <BookingJourney journey={journey} programmes={catalogue.programmes} timeZone={timeZone} onTimeZone={setTimeZone} interactive={interactive}/>
     </main>
-    <footer className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-8 text-xs text-slate-600 sm:px-8"><span>{academyName} · Technical Academy</span><div className="flex gap-5"><a href="/privacy-policy" className="min-h-8 content-center hover:text-indigo-700">Privacy notice</a><a href="/terms-and-conditions" className="min-h-8 content-center hover:text-indigo-700">Terms</a></div></footer>
+    <footer className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-4 text-xs text-slate-600 sm:px-8"><span>{academyName} · Technical Academy</span><div className="flex gap-5"><a href="/privacy-policy" className="min-h-8 content-center hover:text-indigo-700">Privacy notice</a><a href="/terms-and-conditions" className="min-h-8 content-center hover:text-indigo-700">Terms</a></div></footer>
   </div>;
 }
