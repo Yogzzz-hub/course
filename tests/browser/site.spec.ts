@@ -1,6 +1,29 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-const paths=['/','/programmes','/programmes/python-full-stack','/learning-experience','/career-support','/about','/book-session','/direct-booking','/contact','/privacy-policy','/terms-and-conditions'];
+const paths=[
+  '/',
+  '/programmes',
+  '/programmes/python-full-stack',
+  '/programmes/full-stack-app-dev',
+  '/programmes/django-backend-dev',
+  '/programmes/react-development',
+  '/programmes/advanced-python',
+  '/programmes/devops-docker-deployment',
+  '/programmes/dsa-technical-interview',
+  '/programmes/programming-python-foundation',
+  '/programmes/html-css-javascript',
+  '/programmes/sql-postgresql',
+  '/programmes/software-engineering-testing',
+  '/programmes/ai-assisted-development',
+  '/learning-experience',
+  '/career-support',
+  '/about',
+  '/book-session',
+  '/direct-booking',
+  '/contact',
+  '/privacy-policy',
+  '/terms-and-conditions'
+];
 const widths=[320,360,375,390,430,768,1024,1280,1440,1920];
 
 for(const path of paths){test(`route, links and responsive layout: ${path}`,async({page})=>{

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
-import { Clock3, ArrowUpRight, Search, Check, BookOpen } from 'lucide-react';
+import { Clock3, ArrowUpRight, Search, Check, BookOpen, ArrowDown, Layers3, Sparkles } from 'lucide-react';
 import { AnimatedText } from '../components/AnimatedText';
-import { PageHero, BookingCTA, TextLink, SectionHeading, Button } from '../components/ui';
+import { BookingCTA, TextLink, SectionHeading, Button, Eyebrow } from '../components/ui';
 import { ProgrammeFeature } from '../components/Programme';
 import { detailedProgrammes } from '../data/programmeCatalog';
 
@@ -33,16 +33,131 @@ export default function Programmes() {
 
   return (
     <>
-      <PageHero
-        eyebrow="YOUR LEARNING PATH"
-        title={
-          <>
-            One focused programme.<br />
-            <span className="muted">All pathways & specialisations.</span>
-          </>
-        }
-        description="A seven-month path that brings programming, full-stack development and career preparation together. Explore the flagship curriculum or individual technical tracks."
-      />
+      <section className="container page-hero programmes-hero">
+        <div className="programmes-hero-grid">
+          <div className="programmes-hero-copy">
+            <Eyebrow>YOUR LEARNING PATH</Eyebrow>
+            <h1 tabIndex={-1}>
+              <AnimatedText>
+                One focused programme.<br />
+                <span className="muted">All pathways &amp; specialisations.</span>
+              </AnimatedText>
+            </h1>
+            <p className="programmes-hero-desc">
+              A seven-month path that brings programming, full-stack development and career preparation together. Explore the flagship curriculum or individual technical tracks.
+            </p>
+            <div className="programmes-hero-actions">
+              <a
+                href="#catalogue"
+                className="button button-primary"
+                onClick={e => {
+                  e.preventDefault();
+                  document.getElementById('catalogue')?.scrollIntoView({
+                    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+                  });
+                }}
+              >
+                Explore 12 programmes <ArrowDown size={15} aria-hidden="true" />
+              </a>
+              <Button to="/book-session" secondary>
+                Book counselling
+              </Button>
+            </div>
+          </div>
+
+          <aside className="programmes-hero-card" aria-label="Curriculum Architecture Summary">
+            <div className="programmes-hero-card-header">
+              <div className="hero-card-title-group">
+                <span className="hero-status-pulse" aria-hidden="true" />
+                <span className="eyebrow" style={{ margin: 0 }}>CURRICULUM ARCHITECTURE</span>
+              </div>
+              <span className="hero-pill-badge">12 ACTIVE PROGRAMMES</span>
+            </div>
+
+            <div className="programmes-hero-stats">
+              <div className="hero-stat-box">
+                <strong>01</strong>
+                <span>Flagship</span>
+                <p>Full-Stack Engineering</p>
+              </div>
+              <div className="hero-stat-box">
+                <strong>03</strong>
+                <span>Specialist</span>
+                <p>Career Tracks</p>
+              </div>
+              <div className="hero-stat-box">
+                <strong>08</strong>
+                <span>Modular</span>
+                <p>Skill Accelerators</p>
+              </div>
+            </div>
+
+            <div className="programmes-hero-pathways">
+              <button
+                type="button"
+                className="pathway-row"
+                onClick={() => {
+                  setActiveFilter('flagship-track');
+                  document.getElementById('catalogue')?.scrollIntoView({
+                    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+                  });
+                }}
+              >
+                <span className="pathway-step">01</span>
+                <div className="pathway-content">
+                  <h4>Full-Stack Software Engineering</h4>
+                  <p>7 months · Python, Django, React, Databases &amp; Deployment</p>
+                </div>
+                <ArrowUpRight size={15} aria-hidden="true" />
+              </button>
+
+              <button
+                type="button"
+                className="pathway-row"
+                onClick={() => {
+                  setActiveFilter('flagship-track');
+                  document.getElementById('catalogue')?.scrollIntoView({
+                    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+                  });
+                }}
+              >
+                <span className="pathway-step">02</span>
+                <div className="pathway-content">
+                  <h4>Specialised Engineering Tracks</h4>
+                  <p>Frontend Engineering, Backend APIs &amp; DevOps Tracks</p>
+                </div>
+                <ArrowUpRight size={15} aria-hidden="true" />
+              </button>
+
+              <button
+                type="button"
+                className="pathway-row"
+                onClick={() => {
+                  setActiveFilter('module');
+                  document.getElementById('catalogue')?.scrollIntoView({
+                    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+                  });
+                }}
+              >
+                <span className="pathway-step">03</span>
+                <div className="pathway-content">
+                  <h4>Individual Skill Modules</h4>
+                  <p>SQL, Python, React, Testing, DSA &amp; Interview Prep</p>
+                </div>
+                <ArrowUpRight size={15} aria-hidden="true" />
+              </button>
+            </div>
+
+            <div className="programmes-hero-card-footer">
+              <span className="inline-flex items-center gap-1.5">
+                <Sparkles size={13} className="text-amber-500" aria-hidden="true" />
+                Hands-on code reviews &amp; portfolio projects
+              </span>
+              <span className="text-xs font-semibold text-slate-700">7 Months</span>
+            </div>
+          </aside>
+        </div>
+      </section>
 
       <section className="container section section-first">
         <div className="programmes-catalogue" id="catalogue" style={{ marginTop: '0' }}>
@@ -156,7 +271,7 @@ export default function Programmes() {
 
                   <div className="card-actions">
                     <Button to={card.slug}>
-                      Explore programme
+                      {card.isFlagship ? 'Explore flagship' : (card.category === 'module' ? 'Explore module' : 'Explore track')}
                       <ArrowUpRight size={14} aria-hidden="true" />
                     </Button>
                     <Button to={`/book-session?programme=${encodeURIComponent(card.id)}`} secondary>
