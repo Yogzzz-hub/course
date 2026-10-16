@@ -8,5 +8,14 @@ const initialProgrammes = allBookingProgrammes;
 export default function DirectBooking() {
   const { pathname } = useLocation();
   const [search] = useSearchParams();
-  return <PublicWebsite api={api} initialProgrammes={initialProgrammes} startAtBooking={pathname !== '/'} initialPackageId={search.get('package') ?? undefined}/>;
+  return (
+    <PublicWebsite
+      api={api}
+      initialProgrammes={initialProgrammes}
+      startAtBooking={pathname !== '/'}
+      initialPackageId={search.get('package') ?? undefined}
+      initialProgrammeId={search.get('programme') ?? undefined}
+    />
+  );
 }
+

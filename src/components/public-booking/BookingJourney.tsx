@@ -27,6 +27,7 @@ export function BookingJourney({ journey, programmes, timeZone, onTimeZone, inte
   }, [state.step]);
   const selected = programmes.find(programme => programme.id === state.about.programmeId);
   const total = selected ? feeTotal(selected, state.about.packageId, state.about.addonIds) : null;
+  const displayPrice = total !== null ? total : (selected?.packages[0]?.priceMinor ?? null);
   const busy = state.busy !== null;
   return <section id="ss-booking" aria-labelledby="ss-booking-title" className="ss-section border-y border-slate-200 bg-slate-50">
     <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:py-24"><span className="ss-kicker">02 / A CONVERSATION BEFORE A COMMITMENT</span><h2 id="ss-booking-title" className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">Book your counselling session.</h2>
@@ -43,7 +44,26 @@ export function BookingJourney({ journey, programmes, timeZone, onTimeZone, inte
           </>}
         </div>
         <aside aria-label="Counselling details" className="space-y-5 lg:sticky lg:top-28"><div className="rounded-2xl bg-slate-950 p-7 text-white"><span className="text-xs font-medium uppercase tracking-widest text-indigo-200">Your next chapter</span><h3 className="mt-4 text-xl font-semibold tracking-tight">Clarity before you enrol.</h3><ul className="mt-6 space-y-4 text-sm text-slate-200">{['Discuss your background and goals', 'Understand the curriculum and fees', 'Explore the right learning path'].map(text => <li key={text} className="flex items-start gap-2"><ChevronRight size={16} className="mt-0.5 shrink-0 text-indigo-300" aria-hidden="true"/>{text}</li>)}</ul></div>
-          {selected && <div className="rounded-2xl border border-slate-200 bg-white p-6"><span className="text-xs font-semibold uppercase tracking-wider text-slate-600">Programme of interest</span><h3 className="mt-3 text-lg font-semibold text-slate-950">{selected.title}</h3><p className="ss-copy mt-2 text-sm text-slate-600">{selected.duration}</p>{total !== null && <><p className="ss-copy mt-5 text-xs text-slate-600">Listed package + selected extras</p><span className="mt-1 block text-2xl font-semibold text-slate-950">{formatMoney(total, selected.currency)}</span></>}<p className="ss-copy mt-4 text-xs leading-relaxed text-slate-600">Programme fees are separate from booking a counselling session. No payment is collected in this journey.</p></div>}
+          {selected ? (
+            <div className="rounded-2xl border border-slate-200 bg-white p-6">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-600">Programme of interest</span>
+              <h3 className="mt-3 text-lg font-semibold text-slate-950">{selected.title}</h3>
+              <p className="ss-copy mt-2 text-sm text-slate-600">{selected.duration}</p>
+              {displayPrice !== null && (
+                <>
+                  <p className="ss-copy mt-5 text-xs text-slate-600">{total !== null ? 'Listed package + selected extras' : 'Listed package fee'}</p>
+                  <span className="mt-1 block text-2xl font-semibold text-slate-950">{formatMoney(displayPrice, selected.currency)}</span>
+                </>
+              )}
+              <p className="ss-copy mt-4 text-xs leading-relaxed text-slate-600">Programme fees are separate from booking a counselling session. No payment is collected in this journey.</p>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-slate-200 bg-white p-6">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-600">Programme of interest</span>
+              <h3 className="mt-3 text-base font-medium text-slate-800">Select a programme</h3>
+              <p className="ss-copy mt-2 text-sm text-slate-500">Choose a programme in the form to see its duration, package options and curriculum fee details here.</p>
+            </div>
+          )}
           <p className="ss-copy flex items-start gap-2 px-1 text-xs leading-relaxed text-slate-600"><LockKeyhole size={15} className="mt-0.5 shrink-0" aria-hidden="true"/>Verification and slot availability are checked with the booking service.</p>
         </aside>
       </div>

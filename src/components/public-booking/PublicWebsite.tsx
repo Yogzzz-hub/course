@@ -15,6 +15,7 @@ export interface PublicWebsiteProps {
   initialTimeZone?: string;
   startAtBooking?: boolean;
   initialPackageId?: string;
+  initialProgrammeId?: string;
 }
 const emptyProgrammes: Programme[] = [];
 const subscribeHydration = () => () => {};
@@ -22,23 +23,45 @@ const clientIsInteractive = () => true;
 const serverIsInteractive = () => false;
 function validTimeZone(value: string): string { try { new Intl.DateTimeFormat('en', { timeZone: value }); return value; } catch { return 'Asia/Kolkata'; } }
 
-export function PublicWebsite({ api, initialProgrammes = emptyProgrammes, academyName = 'Shadow Sphere', initialTimeZone = 'Asia/Kolkata', startAtBooking = false, initialPackageId }: PublicWebsiteProps) {
+export function PublicWebsite({
+  api,
+  initialProgrammes = emptyProgrammes,
+  academyName = 'Shadow Sphere',
+  initialTimeZone = 'Asia/Kolkata',
+  startAtBooking = false,
+  initialPackageId,
+  initialProgrammeId,
+}: PublicWebsiteProps) {
   const [catalogue, setCatalogue] = useState<{ programmes: Programme[]; status: 'loading' | 'ready' | 'error'; error: string }>({ programmes: initialProgrammes, status: initialProgrammes.length ? 'ready' : 'loading', error: '' });
   const [revision, setRevision] = useState(0);
   const [timeZone, setTimeZone] = useState(() => validTimeZone(initialTimeZone));
   const interactive = useSyncExternalStore(subscribeHydration, clientIsInteractive, serverIsInteractive);
   const journey = useBookingJourney(api, catalogue.programmes, timeZone);
   const updateAbout = journey.updateAbout;
-  const initialConfiguration = useRef({ initialPackageId, initialProgrammes, startAtBooking });
+
   useEffect(() => {
-    const configuration = initialConfiguration.current;
-    if (configuration.initialPackageId) {
-      const programme = configuration.initialProgrammes.find(item => item.packages.some(tier => tier.id === configuration.initialPackageId));
-      if (programme) updateAbout({ programmeId: programme.id, packageId: configuration.initialPackageId });
+    const list = catalogue.programmes.length ? catalogue.programmes : initialProgrammes;
+    if (initialProgrammeId) {
+      const programme = list.find(item => item.id === initialProgrammeId);
+      if (programme) {
+        const pkg = initialPackageId && programme.packages.some(tier => tier.id === initialPackageId)
+          ? initialPackageId
+          : (programme.packages[0]?.id || '');
+        updateAbout({ programmeId: programme.id, packageId: pkg });
+      }
+    } else if (initialPackageId) {
+      const programme = list.find(item => item.packages.some(tier => tier.id === initialPackageId));
+      if (programme) updateAbout({ programmeId: programme.id, packageId: initialPackageId });
     }
-    const frame = configuration.startAtBooking ? requestAnimationFrame(() => document.getElementById('ss-booking')?.scrollIntoView({ behavior: 'instant' })) : 0;
-    return () => cancelAnimationFrame(frame);
-  }, [updateAbout]);
+  }, [initialProgrammeId, initialPackageId, catalogue.programmes, initialProgrammes, updateAbout]);
+
+  useEffect(() => {
+    if (startAtBooking) {
+      const frame = requestAnimationFrame(() => document.getElementById('ss-booking')?.scrollIntoView({ behavior: 'instant' }));
+      return () => cancelAnimationFrame(frame);
+    }
+  }, [startAtBooking]);
+
   useEffect(() => {
     const controller = new AbortController();
     setCatalogue(previous => ({ ...previous, status: previous.programmes.length ? 'ready' : 'loading', error: '' }));
@@ -51,7 +74,12 @@ export function PublicWebsite({ api, initialProgrammes = emptyProgrammes, academ
   }, [api, revision]);
 
   function goToBooking(programmeId?: string, packageId = '', addonIds: string[] = []) {
-    if (programmeId && journey.state.step === 'about') journey.updateAbout({ programmeId, packageId, addonIds: [...addonIds] });
+    if (programmeId && journey.state.step === 'about') {
+      const list = catalogue.programmes.length ? catalogue.programmes : initialProgrammes;
+      const prog = list.find(p => p.id === programmeId);
+      const pkg = packageId || prog?.packages[0]?.id || '';
+      journey.updateAbout({ programmeId, packageId: pkg, addonIds: [...addonIds] });
+    }
     document.getElementById('ss-booking')?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
   }
 
