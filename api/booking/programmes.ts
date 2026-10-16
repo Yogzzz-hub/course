@@ -1,4 +1,4 @@
-import { programme, packages } from '../../src/data/programmes';
+import { allBookingProgrammes } from '../../src/data/bookingProgrammes';
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -12,25 +12,7 @@ function json(body: unknown, status = 200) {
 }
 
 const payload = {
-  programmes: [
-    {
-      id: 'python-full-stack',
-      title: programme.name,
-      summary: programme.description,
-      duration: programme.duration,
-      currency: 'INR',
-      technologies: programme.technologies,
-      packages: packages.map(tier => ({
-        id: tier.name.toLowerCase(),
-        name: tier.name,
-        priceMinor: tier.price * 100,
-        inclusions: tier.inclusions.map(label => ({ label, included: true })),
-      })),
-      addons: [],
-      feeDisclosure:
-        'Listed fees from the supplied programme brief. Taxes, payment schedules, refunds, and exact package scope require academy confirmation.',
-    },
-  ],
+  programmes: allBookingProgrammes,
 };
 
 export async function GET() {
