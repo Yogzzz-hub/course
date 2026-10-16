@@ -15,7 +15,6 @@
 }
 .motion-toggle:hover { color: var(--accent-soft); border-color: var(--border); }
 .motion-toggle:disabled { cursor: default; }
-.site-footer .motion-toggle { margin-top: 12px; padding-left: 0; }
 .layer-art { transform: perspective(900px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)); transition: transform 650ms var(--ease-out); }
 .art-layer-4 { animation: none; }
 [data-motion="active"] .plate-float { animation: engineered-float 6s ease-in-out infinite; }
