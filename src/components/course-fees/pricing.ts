@@ -6,7 +6,7 @@ export const academyFeeCatalogue: CourseFeeCatalogue = {
   programmeId: 'python-full-stack',
   programmeName: programme.name,
   currency: 'INR',
-  courses: courses.map((course, index) => ({ id: `course-${index + 1}`, name: course.name, feeMinor: course.fee * 100 })),
+  courses: courses.map((course, index) => ({ id: `course-${index + 1}`, name: course.name, feeMinor: course.fee * 100, topics: course.topics })),
   packages: packages.map(tier => ({ id: tier.name.toLowerCase(), name: tier.name, description: tier.caption, priceMinor: tier.price * 100, inclusions: tier.inclusions })),
 };
 const formatter = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });

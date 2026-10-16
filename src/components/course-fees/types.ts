@@ -5,6 +5,7 @@ export interface IndividualCourseFee {
   readonly id: string;
   readonly name: string;
   readonly feeMinor: number;
+  readonly topics?: readonly string[];
 }
 export interface MasterPackage {
   readonly id: string;
