@@ -14,7 +14,7 @@ import {
   TrendingDown,
   Zap,
 } from 'lucide-react';
-import { formatFee, individualTotal, savingsLabel } from './pricing';
+import { formatFee, individualTotal } from './pricing';
 import type { CourseFeeCatalogue } from './types';
 
 const courseIcons = [
@@ -192,40 +192,6 @@ export function SavingsMatrix({ catalogue }: { catalogue: CourseFeeCatalogue }) 
           );
         })}
       </div>
-
-      {/* Accessible Detailed Comparison Table */}
-      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white" role="region" aria-label="Course and master package savings comparison" tabIndex={0}>
-        <table className="fees-table w-full min-w-[560px] text-left text-sm">
-          <caption className="sr-only">Comparative savings matrix in Indian rupees</caption>
-          <thead>
-            <tr className="bg-slate-50">
-              <th scope="col">Learning option</th>
-              <th scope="col" className="fees-money">Listed price</th>
-              <th scope="col" className="fees-money">Difference from individual total</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <th scope="row" className="font-medium">All {catalogue.courses.length} individual courses purchased separately</th>
-              <td className="fees-money font-semibold">{formatFee(baseline)}</td>
-              <td className="fees-money text-slate-600">Baseline price</td>
-            </tr>
-            {catalogue.packages.map(tier => (
-              <tr key={tier.id}>
-                <th scope="row" className="font-medium">{tier.name} Master Course</th>
-                <td className="fees-money font-semibold">{formatFee(tier.priceMinor)}</td>
-                <td className="fees-money font-semibold text-indigo-800">
-                  <span className="inline-flex items-center gap-1">
-                    {baseline > tier.priceMinor && <ArrowDownRight size={15} aria-hidden="true"/>}
-                    {savingsLabel(baseline - tier.priceMinor)}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <p className="mt-2 text-xs text-slate-500 sm:hidden">Swipe horizontally to see every comparison column.</p>
     </div>
   );
 }
