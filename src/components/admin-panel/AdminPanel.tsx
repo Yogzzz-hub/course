@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   Wallet,
   X,
+  Orbit,
   type LucideIcon,
 } from "lucide-react";
 import { AdminApiError, adminError } from "./api";
@@ -439,15 +440,15 @@ function Workspace({ academyName }: { academyName: string }) {
         className={`fixed inset-y-0 left-0 z-30 hidden flex-col overflow-y-auto border-r border-slate-200 bg-white lg:flex ${collapsed ? "w-20" : "w-64"}`}
       >
         <div className="flex min-h-20 shrink-0 items-center gap-3 border-b border-slate-100 p-5">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-indigo-950 text-white">
-            <ShieldCheck size={23} />
-          </span>
-          {!collapsed && (
-            <div>
-              <p className="text-sm font-bold">{academyName}</p>
-              <p className="mt-1 text-xs text-slate-500">Administration</p>
-            </div>
-          )}
+          <a href="/" className="logo" aria-label={`${academyName} home`}>
+            <Orbit size={32} aria-hidden="true" />
+            {!collapsed && (
+              <span className="logo-wordmark">
+                <span className="logo-name">{academyName.replace(/\s+Technical Academy$/i, "")}</span>
+                <span className="logo-subtitle">Technical Academy</span>
+              </span>
+            )}
+          </a>
         </div>
         <nav aria-label="Admin navigation" className="space-y-2 px-3 py-6">
           {allowed.map((item) => (
@@ -484,7 +485,10 @@ function Workspace({ academyName }: { academyName: string }) {
       <div className={collapsed ? "lg:pl-20" : "lg:pl-64"}>
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="flex flex-wrap items-center gap-3 px-4 py-3 sm:px-7">
-            <span className="w-full text-sm font-bold sm:w-auto lg:hidden">
+            <a href="/" className="logo lg:hidden" aria-label={`${academyName} home`}>
+              <Orbit size={26} aria-hidden="true" />
+            </a>
+            <span className="text-sm font-bold lg:hidden">
               Shadow Sphere Admin
             </span>
             <SearchBox navigate={setSelected} />

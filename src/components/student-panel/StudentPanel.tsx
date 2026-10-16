@@ -21,6 +21,7 @@ import {
   PanelLeftClose,
   Sparkles,
   Users,
+  Orbit,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { StudentApiError, friendlyError } from "./api";
@@ -233,17 +234,15 @@ function Workspace({
         className={`fixed inset-y-0 left-0 z-30 hidden flex-col overflow-y-auto border-r border-slate-200 bg-white lg:flex ${sidebarWidth}`}
       >
         <div className="flex h-20 shrink-0 items-center gap-3 border-b border-slate-100 px-5">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-indigo-950 text-white">
-            <GraduationCap size={23} aria-hidden="true" />
-          </span>
-          {!collapsed && (
-            <div className="min-w-0">
-              <p className="text-sm font-bold leading-5">{academyName}</p>
-              <p className="text-[10px] font-semibold tracking-wider text-slate-500 uppercase">
-                Student workspace
-              </p>
-            </div>
-          )}
+          <a href="/" className="logo" aria-label={`${academyName} home`}>
+            <Orbit size={32} aria-hidden="true" />
+            {!collapsed && (
+              <span className="logo-wordmark">
+                <span className="logo-name">{academyName.replace(/\s+Technical Academy$/i, "")}</span>
+                <span className="logo-subtitle">Technical Academy</span>
+              </span>
+            )}
+          </a>
         </div>
         <div className="px-3 py-5">
           <span
@@ -309,17 +308,15 @@ function Workspace({
       <div className={contentOffset}>
         <header className="flex min-h-20 items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 sm:px-8">
           <div className="flex min-w-0 items-center gap-3">
-            <GraduationCap
-              size={26}
-              className="shrink-0 text-indigo-800 lg:hidden"
-              aria-hidden="true"
-            />
+            <a href="/" className="logo lg:hidden" aria-label={`${academyName} home`}>
+              <Orbit size={28} aria-hidden="true" />
+            </a>
             <div>
               <p className="text-sm font-semibold">
                 {enrolled ? session.programme : "Your academy journey"}
               </p>
               <p className="mt-1 text-xs text-slate-500">
-                Shadow Sphere · Platform v2.0
+                {academyName} · Technical Academy
               </p>
             </div>
           </div>
