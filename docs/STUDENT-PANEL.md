@@ -52,6 +52,7 @@ The authoritative DTO schemas and TypeScript interfaces are in `src/components/s
 | GET    | `/mentorship`                  | `Mentorship` with entitlement, bookings and attendance                   |
 | GET    | `/mentorship/slots?timeZone=…` | `{ slots: MentorshipSlot[] }`                                            |
 | GET    | `/payments`                    | `Payments` with currency and instalment schedule                         |
+| GET    | `/class-progress`              | `ClassProgress \| null`: batch, course syllabus, class sessions and completion request |
 | GET    | `/orders/:id`                  | `PaymentOrder`                                                           |
 | POST   | `/checkout`                    | `PaymentOrder`                                                           |
 | POST   | `/instalments/:id/checkout`    | `PaymentOrder`                                                           |
@@ -94,6 +95,59 @@ Submissions use `multipart/form-data`: `repositoryUrl`, `liveUrl` and optional `
 `POST /mentorship/bookings` receives `{ slotId }`. Atomically check slot availability and `total - used - reserved`, reserve one entitlement and create the booking. Return HTTP 409 for a conflict and the updated aggregate on success. No optimistic decrement is applied. Slot dates and times are grouped in the selected IANA timezone. Attendance is a per-class read-only server record (`present`, `absent`, `excused`, `pending`); students cannot mark themselves present through this UI.
 
 Onboarding completion receives an empty JSON body; the item ID is in the URL. Return the updated dashboard only after recording the change. Class links, terms and receipts accept safe local paths or HTTPS URLs; the UI cannot verify the ownership of a destination, so the backend must only supply approved links.
+
+### Class sessions and progress
+
+Enrolled students see the class sessions their trainer submits at `/trainer-panel` (see [TRAINER-PANEL.md](TRAINER-PANEL.md)):
+
+- **Home** has an **Attendance & syllabus** card. It shows the two progress figures, the course completion state and a link to the sessions.
+- **Schedule** has two cards above the live class links:
+  - **Your batch**: batch code, course and duration, confirmed schedule, start and end dates, both figures and the completion state.
+  - **Class sessions**: every class date, one entry per date.
+
+`GET /class-progress` returns `null` while no batch is allocated. Otherwise it returns this shape (`classProgressSchema` in `contracts.ts`):
+
+```ts
+{
+  studentId,         // the signed-in student's id on the batch roster
+  today,             // YYYY-MM-DD in Asia/Kolkata, decided by the server
+  batch,             // academy Batch; `students` holds only the signed-in student
+  course,            // academy Course with its approved syllabus
+  sessions,          // academy ClassSession[] for this batch, each carrying only this student's mark (or none)
+  completionRequest, // academy CompletionRequest for this student and batch, or null
+}
+```
+
+`Batch`, `Course`, `ClassSession` and `CompletionRequest` are the trainer contract's schemas (`src/components/academy/contracts.ts`), so both panels read the same records.
+
+The server must narrow the trainer's records to the signed-in student. The schema rejects these responses as a contract error:
+
+- a roster holding anyone else;
+- a session carrying another student's mark, or more than one mark;
+- a session from another batch, or a repeated session id;
+- a completion request for another student or batch;
+- a batch whose course or dates don't match.
+
+The panel never shows `notes` or `submittedBy`. Send `notes: null` unless the trainer's notes are meant for students.
+
+#### What each date shows
+
+The figures come from the shared rules in `src/components/academy/rules.ts`; the panel does not recalculate them. `classTimeline` and `classStanding` in `student-panel/utils.ts` only arrange their results.
+
+| Shown | Rule |
+| --- | --- |
+| The dates | `scheduledDates(batch)`, plus the date of any extra class held on another day (labelled "Extra class"). Classes so far are listed newest first: the latest 8, then **Show all**. Upcoming dates sit in a collapsed **Upcoming classes** list, in date order. |
+| The student's attendance | Their own mark on that date's session: Present, Absent or Leave. A session with no mark for them shows "No attendance recorded". |
+| No session yet | When `dayStatus` is `not-submitted` or `due-today`, the date shows **Attendance not submitted**. It is never shown or counted as Absent. Upcoming dates show only their scheduled time. |
+| Start and end time | The session's own times. A date without a session shows the batch's times, labelled "Scheduled". |
+| Topics and subtopics | The session's subtopics, grouped under their syllabus topic in syllabus order. |
+| Attendance progress | `attendanceProgress`: Present classes ÷ all scheduled classes. Absent, Leave and unsubmitted classes are not present. |
+| Syllabus progress | `syllabusProgress`: distinct approved subtopics covered ÷ all subtopics. |
+| Completion | With a completion request: **Awaiting admin approval**, **Completion approved** or **Completion not approved**. Without one: the `completionStatus` label, for example "Not eligible · syllabus incomplete". |
+
+In the development demo, the enrolled student is a member of the trainer demo's weekday batch. Their view is narrowed the same way a backend must narrow it. Sessions submitted in the trainer demo, in the same browser tab, appear on the student's dashboard.
+
+`tests/student-class-progress.test.ts` covers the contract, the timeline and the figures. `tests/browser/student-class-sessions.spec.ts` covers both screens, every state, a 375px width and axe scans.
 
 ## Route and validation
 

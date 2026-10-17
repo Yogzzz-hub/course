@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createStudentPreviewApi } from '../src/dev/student-preview-api';
-import { assignmentSchema, dashboardSchema, learningPlanSchema, mentorshipSchema, paymentsSchema, sessionSchema, sessionsSchema, slotsSchema } from '../src/components/student-panel/contracts';
+import { assignmentSchema, classProgressSchema, dashboardSchema, learningPlanSchema, mentorshipSchema, paymentsSchema, sessionSchema, sessionsSchema, slotsSchema } from '../src/components/student-panel/contracts';
 import { StudentApiError, friendlyError } from '../src/components/student-panel/api';
 
 describe('local student preview', () => {
@@ -15,6 +15,9 @@ describe('local student preview', () => {
       paymentsSchema.parse(await api.payments());
       sessionsSchema.parse({ sessions: await api.sessions() });
       slotsSchema.parse({ slots: await api.slots('Asia/Kolkata') });
+      const classProgress = await api.classProgress();
+      if (mode === 'prospect') expect(classProgress).toBeNull();
+      else expect(classProgressSchema.parse(classProgress).sessions.length).toBeGreaterThan(0);
     });
   }
   it('every write and payment gateway access is rejected without network traffic', async () => {

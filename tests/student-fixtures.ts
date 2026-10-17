@@ -1,5 +1,7 @@
+import type { AttendanceStatus, ClassSession } from "../src/components/academy/contracts";
 import type {
   Assignment,
+  ClassProgress,
   Dashboard,
   LearningPlan,
   Mentorship,
@@ -160,4 +162,85 @@ export const studentPayments: Payments = {
       receiptUrl: null,
     },
   ],
+};
+
+const classSession = (
+  classDate: string,
+  status: AttendanceStatus,
+  subtopicIds: string[],
+  startTime = "18:30",
+  endTime = "20:30",
+): ClassSession => ({
+  id: `session-${classDate}`,
+  batchId: "batch-pfs-01",
+  classDate,
+  startTime,
+  endTime,
+  attendance: [{ studentId: "student-1", status }],
+  subtopicIds,
+  notes: null,
+  submittedBy: "trainer-1",
+  submittedAt: `${classDate}T15:10:00.000Z`,
+  locked: true,
+});
+/**
+ * Tuesday and Thursday classes from 6 to 29 October 2026, read on Tuesday 20 October: present, absent and
+ * leave marks, one class never submitted (15 Oct), one Saturday extra class and today's class still due.
+ */
+export const studentClassProgress: ClassProgress = {
+  studentId: "student-1",
+  today: "2026-10-20",
+  batch: {
+    id: "batch-pfs-01",
+    code: "PFS-WD-2026-03",
+    courseId: "course-pfs",
+    scheduleType: "weekdays",
+    classDays: [2, 4],
+    startTime: "18:30",
+    endTime: "20:30",
+    startDate: "2026-10-06",
+    expectedEndDate: "2026-10-29",
+    students: [
+      {
+        id: "student-1",
+        registrationNo: "SS-2026-WD001",
+        name: "Asha Rao",
+        schedulePreference: "weekdays",
+      },
+    ],
+  },
+  course: {
+    id: "course-pfs",
+    code: "PFS",
+    name: "Python Full-Stack",
+    durationWeeks: 4,
+    syllabusStatus: "approved",
+    syllabus: [
+      {
+        id: "t1",
+        title: "Python foundations",
+        subtopics: [
+          { id: "t1-s1", title: "Variables and types" },
+          { id: "t1-s2", title: "Control flow" },
+          { id: "t1-s3", title: "Functions" },
+        ],
+      },
+      {
+        id: "t2",
+        title: "SQL & PostgreSQL",
+        subtopics: [
+          { id: "t2-s1", title: "Data modeling" },
+          { id: "t2-s2", title: "PostgreSQL" },
+          { id: "t2-s3", title: "Indexing" },
+        ],
+      },
+    ],
+  },
+  sessions: [
+    classSession("2026-10-06", "present", ["t1-s2", "t1-s1"]),
+    classSession("2026-10-08", "absent", ["t1-s3"]),
+    classSession("2026-10-13", "leave", ["t2-s1"]),
+    classSession("2026-10-17", "present", ["t2-s2", "t1-s3"], "10:00", "12:00"),
+  ],
+  completionRequest: null,
 };

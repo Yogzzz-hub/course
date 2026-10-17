@@ -102,6 +102,5 @@ Errors are JSON `{ message, fieldErrors? }`, where `fieldErrors` keys are `form`
 - Manager and admin approval of backdate grants (grants arrive in the workspace data).
 - Admin approval of completion requests and certificates.
 - Correcting a locked session.
-- Showing these sessions on the student dashboard.
 
-All of these need the backend.
+All of these need the backend. Students already see these sessions and both progress figures on their dashboard; see [STUDENT-PANEL.md](STUDENT-PANEL.md#class-sessions-and-progress).

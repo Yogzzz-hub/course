@@ -3,6 +3,7 @@ import {
   assignmentSchema,
   assignmentsSchema,
   checkoutInputSchema,
+  classProgressSchema,
   dashboardSchema,
   learningPlanSchema,
   mentorshipSchema,
@@ -161,6 +162,8 @@ export function createHttpStudentApi({
     payments: (signal) => request("/payments", paymentsSchema, { signal }),
     sessions: async (signal) =>
       (await request("/sessions", sessionsSchema, { signal })).sessions,
+    classProgress: (signal) =>
+      request("/class-progress", classProgressSchema.nullable(), { signal }),
     order: (id, signal) =>
       request(`/orders/${encodeURIComponent(id)}`, orderSchema, { signal }),
     checkout: async (input, context) => {

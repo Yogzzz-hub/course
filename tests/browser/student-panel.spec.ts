@@ -5,6 +5,7 @@ import {
   future,
   prospectSession,
   studentAssignment,
+  studentClassProgress,
   studentDashboard,
   studentMentorship,
   studentPayments,
@@ -98,6 +99,8 @@ async function mockStudentApi(
           : { json: dashboard },
       );
     if (endpoint === "/payments") return route.fulfill({ json: payments });
+    if (endpoint === "/class-progress")
+      return route.fulfill({ json: studentClassProgress });
     if (endpoint === "/checkout") {
       checkoutCalls++;
       checkoutKeys.push(request.headers()["idempotency-key"]);

@@ -17,6 +17,7 @@ import {
   SecureLink,
 } from "./ui";
 import { dateTime, money, type PanelTab } from "./utils";
+import { ClassProgressCard } from "./ClassSessions";
 
 function Onboarding({
   data,
@@ -200,6 +201,11 @@ export function EnrolledHome({
                 </p>
               )}
             </section>
+            <ClassProgressCard
+              api={api}
+              session={session}
+              navigate={navigate}
+            />
             <div className="grid items-start gap-5 xl:grid-cols-2">
               <Card>
                 <h2 className="mb-4 text-lg font-semibold">

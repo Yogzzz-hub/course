@@ -1,4 +1,13 @@
-import { webUrl, type StudentSession } from "./contracts";
+import type { AttendanceStatus } from "../academy/contracts";
+import {
+  attendanceProgress,
+  completionStatus,
+  dayStatus,
+  scheduledDates,
+  syllabusProgress,
+  type DayStatus,
+} from "../academy/rules";
+import { webUrl, type ClassProgress, type StudentSession } from "./contracts";
 
 export type PanelTab = "home" | "schedule" | "work" | "payments" | "more";
 export function money(minor: number, currency: string) {
@@ -116,4 +125,77 @@ export function submissionError(
       return "Choose a PDF, ZIP, PNG, or JPEG file.";
   }
   return null;
+}
+export interface ClassDay {
+  date: string;
+  /** False for an extra class held on a day the batch does not normally meet. */
+  scheduled: boolean;
+  status: DayStatus;
+  sessions: {
+    id: string;
+    startTime: string;
+    endTime: string;
+    /** Null when the trainer's record has no mark for this student. */
+    attendance: AttendanceStatus | null;
+    topics: { id: string; title: string; subtopics: string[] }[];
+  }[];
+}
+/** Every scheduled date, plus any extra class, oldest first, with the student's own mark per session. */
+export function classTimeline({
+  batch,
+  course,
+  sessions,
+  studentId,
+  today,
+}: ClassProgress): ClassDay[] {
+  const scheduled = new Set(scheduledDates(batch));
+  const dates = [
+    ...new Set([...scheduled, ...sessions.map((item) => item.classDate)]),
+  ].sort();
+  return dates.map((date) => ({
+    date,
+    scheduled: scheduled.has(date),
+    status: dayStatus(batch, sessions, date, today),
+    sessions: sessions
+      .filter((item) => item.classDate === date)
+      .sort((a, b) => a.startTime.localeCompare(b.startTime))
+      .map((item) => ({
+        id: item.id,
+        startTime: item.startTime,
+        endTime: item.endTime,
+        attendance:
+          item.attendance.find((mark) => mark.studentId === studentId)
+            ?.status ?? null,
+        topics: course.syllabus
+          .map((topic) => ({
+            id: topic.id,
+            title: topic.title,
+            subtopics: topic.subtopics
+              .filter((sub) => item.subtopicIds.includes(sub.id))
+              .map((sub) => sub.title),
+          }))
+          .filter((topic) => topic.subtopics.length > 0),
+      })),
+  }));
+}
+const requestLabels = {
+  pending_admin: "Awaiting admin approval",
+  approved: "Completion approved",
+  rejected: "Completion not approved",
+} as const;
+/** The two progress figures and the completion state, from the shared academy rules. */
+export function classStanding(progress: ClassProgress) {
+  const { batch, course, sessions, studentId, completionRequest } = progress;
+  const attendance = attendanceProgress(batch, sessions, studentId);
+  const syllabus = syllabusProgress(batch, course, sessions);
+  const status = completionStatus(attendance.percent, syllabus.percent);
+  return {
+    attendance,
+    syllabus,
+    eligible: status.eligible,
+    request: completionRequest?.status ?? null,
+    completion: completionRequest
+      ? requestLabels[completionRequest.status]
+      : status.label,
+  };
 }

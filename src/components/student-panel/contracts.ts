@@ -1,4 +1,11 @@
 import { z } from "zod";
+import {
+  batchSchema,
+  classSessionSchema,
+  completionRequestSchema,
+  courseSchema,
+  isoDate,
+} from "../academy/contracts";
 
 const id = z.string().trim().min(1).max(200);
 const text = z.string().trim().min(1).max(4000);
@@ -265,6 +272,47 @@ export const sessionsSchema = z.object({
     }),
   ),
 });
+// Date-wise class sessions and progress use the academy-operations shapes, narrowed to what one
+// student may see: their own roster entry and only their own attendance mark on each session.
+export const classProgressSchema = z
+  .object({
+    /** The signed-in student's id on the batch roster. */
+    studentId: id,
+    /** "Today" in the academy's time zone, decided by the server so date rules agree everywhere. */
+    today: isoDate,
+    batch: batchSchema,
+    course: courseSchema,
+    sessions: z.array(classSessionSchema),
+    completionRequest: completionRequestSchema.nullable(),
+  })
+  .superRefine((value, context) => {
+    const { batch, studentId, sessions, completionRequest } = value;
+    const invalid = (message: string) =>
+      context.addIssue({ code: "custom", message });
+    if (
+      batch.courseId !== value.course.id ||
+      batch.startDate > batch.expectedEndDate
+    )
+      invalid("Invalid batch.");
+    if (batch.students.length !== 1 || batch.students[0].id !== studentId)
+      invalid("The roster may only hold the signed-in student.");
+    if (
+      new Set(sessions.map((session) => session.id)).size !== sessions.length ||
+      sessions.some(
+        (session) =>
+          session.batchId !== batch.id ||
+          session.attendance.length > 1 ||
+          session.attendance.some((mark) => mark.studentId !== studentId),
+      )
+    )
+      invalid("Sessions may only carry the student's own attendance.");
+    if (
+      completionRequest &&
+      (completionRequest.batchId !== batch.id ||
+        completionRequest.studentId !== studentId)
+    )
+      invalid("Invalid completion request.");
+  });
 export type StudentSession = z.infer<typeof sessionSchema>;
 export type LearningPlan = z.infer<typeof learningPlanSchema>;
 export type PlanPackage = z.infer<typeof packageSchema>;
@@ -277,6 +325,7 @@ export type Mentorship = z.infer<typeof mentorshipSchema>;
 export type MentorshipSlot = z.infer<typeof slotsSchema>["slots"][number];
 export type Payments = z.infer<typeof paymentsSchema>;
 export type StudentSessions = z.infer<typeof sessionsSchema>;
+export type ClassProgress = z.infer<typeof classProgressSchema>;
 export interface MutationContext {
   csrfToken: string;
   requestId: string;
@@ -296,6 +345,7 @@ export interface StudentApi {
   slots(timeZone: string, signal?: AbortSignal): Promise<MentorshipSlot[]>;
   payments(signal?: AbortSignal): Promise<Payments>;
   sessions(signal?: AbortSignal): Promise<StudentSessions["sessions"]>;
+  classProgress(signal?: AbortSignal): Promise<ClassProgress | null>;
   order(id: string, signal?: AbortSignal): Promise<PaymentOrder>;
   checkout(
     input: CheckoutInput,

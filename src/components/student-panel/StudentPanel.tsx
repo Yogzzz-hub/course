@@ -33,6 +33,7 @@ import {
   CounsellingSessions,
 } from "./Prospect";
 import { EnrolledHome, ClassSchedule } from "./Enrolled";
+import { ClassSessions } from "./ClassSessions";
 import { PaymentsView } from "./Checkout";
 import { AssignmentsView } from "./Assignments";
 import { MentorshipView } from "./Mentorship";
@@ -203,7 +204,7 @@ function Workspace({
     schedule: [
       "Your schedule",
       enrolled
-        ? "Live classes and cohort sessions, in one place."
+        ? "Your class sessions, attendance and live class links, in one place."
         : "Your counselling sessions and upcoming conversations.",
     ],
     work: [
@@ -355,7 +356,10 @@ function Workspace({
                   ))}
                 {tab === "schedule" &&
                   (enrolled ? (
-                    <ClassSchedule api={api} session={session} />
+                    <div className="space-y-5">
+                      <ClassSessions api={api} session={session} />
+                      <ClassSchedule api={api} session={session} />
+                    </div>
                   ) : (
                     <CounsellingSessions api={api} session={session} />
                   ))}

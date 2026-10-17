@@ -82,6 +82,13 @@ export const usePayments = (api: StudentApi, session: StudentSession) =>
         ? 4000
         : false,
   });
+export const useClassProgress = (api: StudentApi, session: StudentSession) =>
+  useResource(
+    session,
+    "class-progress",
+    (signal) => api.classProgress(signal),
+    session.mode === "enrolled",
+  );
 export const useSessions = (api: StudentApi, session: StudentSession) =>
   useResource(
     session,

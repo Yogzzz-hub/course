@@ -1,5 +1,24 @@
+import { createDemoTrainerApi } from '../components/academy/demo';
 import { StudentApiError } from '../components/student-panel/api';
-import type { Assignment, Dashboard, LearningPlan, Mentorship, Payments, StudentApi, StudentSession } from '../components/student-panel/contracts';
+import { classProgressSchema, type Assignment, type ClassProgress, type Dashboard, type LearningPlan, type Mentorship, type Payments, type StudentApi, type StudentSession } from '../components/student-panel/contracts';
+
+/**
+ * The trainer demo's weekday batch, narrowed the way a backend must narrow it for one student: their own roster
+ * entry, their own attendance mark on each session and no trainer notes. Sessions submitted in the trainer demo
+ * in this browser tab show up here too.
+ */
+async function demoClassProgress(name: string): Promise<ClassProgress> {
+  const workspace = await createDemoTrainerApi({ latency: 0 }).workspace();
+  const batch = workspace.batches.find(item => item.id === 'batch-pfs-weekday')!;
+  const student = batch.students.find(item => item.id === 'wd-st2')!;
+  return classProgressSchema.parse({
+    studentId: student.id, today: workspace.today,
+    batch: { ...batch, students: [{ ...student, name }] },
+    course: workspace.courses.find(item => item.id === batch.courseId),
+    sessions: workspace.sessions.filter(item => item.batchId === batch.id).map(item => ({ ...item, attendance: item.attendance.filter(mark => mark.studentId === student.id), notes: null })),
+    completionRequest: workspace.completionRequests.find(item => item.batchId === batch.id && item.studentId === student.id) ?? null,
+  });
+}
 
 /** Synthetic, read-only data. This module is imported only by the development preview. */
 export function createStudentPreviewApi(mode: StudentSession['mode']): StudentApi {
@@ -30,6 +49,7 @@ export function createStudentPreviewApi(mode: StudentSession['mode']): StudentAp
     session: async () => structuredClone(session), learningPlan: async () => structuredClone(plan), dashboard: async () => structuredClone(dashboard), assignments: async () => [structuredClone(assignment)], mentorship: async () => structuredClone(mentorship), payments: async () => structuredClone(payments),
     slots: async () => [{ id: 'demo-slot', startsAt: instant(2), endsAt: new Date(Date.parse(instant(2)) + 1800000).toISOString(), mentor: 'Demo Mentor' }],
     sessions: async () => [{ id: 'demo-counselling', title: 'Sample counselling session', startsAt: instant(2), status: 'booked', joinUrl: null }],
+    classProgress: async () => mode === 'enrolled' ? demoClassProgress(identity.name) : null,
     order: readonly, checkout: readonly, payInstalment: readonly, submit: readonly, bookMentorship: readonly, completeOnboarding: readonly, logout: readonly,
   };
 }
