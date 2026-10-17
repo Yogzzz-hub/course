@@ -3,6 +3,7 @@ import { Route, Routes, useLocation } from 'react-router-dom';
 import { MotionConfig } from 'motion/react';
 import { Header, Footer } from './components/layout';
 import { MotionProvider, MotionDirector } from './components/MotionSystem';
+import { AmbientLayer, InteractionDirector } from './components/fx';
 const pageLoaders: Record<string, () => Promise<{ default: ComponentType }>> = {
  '/': () => import('./pages/Home'),
  '/programmes': () => import('./pages/Programmes'),
@@ -70,9 +71,14 @@ class PageErrorBoundary extends Component<{children:ReactNode},{failed:boolean}>
 }
 export default function App({initialPage: InitialPage, initialPath}: {initialPage?: ComponentType; initialPath?: string}) {
  const { pathname } = useLocation();
- if (['/', '/book-session', '/direct-booking', '/student-panel', '/admin-panel'].includes(pathname)) {
+ if (['/student-panel', '/admin-panel'].includes(pathname)) {
    const Page = pageComponents.find(page => page.path === pathname)!.Page;
-   return <PageErrorBoundary><Suspense fallback={<main className="container page-hero" role="status">Loading counselling…</main>}>{InitialPage && initialPath === pathname ? <InitialPage/> : <Page/>}<RouteEffects/></Suspense></PageErrorBoundary>;
+   return <PageErrorBoundary><Suspense fallback={<main className="container page-hero" role="status">Loading your workspace…</main>}>{InitialPage && initialPath === pathname ? <InitialPage/> : <Page/>}<RouteEffects/></Suspense></PageErrorBoundary>;
  }
- return <MotionConfig reducedMotion="user"><MotionProvider><Header/><main id="main" tabIndex={-1}><PageErrorBoundary><Suspense fallback={<div className="container page-hero" role="status">Loading your next step…</div>}><Routes>{pageComponents.map(({path, Page}) => <Route key={path} path={path} element={InitialPage && (path === initialPath || (path === '*' && initialPath && !pageLoaders[initialPath])) ? <InitialPage/> : <Page/>}/>)}</Routes><RouteEffects/></Suspense></PageErrorBoundary></main><Footer/></MotionProvider></MotionConfig>;
+ // The homepage and booking routes render their own header so the call-to-action can scroll in-page.
+ if (['/', '/book-session', '/direct-booking'].includes(pathname)) {
+   const Page = pageComponents.find(page => page.path === pathname)!.Page;
+   return <MotionConfig reducedMotion="user"><MotionProvider><AmbientLayer/><InteractionDirector/><PageErrorBoundary><Suspense fallback={<main className="container page-hero" role="status">Loading counselling…</main>}>{InitialPage && initialPath === pathname ? <InitialPage/> : <Page/>}<RouteEffects/></Suspense></PageErrorBoundary></MotionProvider></MotionConfig>;
+ }
+ return <MotionConfig reducedMotion="user"><MotionProvider><AmbientLayer/><InteractionDirector/><Header/><main id="main" tabIndex={-1}><PageErrorBoundary><Suspense fallback={<div className="container page-hero" role="status">Loading your next step…</div>}><Routes>{pageComponents.map(({path, Page}) => <Route key={path} path={path} element={InitialPage && (path === initialPath || (path === '*' && initialPath && !pageLoaders[initialPath])) ? <InitialPage/> : <Page/>}/>)}</Routes><RouteEffects/></Suspense></PageErrorBoundary></main><Footer/></MotionProvider></MotionConfig>;
 }

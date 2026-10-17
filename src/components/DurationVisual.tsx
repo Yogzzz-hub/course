@@ -16,7 +16,7 @@ export function DurationVisual({
   const lines = subtitle.split('\n');
 
   return (
-    <div className="duration-art" ref={ref}>
+    <div className="duration-art" ref={ref} data-tilt="10">
       <svg className="duration-dial" viewBox="0 0 300 300" fill="none" aria-hidden="true">
         <circle className="dial-track" cx="150" cy="150" r="120" />
         <circle className="dial-orbit" cx="150" cy="150" r="141" />
@@ -35,7 +35,7 @@ export function DurationVisual({
         ))}
         <path className="dial-cross" d="M138 150h24m-12-12v24" />
       </svg>
-      <span>THE LEARNING JOURNEY</span>
+      <span>The learning journey</span>
       <strong>
         {number}
         <span>{unit}</span>

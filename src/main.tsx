@@ -4,6 +4,8 @@ import '@fontsource-variable/manrope';
 import '@fontsource-variable/space-grotesk';
 import './styles/global.css';
 import './styles/animations.css';
+import './styles/experience.css';
+import './styles/portal.css';
 import App, { loadInitialPage } from './App';
 if (window.location.pathname.length > 1 && window.location.pathname.endsWith('/')) {
   window.history.replaceState(null, '', window.location.pathname.replace(/\/+$/, '') + window.location.search + window.location.hash);

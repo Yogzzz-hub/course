@@ -19,14 +19,15 @@ test('renders all eleven individual fees, package inclusions and exact comparati
   await page.goto(pricingPath);
   const module = page.locator('.course-fees');
   await module.getByRole('tab', { name: 'Individual Courses', exact: true }).click();
-  const table = module.getByRole('table');
-  await expect(table.getByRole('row')).toHaveCount(13);
-  for (const course of academyFeeCatalogue.courses) await expect(table.getByRole('row').filter({ hasText: course.name })).toContainText(formatFee(course.feeMinor));
-  await expect(table.getByRole('row').filter({ hasText: 'Total for all 11' })).toContainText('₹1,57,000');
+  const panel = module.getByRole('tabpanel');
+  const cards = panel.getByRole('article');
+  await expect(cards).toHaveCount(11);
+  for (const course of academyFeeCatalogue.courses) await expect(cards.filter({ has: page.getByRole('heading', { name: course.name, exact: true }) })).toContainText(formatFee(course.feeMinor));
+  await expect(panel.getByRole('table').getByRole('row').filter({ hasText: 'Total for all 11' })).toContainText('₹1,57,000');
   await module.getByRole('tab', { name: 'Comparative Savings Matrix', exact: true }).click();
-  for (const [name, price, savings] of [['Standard', '₹59,999', '₹97,001 less'], ['Premium', '₹79,999', '₹77,001 less'], ['Elite', '₹99,999', '₹57,001 less']]) {
-    const row = module.getByRole('row').filter({ hasText: `${name} Master Course` });
-    await expect(row).toContainText(price); await expect(row).toContainText(savings);
+  for (const [name, price, savings] of [['Standard', '₹59,999', 'Save ₹97,001'], ['Premium', '₹79,999', 'Save ₹77,001'], ['Elite', '₹99,999', 'Save ₹57,001']]) {
+    const card = module.getByRole('article').filter({ has: page.getByRole('heading', { name: `${name} Master Course`, exact: true }) });
+    await expect(card).toContainText(price); await expect(card).toContainText(savings);
   }
   await module.getByRole('tab', { name: 'Master Packages', exact: true }).click();
   await expect(module.getByRole('article', { name: 'Standard master package' })).toContainText('Free internship');

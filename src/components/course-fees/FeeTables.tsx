@@ -1,109 +1,35 @@
-import {
-  ArrowDownRight,
-  Binary,
-  Box,
-  CheckCircle2,
-  Code2,
-  Cpu,
-  Database,
-  Globe,
-  Layers3,
-  Server,
-  Sparkles,
-  Terminal,
-  TrendingDown,
-  Zap,
-} from 'lucide-react';
+import { ArrowDownRight, TrendingDown } from 'lucide-react';
 import { formatFee, individualTotal } from './pricing';
 import type { CourseFeeCatalogue } from './types';
 
-const courseIcons = [
-  Terminal,      // 01. Programming & Python Foundation
-  Code2,         // 02. Advanced Python & Software Development
-  Database,      // 03. SQL & PostgreSQL
-  Server,        // 04. Django & Backend Development
-  Globe,         // 05. HTML, CSS & JavaScript
-  Layers3,       // 06. React Development
-  Cpu,           // 07. Full-Stack Application Development
-  CheckCircle2,  // 08. Software Engineering, Testing & APIs
-  Box,           // 09. DevOps, Docker & Deployment
-  Binary,        // 10. DSA & Technical Interview Preparation
-  Sparkles,      // 11. AI-Assisted Development
-];
-
+/** Every course as a line in a price list: the name and what it covers, then its standalone fee. */
 export function IndividualCourseTable({ catalogue }: { catalogue: CourseFeeCatalogue }) {
   const total = individualTotal(catalogue);
   return (
-    <div className="space-y-6">
-      {/* Individual Courses Animated Cards Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {catalogue.courses.map((course, index) => {
-          const Icon = courseIcons[index % courseIcons.length];
-          return (
-            <article
-              key={course.id}
-              className="individual-course-card group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 transition-all duration-300 hover:-translate-y-1.5 hover:border-indigo-500 hover:shadow-xl hover:shadow-indigo-950/5"
-              style={{
-                animation: 'cardFadeSlideUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both',
-                animationDelay: `${index * 45}ms`,
-              }}
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="flex size-8 items-center justify-center rounded-lg bg-indigo-50 font-mono text-xs font-bold text-indigo-700">
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-                  <div className="flex size-9 items-center justify-center rounded-xl bg-slate-50 text-slate-700 transition-colors duration-200 group-hover:bg-indigo-600 group-hover:text-white">
-                    <Icon size={18} aria-hidden="true" />
-                  </div>
-                </div>
-                <h4 className="mt-3.5 text-base font-semibold leading-snug text-slate-900 group-hover:text-indigo-950">
-                  {course.name}
-                </h4>
-                {course.topics && course.topics.length > 0 && (
-                  <div className="mt-2.5 flex flex-wrap gap-1.5">
-                    {course.topics.map(topic => (
-                      <span
-                        key={topic}
-                        className="rounded-md bg-slate-100/90 px-2 py-0.5 text-[11px] font-medium text-slate-600"
-                      >
-                        {topic}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="mt-5 flex items-baseline justify-between border-t border-slate-100 pt-3">
-                <span className="text-xs text-slate-500">Standalone fee</span>
-                <span className="text-lg font-bold tracking-tight text-slate-900 group-hover:text-indigo-700">
-                  {formatFee(course.feeMinor)}
-                </span>
-              </div>
-            </article>
-          );
-        })}
+    <div className="fee-list-wrap">
+      <div className="fee-list">
+        {catalogue.courses.map(course => (
+          <article key={course.id} className="fee-row">
+            <div>
+              <h4>{course.name}</h4>
+              {course.topics && course.topics.length > 0 && <p className="fee-row-topics">{course.topics.join(', ')}</p>}
+            </div>
+            <p className="fee-row-price"><span className="sr-only">Standalone fee </span>{formatFee(course.feeMinor)}</p>
+          </article>
+        ))}
       </div>
-
-      {/* Summary table card that provides clear total and matches test accessibility expectations */}
-      <div className="total-summary-card overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-r from-indigo-50/80 via-white to-indigo-50/50 p-5 shadow-sm sm:p-6">
-        <table className="fees-table w-full text-left" role="table">
-          <caption className="sr-only">Total for all individual courses</caption>
-          <tbody>
-            <tr className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <th scope="row" className="font-semibold text-slate-900 text-sm sm:text-base border-none p-0">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100/80 px-2.5 py-0.5 text-xs font-bold text-indigo-800 mb-1.5">
-                  <Zap size={13} aria-hidden="true" /> All {catalogue.courses.length} courses combined
-                </span>
-                <span className="block font-bold text-slate-900">Total for all {catalogue.courses.length} individual courses</span>
-                <span className="block text-xs font-normal text-slate-500 mt-0.5">Purchased individually without package bundles</span>
-              </th>
-              <td className="fees-money text-2xl sm:text-3xl font-extrabold text-indigo-900 border-none p-0 whitespace-nowrap">
-                {formatFee(total)}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <table className="fees-table fee-total">
+        <caption className="sr-only">Total for all individual courses</caption>
+        <tbody>
+          <tr>
+            <th scope="row">
+              <span className="fee-total-label">Total for all {catalogue.courses.length} individual courses</span>
+              <span className="fee-total-note">Purchased individually, without a package</span>
+            </th>
+            <td className="fees-money">{formatFee(total)}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -125,8 +51,7 @@ export function SavingsMatrix({ catalogue }: { catalogue: CourseFeeCatalogue }) 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* Baseline Card */}
         <article
-          className="relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-          style={{ animation: 'cardFadeSlideUp 0.4s ease-out both' }}
+          className="relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5"
         >
           <div>
             <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
@@ -147,17 +72,13 @@ export function SavingsMatrix({ catalogue }: { catalogue: CourseFeeCatalogue }) 
         </article>
 
         {/* Package Savings Cards */}
-        {catalogue.packages.map((tier, index) => {
+        {catalogue.packages.map(tier => {
           const savings = baseline - tier.priceMinor;
           const percent = baseline > 0 ? Math.round((savings / baseline) * 100) : 0;
           return (
             <article
               key={tier.id}
-              className="relative flex flex-col justify-between rounded-2xl border-2 border-indigo-100 bg-white p-5 transition-all duration-300 hover:-translate-y-1.5 hover:border-indigo-600 hover:shadow-xl"
-              style={{
-                animation: 'cardFadeSlideUp 0.4s ease-out both',
-                animationDelay: `${(index + 1) * 60}ms`,
-              }}
+              className="relative flex flex-col justify-between rounded-2xl border-2 border-indigo-100 bg-white p-5"
             >
               <div>
                 <div className="flex items-center justify-between gap-1">
@@ -180,7 +101,7 @@ export function SavingsMatrix({ catalogue }: { catalogue: CourseFeeCatalogue }) 
               </div>
               <div className="mt-6 border-t border-slate-100 pt-3">
                 <p className="text-xs text-slate-500">Package price</p>
-                <p className="text-2xl font-bold text-indigo-950">{formatFee(tier.priceMinor)}</p>
+                <p className="text-2xl font-bold text-slate-900">{formatFee(tier.priceMinor)}</p>
                 {savings > 0 && (
                   <p className="mt-1 inline-flex items-center gap-1 text-xs font-bold text-emerald-700">
                     <ArrowDownRight size={14} aria-hidden="true" />

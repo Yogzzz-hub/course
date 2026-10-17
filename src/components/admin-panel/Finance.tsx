@@ -408,6 +408,15 @@ export function Finance() {
     ],
     [],
   );
+  // A stable array keeps the reader's ledger page when the five-second refetch returns unchanged entries.
+  const entries = query.data?.entries;
+  const ledger = useMemo(
+    () =>
+      (entries ?? []).filter(
+        (entry) => status === "all" || entry.status === status,
+      ),
+    [entries, status],
+  );
   return (
     <div className="space-y-5">
       <Notice>
@@ -459,9 +468,7 @@ export function Finance() {
                   </select>
                 </div>
                 <DataTable
-                  data={data.entries.filter(
-                    (entry) => status === "all" || entry.status === status,
-                  )}
+                  data={ledger}
                   columns={ledgerColumns}
                   label="Financial ledger"
                 />

@@ -1,0 +1,85 @@
+/* Portal layer: the student and admin workspaces share the public site's depth language.
+   Scoped to .ss-student / .ss-admin so panel logic and Tailwind structure stay untouched. */
+.ss-student, .ss-admin {
+  --portal-stage: linear-gradient(150deg, color-mix(in srgb, var(--ink) 86%, var(--accent)), color-mix(in srgb, var(--ink) 95%, var(--accent)));
+  background:
+    radial-gradient(900px 500px at 100% -10%, color-mix(in srgb, var(--accent-soft) 28%, transparent), transparent 60%),
+    radial-gradient(700px 500px at -10% 40%, color-mix(in srgb, var(--accent) 7%, transparent), transparent 60%),
+    var(--bg) !important;
+}
+.workspace-appearance { position: sticky; top: 0; z-index: 30; margin: 10px; border-radius: 999px; padding: 10px 12px 10px 22px; background: color-mix(in srgb, var(--surface) 75%, transparent); border: 1px solid var(--border); backdrop-filter: blur(16px) saturate(1.5); -webkit-backdrop-filter: blur(16px) saturate(1.5); box-shadow: 0 14px 40px -26px color-mix(in srgb, var(--accent) 50%, transparent); }
+.workspace-appearance .workspace-home { font-family: var(--font-display); font-size: 16px; letter-spacing: -.03em; }
+.workspace-appearance .palette-trigger { border-radius: 999px !important; }
+
+/* Cards */
+:is(.ss-student, .ss-admin) :is(section, article, div)[class*="rounded-2xl"][class*="border"][class*="bg-white"] {
+  border-radius: 22px;
+  border-color: color-mix(in srgb, var(--border-strong) 70%, transparent);
+  background-color: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 1px 0 rgb(255 255 255 / .7) inset, 0 18px 40px -30px color-mix(in srgb, var(--accent) 45%, transparent);
+  transition: transform .5s cubic-bezier(.22,1,.36,1), box-shadow .4s, border-color .3s;
+}
+@media (hover: hover) and (pointer: fine) {
+  :is(.ss-student, .ss-admin) :is(section, article)[class*="rounded-2xl"][class*="border"]:hover {
+    transform: translateY(-4px);
+    border-color: color-mix(in srgb, var(--accent-soft) 70%, var(--border));
+    box-shadow: 0 1px 0 rgb(255 255 255 / .7) inset, 0 30px 60px -32px color-mix(in srgb, var(--accent) 60%, transparent);
+  }
+}
+
+/* Dark hero cards use the stage gradient with a soft orbit glow. */
+:is(.ss-student, .ss-admin) :is([class*="bg-slate-950"], [class*="bg-slate-900"], [class*="bg-indigo-950"]):not(button, a, span) {
+  position: relative; isolation: isolate; overflow: hidden;
+  background-image: radial-gradient(420px 220px at 100% 0%, color-mix(in srgb, var(--accent-soft) 32%, transparent), transparent 60%), var(--portal-stage);
+  border-radius: 24px;
+  box-shadow: 0 34px 70px -40px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+:is(.ss-student, .ss-admin) :is([class*="bg-slate-950"], [class*="bg-indigo-950"]):not(button, a, span)::after {
+  content: ''; position: absolute; z-index: -1; right: -60px; bottom: -90px; width: 240px; height: 240px; border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--accent-soft) 30%, transparent);
+  box-shadow: 0 0 0 30px color-mix(in srgb, var(--accent-soft) 6%, transparent), 0 0 0 60px color-mix(in srgb, var(--accent-soft) 4%, transparent);
+}
+[data-motion="active"] :is(.ss-student, .ss-admin) :is([class*="bg-slate-950"], [class*="bg-indigo-950"]):not(button, a, span)::after { animation: portal-orbit 14s ease-in-out infinite alternate; }
+@keyframes portal-orbit { to { transform: translate(-40px, -30px) scale(1.15); } }
+
+/* Actions */
+:is(.ss-student, .ss-admin) :is(button, a)[class*="bg-indigo-700"], :is(.ss-student, .ss-admin) :is(button, a)[class*="bg-indigo-600"] {
+  border-radius: 999px;
+  background-image: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 70%, var(--accent-soft-dark)));
+  box-shadow: 0 12px 26px -14px var(--accent), 0 1px 0 rgb(255 255 255 / .25) inset;
+  transition: transform .3s cubic-bezier(.34,1.56,.64,1), box-shadow .3s, filter .3s;
+}
+:is(.ss-student, .ss-admin) :is(button, a)[class*="bg-indigo-700"]:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 18px 32px -14px var(--accent); }
+:is(.ss-student, .ss-admin) :is(button, a)[class*="rounded-xl"][class*="border"]:not([class*="bg-indigo"]) { border-radius: 999px; transition: background .25s, border-color .25s, transform .3s; }
+:is(.ss-student, .ss-admin) :is(button, a)[class*="rounded-xl"][class*="border"]:not([class*="bg-indigo"]):hover { border-color: var(--accent); }
+:is(.ss-student, .ss-admin) :is(input, select, textarea)[class*="rounded"] { border-radius: 14px; transition: border-color .25s, box-shadow .25s; }
+:is(.ss-student, .ss-admin) :is(input, select, textarea):focus { border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-soft) 35%, transparent); outline: none; }
+
+/* Progress */
+.ss-student progress::-webkit-progress-value { background: linear-gradient(90deg, var(--accent), var(--accent-soft-dark)); }
+.ss-student progress::-moz-progress-bar { background: linear-gradient(90deg, var(--accent), var(--accent-soft-dark)); }
+
+/* Navigation */
+.ss-student .student-bottom-nav { left: 12px; right: 12px; bottom: 10px; border: 1px solid var(--border); border-radius: 26px; background: color-mix(in srgb, var(--surface) 82%, transparent) !important; backdrop-filter: blur(18px) saturate(1.6); -webkit-backdrop-filter: blur(18px) saturate(1.6); box-shadow: 0 20px 50px -24px color-mix(in srgb, var(--accent) 50%, transparent); }
+:is(.ss-student, .ss-admin) nav :is(a, button)[aria-current="page"] { position: relative; }
+:is(.ss-student, .ss-admin) aside nav :is(a, button) { border-radius: 14px; transition: background .25s, color .25s, transform .35s cubic-bezier(.22,1,.36,1); }
+:is(.ss-student, .ss-admin) aside nav :is(a, button):hover { transform: translateX(4px); }
+
+/* Tables */
+.ss-admin table thead { background: color-mix(in srgb, var(--accent-soft) 14%, var(--surface)); }
+.ss-admin table tbody tr { transition: background .2s; }
+.ss-admin table tbody tr:hover { background: color-mix(in srgb, var(--accent-soft) 12%, transparent); }
+
+/* Staggered entrance for the workspace content. Sections remount on every switch, so the
+   entrance only moves content and never hides it: forms and ledgers stay readable throughout. */
+[data-motion="active"] :is(.ss-student, .ss-admin) main > * > * { animation: portal-rise .8s cubic-bezier(.22,1,.36,1) both; }
+[data-motion="active"] :is(.ss-student, .ss-admin) main > * > :nth-child(2) { animation-delay: 70ms; }
+[data-motion="active"] :is(.ss-student, .ss-admin) main > * > :nth-child(3) { animation-delay: 140ms; }
+[data-motion="active"] :is(.ss-student, .ss-admin) main > * > :nth-child(4) { animation-delay: 210ms; }
+[data-motion="active"] :is(.ss-student, .ss-admin) main > * > :nth-child(n+5) { animation-delay: 280ms; }
+@keyframes portal-rise { from { transform: perspective(1200px) translateY(28px) rotateX(8deg); } to { transform: none; } }
+
+/* Access screens (no session yet) get a centred stage glow. */
+.ss-student > .mx-auto.flex.min-h-screen, .ss-admin [class*="min-h-screen"][class*="items-center"] { position: relative; }
+@media (prefers-reduced-motion: reduce) { :is(.ss-student, .ss-admin) * { animation: none !important; } }

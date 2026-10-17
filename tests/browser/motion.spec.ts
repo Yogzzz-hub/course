@@ -64,16 +64,20 @@ test('hero moves, can be paused, and the preference survives navigation', async 
   await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Programmes', exact: true }).click();
   await expect(page.locator('h1')).toContainText('One focused programme.');
   await expect(page.locator('html')).toHaveAttribute('data-motion', 'paused');
+  // The motion toggle lives with the About engineering visual since the footer toggle was removed.
+  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'About', exact: true }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-motion', 'paused');
   await page.getByRole('button', { name: 'Resume animations', exact: true }).first().click();
   await expect(page.locator('html')).toHaveAttribute('data-motion', 'active');
 });
 
 test('scroll reveals the journey and updates reading progress', async ({ page }) => {
   await page.goto('/learning-experience');
-  const stage = page.locator('.journey li').first();
+  await expect(page.locator('.ring-face')).toHaveCount(5);
+  const stage = page.locator('.foundation-list > div').first();
   await stage.scrollIntoViewIfNeeded();
   await expect(stage).toHaveAttribute('data-revealed', 'true');
-  await expect.poll(() => page.locator('.reading-progress').evaluate(element => getComputedStyle(element).transform)).not.toBe('matrix(0, 0, 0, 1, 0, 0)');
+  await expect.poll(() => page.locator('.scroll-meter').evaluate(element => getComputedStyle(element).transform)).not.toBe('matrix(0, 0, 0, 1, 0, 0)');
   await page.goto('/programmes/python-full-stack');
   await page.getByRole('article', { name: 'Elite master package' }).scrollIntoViewIfNeeded();
   await expect(page.getByRole('article', { name: 'Elite master package' })).toHaveAttribute('data-revealed', 'true');

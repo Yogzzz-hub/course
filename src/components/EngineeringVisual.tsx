@@ -20,7 +20,7 @@ export function EngineeringVisual({ compact = false }: { compact?: boolean }) {
   }
   return <div className="engineering-stage"><div ref={visual} onPointerMove={tilt} onPointerLeave={event => { event.currentTarget.style.setProperty('--tilt-x', '0deg'); event.currentTarget.style.setProperty('--tilt-y', '0deg'); }} className={`engineering-visual ${compact ? 'compact' : ''}`} aria-hidden="true">
     <div className="visual-grid" />
-    <span className="visual-label visual-label-top">IDEA → IMPLEMENTATION</span>
+    <span className="visual-label visual-label-top">Idea to implementation</span>
     <svg viewBox="0 0 560 500" fill="none" className="layer-art">
       <defs>
         <linearGradient id={compact ? 'plateSmall' : 'plate'} x1="130" y1="80" x2="390" y2="390" gradientUnits="userSpaceOnUse"><stop stopColor="var(--visual-plate-1)" stopOpacity=".3"/><stop offset=".5" stopColor="var(--visual-plate-2)" stopOpacity=".35"/><stop offset="1" stopColor="var(--visual-plate-3)" stopOpacity=".95"/></linearGradient>
@@ -45,6 +45,6 @@ export function EngineeringVisual({ compact = false }: { compact?: boolean }) {
     </svg>
     <span className="art-tag art-tag-top">&lt;/&gt;<span>Built on fundamentals</span></span>
     <span className="art-tag art-tag-bottom"><span className="status-dot"/> From concept to capability</span>
-    <div className="visual-caption"><span>01 — 05</span><span>A LAYERED APPROACH TO LEARNING</span><span>↗</span></div>
+    <div className="visual-caption"><span>A layered approach to learning</span></div>
   </div><MotionToggle/></div>;
 }

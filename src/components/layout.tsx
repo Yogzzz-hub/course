@@ -1,15 +1,38 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { ArrowUp, ArrowUpRight, Menu, X, Orbit } from 'lucide-react';
+import { motion } from 'motion/react';
+import { ArrowUp, ArrowUpRight, CalendarDays, X, Orbit } from 'lucide-react';
 import { academy } from '../config/academy';
 import { navigation } from '../data/routes';
 import { Button } from './ui';
 import { ReadingProgress } from './MotionSystem';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { PaletteMenu } from './PaletteMenu';
+import { Marquee } from './fx';
 
-export function Logo() { return <Link to="/" className="logo flex flex-row items-center flex-nowrap gap-2.5 shrink-0" aria-label={`${academy.name} home`}><Orbit size={35} aria-hidden="true" className="shrink-0 text-[var(--accent)]"/><span className="logo-wordmark flex flex-col justify-center leading-tight"><span className="logo-name whitespace-nowrap">{academy.name.replace(/\s+Technical Academy$/i, "")}</span><span className="logo-subtitle whitespace-nowrap">Technical Academy</span></span></Link>; }
-export function Header() {
+export function Logo() { return <Link to="/" className="logo flex flex-row items-center flex-nowrap gap-2.5 shrink-0" aria-label={`${academy.name} home`}><span className="logo-mark"><Orbit size={35} aria-hidden="true" className="shrink-0 text-[var(--accent)]"/></span><span className="logo-wordmark flex flex-col justify-center leading-tight"><span className="logo-name whitespace-nowrap">{academy.name.replace(/\s+Technical Academy$/i, "")}</span><span className="logo-subtitle whitespace-nowrap">Technical Academy</span></span></Link>; }
+
+const isCurrent = (to: string, pathname: string) => to === '/' ? pathname === '/' : pathname === to || pathname.startsWith(`${to}/`);
+
+/**
+ * The dock's link island. A liquid lens glides to whichever link is hovered or focused and
+ * settles back on the current page, which also keeps a small eclipse bead beneath its label.
+ * Index numerals and the rolling duplicate label are hidden, so each link is named by its label alone.
+ */
+function DockNav() {
+  const { pathname } = useLocation();
+  const [hovered, setHovered] = useState<string | null>(null);
+  const lens = hovered ?? navigation.find(item => isCurrent(item.to, pathname))?.to;
+  return <nav className="desktop-nav dock-island dock-nav" aria-label="Main navigation" onMouseLeave={() => setHovered(null)} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setHovered(null); }}>
+    {navigation.map(item => <NavLink key={item.to} to={item.to} end={item.to === '/'} className="dock-link" data-lens={lens === item.to} onMouseEnter={() => setHovered(item.to)} onFocus={() => setHovered(item.to)}>
+      {lens === item.to && <motion.span layoutId="dock-lens" className="dock-lens" aria-hidden="true" transition={{ type: 'spring', stiffness: 480, damping: 36, mass: 0.7 }}/>}
+      <span className="dock-label"><span>{item.label}</span><span aria-hidden="true">{item.label}</span></span>
+    </NavLink>)}
+  </nav>;
+}
+
+/** On the homepage the call-to-action scrolls to the in-page booking journey. */
+export function Header({ onBook }: { onBook?: () => void }) {
   const [open, setOpen] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -22,7 +45,27 @@ export function Header() {
     return () => { document.body.style.overflow = ''; };
   }, [open]);
   function close() { setOpen(false); trigger.current?.focus(); }
-  return <><a href="#main" className="skip-link">Skip to content</a><header className="site-header"><div className="container header-inner"><Logo/><nav className="desktop-nav" aria-label="Main navigation">{navigation.map(n => <NavLink key={n.to} to={n.to} end={n.to === '/'}>{n.label}</NavLink>)}</nav><PaletteMenu/><Button to="/book-session" className="header-cta" secondary>Book a call</Button><button ref={trigger} className="menu-trigger icon-button" aria-label="Open navigation" aria-expanded={open} aria-controls="mobile-navigation" onClick={() => setOpen(true)}><Menu/></button></div><ReadingProgress/></header>
-  <dialog ref={dialog} id="mobile-navigation" className="mobile-drawer" aria-label="Navigation" onCancel={event => { event.preventDefault(); close(); }} onClick={event => { if (event.target === dialog.current) close(); }}><div className="drawer-inner"><div className="drawer-top"><Logo/><button className="icon-button" onClick={close} aria-label="Close navigation" autoFocus><X/></button></div><div className="drawer-theme"><p className="eyebrow">THEME</p><ThemeSwitcher/></div><p className="eyebrow">YOUR NEXT CHAPTER</p><nav aria-label="Mobile navigation">{[...navigation, { to: '/career-support', label: 'Career support' }].map(n => <NavLink key={n.to} to={n.to} end={n.to === '/'} onClick={close}>{n.label}<ArrowUpRight/></NavLink>)}</nav><div onClick={close}><Button to="/book-session">Book a one-on-one call</Button></div><div className="drawer-legal"><Link to="/privacy-policy" onClick={close}>Privacy</Link><Link to="/terms-and-conditions" onClick={close}>Terms</Link></div><p className="muted">{academy.tagline}</p></div></dialog></>;
+  const cta = onBook
+    ? <button type="button" onClick={onBook} className="button button-primary header-cta ss-header-cta" aria-label="Book a counselling call" data-magnetic><CalendarDays size={17} aria-hidden="true"/>Book a call</button>
+    : <span className="header-cta-wrap" data-magnetic><Button to="/book-session" className="header-cta">Book a call</Button></span>;
+  return <><a href="#main" className="skip-link">Skip to content</a><header className="site-header"><div className="container header-inner dock"><div className="dock-island dock-brand"><Logo/></div><DockNav/><div className="dock-island header-tools"><PaletteMenu/>{cta}<button ref={trigger} className="menu-trigger icon-button" aria-label="Open navigation" aria-expanded={open} aria-controls="mobile-navigation" onClick={() => setOpen(true)}><span className="menu-glyph" aria-hidden="true"><i/><i/></span></button></div></div><ReadingProgress/></header>
+  <dialog ref={dialog} id="mobile-navigation" className="mobile-drawer" aria-label="Navigation" onCancel={event => { event.preventDefault(); close(); }} onClick={event => { if (event.target === dialog.current) close(); }}><div className="drawer-inner"><div className="drawer-top"><Logo/><button className="icon-button" onClick={close} aria-label="Close navigation" autoFocus><X/></button></div><div className="drawer-theme"><ThemeSwitcher/></div><nav aria-label="Mobile navigation">{[...navigation, { to: '/career-support', label: 'Career support' }].map(n => <NavLink key={n.to} to={n.to} end={n.to === '/'} onClick={close}>{n.label}<ArrowUpRight/></NavLink>)}</nav><div onClick={close}><Button to="/book-session">Book a one-on-one call</Button></div><div className="drawer-legal"><Link to="/privacy-policy" onClick={close}>Privacy</Link><Link to="/terms-and-conditions" onClick={close}>Terms</Link></div><p className="muted">{academy.tagline}</p></div></dialog></>;
 }
-export function Footer() { return <footer className="site-footer"><div className="container"><div className="footer-grid"><div className="footer-brand"><Logo/><p>Turn understanding into ability.<br/>And ambition into your next chapter.</p><span className="eyebrow">{academy.tagline}</span></div><div><h2>Explore</h2><Link to="/programmes">Programmes</Link><Link to="/learning-experience">Learning experience</Link><Link to="/career-support">Career support</Link><Link to="/about">About the academy</Link></div><div><h2>Take the next step</h2><Link to="/book-session">Book a counselling call</Link><Link to="/contact">Contact & FAQs</Link><Link to="/programmes">Programme fees & catalogue</Link>{academy.email && <a href={`mailto:${academy.email}`}>{academy.email}</a>}{academy.phone && <a href={`tel:${academy.phone}`}>{academy.phone}</a>}</div><button className="back-top" onClick={() => window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' })} aria-label="Back to top"><ArrowUp size={20}/></button></div><div className="footer-bottom"><span>© {new Date().getFullYear()} {academy.name}. {academy.brandApproved ? 'Learn. Build. Evolve.' : 'Brand identity pending approval.'}</span><div><Link to="/privacy-policy">Privacy policy</Link><Link to="/terms-and-conditions">Terms & conditions</Link></div></div><p className="footer-disclaimer">Internships depend on eligibility, availability and confirmed package terms. Placement support does not guarantee employment.</p></div></footer>; }
+
+export function Footer() {
+  const top = () => window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+  return <footer className="site-footer stage">
+    <Marquee className="footer-marquee" speed={60} items={['Learn', 'Build', 'Evolve'].map(word => <span className="footer-marquee-word">{word}</span>)}/>
+    <div className="container">
+      <div className="footer-grid">
+        <div className="footer-brand"><Logo/><p>Turn understanding into ability.<br/>And ambition into your next chapter.</p></div>
+        <div><h2>Explore</h2><Link to="/programmes">Programmes</Link><Link to="/learning-experience">Learning experience</Link><Link to="/career-support">Career support</Link><Link to="/about">About the academy</Link></div>
+        <div><h2>Take the next step</h2><Link to="/book-session">Book a counselling call</Link><Link to="/contact">Contact & FAQs</Link><Link to="/programmes">Programme fees & catalogue</Link>{academy.email && <a href={`mailto:${academy.email}`}>{academy.email}</a>}{academy.phone && <a href={`tel:${academy.phone}`}>{academy.phone}</a>}</div>
+        <button className="back-top" onClick={top} aria-label="Back to top" data-magnetic><ArrowUp size={20}/></button>
+      </div>
+      <div className="footer-wordmark" aria-hidden="true">{academy.name.replace(/\s+Technical Academy$/i, '')}</div>
+      <div className="footer-bottom"><span>© {new Date().getFullYear()} {academy.name}. {academy.brandApproved ? 'Learn. Build. Evolve.' : 'Brand identity pending approval.'}</span><div><Link to="/privacy-policy">Privacy policy</Link><Link to="/terms-and-conditions">Terms & conditions</Link></div></div>
+      <p className="footer-disclaimer">Internships depend on eligibility, availability and confirmed package terms. Placement support does not guarantee employment.</p>
+    </div>
+  </footer>;
+}

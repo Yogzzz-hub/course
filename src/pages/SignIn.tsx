@@ -18,5 +18,5 @@ export default function SignInPage() {
       if (packageId) returnTo = checkoutHref(packageId);
     }
   } catch { /* Keep the fixed workspace destination for invalid input. */ }
-  return <PageHero eyebrow="ACCOUNT ACCESS" title={admin ? 'Admin sign-in' : 'Student sign-in'} description="The authentication service has not been connected to this website yet. Contact the academy for account access."><div className="hero-actions"><Button to={returnTo}>Return to workspace</Button><Button to="/contact" secondary>Contact the academy</Button></div></PageHero>;
+  return <PageHero labels={['Secure', 'Access']} title={admin ? 'Admin sign-in' : 'Student sign-in'} description="The authentication service has not been connected to this website yet. Contact the academy for account access."><div className="hero-actions"><Button to={returnTo}>Return to workspace</Button><Button to="/contact" secondary>Contact the academy</Button></div></PageHero>;
 }

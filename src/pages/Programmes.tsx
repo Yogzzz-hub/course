@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Clock3, ArrowUpRight, Search, Check, BookOpen } from 'lucide-react';
+import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
+import { Clock3, Search, Check, BookOpen } from 'lucide-react';
 import { AnimatedText } from '../components/AnimatedText';
 import { PageHero, BookingCTA, TextLink, SectionHeading, Button } from '../components/ui';
 import { ProgrammeFeature } from '../components/Programme';
@@ -34,7 +35,7 @@ export default function Programmes() {
   return (
     <>
       <PageHero
-        eyebrow="YOUR LEARNING PATH"
+        labels={['12 programmes', '7 months']}
         title={
           <>
             One focused programme.<br />
@@ -48,13 +49,13 @@ export default function Programmes() {
         <div className="programmes-catalogue" id="catalogue" style={{ marginTop: '0' }}>
           <div className="catalogue-header">
             <SectionHeading
-              label="01 / PROGRAMME CATALOGUE"
               title="All programmes & engineering tracks."
               description="Explore all learning tracks, full programmes, and individual technical modules presented card-by-card with clear fees and inclusions."
             />
           </div>
 
           <div className="catalogue-controls">
+            <LayoutGroup id="catalogue-tabs">
             <div className="catalogue-filter-tabs" role="tablist" aria-label="Programme categories">
               <button
                 type="button"
@@ -64,6 +65,7 @@ export default function Programmes() {
                 onClick={() => setActiveFilter('all')}
               >
                 All Programmes ({detailedProgrammes.length})
+                {activeFilter === 'all' && <motion.span layoutId="tab-pill" className="tab-pill" transition={{ type: 'spring', stiffness: 420, damping: 34 }}/>}
               </button>
               <button
                 type="button"
@@ -73,6 +75,7 @@ export default function Programmes() {
                 onClick={() => setActiveFilter('flagship-track')}
               >
                 Full Programmes & Tracks (7)
+                {activeFilter === 'flagship-track' && <motion.span layoutId="tab-pill" className="tab-pill" transition={{ type: 'spring', stiffness: 420, damping: 34 }}/>}
               </button>
               <button
                 type="button"
@@ -82,8 +85,10 @@ export default function Programmes() {
                 onClick={() => setActiveFilter('module')}
               >
                 Modular Courses (5)
+                {activeFilter === 'module' && <motion.span layoutId="tab-pill" className="tab-pill" transition={{ type: 'spring', stiffness: 420, damping: 34 }}/>}
               </button>
             </div>
+            </LayoutGroup>
 
             <div className="catalogue-search">
               <Search size={16} aria-hidden="true" />
@@ -115,9 +120,19 @@ export default function Programmes() {
             </div>
           ) : (
             <div className="programmes-grid" role="region" aria-label="Programme catalogue cards">
+              <AnimatePresence mode="popLayout" initial={false}>
               {filteredProgrammes.map(card => (
-                <article
+                <motion.div
                   key={card.id}
+                  layout
+                  className={`programme-card-slot ${card.isFlagship ? 'featured' : ''}`}
+                  initial={{ opacity: 0, scale: 0.9, rotateX: -18, y: 40 }}
+                  animate={{ opacity: 1, scale: 1, rotateX: 0, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, rotateX: 18, y: -20 }}
+                  transition={{ type: 'spring', stiffness: 260, damping: 28 }}
+                >
+                <article
+                  data-tilt="7"
                   className={`programme-card-item ${card.isFlagship ? 'featured' : ''}`}
                 >
                   <div className="card-badge-row">
@@ -157,14 +172,15 @@ export default function Programmes() {
                   <div className="card-actions">
                     <Button to={card.slug}>
                       {card.isFlagship ? 'Explore flagship' : (card.category === 'module' ? 'Explore module' : 'Explore track')}
-                      <ArrowUpRight size={14} aria-hidden="true" />
                     </Button>
                     <Button to={`/book-session?programme=${encodeURIComponent(card.id)}`} secondary>
                       Discuss
                     </Button>
                   </div>
                 </article>
+                </motion.div>
               ))}
+              </AnimatePresence>
             </div>
           )}
         </div>
@@ -172,7 +188,6 @@ export default function Programmes() {
         {/* Learning Architecture Section */}
         <div id="flagship-architecture" style={{ marginTop: '70px', paddingTop: '40px', borderTop: '1px solid var(--border)' }}>
           <SectionHeading
-            label="02 / ARCHITECTURE & SKILL SET"
             title="Connected software engineering architecture."
             description="Explore the connected multi-tier stack architecture taught across our flagship and specialised engineering tracks."
           />
@@ -180,7 +195,7 @@ export default function Programmes() {
         </div>
 
         <div className="editorial-grid" style={{ marginTop: '70px' }}>
-          <div>
+          <div data-tilt="6">
             <h2>
               <AnimatedText>Start with your goals.</AnimatedText>
             </h2>
@@ -188,14 +203,14 @@ export default function Programmes() {
               Explore the curriculum and consider what you want to build. Counselling can help you discuss your background and the right starting point.
             </p>
           </div>
-          <div>
+          <div data-tilt="6">
             <h3>Learning that connects.</h3>
             <p>
               Programming foundations lead into interfaces, backend development, data, testing and deployment. Guided exercises and programme projects connect these areas in practice.
             </p>
             <TextLink to="/programmes/python-full-stack#curriculum">Explore the learning areas</TextLink>
           </div>
-          <div>
+          <div data-tilt="6">
             <h3>Make an informed choice.</h3>
             <p>
               Review the listed fees and package inclusions. Prerequisites, teaching format and class timings must be confirmed before enrolment.

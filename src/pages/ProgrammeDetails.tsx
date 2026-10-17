@@ -1,18 +1,35 @@
 import { DurationVisual } from '../components/DurationVisual';
 import { AnimatedText } from '../components/AnimatedText';
-import { Clock3, ArrowRight, ArrowUpRight, Check } from 'lucide-react';
+import { Clock3, ArrowRight, Check } from 'lucide-react';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { detailedProgrammes, type DetailedProgramme } from '../data/programmeCatalog';
-import { Accordion, BookingCTA, Button, Eyebrow, FAQ, SectionHeading, Tags, TextLink } from '../components/ui';
+import { Accordion, BookingCTA, Button, FAQ, SectionHeading, Tags, TextLink } from '../components/ui';
 import { CourseFeesComparison } from '../components/course-fees';
 import type { FeeView } from '../components/course-fees';
 import { checkoutHref } from '../utils/checkoutIntent';
 
 const validViews: FeeView[] = ['individual', 'packages', 'savings'];
+const sectionIds = ['overview', 'curriculum', 'projects', 'pricing'];
+
+/** Highlights the section currently under the sticky anchor bar. */
+function useCurrentSection() {
+  const [current, setCurrent] = useState(sectionIds[0]);
+  useEffect(() => {
+    const observer = new IntersectionObserver(entries => {
+      const visible = entries.filter(entry => entry.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+      if (visible) setCurrent(visible.target.id);
+    }, { rootMargin: '-35% 0px -55% 0px' });
+    sectionIds.forEach(id => { const node = document.getElementById(id); if (node) observer.observe(node); });
+    return () => observer.disconnect();
+  }, []);
+  return current;
+}
 
 export default function ProgrammeDetails() {
   const navigate = useNavigate();
   const location = useLocation();
+  const currentSection = useCurrentSection();
   const [searchParams] = useSearchParams();
   const viewParam = searchParams.get('view');
   const initialView: FeeView = validViews.includes(viewParam as FeeView) ? (viewParam as FeeView) : 'packages';
@@ -41,7 +58,7 @@ export default function ProgrammeDetails() {
         </nav>
         <div className="detail-hero-grid">
           <div>
-            <Eyebrow>{prog.eyebrow}</Eyebrow>
+            
             <h1 tabIndex={-1}>
               <AnimatedText>
                 {prog.heroTitle}
@@ -75,7 +92,7 @@ export default function ProgrammeDetails() {
             ['projects', 'Projects & support'],
             ['pricing', 'Packages & fees'],
           ].map(([id, label]) => (
-            <a href={`#${id}`} key={id}>
+            <a href={`#${id}`} key={id} data-current={currentSection === id} aria-current={currentSection === id ? 'location' : undefined}>
               {label}
               <ArrowRight size={14} />
             </a>
@@ -87,7 +104,6 @@ export default function ProgrammeDetails() {
         <div className="programme-main">
           <section id="overview" className="detail-section">
             <SectionHeading
-              label="01 / THE OVERVIEW"
               title="A connected engineering foundation."
               description={prog.name}
             />
@@ -116,13 +132,13 @@ export default function ProgrammeDetails() {
 
           <section id="curriculum" className="detail-section">
             <SectionHeading
-              label="02 / THE CURRICULUM"
               title="See how the pieces connect."
               description={`${prog.modules.length} learning modules, from programming foundations to advanced implementation.`}
             />
             <p className="small">
               Topics below follow the academy syllabus. The teaching sequence, assignments and schedule will be confirmed before enrolment.
             </p>
+            <div className="curriculum-timeline">
             <Accordion
               items={prog.modules.map(module => ({
                 question: module.name,
@@ -140,11 +156,11 @@ export default function ProgrammeDetails() {
                 ),
               }))}
             />
+            </div>
           </section>
 
           <section id="projects" className="detail-section">
             <SectionHeading
-              label="03 / PUT LEARNING TO WORK"
               title="Build. Review. Improve."
             />
             <p>
@@ -178,7 +194,7 @@ export default function ProgrammeDetails() {
 
         <aside className="programme-sidebar">
           <div className="summary-card">
-            <Eyebrow>YOUR NEXT CHAPTER</Eyebrow>
+            
             <h2>
               <AnimatedText>{prog.name}</AnimatedText>
             </h2>
@@ -203,8 +219,7 @@ export default function ProgrammeDetails() {
       <section id="pricing" className="section section-tinted">
         <div className="container">
           <SectionHeading
-            label="04 / FEES & INCLUSIONS"
-            title="Choose with clarity."
+            title="Fees and inclusions."
             description={
               prog.isFlagship
                 ? 'Compare the listed master packages. Confirm detailed inclusions and conditions with the academy before enrolling.'
@@ -220,9 +235,8 @@ export default function ProgrammeDetails() {
             />
           ) : (
             <div style={{ maxWidth: '640px', margin: '40px auto 0' }}>
-              <article className="pricing-card" style={{ borderColor: 'var(--accent)' }}>
-                <div className="tier-index">01 / {prog.badge.toUpperCase()}</div>
-                <h3>{prog.name}</h3>
+              <article className="pricing-card" data-tilt="5" style={{ borderColor: 'var(--accent)' }}>
+                                <h3>{prog.name}</h3>
                 <p className="tier-caption">{prog.description}</p>
                 <p className="price">
                   {prog.feeDisplay}

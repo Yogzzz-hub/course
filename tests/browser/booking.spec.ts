@@ -63,7 +63,7 @@ test('homepage and counselling routes render the replacement experience with pac
   await mockBookingApi(page);
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Build the skills.Shape your next chapter.');
-  await expect(page.getByRole('navigation', { name: 'Primary navigation' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible();
   await page.goto('/book-session?package=premium');
   await expect(page.getByLabel('Package to discuss (optional)')).toHaveValue('premium');
   await expect(page.getByRole('heading', { name: 'Let’s start with you.' })).toBeInViewport();

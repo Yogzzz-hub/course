@@ -89,6 +89,8 @@ const revealSelectors = [
   '.pricing-note', '.booking-cta', '.editorial-grid > div', '.support-editorial article',
   '.about-layout > div:first-child', '.fee-breakdown > div', '.outcomes',
   '.contact-call', '.booking-panel', '.enquiry-form', '.legal-content > section',
+  '.stat-card', '.deck-head', '.rail-head', '.commerce-head', '.accordion details', '.detail-section .two-columns > div',
+  '.programme-card-item', '.booking-shell', '.booking-aside-stage', '.catalogue-controls',
 ].join(',');
 
 /** Progressive enhancement: server HTML and off-screen content are always readable. */
@@ -104,8 +106,10 @@ export function MotionDirector() {
     const navigation = lastPath.current !== pathname;
     lastPath.current = pathname;
     // Only move intro text; it is never hidden, keeping the headline immediately readable.
-    main.querySelectorAll<HTMLElement>('.hero-copy > *, .page-hero > *, .detail-hero-grid > div:first-child > *, .duration-art').forEach((element, index) => {
-      controls.push(animate(element, { transform: ['translateY(18px)', 'translateY(0px)'] }, { duration: 0.75, delay: Math.min(index * 0.055, 0.25), ease }));
+    main.querySelectorAll<HTMLElement>('.hero-copy > *, .page-hero-copy > *, .detail-hero-grid > div:first-child > *, .duration-art').forEach((element, index) => {
+      const control = animate(element, { transform: ['translateY(18px)', 'translateY(0px)'] }, { duration: 0.75, delay: Math.min(index * 0.055, 0.25), ease });
+      control.then(() => { element.style.transform = ''; }).catch(() => {});
+      controls.push(control);
     });
     if (navigation) {
       controls.push(animate(main, { transform: ['translateY(8px)', 'translateY(0px)'] }, { duration: 0.35, ease }));
@@ -118,7 +122,15 @@ export function MotionDirector() {
         const element = entry.target as HTMLElement;
         element.dataset.revealed = 'true';
         observer.unobserve(element);
-        controls.push(animate(element, { transform: ['translateY(26px)', 'translateY(0px)'] }, { duration: 0.7, delay: Math.min(index * 0.075, 0.225), ease }));
+        // Cards tip up gently out of depth; text blocks rise. Transform and opacity only, so the
+        // compositor runs them without repainting (a blur filter re-rasterises text every frame).
+        const card = element.matches('.stat-card, .programme-card-item, .editorial-grid > div, .support-editorial article, .pricing-card, .course-fees article, .foundation-list > div, .accordion details, .detail-section .two-columns > div');
+        const keyframes = card
+          ? { transform: ['perspective(1200px) translate3d(0, 40px, 0) rotateX(8deg)', 'perspective(1200px) translate3d(0, 0, 0) rotateX(0deg)'], opacity: [0, 1] }
+          : { transform: ['translate3d(0, 24px, 0)', 'translate3d(0, 0, 0)'], opacity: [0, 1] };
+        const control = animate(element, keyframes, { duration: card ? 0.9 : 0.8, delay: Math.min(index * 0.08, 0.32), ease: [0.16, 1, 0.3, 1] });
+        control.then(() => { element.style.transform = ''; }).catch(() => {});
+        controls.push(control);
       });
     }, { threshold: 0.08, rootMargin: '0px 0px -24px 0px' });
     elements.forEach(element => observer.observe(element));
