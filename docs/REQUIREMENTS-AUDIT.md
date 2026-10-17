@@ -2,21 +2,23 @@
 
 Checked against *Academy_Management_Website_Requirements_Combined_Session_Final.pdf* (Updated Master Requirements, developer reference) on 17 October 2026, at commit `48f78b6`.
 
+**Update:** the trainer's combined class-session workflow now exists as a front end at `/trainer-panel`, covering sections 2, 3 and part of 5. See `docs/TRAINER-PANEL.md`. Until `VITE_ACADEMY_API_URL` points at a backend, it runs on a clearly labelled in-browser demo store.
+
 **Status key:** **Done** — built and working in this repo. **Partial** — some of it exists, usually as a front end waiting for a backend. **Missing** — not started.
 
 ## Summary
 
 This repository holds the public website, the counselling booking flow, and two front-end portals: a student panel and a sales/finance admin panel. Both portals call APIs (`/api/student/*`, `/api/admin/*`) and a sign-in service that do **not exist in this repo**. The only server code here is the booking programme list and the enquiry endpoint.
 
-The document describes an academy-operations system with five roles (Student, Trainer, Manager, Admin, Financier), batches, a combined class-session entry, automatic progress, certificates, trainer payments and financier reporting. **None of that operations layer is built yet, and there is no database or backend for it.**
+The document describes an academy-operations system with five roles (Student, Trainer, Manager, Admin, Financier), batches, a combined class-session entry, automatic progress, certificates, trainer payments and financier reporting. The trainer's class-session entry and the progress rules are now built as a front end with a typed API contract. **There is still no database or backend for any of the operations layer.**
 
 | Area | Status |
 | --- | --- |
 | 1. Student dashboard | Partial (UI shell only; most fields missing) |
-| 2. Combined class session entry | Missing |
-| 3. Automatic attendance and syllabus progress | Missing |
-| 4. Student schedule preference | Missing |
-| 5. Trainer dashboard | Missing |
+| 2. Combined class session entry | Partial (front end, rules and API contract done; backend missing) |
+| 3. Automatic attendance and syllabus progress | Partial (calculated in the trainer panel; not yet on the student dashboard) |
+| 4. Student schedule preference | Partial (batch schedule type and student preference in the data model; no admission or allocation screens) |
+| 5. Trainer dashboard | Partial (allocated batches, session entry, student progress; no sign-in, profile or transactions) |
 | 6. Manager dashboard | Missing |
 | 7. Admin dashboard — critical approvals | Partial (finance/discount approvals, audit, permissions; no academy approvals) |
 | 8. Financier dashboard | Partial (ledger, proofs, refunds inside the admin panel; no financier role) |
@@ -33,13 +35,32 @@ The document describes an academy-operations system with five roles (Student, Tr
 | Edit permitted personal details; registration no., batch, course allocation and fees read-only | Missing | No profile screen. |
 | View/download e-certificate after trainer confirmation and admin approval | Missing | No certificate data or screen. |
 
-## 2. Combined class session entry (attendance + topics) — Missing
+## 2. Combined class session entry (attendance + topics) — Partial
 
-No trainer role, form, API or data model. None of these exist: batch/date selection limited to assigned batches and permitted dates, start/end time validation, Present/Absent/Leave per student, topic and multi-subtopic selection from the approved syllabus, single submit, record locking, duplicate prevention, today/yesterday-only entry with authorised backdating, future dates locked, "Attendance Not Submitted" state, sessions shown in the student dashboard.
+| Requirement | Status | Evidence |
+| --- | --- | --- |
+| Assigned batches only; date and start/end time | Done (front end) | Batch tabs in `academy/TrainerPanel.tsx`; `validateClassSession` in `academy/rules.ts` checks the assignment and that the end is after the start. |
+| Present / Absent / Leave for every student | Done (front end) | Segmented radio group per student and **Mark everyone present** in `academy/ClassSessionForm.tsx`; every student must be marked once. |
+| Topic and multiple subtopics from the approved syllabus | Done (front end) | Subtopics grouped by module, from `course.syllabus` (`syllabusStatus: "approved"`); unknown subtopics are rejected. |
+| Submit once; record locked | Done (front end) | A review step, then **Submit and lock**, with an idempotency key; stored sessions are `locked: true` and have no edit path. |
+| Duplicate prevention (batch + date + time) | Done (front end) | Same batch, date and start time is refused (409); overlapping times are refused. |
+| Today/yesterday only, authorised backdating, future locked | Done (front end) | `dateAccess` / `permittedDates`, read in Asia/Kolkata; a backdate grant is used up by one session. Grants are read from the workspace; there is no screen to issue them yet. |
+| Missing class shows "Attendance Not Submitted", not Absent | Done (front end) | `dayStatus` / `missingAttendanceDates`; shown in the batch summary and the session record. |
+| Sessions shown on the student dashboard | Missing | The student panel does not read class sessions yet. |
+| Server-side enforcement and storage | Missing | No backend; the HTTP adapter and contract are ready (`academy/api.ts`, `contracts.ts`). |
 
-## 3. Automatic attendance and syllabus progress — Missing
+## 3. Automatic attendance and syllabus progress — Partial
 
-No calculation exists. The student dashboard displays a progress value supplied by the (absent) API. Missing: attendance progress = Present ÷ scheduled × 100; syllabus progress from topics recorded in submitted sessions; recalculation on submit; separate display of both values; completion eligibility only at 100% / 100%.
+Done in the trainer panel (`academy/rules.ts`, covered by `tests/academy-rules.test.ts`):
+- attendance progress = Present ÷ all scheduled classes × 100;
+- syllabus progress = approved subtopics recorded in submitted sessions ÷ total, unweighted;
+- both are recalculated after each submission and shown separately for each student;
+- completion can be sent for admin approval only at 100% / 100%.
+
+Still missing:
+- showing both figures on the student dashboard;
+- server-side calculation;
+- the admin approval of completion requests.
 
 ## 4. Student schedule preference — Missing
 
@@ -78,8 +99,8 @@ No manager role: schedules, admission follow-ups, batch monitoring, missing-atte
 | Workflow | Status |
 | --- | --- |
 | Admission (create student → record preference → assign course/batch/trainer) | Missing |
-| Class (select date/time → attendance → topics → submit once → lock → recalculate) | Missing |
-| Certificate (100%/100% → trainer confirms → admin approves → e-certificate) | Missing |
+| Class (select date/time → attendance → topics → submit once → lock → recalculate) | Partial — complete in the trainer panel's front end; no backend |
+| Certificate (100%/100% → trainer confirms → admin approves → e-certificate) | Partial — the trainer can send an eligible student for approval; admin approval and certificates are missing |
 | Trainer payment (admin approves → financier pays → shows in trainer dashboard) | Missing |
 | Student payment (financier records → balance updates everywhere) | Partial — student payments and the admin ledger exist as front ends only |
 
@@ -118,6 +139,6 @@ No manager role: schedules, admission follow-ups, batch monitoring, missing-atte
    - income and expenses;
    - certificates;
    - the audit log.
-3. **Role dashboards:** Trainer (with the class session entry), Manager, Financier, and the academy parts of Admin (accounts, syllabus approval, completion and certificate approval, trainer payment approval).
+3. **Role dashboards:** Trainer (sign-in, profile and transactions; the class session entry is done), Manager, Financier, and the academy parts of Admin (accounts, syllabus approval, completion and certificate approval, trainer payment approval).
 4. **Student dashboard additions:** OTP login, batch/trainer/schedule, date-wise sessions, both progress figures, profile editing, receipts, certificate download.
 5. **Reports and exports:** weekly/monthly/yearly, PDF and Excel; certificate PDFs with unique IDs.

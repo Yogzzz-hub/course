@@ -26,6 +26,7 @@ const pageLoaders: Record<string, () => Promise<{ default: ComponentType }>> = {
  '/direct-booking': () => import('./pages/DirectBooking'),
  '/student-panel': () => import('./pages/StudentPanel'),
  '/admin-panel': () => import('./pages/AdminPanel'),
+ '/trainer-panel': () => import('./pages/TrainerPanel'),
  '/auth/sign-in': () => import('./pages/SignIn'),
  '/auth/admin/sign-in': () => import('./pages/SignIn'),
  '/contact': () => import('./pages/Contact'),
@@ -53,11 +54,11 @@ function RouteEffects() {
     };
     const description=route?.description || 'Find your way back to programme information and academy guidance.';
     meta('description',description);meta('og:title',document.title,true);meta('og:description',description,true);meta('og:type','website',true);
-    meta('robots',['/student-panel', '/admin-panel', '/auth/sign-in', '/auth/admin/sign-in'].includes(pathname) || !academy.siteUrl || !academy.legalApproved || !academy.brandApproved || !route || pathname.includes('policy') || pathname.includes('terms') ? 'noindex, nofollow' : 'index, follow');
+    meta('robots',['/student-panel', '/admin-panel', '/trainer-panel', '/auth/sign-in', '/auth/admin/sign-in'].includes(pathname) || !academy.siteUrl || !academy.legalApproved || !academy.brandApproved || !route || pathname.includes('policy') || pathname.includes('terms') ? 'noindex, nofollow' : 'index, follow');
     let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
     if(academy.siteUrl && route){ if(!canonical){canonical=document.createElement('link');canonical.rel='canonical';document.head.append(canonical);} canonical.href=academy.siteUrl+pathname;meta('og:url',canonical.href,true); }else{canonical?.remove();}
     document.querySelector('#academy-structured-data')?.remove();
-    if (academy.siteUrl && academy.brandApproved && !['/student-panel', '/admin-panel', '/auth/sign-in', '/auth/admin/sign-in'].includes(pathname)) {const script=document.createElement('script');script.type='application/ld+json';script.id='academy-structured-data';script.textContent=JSON.stringify({'@context':'https://schema.org','@type':'WebPage',name:document.title,url:academy.siteUrl+pathname,description});document.head.append(script);}
+    if (academy.siteUrl && academy.brandApproved && !['/student-panel', '/admin-panel', '/trainer-panel', '/auth/sign-in', '/auth/admin/sign-in'].includes(pathname)) {const script=document.createElement('script');script.type='application/ld+json';script.id='academy-structured-data';script.textContent=JSON.stringify({'@context':'https://schema.org','@type':'WebPage',name:document.title,url:academy.siteUrl+pathname,description});document.head.append(script);}
     if(hash){requestAnimationFrame(()=>document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView());}
     else {window.scrollTo({top:0,behavior:'instant'});if (!firstRender.current) document.querySelector<HTMLElement>('h1')?.focus({preventScroll:true});}
     firstRender.current = false;
@@ -71,7 +72,7 @@ class PageErrorBoundary extends Component<{children:ReactNode},{failed:boolean}>
 }
 export default function App({initialPage: InitialPage, initialPath}: {initialPage?: ComponentType; initialPath?: string}) {
  const { pathname } = useLocation();
- if (['/student-panel', '/admin-panel'].includes(pathname)) {
+ if (['/student-panel', '/admin-panel', '/trainer-panel'].includes(pathname)) {
    const Page = pageComponents.find(page => page.path === pathname)!.Page;
    return <PageErrorBoundary><Suspense fallback={<main className="container page-hero" role="status">Loading your workspace…</main>}>{InitialPage && initialPath === pathname ? <InitialPage/> : <Page/>}<RouteEffects/></Suspense></PageErrorBoundary>;
  }

@@ -1,0 +1,93 @@
+.ss-trainer {
+  font-family: "Manrope Variable", ui-sans-serif, system-ui, sans-serif;
+  line-height: 1.5;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.ss-trainer
+  :where(
+    h1,
+    h2,
+    h3,
+    p,
+    button,
+    input,
+    select,
+    textarea,
+    a,
+    svg,
+    table,
+    thead,
+    tbody,
+    tr,
+    th,
+    td,
+    fieldset,
+    legend,
+    label,
+    ol,
+    ul,
+    li,
+    dl,
+    dt,
+    dd,
+    details,
+    summary,
+    header,
+    main,
+    section
+  ) {
+  all: revert-layer;
+}
+.ss-trainer *,
+.ss-trainer *::before,
+.ss-trainer *::after {
+  box-sizing: border-box;
+}
+.ss-trainer :where(button, input, select, textarea) {
+  font-family: inherit;
+}
+.ss-trainer :where(button, select, summary, input[type="radio"]) {
+  cursor: pointer;
+}
+.ss-trainer :where(button:disabled, input:disabled, select:disabled, textarea:disabled) {
+  cursor: not-allowed;
+}
+.ss-trainer :where(h1, h2, h3) {
+  font-family: "Space Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
+}
+.ss-trainer :where(svg) {
+  display: inline-block;
+  vertical-align: middle;
+}
+.ss-trainer :where(table) {
+  border-collapse: collapse;
+  overflow-wrap: normal;
+}
+.ss-trainer :where(fieldset) {
+  min-width: 0;
+  margin-inline: 0;
+  padding: 0;
+  border: 0;
+}
+.ss-trainer :where(:focus-visible) {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+.ss-trainer [tabindex="-1"]:focus {
+  outline: none;
+}
+.ss-trainer :where(input, select, textarea)[aria-invalid="true"] {
+  border-color: #b91c1c;
+}
+.ss-trainer table thead {
+  background: color-mix(in srgb, var(--accent-soft) 14%, var(--surface));
+}
+@media (prefers-reduced-motion: reduce) {
+  .ss-trainer *,
+  .ss-trainer *::before,
+  .ss-trainer *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

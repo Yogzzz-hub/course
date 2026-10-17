@@ -11,9 +11,9 @@ export async function render(path:string){
  const title=`${route?.title || 'Page not found'} | ${titleBrand}`;
  const description=route?.description || 'Find your way back to the academy.';
  const launchReady=academy.siteUrl && academy.brandApproved && academy.legalApproved;
- const noindex=['/student-panel', '/admin-panel', '/auth/sign-in', '/auth/admin/sign-in'].includes(path) || !launchReady || !route || path.includes('policy') || path.includes('terms');
+ const noindex=['/student-panel', '/admin-panel', '/trainer-panel', '/auth/sign-in', '/auth/admin/sign-in'].includes(path) || !launchReady || !route || path.includes('policy') || path.includes('terms');
  const canonical=academy.siteUrl && route ? `<link rel="canonical" href="${escape(academy.siteUrl+path)}"/><meta property="og:url" content="${escape(academy.siteUrl+path)}"/>` : '';
- const structured=academy.siteUrl && academy.brandApproved && route && !['/student-panel', '/admin-panel', '/auth/sign-in', '/auth/admin/sign-in'].includes(path) ? `<script id="academy-structured-data" type="application/ld+json">${JSON.stringify({'@context':'https://schema.org','@type':'WebPage',name:title,url:academy.siteUrl+path,description}).replace(/</g,'\\u003c')}</script>` : '';
+ const structured=academy.siteUrl && academy.brandApproved && route && !['/student-panel', '/admin-panel', '/trainer-panel', '/auth/sign-in', '/auth/admin/sign-in'].includes(path) ? `<script id="academy-structured-data" type="application/ld+json">${JSON.stringify({'@context':'https://schema.org','@type':'WebPage',name:title,url:academy.siteUrl+path,description}).replace(/</g,'\\u003c')}</script>` : '';
  // Match the client's resolved route and avoid deferred streaming fragments in static HTML.
  const initialPage = await loadInitialPage(path);
  const html = renderToString(<StaticRouter location={path}><App initialPage={initialPage} initialPath={path}/></StaticRouter>);

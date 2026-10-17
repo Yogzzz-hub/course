@@ -2,6 +2,7 @@ export const routes = [
   { path: '/auth/sign-in', title: 'Student Sign-in', description: 'Student account access and authentication service information.' },
   { path: '/auth/admin/sign-in', title: 'Admin Sign-in', description: 'Secure administration account access and authentication service information.' },
   { path: '/admin-panel', title: 'Admin Panel', description: 'Private academy administration for leads, approvals, payments, programme pricing and reports.' },
+  { path: '/trainer-panel', title: 'Trainer Panel', description: 'Private trainer workspace for combined class-session entry, attendance and syllabus progress.' },
   { path: '/student-panel', title: 'Student Panel', description: 'Your private learning plan, programme activity and payments workspace.' },
   { path: '/', title: 'Shadow Sphere — Learn. Build. Evolve.', description: 'Explore technical programmes, compare package fees and book counselling through email verification, session selection and a pre-session brief.' },
   { path: '/programmes', title: 'Programmes', description: 'Explore Python Full-Stack Software Engineering and all specialised engineering tracks.' },
