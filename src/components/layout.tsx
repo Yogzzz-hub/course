@@ -1,16 +1,18 @@
+import { Personalization } from './learning/Personalization';
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ArrowUp, ArrowUpRight, CalendarDays, X, Orbit } from 'lucide-react';
+import { ArrowUp, ArrowUpRight, CalendarDays, X } from 'lucide-react';
+import { LogoMark } from './LogoMark';
 import { academy } from '../config/academy';
 import { navigation } from '../data/routes';
 import { Button } from './ui';
 import { ReadingProgress } from './MotionSystem';
-import { ThemeSwitcher } from './ThemeSwitcher';
 import { PaletteMenu } from './PaletteMenu';
 import { Marquee } from './fx';
 
-export function Logo() { return <Link to="/" className="logo flex flex-row items-center flex-nowrap gap-2.5 shrink-0" aria-label={`${academy.name} home`}><span className="logo-mark"><Orbit size={35} aria-hidden="true" className="shrink-0 text-[var(--accent)]"/></span><span className="logo-wordmark flex flex-col justify-center leading-tight"><span className="logo-name whitespace-nowrap">{academy.name.replace(/\s+Technical Academy$/i, "")}</span><span className="logo-subtitle whitespace-nowrap">Technical Academy</span></span></Link>; }
+export { LogoMark };
+export function Logo() { return <Link to="/" className="logo flex flex-row items-center flex-nowrap gap-3 shrink-0" aria-label={`${academy.name} home`}><span className="logo-mark"><LogoMark size={34} aria-hidden="true" className="shrink-0"/></span><span className="logo-wordmark flex flex-col justify-center leading-tight"><span className="logo-name whitespace-nowrap">{academy.name.replace(/\s+Technical Academy$/i, "")}</span><span className="logo-subtitle whitespace-nowrap">Technical Academy</span></span></Link>; }
 
 const isCurrent = (to: string, pathname: string) => to === '/' ? pathname === '/' : pathname === to || pathname.startsWith(`${to}/`);
 
@@ -49,12 +51,12 @@ export function Header({ onBook }: { onBook?: () => void }) {
     ? <button type="button" onClick={onBook} className="button button-primary header-cta ss-header-cta" aria-label="Book a counselling call" data-magnetic><CalendarDays size={17} aria-hidden="true"/>Book a call</button>
     : <span className="header-cta-wrap" data-magnetic><Button to="/book-session" className="header-cta">Book a call</Button></span>;
   return <><a href="#main" className="skip-link">Skip to content</a><header className="site-header"><div className="container header-inner dock"><div className="dock-island dock-brand"><Logo/></div><DockNav/><div className="dock-island header-tools"><PaletteMenu/>{cta}<button ref={trigger} className="menu-trigger icon-button" aria-label="Open navigation" aria-expanded={open} aria-controls="mobile-navigation" onClick={() => setOpen(true)}><span className="menu-glyph" aria-hidden="true"><i/><i/></span></button></div></div><ReadingProgress/></header>
-  <dialog ref={dialog} id="mobile-navigation" className="mobile-drawer" aria-label="Navigation" onCancel={event => { event.preventDefault(); close(); }} onClick={event => { if (event.target === dialog.current) close(); }}><div className="drawer-inner"><div className="drawer-top"><Logo/><button className="icon-button" onClick={close} aria-label="Close navigation" autoFocus><X/></button></div><div className="drawer-theme"><ThemeSwitcher/></div><nav aria-label="Mobile navigation">{[...navigation, { to: '/career-support', label: 'Career support' }].map(n => <NavLink key={n.to} to={n.to} end={n.to === '/'} onClick={close}>{n.label}<ArrowUpRight/></NavLink>)}</nav><div onClick={close}><Button to="/book-session">Book a one-on-one call</Button></div><div className="drawer-legal"><Link to="/privacy-policy" onClick={close}>Privacy</Link><Link to="/terms-and-conditions" onClick={close}>Terms</Link></div><p className="muted">{academy.tagline}</p></div></dialog></>;
+  <dialog ref={dialog} id="mobile-navigation" className="mobile-drawer" aria-label="Navigation" onCancel={event => { event.preventDefault(); close(); }} onClick={event => { if (event.target === dialog.current) close(); }}><div className="drawer-inner"><div className="drawer-top"><Logo/><button className="icon-button" onClick={close} aria-label="Close navigation" autoFocus><X/></button></div><nav aria-label="Mobile navigation">{[...navigation, { to: '/career-support', label: 'Career support' }].map(n => <NavLink key={n.to} to={n.to} end={n.to === '/'} onClick={close}>{n.label}<ArrowUpRight/></NavLink>)}</nav><div onClick={close}><Button to="/book-session">Book a one-on-one call</Button></div><div className="drawer-legal"><Link to="/privacy-policy" onClick={close}>Privacy</Link><Link to="/terms-and-conditions" onClick={close}>Terms</Link></div><p className="muted">{academy.tagline}</p></div></dialog></>;
 }
 
 export function Footer() {
   const top = () => window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
-  return <footer className="site-footer stage">
+  return <><Personalization/><footer className="site-footer stage">
     <Marquee className="footer-marquee" speed={60} items={['Learn', 'Build', 'Evolve'].map(word => <span className="footer-marquee-word">{word}</span>)}/>
     <div className="container">
       <div className="footer-grid">
@@ -67,5 +69,5 @@ export function Footer() {
       <div className="footer-bottom"><span>© {new Date().getFullYear()} {academy.name}. {academy.brandApproved ? 'Learn. Build. Evolve.' : 'Brand identity pending approval.'}</span><div><Link to="/privacy-policy">Privacy policy</Link><Link to="/terms-and-conditions">Terms & conditions</Link></div></div>
       <p className="footer-disclaimer">Internships depend on eligibility, availability and confirmed package terms. Placement support does not guarantee employment.</p>
     </div>
-  </footer>;
+  </footer></>;
 }

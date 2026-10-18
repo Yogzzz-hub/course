@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { routes } from '../../src/data/routes';
 // Entrance fades are transient, so contrast is scanned once the page has hydrated (the reading bar gets its inline
 // transform) and no finite animation has run for a few consecutive samples, which also covers in-view reveals.
 const settled=async(page:Page)=>{await page.locator('.reading-progress[style]').waitFor({state:'attached'});let quiet=0;await expect.poll(async()=>{quiet=await page.evaluate(()=>document.getAnimations().some(animation=>animation.playState==='running'&&Number.isFinite(animation.effect?.getComputedTiming().endTime)))?0:quiet+1;return quiet;},{intervals:[200]}).toBeGreaterThan(2);};
@@ -37,7 +38,7 @@ for(const path of paths){test(`route, links and responsive layout: ${path}`,asyn
  for(const width of widths){await page.setViewportSize({width,height:900});await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);}
  const bad=await page.locator('a').evaluateAll(links=>links.filter(a=>!a.getAttribute('href')||a.getAttribute('href')==='#').map(a=>a.textContent));expect(bad).toEqual([]);
  const targets=await page.locator('a[href^="/"]').evaluateAll(links=>[...new Set(links.map(a=>new URL((a as HTMLAnchorElement).href).pathname))]);
- for(const target of targets)expect(paths).toContain(target);
+ for(const target of targets)expect(routes.map(route=>route.path)).toContain(target);
  expect(errors).toEqual([]);
 });}
 

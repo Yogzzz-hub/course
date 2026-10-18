@@ -21,8 +21,8 @@ import {
   PanelLeftClose,
   Sparkles,
   Users,
-  Orbit,
 } from "lucide-react";
+import { LogoMark } from "../LogoMark";
 import type { LucideIcon } from "lucide-react";
 import { StudentApiError, friendlyError } from "./api";
 import type { PaymentGateway, StudentApi, StudentSession } from "./contracts";
@@ -235,7 +235,7 @@ function Workspace({
       >
         <div className="flex h-20 shrink-0 items-center gap-3 border-b border-slate-100 px-5">
           <a href="/" className="logo flex flex-row items-center flex-nowrap gap-2.5 shrink-0" aria-label={`${academyName} home`}>
-            <Orbit size={32} aria-hidden="true" className="shrink-0 text-[var(--accent)]" />
+            <LogoMark size={32} className="shrink-0" />
             {!collapsed && (
               <span className="logo-wordmark flex flex-col justify-center leading-tight">
                 <span className="logo-name whitespace-nowrap">{academyName.replace(/\s+Technical Academy$/i, "")}</span>
@@ -309,7 +309,7 @@ function Workspace({
         <header className="flex min-h-20 items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 sm:px-8">
           <div className="flex min-w-0 items-center gap-3">
             <a href="/" className="logo lg:hidden" aria-label={`${academyName} home`}>
-              <Orbit size={28} aria-hidden="true" />
+              <LogoMark size={28} />
             </a>
             <div>
               <p className="text-sm font-semibold">

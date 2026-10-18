@@ -13,7 +13,7 @@ const views = [
 ] as const;
 
 /** Portable pricing module: routing and authenticated checkout belong to its host. */
-export function CourseFeesComparison({ catalogue = academyFeeCatalogue, initialView = 'packages', initialPackageId, onProceed, counsellingHref }: CourseFeesComparisonProps) {
+export function CourseFeesComparison({ catalogue = academyFeeCatalogue, initialView = 'packages', initialPackageId, onProceed, counsellingHref, onSelectionChange }: CourseFeesComparisonProps) {
   const id = useId();
   const [view, setView] = useState<FeeView>(initialView);
   const [selectedId, setSelectedId] = useState(initialPackageId ?? catalogue.packages[0]?.id ?? '');
@@ -50,7 +50,7 @@ export function CourseFeesComparison({ catalogue = academyFeeCatalogue, initialV
       <div id={`${id}-panel-individual`} role="tabpanel" aria-labelledby={`${id}-tab-individual`} tabIndex={0} hidden={view !== 'individual'}>{catalogue.courses.length ? <IndividualCourseTable catalogue={catalogue}/> : <Empty>Individual course fees have not been published yet.</Empty>}</div>
       <div id={`${id}-panel-packages`} role="tabpanel" aria-labelledby={`${id}-tab-packages`} tabIndex={0} hidden={view !== 'packages'}>
         {error && <div role="alert" className="mb-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"><AlertCircle size={18} className="shrink-0" aria-hidden="true"/>{error}</div>}
-        {catalogue.packages.length ? <MasterPackageCards catalogue={catalogue} selectedId={selected?.id ?? ''} radioName={`${id}-package`} busyId={busyId} onSelect={setSelectedId} onProceed={tier => void proceed(tier)} counsellingHref={counsellingHref}/> : <Empty>Master packages have not been published yet.</Empty>}
+        {catalogue.packages.length ? <MasterPackageCards catalogue={catalogue} selectedId={selected?.id ?? ''} radioName={`${id}-package`} busyId={busyId} onSelect={value=>{setSelectedId(value);onSelectionChange?.(value);}} onProceed={tier => void proceed(tier)} counsellingHref={counsellingHref}/> : <Empty>Master packages have not been published yet.</Empty>}
       </div>
       <div id={`${id}-panel-savings`} role="tabpanel" aria-labelledby={`${id}-tab-savings`} tabIndex={0} hidden={view !== 'savings'}>{catalogue.courses.length && catalogue.packages.length ? <SavingsMatrix catalogue={catalogue}/> : <Empty>Both individual fees and package prices are needed to compare savings.</Empty>}</div>
       <p className="mt-6 text-xs leading-6 text-slate-600">Prices are listed in Indian rupees. Master package scope may differ from purchasing every course separately. Confirm taxes, payment schedules and refund terms before payment. Internship descriptions depend on eligibility, availability and confirmed arrangements; placement support does not guarantee employment.</p>

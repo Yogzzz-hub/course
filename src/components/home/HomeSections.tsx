@@ -1,4 +1,4 @@
-import { useEffect, useRef, useSyncExternalStore, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useScroll, useSpring, useTransform, type MotionValue } from 'motion/react';
 import { ArrowDown, ArrowUpRight, Clock3, Database, MonitorSmartphone, Rocket, Server } from 'lucide-react';
@@ -22,6 +22,7 @@ function subscribeWide(update: () => void) {
 }
 
 export function HomeHero({ onBook }: { onBook: () => void }) {
+  const [activeAction, setActiveAction] = useState<'test' | 'book'>('test');
   const section = useRef<HTMLElement>(null);
   const { enabled } = useSiteMotion();
   const { scrollYProgress } = useScroll({ target: section, offset: ['start start', 'end start'] });
@@ -45,36 +46,91 @@ export function HomeHero({ onBook }: { onBook: () => void }) {
     observer.observe(node);
     return () => { observer.disconnect(); delete root.dataset.headerTone; };
   }, []);
-  return <section ref={section} aria-labelledby="ss-hero-title" className="home-hero eclipse-hero stage">
-    <div className="hero-sky" aria-hidden="true"/>
-    <motion.div className="eclipse-frame" style={enabled ? { y: visualY, scale: visualScale } : undefined} aria-hidden="true">
-      <EclipseRing half="back"/>
-      <Eclipse className="hero-eclipse" progress={reveal}/>
-      <EclipseRing half="front"/>
-    </motion.div>
-    <div className="container eclipse-layout">
-      <motion.div className="eclipse-copy" style={enabled && wide ? { y: copyY, opacity: fade } : undefined}>
-        <h1 id="ss-hero-title" tabIndex={-1} className="eclipse-title">
-          <span className="hero-line"><span style={{ '--line': 0 } as CSSProperties}>Build the skills.</span></span>
-          <span className="hero-line hero-line-lit"><span style={{ '--line': 1 } as CSSProperties}>Shape your next chapter.</span></span>
-        </h1>
-        <p className="eclipse-lede">Explore technical programmes with transparent fees and a clear learning path. Start with a conversation about where you are and where you want to go.</p>
-        <div className="eclipse-actions">
-          <Link to="/programmes" className="btn-glow" data-magnetic><span>Explore programmes</span><ArrowUpRight size={17} aria-hidden="true"/></Link>
-          <button type="button" onClick={onBook} className="btn-ghost ss-hero-cta" data-magnetic><span>Book counselling</span></button>
-        </div>
+  return <>
+    <section ref={section} aria-labelledby="ss-hero-title" className="home-hero eclipse-hero stage">
+      <div className="hero-sky" aria-hidden="true"/>
+      <motion.div className="eclipse-frame" style={enabled ? { y: visualY, scale: visualScale } : undefined} aria-hidden="true">
+        <EclipseRing half="back"/>
+        <Eclipse className="hero-eclipse" progress={reveal}/>
+        <EclipseRing half="front"/>
       </motion.div>
-      <div className="eclipse-foot">
-        <ol className="eclipse-path" aria-label="A connected learning path">
+      <div className="container eclipse-layout">
+        <motion.div className="eclipse-copy" style={enabled && wide ? { y: copyY, opacity: fade } : undefined}>
+          <h1 id="ss-hero-title" tabIndex={-1} className="eclipse-title">
+            <span className="hero-line"><span style={{ '--line': 0 } as CSSProperties}>Are You Ready for Your</span></span>
+            <span className="hero-line hero-line-lit"><span style={{ '--line': 1 } as CSSProperties}>Next Developer Interview?</span></span>
+          </h1>
+          <p className="eclipse-lede">Discover your skills, identify your gaps, and build your personalized career roadmap.</p>
+          <div
+            className="eclipse-actions hero-action-dock"
+            role="group"
+            aria-label="Programme actions"
+            onMouseLeave={() => setActiveAction('test')}
+          >
+            <Link
+              to="/developer-readiness-test"
+              aria-label="Take the Free Skill Test"
+              className={`btn-hero-action btn-glow ${activeAction === 'test' ? 'is-active' : ''}`}
+              onMouseEnter={() => setActiveAction('test')}
+              onFocus={() => setActiveAction('test')}
+              data-magnetic
+            >
+              {activeAction === 'test' && (
+                <motion.span
+                  layoutId="hero-action-lens"
+                  className="hero-action-lens"
+                  aria-hidden="true"
+                  transition={{ type: 'spring', stiffness: 480, damping: 36, mass: 0.65 }}
+                />
+              )}
+              <span className="hero-action-label">
+                <span className="label-desktop">Take the Free Skill Test</span>
+                <span className="label-mobile" aria-hidden="true">Free Skill Test</span>
+              </span>
+              <ArrowUpRight size={17} aria-hidden="true" className="hero-action-arrow" />
+            </Link>
+            <button
+              type="button"
+              onClick={onBook}
+              className={`btn-hero-action btn-ghost ss-hero-cta ${activeAction === 'book' ? 'is-active' : ''}`}
+              onMouseEnter={() => setActiveAction('book')}
+              onFocus={() => setActiveAction('book')}
+              data-magnetic
+            >
+              {activeAction === 'book' && (
+                <motion.span
+                  layoutId="hero-action-lens"
+                  className="hero-action-lens"
+                  aria-hidden="true"
+                  transition={{ type: 'spring', stiffness: 480, damping: 36, mass: 0.65 }}
+                />
+              )}
+              <span className="hero-action-label">Book counselling</span>
+            </button>
+          </div>
+        </motion.div>
+        <div className="eclipse-foot desktop-only-foot">
+          <ol className="eclipse-path" aria-label="A connected learning path">
+            {heroSteps.map((step, index) => <li key={step.title} style={{ '--i': index } as CSSProperties}>
+              <h2>{step.title}</h2>
+              <p>{step.text}</p>
+            </li>)}
+          </ol>
+          <a href="#home-stack" className="scroll-cue" aria-label="Scroll to the learning stack"><span className="scroll-cue-track"><span/></span><ArrowDown size={14} aria-hidden="true"/></a>
+        </div>
+      </div>
+    </section>
+    <section className="hero-steps-band stage mobile-only-foot" aria-label="A connected learning path">
+      <div className="container">
+        <ol className="eclipse-path">
           {heroSteps.map((step, index) => <li key={step.title} style={{ '--i': index } as CSSProperties}>
             <h2>{step.title}</h2>
             <p>{step.text}</p>
           </li>)}
         </ol>
-        <a href="#home-stack" className="scroll-cue" aria-label="Scroll to the learning stack"><span className="scroll-cue-track"><span/></span><ArrowDown size={14} aria-hidden="true"/></a>
       </div>
-    </div>
-  </section>;
+    </section>
+  </>;
 }
 
 export function TechMarquee() {

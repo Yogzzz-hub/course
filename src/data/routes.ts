@@ -1,4 +1,14 @@
 export const routes = [
+  { path:'/leaderboard',title:'Optional Learner Leaderboard',description:'Browse opted-in pseudonymous challenge results with transparent scoring, difficulty filters and weekly or monthly periods.' },
+  { path:'/shared-roadmap',title:'Shared Private Roadmap',description:'An explicitly shared, expiring learning roadmap. Access can be revoked by its owner.' },
+  { path: '/assessment', title: 'Your Private Skill Assessment', description: 'A private adaptive skill assessment with server-calculated results and a personal learning roadmap.' },
+  { path: '/developer-readiness-test', title: 'Free Developer Readiness Test', description: 'Discover your skills with ten adaptive questions across Python, SQL, JavaScript, APIs and debugging. Get honest explanations and next learning steps.' },
+  { path: '/python-aptitude-test', title: 'Python Aptitude and Reasoning Practice', description: 'Learn to trace Python values, reason about references and spot boundary cases before taking a broad developer skill check.' },
+  { path: '/backend-developer-roadmap', title: 'Backend Developer Learning Roadmap', description: 'A practical sequence from Python and SQL to reliable APIs, authorization, transactions and regression testing.' },
+  { path: '/full-stack-developer-roadmap', title: 'Full-Stack Developer Learning Roadmap', description: 'Connect accessible frontend interfaces to secure APIs and relational databases with a practical project-based learning sequence.' },
+  { path: '/python-interview-practice', title: 'Python Interview Practice', description: 'Practice predicting output, debugging mistakes and explaining changes to Python solutions without unverified hiring claims.' },
+  { path: '/python-coding-challenge', title: 'Python Coding Challenge Practice', description: 'Explore Python sequence, dictionary and algorithm exercises with examples, constraints and an accessible code editor.' },
+  { path: '/admin', title: 'Learning Platform Management', description: 'Private learning platform management and assessment quality reporting.' },
   { path: '/auth/sign-in', title: 'Student Sign-in', description: 'Student account access and authentication service information.' },
   { path: '/auth/admin/sign-in', title: 'Admin Sign-in', description: 'Secure administration account access and authentication service information.' },
   { path: '/admin-panel', title: 'Admin Panel', description: 'Private academy administration for leads, approvals, payments, programme pricing and reports.' },
@@ -27,6 +37,7 @@ export const routes = [
   { path: '/terms-and-conditions', title: 'Terms & Conditions — Review Draft', description: 'Review draft website terms and the enrolment, fee and internship conditions awaiting academy approval.' },
 ];
 export const navigation = [
+  { to: '/developer-readiness-test', label: 'Free skill test' },
   { to: '/', label: 'Home' },
   { to: '/programmes', label: 'Programmes' }, { to: '/learning-experience', label: 'Learning experience' },
   { to: '/about', label: 'About' }, { to: '/contact', label: 'Contact' },

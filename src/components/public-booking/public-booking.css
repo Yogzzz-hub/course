@@ -68,7 +68,7 @@
 .ss-public h1, .ss-public h2, .ss-public h3 {
   font-family: 'Space Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
 }
-.ss-public [id] { scroll-margin-top: 0; }
+.ss-public [id] { scroll-margin-top: 80px; }
 .ss-public .ss-kicker { color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: .14em; }
 .ss-public .ss-comparison th, .ss-public .ss-comparison td { padding: 16px 14px; border-bottom: 1px solid var(--border); text-align: left; }
 .ss-public .ss-comparison tbody tr:last-child th, .ss-public .ss-comparison tbody tr:last-child td { border-bottom: 0; }

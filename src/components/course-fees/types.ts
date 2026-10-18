@@ -36,5 +36,6 @@ export interface CourseFeesComparisonProps {
   readonly initialView?: FeeView;
   readonly initialPackageId?: string;
   readonly onProceed: (selection: PackageSelection) => void | Promise<void>;
+  readonly onSelectionChange?: (packageId: string) => void;
   readonly counsellingHref?: (packageId: string) => string;
 }

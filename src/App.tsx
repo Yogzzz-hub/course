@@ -5,6 +5,16 @@ import { Header, Footer } from './components/layout';
 import { MotionProvider, MotionDirector } from './components/MotionSystem';
 import { AmbientLayer, InteractionDirector } from './components/fx';
 const pageLoaders: Record<string, () => Promise<{ default: ComponentType }>> = {
+ '/assessment': () => import('./pages/Assessment'),
+ '/leaderboard': () => import('./pages/Leaderboard'),
+ '/shared-roadmap': () => import('./pages/SharedRoadmap'),
+ '/developer-readiness-test': () => import('./pages/LearningLanding'),
+ '/python-aptitude-test': () => import('./pages/LearningLanding'),
+ '/backend-developer-roadmap': () => import('./pages/LearningLanding'),
+ '/full-stack-developer-roadmap': () => import('./pages/LearningLanding'),
+ '/python-interview-practice': () => import('./pages/LearningLanding'),
+ '/python-coding-challenge': () => import('./pages/CodingArena'),
+ '/admin': () => import('./pages/LearningAdmin'),
  '/': () => import('./pages/Home'),
  '/programmes': () => import('./pages/Programmes'),
  '/programmes/python-full-stack': () => import('./pages/ProgrammeDetails'),
@@ -37,11 +47,14 @@ const pageComponents = Object.entries(pageLoaders).map(([path, loader]) => ({pat
 export async function loadInitialPage(path: string) { return (await (pageLoaders[path] || pageLoaders['*'])()).default; }
 import { academy } from './config/academy';
 import { routes } from './data/routes';
+import { isPrivatePath } from './utils/seo';
+import { trackLearningPage } from './components/learning/client';
 
 function RouteEffects() {
   const { pathname, hash } = useLocation();
   const firstRender = useRef(true);
   useEffect(() => {
+    if(!isPrivatePath(pathname))trackLearningPage(pathname);
     const route = routes.find(route=>route.path===pathname);
     const titleBrand = ['/', '/book-session', '/direct-booking'].includes(pathname) ? 'Technical Academy' : academy.name;
     document.title = `${route?.title || 'Page not found'} | ${titleBrand}`;
@@ -53,13 +66,19 @@ function RouteEffects() {
     };
     const description=route?.description || 'Find your way back to programme information and academy guidance.';
     meta('description',description);meta('og:title',document.title,true);meta('og:description',description,true);meta('og:type','website',true);
-    meta('robots',['/student-panel', '/admin-panel', '/auth/sign-in', '/auth/admin/sign-in'].includes(pathname) || !academy.siteUrl || !academy.legalApproved || !academy.brandApproved || !route || pathname.includes('policy') || pathname.includes('terms') ? 'noindex, nofollow' : 'index, follow');
+    meta('robots',isPrivatePath(pathname) || !academy.siteUrl || !academy.legalApproved || !academy.brandApproved || !route || pathname.includes('policy') || pathname.includes('terms') ? 'noindex, nofollow' : 'index, follow');
     let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
     if(academy.siteUrl && route){ if(!canonical){canonical=document.createElement('link');canonical.rel='canonical';document.head.append(canonical);} canonical.href=academy.siteUrl+pathname;meta('og:url',canonical.href,true); }else{canonical?.remove();}
     document.querySelector('#academy-structured-data')?.remove();
-    if (academy.siteUrl && academy.brandApproved && !['/student-panel', '/admin-panel', '/auth/sign-in', '/auth/admin/sign-in'].includes(pathname)) {const script=document.createElement('script');script.type='application/ld+json';script.id='academy-structured-data';script.textContent=JSON.stringify({'@context':'https://schema.org','@type':'WebPage',name:document.title,url:academy.siteUrl+pathname,description});document.head.append(script);}
+    if (academy.siteUrl && academy.brandApproved && route && !isPrivatePath(pathname)) {const script=document.createElement('script');script.type='application/ld+json';script.id='academy-structured-data';script.textContent=JSON.stringify({'@context':'https://schema.org','@type':'WebPage',name:document.title,url:academy.siteUrl+pathname,description});document.head.append(script);}
     if(hash){requestAnimationFrame(()=>document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView());}
-    else {window.scrollTo({top:0,behavior:'instant'});if (!firstRender.current) document.querySelector<HTMLElement>('h1')?.focus({preventScroll:true});}
+    else {
+      window.scrollTo({top:0,behavior:'instant'});
+      if (!firstRender.current) {
+        document.querySelector<HTMLElement>('h1')?.focus({preventScroll:true});
+        if (window.scrollY !== 0) window.scrollTo({top: 0, behavior: 'instant'});
+      }
+    }
     firstRender.current = false;
   },[pathname,hash]);
   return <MotionDirector/>;

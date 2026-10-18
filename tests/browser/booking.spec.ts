@@ -2,6 +2,8 @@ import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { bookingAbout, bookingProgramme } from '../booking-fixtures';
 import type { BookingSubmission } from '../../src/components/public-booking/types';
+// Flow tests do not measure animation; dedicated motion.spec.ts covers motion.
+test.use({ reducedMotion: 'reduce' });
 
 async function mockBookingApi(page: Page, options: { holdSeconds?: number; failConfirmation?: boolean; slotConflict?: boolean; empty?: boolean; slotsDelay?: number } = {}) {
   const startsAt = new Date(Date.now() + 48 * 3600000).toISOString();
@@ -62,7 +64,7 @@ async function fillBrief(page: Page) {
 test('homepage and counselling routes render the replacement experience with package deep links', async ({ page }) => {
   await mockBookingApi(page);
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Build the skills.Shape your next chapter.');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Are You Ready for Your\s*Next Developer Interview\?/);
   await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible();
   await page.goto('/book-session?package=premium');
   await expect(page.getByLabel('Package to discuss (optional)')).toHaveValue('premium');
@@ -156,7 +158,7 @@ test('new journey is accessible and reflows at phone and desktop widths through 
 test('prerendered homepage keeps its design and programme details without JavaScript', async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
   const page = await context.newPage(); await page.goto('http://127.0.0.1:4173/');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Build the skills.Shape your next chapter.');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Are You Ready for Your\s*Next Developer Interview\?/);
   await expect(page.getByText('Python Full-Stack Software Engineering', { exact: true }).first()).toBeVisible();
   await expect(page.getByRole('button', { name: 'Continue to verification' })).toBeDisabled();
   // The shared default Ice Blue palette is present even before JavaScript runs.

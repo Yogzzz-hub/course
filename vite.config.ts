@@ -13,9 +13,10 @@ export default defineConfig(({ mode }) => {
   const unavailableApi: Plugin = {
     name: 'local-api-unavailable',
     configureServer(server) {
-      if (target) return;
       server.middlewares.use((request, response, next) => {
         if (!request.url?.startsWith('/api/')) return next();
+        if (request.url.startsWith('/api/learning/')) return next();
+        if (target) return next();
         if (request.url?.startsWith('/api/booking/programmes')) {
           response.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
           response.end(JSON.stringify({ programmes: allBookingProgrammes }));
@@ -26,5 +27,5 @@ export default defineConfig(({ mode }) => {
       });
     },
   };
-  return { plugins: [react(), tailwindcss(), unavailableApi], build: { manifest: true }, server: { port: 5173, ...(target ? { proxy: { '/api': { target, changeOrigin: true } } } : {}) }, preview: { port: 4173 } };
+  return { plugins: [react(), tailwindcss(), unavailableApi], build: { manifest: true }, server: { port: 5173, proxy: { '/api/learning': { target: env.VITE_LEARNING_PROXY_TARGET || 'http://127.0.0.1:8787' }, ...(target ? { '/api': { target, changeOrigin: true } } : {}) } }, preview: { port: 4173 } };
 });

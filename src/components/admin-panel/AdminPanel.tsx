@@ -20,9 +20,9 @@ import {
   ShieldCheck,
   Wallet,
   X,
-  Orbit,
   type LucideIcon,
 } from "lucide-react";
+import { LogoMark } from "../LogoMark";
 import { AdminApiError, adminError } from "./api";
 import {
   secureLink,
@@ -441,7 +441,7 @@ function Workspace({ academyName }: { academyName: string }) {
       >
         <div className="flex min-h-20 shrink-0 items-center gap-3 border-b border-slate-100 p-5">
           <a href="/" className="logo flex flex-row items-center flex-nowrap gap-2.5 shrink-0" aria-label={`${academyName} home`}>
-            <Orbit size={32} aria-hidden="true" className="shrink-0 text-[var(--accent)]" />
+            <LogoMark size={32} className="shrink-0" />
             {!collapsed && (
               <span className="logo-wordmark flex flex-col justify-center leading-tight">
                 <span className="logo-name whitespace-nowrap">{academyName.replace(/\s+Technical Academy$/i, "")}</span>
@@ -486,7 +486,7 @@ function Workspace({ academyName }: { academyName: string }) {
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="flex flex-wrap items-center gap-3 px-4 py-3 sm:px-7">
             <a href="/" className="logo lg:hidden" aria-label={`${academyName} home`}>
-              <Orbit size={26} aria-hidden="true" />
+              <LogoMark size={26} />
             </a>
             <span className="text-sm font-bold lg:hidden">
               Shadow Sphere Admin

@@ -3,8 +3,10 @@ dist/
 .build/
 .env
 .env.local
+.env.*.local
 .dev.vars
 test-results/
 playwright-report/
 *.log
 .vercel
+test-results-learning/

@@ -461,11 +461,11 @@ test("hides private content immediately when two-factor verification expires", a
   await mockAdmin(page, {
     session: {
       ...adminSession,
-      twoFactorExpiresAt: new Date(Date.now() + 5000).toISOString(),
+      twoFactorExpiresAt: new Date(Date.now() + 30000).toISOString(),
     },
   });
   await open(page);
-  await page.clock.fastForward(6000);
+  await page.clock.fastForward(31000);
   await expect(
     page.getByRole("heading", { name: "Your verification has expired" }),
   ).toBeVisible();

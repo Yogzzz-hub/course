@@ -114,11 +114,13 @@ test('async checkout errors are recoverable and double clicks dispatch once', as
   const button = page.getByRole('button', { name: 'Select Elite package and proceed to checkout', exact: true });
   await button.evaluate(element => { (element as HTMLButtonElement).click(); (element as HTMLButtonElement).click(); });
   await expect(button).toBeDisabled();
+  await page.locator('#fee-test-root').dispatchEvent('finish-attempt');
   await expect(page.getByRole('alert')).toContainText('Please try again');
   await expect(page.locator('#fee-test-root')).toHaveAttribute('data-calls', '1');
   expect(JSON.parse((await page.locator('#fee-test-root').getAttribute('data-selection'))!)).toMatchObject({ packageId: 'elite', priceMinor: 9999900, savingsMinor: 5700100 });
   await button.click();
   await expect(page.locator('#fee-test-root')).toHaveAttribute('data-calls', '2');
+  await page.locator('#fee-test-root').dispatchEvent('finish-attempt');
   await expect(button).toBeEnabled();
   await expect(page.getByRole('alert')).toHaveCount(0);
 });

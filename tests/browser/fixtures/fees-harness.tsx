@@ -8,7 +8,7 @@ export function mount(target: HTMLElement) {
   createRoot(target).render(<main className="p-5"><h1>Course fee integration test</h1><CourseFeesComparison onProceed={async (selection: PackageSelection) => {
     target.dataset.calls = String(++calls);
     target.dataset.selection = JSON.stringify(selection);
-    await new Promise(resolve => setTimeout(resolve, 350));
+    await new Promise<void>(resolve => target.addEventListener('finish-attempt',()=>resolve(),{once:true}));
     if (calls === 1) throw new Error('Synthetic host failure');
   }}/></main>);
 }
