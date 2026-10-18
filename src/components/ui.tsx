@@ -26,7 +26,7 @@ export function FAQ({ compact = false }: { compact?: boolean }) {
   return <section className="section container faq-section"><SectionHeading title={<>Good questions.<br /><span className="muted">Straight answers.</span></>} /><div><Accordion items={compact ? faqs.slice(0, 4) : faqs} />{compact && <TextLink to="/contact#faqs">See all FAQs</TextLink>}</div></section>;
 }
 export function BookingCTA() { const ref = useMotionVisibility<HTMLDivElement>(); return <section className="container cta-wrap"><div className="booking-cta" ref={ref}><div className="cta-sphere" aria-hidden="true"><Eclipse live={false}/></div><div><h2><AnimatedText>Your next step starts<br />with a conversation.</AnimatedText></h2><p>Bring your questions. Let's talk about your goals,<br className="desktop-break" /> your starting point and the path ahead.</p></div><div><span data-magnetic className="inline-flex"><Button to="/book-session">Book a one-on-one call</Button></span><span className="cta-note">A conversation about your learning goals.</span></div></div></section>; }
-/** The shadow-sphere mark for light inner-page heroes: CSS only, with two annotations on its orbit. */
+/** The eclipse mark for light inner-page heroes: CSS only, with two annotations on its orbit. */
 export function PageEclipse({ labels = ['Learn', 'Build'] }: { labels?: [string, string] | string[] }) {
   return <div className="page-eclipse" data-tilt="10" aria-hidden="true"><EclipseRing half="back"/><Eclipse className="page-eclipse-mark" live={false}/><EclipseRing half="front"/><span className="page-eclipse-label page-eclipse-label-a">{labels[0]}</span><span className="page-eclipse-label page-eclipse-label-b">{labels[1]}</span></div>;
 }

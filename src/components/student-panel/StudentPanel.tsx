@@ -238,8 +238,8 @@ function Workspace({
             <LogoMark size={32} className="shrink-0" />
             {!collapsed && (
               <span className="logo-wordmark flex flex-col justify-center leading-tight">
-                <span className="logo-name whitespace-nowrap">{academyName.replace(/\s+Technical Academy$/i, "")}</span>
-                <span className="logo-subtitle whitespace-nowrap">Technical Academy</span>
+                <span className="logo-name whitespace-nowrap">{academyName.replace(/\s+(Technical\s+)?Academy$/i, "")}</span>
+                <span className="logo-subtitle whitespace-nowrap">Academy</span>
               </span>
             )}
           </a>
@@ -316,7 +316,7 @@ function Workspace({
                 {enrolled ? session.programme : "Your academy journey"}
               </p>
               <p className="mt-1 text-xs text-slate-500">
-                {academyName} · Technical Academy
+                {academyName.includes('Academy') ? academyName : `${academyName} Academy`}
               </p>
             </div>
           </div>
@@ -500,7 +500,7 @@ function SessionGate(
 export function StudentPanel({
   signInUrl = "/auth/sign-in?returnTo=%2Fstudent-panel",
   supportUrl = "/contact",
-  academyName = "Shadow Sphere",
+  academyName = "Aintrix Academy",
   ...props
 }: StudentPanelProps) {
   const [expired, setExpired] = useState(false);

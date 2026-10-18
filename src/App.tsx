@@ -56,7 +56,7 @@ function RouteEffects() {
   useEffect(() => {
     if(!isPrivatePath(pathname))trackLearningPage(pathname);
     const route = routes.find(route=>route.path===pathname);
-    const titleBrand = ['/', '/book-session', '/direct-booking'].includes(pathname) ? 'Technical Academy' : academy.name;
+    const titleBrand = academy.name;
     document.title = `${route?.title || 'Page not found'} | ${titleBrand}`;
     const meta = (name:string, value:string, property = false) => {
       const attr = property ? 'property' : 'name';

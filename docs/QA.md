@@ -1,6 +1,8 @@
-﻿# Executed QA and release status
+# Executed QA and release status
 
-Tested 12 October 2026, Windows, Node 24, installed Google Chrome. Current checks cover the Shadow Sphere v2 public website, booking journey, dual-mode Student Panel, Admin Panel and retained pages. Results describe the local production build, not a deployed service. The Lighthouse measurements and older design notes below are historical and predate v2.
+**Latest continuation: 18 October 2026.** See [continuation results](./CONTINUATION-2026-10-18.md) for the current learning-platform checks, challenge validation and infrastructure limitations. The 12 October results below are historical; their route counts and dependency findings do not describe the latest build.
+
+Tested 12 October 2026, Windows, Node 24, installed Google Chrome. These historical checks cover the Aintrix Academy v2 public website, booking journey, dual-mode Student Panel, Admin Panel and retained pages. Results describe the local production build, not a deployed service. The Lighthouse measurements and older design notes below are historical and predate v2.
 
 ## Final executed checks
 
@@ -25,7 +27,7 @@ Tested 12 October 2026, Windows, Node 24, installed Google Chrome. Current check
 
 The HTML Playwright report is `playwright-report/index.html`. Screenshots are under `test-results/screenshots/`; both directories are generated and ignored by Git.
 
-## Shadow Sphere v2 checks
+## Aintrix Academy v2 checks
 
 Admin Panel checks use synthetic fixtures and mocked services, with no live approvals, captures, refunds or website publishes. Runtime validation checks verified sessions, consistent prices, independent refund approval and safe links; monetary parsing and formatting preserve exact minor units up to the safe integer limit. Financial recovery persists only opaque request IDs and hashes; unresolved or `not_found` outcomes block new financial actions. The server must enforce MFA, current permissions, independent reviewers, durable idempotency and atomic record-version checks. Backend and worker integration remains outstanding; see [ADMIN-PANEL.md](ADMIN-PANEL.md).
 
@@ -92,7 +94,7 @@ The text/SVG follow-up adds real-text staggered heading reveals across pages, dr
 ## Implemented but awaiting external configuration
 
 - Cloudflare enquiry function with validation, origin check, bounded request body, honeypot, Turnstile server verification, best-effort KV rate limits, provider idempotency and success tied to email API acceptance.
-- Shadow Sphere direct booking UI with a configurable typed API: email OTP, session holds, pre-session brief, authoritative confirmation and ambiguous-outcome recovery. CMS, OTP delivery and booking endpoints are not connected; see DIRECT-BOOKING.md.
+- Aintrix Academy direct booking UI with a configurable typed API: email OTP, session holds, pre-session brief, authoritative confirmation and ambiguous-outcome recovery. CMS, OTP delivery and booking endpoints are not connected; see DIRECT-BOOKING.md.
 - Dual-mode Student Panel with a configurable authenticated API, hosted payment adapter and server-verified enrolment gate. Sign-in, private storage, student endpoints and provider webhooks are not connected; see STUDENT-PANEL.md.
 - Admin Panel with typed HTTP contracts, current permission/MFA gates, independent financial approvals, idempotent recovery, versioned pricing and rebuild hooks, audit and report exports. Auth-provider, admin services, payment processor, private proof storage and build/export workers are not connected; see ADMIN-PANEL.md.
 - Environment template, Cloudflare security headers, deployment instructions and indexing controls.

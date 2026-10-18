@@ -1,5 +1,7 @@
 # Learning platform delivery
 
+For the latest continuation, exact changed files and executed checks, see [18 October continuation](./CONTINUATION-2026-10-18.md).
+
 ## Implemented
 
 The existing React/Vite site, catalogue, four palettes and booking/student/admin interfaces are retained. The new backend is a separate Node/PostgreSQL service. It adds a ten-question adaptive assessment across eight skills with versioned questions, shuffled choices, server-only answer keys, transactional answer commits, exact grading and per-answer explanations. Results state their evidence limits rather than claiming a hiring percentile.

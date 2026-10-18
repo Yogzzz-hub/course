@@ -4,7 +4,7 @@ function approvedUrl(value: string | undefined, host?: string) {
   try { const url = new URL(value); return url.protocol === 'https:' && (!host || url.hostname === host) ? url.href.replace(/\/$/, '') : ''; } catch { return ''; }
 }
 export const academy = {
-  name: env.VITE_ACADEMY_NAME || 'Shadow Sphere Technical Academy',
+  name: env.VITE_ACADEMY_NAME || 'Aintrix Academy',
   brandApproved: env.VITE_BRAND_APPROVED === 'true',
   legalApproved: env.VITE_LEGAL_APPROVED === 'true',
   siteUrl: approvedUrl(env.VITE_SITE_URL),

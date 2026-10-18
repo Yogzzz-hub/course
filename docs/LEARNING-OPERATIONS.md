@@ -75,7 +75,7 @@ Verify filesystem isolation, escape resistance, fork/resource bombs, excessive o
 
 The adapter submits each case independently, parses JSON stdout and compares data structures; equivalent dictionary key order is accepted. Expected outputs stay on the grading service side of the application, not in submitted code. Candidate runtime/compile/resource failures are graded failures; service failures retry up to twice and then become `system-error`, without assigning a zero grade. Polling and HTTP requests have finite timeouts. Cancellation prevents further cases; an already submitted isolated case can run until its resource limit. Sample runs exclude hidden tests and ranking. Rejudges require the exact original code hash and retain the old result/reason.
 
-Scores are 60 sample correctness + 20 hidden cases + 20 deterministic understanding. Code quality is explicitly not scored. There are three reviewed exercise fixtures, not a comprehensive interview bank. No unsupported language, LLM grading, AI-authorship detection or supervised-exam claim is provided.
+Scores are 60 sample correctness + 20 hidden cases + 20 deterministic understanding. Code quality is explicitly not scored. There are seven versioned exercises, not a comprehensive interview bank: sum a sequence, normalized word counts, interval merging, sensor classification, validated division, deduplicated ledger events and balanced delimiters. Every exercise has public/hidden boundaries, one reference and two faulty implementations. No unsupported language, LLM grading, AI-authorship detection or supervised-exam claim is provided.
 
 ## Tests and retention
 
@@ -91,7 +91,20 @@ npm run test:learning:e2e
 npm audit
 ```
 
-The fixture runner executes only checked-in trusted reference/faulty solutions inside constrained Docker containers. Integration tests create and drop their own random schema; they require database permission to create that schema. The learning browser suite uses ports 5174/8788 and the configured local DB, creates temporary learning sessions, and expects disabled judging. Original browser tests use fixture-backed booking/student/admin APIs and do not prove live payment or identity integrations.
+The fixture runner defaults to checked-in trusted reference/faulty solutions inside constrained Docker containers and fails explicitly if Docker is missing. Developers who have reviewed those checked-in solutions can run `npm run test:challenge-fixtures -- --trusted-local` using Python on PATH. This explicit mode executes trusted repository fixtures only, provides no sandbox assurance, accepts no arbitrary source paths and is never called by the API or worker. There is no automatic fallback for candidate execution. Both modes compare outputs with the same type-sensitive JSON equality as the authoritative grader and reject oversized fixture output.
+
+Integration tests create and drop their own random schema; they require database permission to create that schema. The learning browser suite uses ports 5174/8788 and the configured local DB, creates temporary learning sessions, and expects disabled judging. Original browser tests use fixture-backed booking/student/admin APIs and do not prove live payment or identity integrations. Coding-arena UI contract tests likewise mock judging; the real learning browser suite verifies unavailable execution without inventing scores.
+
+### This Windows workspace
+
+On 18 October 2026, Docker was unavailable. A separate PostgreSQL 16 development cluster was initialized at `.local/postgres`, bound to `127.0.0.1:55432`, using the existing ignored `.env.learning.local` credentials. The pre-existing system PostgreSQL service on port 5432 was not modified. All seven migrations were applied to the project database. `.local/` is ignored and must never be published. To stop or restart this project cluster from the repository directory:
+
+```powershell
+& 'C:\Program Files\PostgreSQL\16\bin\pg_ctl.exe' -D "$PWD\.local\postgres" -m fast -w stop
+& 'C:\Program Files\PostgreSQL\16\bin\pg_ctl.exe' -D "$PWD\.local\postgres" -l "$PWD\.local\postgres.log" -o '-h 127.0.0.1 -p 55432' -w start
+```
+
+Do not start the Compose database on the same port while this cluster is running. The pinned Compose deployment remains PostgreSQL 17.6; local PostgreSQL 16 checks do not replace staging verification on the deployed version.
 
 Anonymous sessions expire after seven days, assessment/report access after 24 hours, optional events at most 30 days (usually sooner through session cascade), administrator sessions one hour, security audit records 180 days. Code is cleared on final grading/failure/cancellation or stale-job pruning. Persistent learner points/history last until account deletion. Reports require explicit sharing consent and expire or revoke. Leaderboards require a single-use invitation and separate public opt-in; accounts have no public email field. A public pseudonym is still personal data if the learner chooses an identifying name.
 

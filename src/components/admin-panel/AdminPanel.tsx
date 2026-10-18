@@ -444,8 +444,8 @@ function Workspace({ academyName }: { academyName: string }) {
             <LogoMark size={32} className="shrink-0" />
             {!collapsed && (
               <span className="logo-wordmark flex flex-col justify-center leading-tight">
-                <span className="logo-name whitespace-nowrap">{academyName.replace(/\s+Technical Academy$/i, "")}</span>
-                <span className="logo-subtitle whitespace-nowrap">Technical Academy</span>
+                <span className="logo-name whitespace-nowrap">{academyName.replace(/\s+(Technical\s+)?Academy$/i, "")}</span>
+                <span className="logo-subtitle whitespace-nowrap">Academy</span>
               </span>
             )}
           </a>
@@ -489,7 +489,7 @@ function Workspace({ academyName }: { academyName: string }) {
               <LogoMark size={26} />
             </a>
             <span className="text-sm font-bold lg:hidden">
-              Shadow Sphere Admin
+              {academyName} Admin
             </span>
             <SearchBox navigate={setSelected} />
             <PaletteMenu/>
@@ -696,7 +696,7 @@ function SessionGate({
 export function AdminPanel({
   api,
   signInUrl = "/auth/admin/sign-in?returnTo=%2Fadmin-panel",
-  academyName = "Shadow Sphere",
+  academyName = "Aintrix Academy",
 }: AdminPanelProps) {
   const [blocked, setBlocked] = useState(false);
   const [client] = useState(() => {

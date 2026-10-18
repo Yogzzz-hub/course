@@ -1,4 +1,4 @@
-# Shadow Sphere v2 Student Panel
+# Aintrix Academy v2 Student Panel
 
 The reusable `StudentPanel` component is integrated at `/student-panel`. It uses React, strict TypeScript, Tailwind, Lucide and TanStack Query v5. The HTTP adapter validates every response with Zod. No student records, enrolments, payments or uploads are simulated in the production visitor build. A development-only, explicitly selected local demo uses synthetic data in `src/dev/`; every mutation rejects locally and its gateway cannot open a payment page. It is excluded from production bundles. Test fixtures remain separate.
 
@@ -22,7 +22,7 @@ export function StudentWorkspace() {
       gateway={gateway}
       signInUrl="/auth/sign-in?returnTo=%2Fstudent-panel"
       supportUrl="/contact"
-      academyName="Shadow Sphere"
+      academyName="Aintrix Academy"
     />
   );
 }

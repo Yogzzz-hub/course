@@ -138,7 +138,7 @@ test('mobile drawer animates without losing focus containment', async ({ page })
 test('page navigation settles to fully visible content and shows the correct title', async ({ page }) => {
   await page.goto('/programmes');
   await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'About', exact: true }).click();
-  await expect(page).toHaveTitle('About the Academy | Shadow Sphere Technical Academy');
+  await expect(page).toHaveTitle('About the Academy | Aintrix Academy');
   await expect(page.locator('h1')).toBeVisible();
   await expect.poll(() => page.locator('main').evaluate(element => getComputedStyle(element).opacity)).toBe('1');
   await page.goBack();

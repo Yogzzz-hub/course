@@ -10,3 +10,4 @@ playwright-report/
 *.log
 .vercel
 test-results-learning/
+.local/

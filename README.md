@@ -1,4 +1,4 @@
-﻿# Shadow Sphere — Learn. Build. Evolve.
+# Aintrix Academy — Learn. Build. Evolve.
 
 A complete responsive informational academy website built with React, TypeScript, Vite, Tailwind CSS, React Router, Motion and Lucide. All public pages, Student Panel and Admin Panel share four selectable palettes: Burgundy with Ice Blue, Soft Copper, Dusty Lavender or Rose Blush. Use the palette button in any header; the selection persists across navigation, reloads and browser tabs. Manrope and Space Grotesk fonts are self-hosted.
 
@@ -6,7 +6,7 @@ The dual-mode Student Panel is available at `/student-panel`, using TanStack Que
 
 The Admin Panel at `/admin-panel` uses TanStack Table and Query for the leads pipeline, discount approvals, financial ledger, independent proof verification, refunds, versioned pricing, reports and audit trail. It requires server-confirmed two-factor access, checks current permissions on every render, and recovers unresolved financial requests using idempotency keys. See [Admin Panel integration and API contract](docs/ADMIN-PANEL.md); authentication and admin services must be connected for live use.
 
-The homepage and counselling page now use the Shadow Sphere v2 experience: programme comparison, fee calculation, validated personal details, email OTP, session holds and a pre-session brief. See [Direct booking and API contract](docs/DIRECT-BOOKING.md). Booking APIs must be connected before live OTP or booking is available; the existing enquiry API is separate.
+The homepage and counselling page now use the Aintrix Academy v2 experience: programme comparison, fee calculation, validated personal details, email OTP, session holds and a pre-session brief. See [Direct booking and API contract](docs/DIRECT-BOOKING.md). Booking APIs must be connected before live OTP or booking is available; the existing enquiry API is separate.
 
 The [course fees and master package module](docs/COURSE-FEES.md) at `/programmes/python-full-stack#pricing` provides tabs for all eleven individual fees, selectable Standard/Premium/Elite packages and the computed savings matrix. Package actions carry selection into authenticated Student Panel checkout; the server learning plan determines the final price.
 

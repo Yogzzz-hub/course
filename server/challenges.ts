@@ -1,3 +1,5 @@
+import { extendedChallenges } from './challenges-extended.ts';
+
 export interface Challenge {
   id:string; version:number; title:string; category:string; difficulty:string; statement:string; starter:string;
   samples:{input:unknown;output:unknown}[]; hidden:{input:unknown;output:unknown}[];
@@ -27,5 +29,6 @@ export const challenges:Challenge[]=[
     reference:'import json,sys\nout=[]\nfor start,end in sorted(json.load(sys.stdin)):\n    if out and start <= out[-1][1]:\n        out[-1][1]=max(out[-1][1],end)\n    else:\n        out.append([start,end])\nprint(json.dumps(out))',
     faulty:['import json,sys\nprint(json.dumps(sorted(json.load(sys.stdin))))','import json,sys\nout=[]\nfor s,e in sorted(json.load(sys.stdin)):\n if out and s < out[-1][1]: out[-1][1]=e\n else: out.append([s,e])\nprint(json.dumps(out))'],
     understanding:{prompt:'When [1, 9] is followed by [2, 3], why must the merged end use max(previous_end, end)?',options:['Otherwise the merged interval incorrectly shrinks','It makes the result unsorted','It removes all negative endpoints','It prevents JSON parsing errors'],answer:0,explanation:'The second interval is contained in the first. Replacing 9 with 3 would discard covered availability.'}},
+  ...extendedChallenges,
 ];
 export function publicChallenge(c:Challenge) {return {id:c.id,version:c.version,title:c.title,category:c.category,difficulty:c.difficulty,statement:c.statement,starter:c.starter,samples:c.samples};}

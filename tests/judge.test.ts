@@ -38,4 +38,12 @@ describe('Isolated execution adapter',()=>{
     await expect(judgeCode(c.reference,c,config,f,'submit',async()=>++checked>1)).rejects.toThrow('cancelled');
     expect(f).toHaveBeenCalledTimes(2);
   });
+  it.each(challenges.map(challenge=>[challenge.id,challenge] as const))('grades every public and hidden case for %s',async(_id,challenge)=>{
+    const cases=[...challenge.samples,...challenge.hidden];
+    const correct=await judgeCode('fixture response transport',challenge,config,fetcher(cases.map(test=>test.output)));
+    expect(correct.correctness+correct.edgeCases).toBe(80);
+    expect(correct.outcomes).toHaveLength(cases.length);
+    const wrong=await judgeCode('fixture response transport',challenge,config,fetcher(cases.map(()=>({unexpected:'wrong result'}))));
+    expect(wrong.correctness+wrong.edgeCases).toBe(0);
+  });
 });

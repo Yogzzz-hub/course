@@ -15,3 +15,7 @@ Add a separate Node API with PostgreSQL, parameterized SQL, migrations, opaque a
 5. SEO routes, accessibility, regression tests, dependency review and deployment documentation.
 
 Infrastructure gates: PostgreSQL must be reachable; candidate code must never execute in this API. A separate reviewed execution environment is required. Missing integrations must produce explicit unavailable states. This document is a plan, not a claim that every module is implemented or production verified.
+
+## Continuation — 18 October 2026
+
+Retain the implemented platform and existing integration boundaries. Expand the three-exercise Python bank with conditions, error handling, idempotent backend processing and stack-based algorithms. Add explicit boundary cases and multiple faulty implementations for each exercise. Repair challenge switching so an old submission cannot appear under a different problem, and preserve in-page drafts. Improve fixture-runner diagnostics without introducing an unsafe execution fallback. Run type/lint/unit/build/browser checks and distinguish unavailable PostgreSQL/Docker infrastructure from application failures in the delivery report.

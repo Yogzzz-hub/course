@@ -11,18 +11,19 @@ const enabled=Boolean(process.env.TEST_DATABASE_URL);
 describe.skipIf(!enabled)('Learning API against PostgreSQL',()=>{
   const schema='learning_test_'+randomUUID().replaceAll('-','');
   let root:pg.Pool,db:pg.Pool,app:ReturnType<typeof createApp>;
+  let schemaCreated=false;
   const origin='http://127.0.0.1:5173';
   type Session={cookie:string;csrf:string};
   async function call(path:string,method='GET',input?:unknown,s?:Session){return app(new Request(origin+'/api/learning'+path,{method,headers:{Origin:origin,'Content-Type':'application/json',Cookie:s?.cookie||'','X-CSRF-Token':s?.csrf||''},body:input===undefined?undefined:JSON.stringify(input)}),randomUUID());}
   async function session():Promise<Session>{const response=await call('/session');const data=await response.json();return {cookie:response.headers.get('set-cookie')!.split(';')[0],csrf:data.csrf};}
   beforeAll(async()=>{
-    root=new pg.Pool({connectionString:process.env.TEST_DATABASE_URL});await root.query(`CREATE SCHEMA ${schema}`);
+    root=new pg.Pool({connectionString:process.env.TEST_DATABASE_URL,connectionTimeoutMillis:5000});await root.query(`CREATE SCHEMA ${schema}`);schemaCreated=true;
     db=new pg.Pool({connectionString:process.env.TEST_DATABASE_URL,options:`-c search_path=${schema}`});
     for(const name of ['001_learning.sql','002_judging.sql','003_score_reviews.sql','004_roadmaps.sql','005_learners.sql','006_engagement.sql','007_judge_operations.sql'])await db.query(await readFile(new URL('../server/migrations/'+name,import.meta.url),'utf8'));
     for(const q of bank)await db.query("INSERT INTO learning_questions(id,version,content,status) VALUES($1,$2,$3,'published')",[q.id,q.version,JSON.stringify(q)]);
     app=createApp(db,origin,false);
   },30000);
-  afterAll(async()=>{await db?.end();if(root){await root.query(`DROP SCHEMA ${schema} CASCADE`);await root.end();}});
+  afterAll(async()=>{await db?.end();if(root){try{if(schemaCreated)await root.query(`DROP SCHEMA ${schema} CASCADE`);}finally{await root.end();}}});
   it('completes a real assessment, protects keys, recovers concurrent retries, and generates a roadmap',async()=>{
     const s=await session();let response=await call('/attempts','POST',{track:1},s);expect(response.status).toBe(201);let a=await response.json();const aid=a.id;
     for(let i=0;i<10;i++){
@@ -120,5 +121,36 @@ describe.skipIf(!enabled)('Learning API against PostgreSQL',()=>{
     await call('/preferences','POST',{analytics:true},s);
     const a=await (await call('/experiments','POST',{},s)).json();const b=await (await call('/experiments','POST',{},s)).json();expect(a).toEqual(b);expect(a.assignments).toHaveLength(1);
     await call('/preferences','POST',{analytics:false},s);expect((await (await call('/experiments','POST',{},s)).json()).assignments).toHaveLength(0);
+  });
+  it('exposes all challenge contracts without fixtures and preserves sample, cancellation and rejudge boundaries',async()=>{
+    const original=process.env.LEARNING_JUDGING_ENABLED;process.env.LEARNING_JUDGING_ENABLED='true';
+    try{
+      await db.query('INSERT INTO learning_worker_health(id,checked_at) VALUES(1,now()) ON CONFLICT(id) DO UPDATE SET checked_at=now()');
+      const list=await (await call('/challenges')).json();expect(list.challenges).toHaveLength(7);
+      for(const c of list.challenges){expect(c).not.toHaveProperty('hidden');expect(c).not.toHaveProperty('reference');expect(c).not.toHaveProperty('faulty');}
+      const s=await session(),other=await session();
+      const input={requestId:randomUUID(),challengeId:'safe-integer-division',version:1,code:'print([])',mode:'practice',assisted:false,purpose:'sample'};
+      const sample=await (await call('/submissions','POST',input,s)).json();expect(sample.purpose).toBe('sample');
+      expect((await call(`/submissions/${sample.id}/cancel`,'POST',{},other)).status).toBe(404);
+      expect((await call(`/submissions/${sample.id}/cancel`,'POST',{},s)).status).toBe(200);
+      const cancelled=(await db.query('SELECT state,code FROM learning_submissions WHERE id=$1',[sample.id])).rows[0];
+      expect(cancelled).toEqual({state:'cancelled',code:null});
+      expect((await call(`/submissions/${sample.id}/rejudge`,'POST',{code:input.code,reason:'Review this test fixture cancellation'},s)).status).toBe(409);
+      const full=await (await call('/submissions','POST',{...input,requestId:randomUUID(),purpose:'submit'},s)).json();
+      const result={correctness:60,edgeCases:20,outcomes:[],graderVersion:'test-worker'};
+      await db.query("UPDATE learning_submissions SET state='graded',code=NULL,result=$2 WHERE id=$1",[full.id,JSON.stringify(result)]);
+      await call(`/submissions/${full.id}/cancel`,'POST',{},s);
+      expect((await (await call(`/submissions/${full.id}`,'GET',undefined,s)).json()).state).toBe('graded');
+      expect((await call(`/submissions/${full.id}/rejudge`,'POST',{code:'print(42)',reason:'Changed source must be rejected here'},s)).status).toBe(409);
+      expect((await call(`/submissions/${full.id}/rejudge`,'POST',{code:input.code,reason:'Review the original boundary outputs'},s)).status).toBe(200);
+      expect((await db.query('SELECT previous_result FROM learning_rejudges WHERE submission_id=$1',[full.id])).rows[0].previous_result).toEqual(result);
+      const queued=(await db.query('SELECT challenge,state,result,code FROM learning_submissions WHERE id=$1',[full.id])).rows[0];
+      expect(queued.challenge.id).toBe(input.challengeId);expect(queued.challenge.version).toBe(1);expect(queued.state).toBe('queued');expect(queued.result).toBeNull();expect(queued.code).toBe(input.code);
+      await call(`/submissions/${full.id}/cancel`,'POST',{},s);
+      // A sample completion must not unlock the full submission's understanding score.
+      await db.query("UPDATE learning_submissions SET state='graded',result=$2 WHERE id=$1",[sample.id,JSON.stringify(result)]);
+      expect((await call(`/submissions/${sample.id}/understanding`,'POST',{option:0},s)).status).toBe(409);
+      expect((await (await call(`/submissions/${sample.id}`,'GET',undefined,s)).json()).followup).toBeNull();
+    }finally{if(original===undefined)delete process.env.LEARNING_JUDGING_ENABLED;else process.env.LEARNING_JUDGING_ENABLED=original;await db.query('DELETE FROM learning_worker_health');}
   });
 });

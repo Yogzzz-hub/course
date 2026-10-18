@@ -1,4 +1,4 @@
-# Shadow Sphere public website and direct booking
+# Aintrix Academy public website and direct booking
 
 The React entry point is `src/components/public-booking/PublicWebsite.tsx`. It replaces `/` and `/book-session`; `/direct-booking` is an alias. Other academy pages remain available. The counselling route opens at the booking section, and existing `?package=premium` links populate the package field after hydration.
 
@@ -12,7 +12,7 @@ import { PublicWebsite, createHttpBookingApi } from './components/public-booking
 const api = createHttpBookingApi('/api/booking');
 
 export default function Website() {
-  return <PublicWebsite api={api} academyName="Shadow Sphere" initialTimeZone="Asia/Kolkata" />;
+  return <PublicWebsite api={api} academyName="Aintrix Academy" initialTimeZone="Asia/Kolkata" />;
 }
 ```
 

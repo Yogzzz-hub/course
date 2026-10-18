@@ -7,6 +7,23 @@ import { isPrivatePath } from '../src/utils/seo';
 import { classifyAttribution,csvCell,leadPriority,orderedFunnel } from '../server/insights';
 import { challengePoints } from '../server/ranking';
 describe('Authoritative learning rules',()=>{
+  it('keeps challenge identities unique and requires boundary fixtures and understanding keys',()=>{
+    expect(challenges).toHaveLength(7);
+    expect(new Set(challenges.map(c=>c.id)).size).toBe(challenges.length);
+    expect(new Set(challenges.map(c=>c.difficulty))).toEqual(new Set(['beginner','intermediate','advanced']));
+    for(const c of challenges){
+      expect(c.version).toBeGreaterThan(0);
+      expect(c.samples.length).toBeGreaterThanOrEqual(2);
+      expect(c.hidden.length).toBeGreaterThanOrEqual(3);
+      expect(c.faulty.length).toBeGreaterThanOrEqual(2);
+      expect(c.understanding.options).toHaveLength(4);
+      expect(new Set(c.understanding.options).size).toBe(4);
+      expect(c.understanding.options[c.understanding.answer]).toBeTruthy();
+      expect(c.understanding.explanation.length).toBeGreaterThan(20);
+      // Cases must survive the JSON protocol without losing precision or values.
+      for(const test of [...c.samples,...c.hidden])expect(JSON.parse(JSON.stringify(test))).toEqual(test);
+    }
+  });
   it('validates the entire versioned bank and covers every skill at each difficulty',()=>{
     expect(bank).toHaveLength(24);expect(new Set(bank.map(q=>q.id)).size).toBe(24);
     for(const q of bank)expect(questionSchema.safeParse(q).success).toBe(true);

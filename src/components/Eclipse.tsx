@@ -117,7 +117,7 @@ export function EclipseRing({ half }: { half: 'back' | 'front' }) {
 }
 
 /**
- * The academy's shadow sphere: a total eclipse whose diamond-ring bead follows the pointer
+ * The academy's eclipse mark: a total eclipse whose diamond-ring bead follows the pointer
  * and opens into a crescent as the reader scrolls. Decorative; the CSS layers are the
  * server-rendered and fallback image, and WebGL only adds the moving corona on top.
  */

@@ -207,7 +207,7 @@ button.header-cta { display: none; }
 .stage { position: relative; isolation: isolate; color: var(--stage-text); background: var(--stage-deep); overflow: hidden; }
 .stage p { color: color-mix(in srgb, #fff 86%, var(--accent-soft)); }
 
-/* ---------- The eclipse: Shadow Sphere's mark ----------
+/* ---------- The eclipse: Aintrix Academy's mark ----------
    A moon that exactly covers the sun, so only the corona streams out. Every moving layer here
    animates transform or opacity, so the compositor carries it without repainting. */
 .eclipse { --flare: -0.72rad; --moon-x: -.9%; --moon-y: .8%; --reveal: 0; position: relative; aspect-ratio: 1; pointer-events: none; isolation: isolate; contain: layout; }
