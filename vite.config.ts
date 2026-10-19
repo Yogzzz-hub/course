@@ -22,6 +22,11 @@ export default defineConfig(({ mode }) => {
           response.end(JSON.stringify({ programmes: allBookingProgrammes }));
           return;
         }
+        if (request.url?.startsWith('/api/notify')) {
+          response.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+          response.end(JSON.stringify({ success: true, receiver: 'aintrixacademy2026@gmail.com', message: 'Notification received' }));
+          return;
+        }
         response.writeHead(503, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
         response.end(JSON.stringify({ available: false, message: 'No local API server is configured.' }));
       });

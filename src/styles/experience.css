@@ -710,6 +710,28 @@ button.header-cta { display: none; }
 .field input, .field select, .field textarea { border-radius: 12px; border-color: var(--border-strong); background: var(--surface); }
 .field input:focus, .field textarea:focus, .field select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-soft) 35%, transparent); }
 
+.contact-address-card { margin-top: 14px; padding: 16px 18px; border-radius: 16px; background: var(--surface); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px; }
+.contact-address-header { display: flex; align-items: flex-start; gap: 12px; }
+.contact-address-header svg { color: var(--accent); margin-top: 2px; }
+.contact-address-details strong { display: block; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 2px; }
+.contact-address-details address { font-size: 0.9rem; line-height: 1.5; color: var(--text); font-style: normal; }
+.contact-map-btn { display: inline-flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 600; color: var(--accent); padding: 8px 14px; border-radius: 10px; background: var(--surface-alt); width: fit-content; transition: all 0.2s ease; text-decoration: none; }
+.contact-map-btn:hover { background: var(--accent-soft); }
+.campus-map-section { padding-block: 40px 60px; }
+.map-embed-wrapper { margin-top: 24px; border-radius: 24px; overflow: hidden; border: 1px solid var(--border); background: var(--surface); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.15); }
+.map-embed-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 20px; border-bottom: 1px solid var(--border); background: var(--surface-alt); font-size: 0.85rem; flex-wrap: wrap; }
+.map-embed-title { display: flex; align-items: center; gap: 8px; color: var(--text); font-weight: 600; }
+.map-embed-title svg { color: var(--accent); }
+.map-open-link { display: inline-flex; align-items: center; gap: 6px; color: var(--accent); font-size: 0.82rem; font-weight: 600; text-decoration: none; }
+.map-open-link:hover { text-decoration: underline; }
+.map-frame-container { width: 100%; height: 420px; background: var(--bg); }
+.map-frame-container iframe { width: 100%; height: 100%; display: block; border: 0; }
+.footer-contact-block { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+.site-footer .footer-address { font-size: 0.85rem; line-height: 1.5; color: var(--stage-muted); display: flex; align-items: flex-start; gap: 8px; margin: 0; }
+.site-footer .footer-address svg { color: var(--stage-muted); margin-top: 3px; }
+.site-footer .footer-map-link { display: inline-flex; align-items: center; gap: 4px; font-size: 0.82rem; color: var(--stage-muted); text-decoration: underline; text-underline-offset: 3px; transition: color 0.2s ease; }
+.site-footer .footer-map-link:hover { color: #fff; }
+
 /* Accordion (FAQ + curriculum) */
 .accordion { display: grid; gap: 10px; }
 .accordion details { border: 0; border-radius: 18px; background: var(--surface); padding: 0 20px; transition: border-color .35s, box-shadow .4s, background .35s; }

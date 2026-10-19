@@ -4,6 +4,7 @@ import type { LearningPlan, StudentApi, StudentSession } from "./contracts";
 import { useLearningPlan, useSessions } from "./hooks";
 import { Button, Card, Empty, Eyebrow, QueryView, SecureLink } from "./ui";
 import { dateTime, money, nextStep, type PanelTab } from "./utils";
+import { ConsultationCard } from "./ConsultationEnquiryModal";
 
 export function NextStepCard({
   session,
@@ -57,6 +58,7 @@ export function ProspectHome({
   return (
     <div className="space-y-6">
       <NextStepCard session={session} navigate={navigate} />
+      <ConsultationCard session={session} />
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>
           <Sparkles
@@ -272,7 +274,9 @@ export function CounsellingSessions({
 }) {
   const query = useSessions(api, session);
   return (
-    <QueryView query={query}>
+    <div className="space-y-5">
+      <ConsultationCard session={session} />
+      <QueryView query={query}>
       {(sessions) =>
         sessions.length ? (
           <div className="space-y-4">
@@ -307,5 +311,6 @@ export function CounsellingSessions({
         )
       }
     </QueryView>
+    </div>
   );
 }

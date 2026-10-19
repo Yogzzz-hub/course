@@ -12,6 +12,7 @@ import {
   useRequestKey,
   useStudentActions,
 } from "./hooks";
+import { sendStudentNotification } from "../../utils/studentNotification";
 import {
   Button,
   Card,
@@ -215,6 +216,14 @@ function MentorshipContent({
                       requestId: requestKey.forPayload(target.id),
                     });
                     requestKey.reset();
+                    void sendStudentNotification({
+                      type: "consultation",
+                      studentName: session.name,
+                      studentEmail: session.email,
+                      topics: `Mentorship Session with ${target.mentor}`,
+                      preferredDate: dateTime(target.startsAt),
+                      message: `Booked mentorship session from ${timeLabel(target.startsAt, timeZone)} to ${timeLabel(target.endsAt, timeZone)} (Timezone: ${timeZone}).`,
+                    });
                     setSelectedId(null);
                     setConfirmed(true);
                     setUncertainSlot(null);

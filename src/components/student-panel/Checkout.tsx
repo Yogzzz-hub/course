@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { LockKeyhole } from "lucide-react";
+import { LockKeyhole, Mail } from "lucide-react";
 import {
   billingSchema,
   type Billing,
@@ -19,6 +19,7 @@ import {
   useStudentActions,
 } from "./hooks";
 import { FeeBreakdown } from "./Prospect";
+import { sendStudentNotification, RECEIVER_EMAIL } from "../../utils/studentNotification";
 import {
   Button,
   Card,
@@ -106,6 +107,16 @@ function CheckoutForm({
         requestId: requestKey.forPayload(JSON.stringify(input)),
       });
       requestKey.reset();
+      void sendStudentNotification({
+        type: "enrolment",
+        studentName: billing.name,
+        studentEmail: billing.email,
+        programme: plan.programme,
+        package: chosen.name,
+        amount: money(chosen.dueNowMinor, plan.currency),
+        orderId: order.id,
+        billingAddress: `${billing.address}, ${billing.city}, ${billing.postalCode}, ${billing.country}`,
+      });
       onOrder(order);
     } catch (error) {
       if (

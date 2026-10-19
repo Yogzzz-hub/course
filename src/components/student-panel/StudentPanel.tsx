@@ -32,6 +32,7 @@ import {
   LearningPlanView,
   CounsellingSessions,
 } from "./Prospect";
+import { ConsultationCard } from "./ConsultationEnquiryModal";
 import { EnrolledHome, ClassSchedule } from "./Enrolled";
 import { PaymentsView } from "./Checkout";
 import { AssignmentsView } from "./Assignments";
@@ -141,6 +142,9 @@ function MoreView({
         </p>
         <SecureLink href={supportUrl}>Contact academy support</SecureLink>
       </Card>
+      <div className="sm:col-span-2">
+        <ConsultationCard session={session} />
+      </div>
     </div>
   );
 }
