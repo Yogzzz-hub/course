@@ -14,7 +14,7 @@ export const academy = {
   calendlyUrl: approvedUrl(env.VITE_CALENDLY_URL, 'calendly.com'),
   tagline: 'LEARN. BUILD. EVOLVE.',
   address: '93/50, Ramakrishna mutt road, Mandaveli, Chennai - 600028',
-  googleMapsUrl: 'https://share.google/mU36GNGijDKeopwkV',
+  googleMapsUrl: env.VITE_GOOGLE_MAPS_URL || 'https://www.google.com/maps/search/?api=1&query=Ryzeworks,+93%2F50,+Ramakrishna+Mutt+Rd,+Mandaveli,+Chennai+-+600028',
   googleMapsEmbedUrl: 'https://maps.google.com/maps?q=93%2F50%2C+Ramakrishna+mutt+road%2C+Mandaveli%2C+chennai-600028&t=&z=16&ie=UTF8&iwloc=&output=embed',
   // Unknown business facts stay unknown. Populate only after academy approval.
   legalEntity: null, socialProfiles: [], deliveryMode: null,

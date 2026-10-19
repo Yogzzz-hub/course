@@ -45,40 +45,37 @@ export function buildMailtoUrl(payload: StudentNotificationPayload): string {
     ? `[Aintrix Academy] Enrolment Notification - ${payload.studentName} (${payload.programme})`
     : `[Aintrix Academy] Consultation Enquiry via Mail - ${payload.studentName}`;
 
-  let body = '';
-  if (isEnrolment) {
-    body = [
-      `AINTRIX ACADEMY - STUDENT ENROLMENT NOTIFICATION`,
-      `--------------------------------------------------`,
-      `Student Name: ${payload.studentName}`,
-      `Email Address: ${payload.studentEmail}`,
-      payload.phone ? `Phone: ${payload.phone}` : null,
-      `Programme: ${payload.programme}`,
-      `Selected Package: ${payload.package}`,
-      `Amount Paid / Due: ${payload.amount}`,
-      `Order Reference: ${payload.orderId}`,
-      `Billing Address: ${payload.billingAddress}`,
-      `Date & Time: ${payload.timestamp || new Date().toLocaleString()}`,
-      `--------------------------------------------------`,
-      `Sent to admissions receiver: ${RECEIVER_EMAIL}`,
-    ].filter(Boolean).join('\n');
-  } else {
-    body = [
-      `AINTRIX ACADEMY - CONSULTATION ENQUIRY`,
-      `--------------------------------------------------`,
-      `Student Name: ${payload.studentName}`,
-      `Student Email: ${payload.studentEmail}`,
-      payload.phone ? `Phone Number: ${payload.phone}` : null,
-      payload.programme ? `Programme of Interest: ${payload.programme}` : null,
-      payload.preferredDate ? `Preferred Date: ${payload.preferredDate}` : null,
-      payload.preferredTime ? `Preferred Time: ${payload.preferredTime}` : null,
-      payload.topics ? `Discussion Topic: ${payload.topics}` : null,
-      payload.message ? `Message / Questions:\n${payload.message}` : null,
-      `Date & Time: ${payload.timestamp || new Date().toLocaleString()}`,
-      `--------------------------------------------------`,
-      `Receiver Email: ${RECEIVER_EMAIL}`,
-    ].filter(Boolean).join('\n');
-  }
+  const body = isEnrolment
+    ? [
+        `AINTRIX ACADEMY - STUDENT ENROLMENT NOTIFICATION`,
+        `--------------------------------------------------`,
+        `Student Name: ${payload.studentName}`,
+        `Email Address: ${payload.studentEmail}`,
+        payload.phone ? `Phone: ${payload.phone}` : null,
+        `Programme: ${payload.programme}`,
+        `Selected Package: ${payload.package}`,
+        `Amount Paid / Due: ${payload.amount}`,
+        `Order Reference: ${payload.orderId}`,
+        `Billing Address: ${payload.billingAddress}`,
+        `Date & Time: ${payload.timestamp || new Date().toLocaleString()}`,
+        `--------------------------------------------------`,
+        `Sent to admissions receiver: ${RECEIVER_EMAIL}`,
+      ].filter(Boolean).join('\n')
+    : [
+        `AINTRIX ACADEMY - CONSULTATION ENQUIRY`,
+        `--------------------------------------------------`,
+        `Student Name: ${payload.studentName}`,
+        `Student Email: ${payload.studentEmail}`,
+        payload.phone ? `Phone Number: ${payload.phone}` : null,
+        payload.programme ? `Programme of Interest: ${payload.programme}` : null,
+        payload.preferredDate ? `Preferred Date: ${payload.preferredDate}` : null,
+        payload.preferredTime ? `Preferred Time: ${payload.preferredTime}` : null,
+        payload.topics ? `Discussion Topic: ${payload.topics}` : null,
+        payload.message ? `Message / Questions:\n${payload.message}` : null,
+        `Date & Time: ${payload.timestamp || new Date().toLocaleString()}`,
+        `--------------------------------------------------`,
+        `Receiver Email: ${RECEIVER_EMAIL}`,
+      ].filter(Boolean).join('\n');
 
   return `mailto:${RECEIVER_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }

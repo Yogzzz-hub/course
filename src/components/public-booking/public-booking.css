@@ -1,5 +1,5 @@
 /* Unlayered legacy element styles must not override Tailwind in this standalone view. */
-.ss-public :where(h1, h2, h3, h4, p, fieldset, legend, table, th, td, button, input, select, textarea, a, svg) {
+.ss-public :where(h1, h2, h3, h4, p, fieldset, legend, table, th, td, button, input, select:not(.animated-select-native-sync), textarea, a, svg) {
   all: revert-layer;
 }
 

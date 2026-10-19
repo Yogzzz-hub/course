@@ -9,7 +9,7 @@ export async function migrate() {
     await client.query('SELECT pg_advisory_xact_lock(81244301)');
     await client.query('CREATE TABLE IF NOT EXISTS platform_migrations (version integer PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())');
     const applied=new Set((await client.query('SELECT version FROM platform_migrations')).rows.map(row=>row.version as number));
-    const migrations=['001_learning.sql','002_judging.sql','003_score_reviews.sql','004_roadmaps.sql','005_learners.sql','006_engagement.sql','007_judge_operations.sql'];
+    const migrations=['001_learning.sql','002_judging.sql','003_score_reviews.sql','004_roadmaps.sql','005_learners.sql','006_engagement.sql','007_judge_operations.sql','008_supabase_and_enquiries.sql'];
     for(const name of migrations){
       if(!applied.has(Number(name.slice(0,3))))await client.query(await readFile(new URL('./migrations/'+name,import.meta.url),'utf8'));
     }

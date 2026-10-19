@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   RECEIVER_EMAIL,
   buildMailtoUrl,
@@ -16,7 +16,8 @@ describe('Student and Consultation Notification Configuration', () => {
 
   it('has official academy address and Google Maps links configured', () => {
     expect(academy.address).toBe('93/50, Ramakrishna mutt road, Mandaveli, Chennai - 600028');
-    expect(academy.googleMapsUrl).toBe('https://share.google/mU36GNGijDKeopwkV');
+    expect(academy.googleMapsUrl).toContain('google.com/maps');
+    expect(academy.googleMapsUrl).toContain('Ryzeworks');
     expect(academy.googleMapsEmbedUrl).toContain('Mandaveli');
   });
 

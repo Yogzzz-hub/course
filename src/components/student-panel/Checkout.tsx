@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { LockKeyhole, Mail } from "lucide-react";
+import { LockKeyhole } from "lucide-react";
 import {
   billingSchema,
   type Billing,
@@ -19,7 +19,7 @@ import {
   useStudentActions,
 } from "./hooks";
 import { FeeBreakdown } from "./Prospect";
-import { sendStudentNotification, RECEIVER_EMAIL } from "../../utils/studentNotification";
+import { sendStudentNotification } from "../../utils/studentNotification";
 import {
   Button,
   Card,

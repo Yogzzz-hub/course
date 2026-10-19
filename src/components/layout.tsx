@@ -2,7 +2,7 @@ import { Personalization } from './learning/Personalization';
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ArrowUp, ArrowUpRight, CalendarDays, MapPin, X } from 'lucide-react';
+import { ArrowUp, ArrowUpRight, CalendarDays, Mail, MapPin, Phone, X } from 'lucide-react';
 import { LogoMark } from './LogoMark';
 import { academy } from '../config/academy';
 import { navigation } from '../data/routes';
@@ -61,8 +61,52 @@ export function Footer() {
     <div className="container">
       <div className="footer-grid">
         <div className="footer-brand"><Logo/><p>Turn understanding into ability.<br/>And ambition into your next chapter.</p></div>
-        <div><h2>Explore</h2><Link to="/programmes">Programmes</Link><Link to="/learning-experience">Learning experience</Link><Link to="/career-support">Career support</Link><Link to="/about">About the academy</Link></div>
-        <div><h2>Take the next step</h2><Link to="/book-session">Book a counselling call</Link><Link to="/contact">Contact & FAQs</Link><Link to="/programmes">Programme fees & catalogue</Link>{academy.email && <a href={`mailto:${academy.email}`}>{academy.email}</a>}{academy.phone && <a href={`tel:${academy.phone}`}>{academy.phone}</a>}{academy.address && <div className="footer-contact-block"><p className="footer-address"><MapPin size={14} aria-hidden="true" className="shrink-0"/><span>{academy.address}</span></p>{academy.googleMapsUrl && <a href={academy.googleMapsUrl} target="_blank" rel="noopener noreferrer" className="footer-map-link" aria-label="View Aintrix Academy on Google Maps">View on Google Maps <ArrowUpRight size={13} aria-hidden="true"/></a>}</div>}</div>
+        <div className="footer-col">
+          <h2>Explore</h2>
+          <Link to="/programmes">Programmes</Link>
+          <Link to="/learning-experience">Learning experience</Link>
+          <Link to="/career-support">Career support</Link>
+          <Link to="/about">About the academy</Link>
+        </div>
+        <div className="footer-col footer-col-action">
+          <h2>Take the next step</h2>
+          <div className="footer-links-group">
+            <Link to="/book-session">Book a counselling call</Link>
+            <Link to="/contact">Contact & FAQs</Link>
+            <Link to="/programmes">Programme fees & catalogue</Link>
+          </div>
+          {(academy.email || academy.phone || academy.address) && (
+            <div className="footer-contact-block">
+              {academy.email && (
+                <a href={`mailto:${academy.email}`} className="footer-contact-item footer-email-link" aria-label={`Email ${academy.email}`}>
+                  <Mail size={14} aria-hidden="true" className="shrink-0"/>
+                  <span>{academy.email}</span>
+                </a>
+              )}
+              {academy.phone && (
+                <a href={`tel:${academy.phone}`} className="footer-contact-item footer-phone-link" aria-label={`Call ${academy.phone}`}>
+                  <Phone size={14} aria-hidden="true" className="shrink-0"/>
+                  <span>{academy.phone}</span>
+                </a>
+              )}
+              {academy.address && (
+                <div className="footer-address-item">
+                  <div className="footer-address-row">
+                    <MapPin size={14} aria-hidden="true" className="shrink-0"/>
+                    <div className="footer-address-details">
+                      <span className="footer-address-text">{academy.address}</span>
+                      {academy.googleMapsUrl && (
+                        <a href={academy.googleMapsUrl} target="_blank" rel="noopener noreferrer" className="footer-map-link" aria-label="View Aintrix Academy on Google Maps">
+                          View on Google Maps <ArrowUpRight size={13} aria-hidden="true"/>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
         <button className="back-top" onClick={top} aria-label="Back to top" data-magnetic><ArrowUp size={20}/></button>
       </div>
       <div className="footer-wordmark" aria-hidden="true">{academy.name}</div>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, Send, CheckCircle2, ArrowUpRight, X, Calendar, Clock, MessageSquare } from 'lucide-react';
+import { Mail, Send, CheckCircle2, ArrowUpRight, X } from 'lucide-react';
 import type { StudentSession } from './contracts';
 import { sendStudentNotification, buildMailtoUrl, RECEIVER_EMAIL } from '../../utils/studentNotification';
 import { Button, Card, Notice } from './ui';

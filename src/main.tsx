@@ -6,9 +6,10 @@ import './styles/global.css';
 import './styles/animations.css';
 import './styles/experience.css';
 import './styles/portal.css';
-// Keep discovery layouts available before lazy route hydration and navigation.
+// Keep discovery layouts and animated selects available before lazy route hydration and navigation.
 import './components/learning/learning.css';
 import './components/learning/assessment.css';
+import './components/public-booking/animated-select.css';
 import App, { loadInitialPage } from './App';
 if (window.location.pathname.length > 1 && window.location.pathname.endsWith('/')) {
   window.history.replaceState(null, '', window.location.pathname.replace(/\/+$/, '') + window.location.search + window.location.hash);

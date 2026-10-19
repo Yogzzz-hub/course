@@ -188,6 +188,22 @@ export function AnimatedSelect({
         aria-invalid={ariaInvalid || !!error}
         aria-label={ariaLabel}
         className="animated-select-native-sync"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          opacity: 0.0001,
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          zIndex: 10,
+          border: 0,
+          padding: 0,
+          margin: 0,
+          appearance: 'none',
+          WebkitAppearance: 'none',
+          background: 'transparent',
+          color: 'transparent',
+        }}
         onChange={handleNativeChange}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}

@@ -33,7 +33,7 @@ try {
   try {
     await db.query('SELECT 1 FROM learning_questions LIMIT 1');
     const versions = await db.query('SELECT version FROM platform_migrations ORDER BY version');
-    if (![1, 2, 3, 4, 5, 6, 7].every(v => versions.rows.some(row => row.version === v)))
+    if (![1, 2, 3, 4, 5, 6, 7, 8].every(v => versions.rows.some(row => row.version === v)))
       throw new Error('migrations');
   } catch {
     throw new Error('The learning database is unreachable or needs migrations. Start PostgreSQL, then run npm run db:migrate. See docs/LEARNING-OPERATIONS.md.');

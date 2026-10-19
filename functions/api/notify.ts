@@ -9,6 +9,7 @@ export interface NotifyEnv {
   ENQUIRY_TO?: string;
   RECEIVER_EMAIL?: string;
   ENQUIRY_LIMITS?: KV;
+  onPersist?: (body: Record<string, unknown>) => Promise<void>;
 }
 
 const DEFAULT_RECEIVER = 'aintrixacademy2026@gmail.com';
@@ -54,7 +55,7 @@ export async function onRequest({ request, env }: { request: Request; env: Notif
     ? `[Aintrix Academy] Enrolment Confirmed: ${studentName} - ${body.programme || 'Course'}`
     : `[Aintrix Academy] Consultation Enquiry via Mail: ${studentName}`;
 
-  let text = '';
+  let text: string;
   if (type === 'enrolment') {
     text = `AINTRIX ACADEMY - STUDENT ENROLMENT NOTIFICATION\n` +
       `--------------------------------------------------\n` +
@@ -104,6 +105,7 @@ export async function onRequest({ request, env }: { request: Request; env: Notif
 
       if (delivery.ok) {
         const resJson = await delivery.json() as { id?: string };
+        try { await env.onPersist?.(body); } catch { /* non-blocking */ }
         return json({ success: true, delivered: true, id: resJson.id, receiver });
       }
     } catch {
@@ -112,6 +114,7 @@ export async function onRequest({ request, env }: { request: Request; env: Notif
   }
 
   // When no API key is set or in dev, successfully acknowledge delivery
+  try { await env.onPersist?.(body); } catch { /* non-blocking */ }
   return json({
     success: true,
     delivered: false,

@@ -5,6 +5,7 @@ export interface Env {
   RESEND_API_KEY:string; ENQUIRY_FROM:string; ENQUIRY_TO:string; TURNSTILE_SECRET_KEY:string;
   TURNSTILE_SITE_KEY:string; ALLOWED_ORIGIN:string; RATE_LIMIT_SALT:string; LEGAL_APPROVED:string;
   ENQUIRY_LIMITS:KV;
+  onPersist?:(enquiry:Enquiry)=>Promise<void>;
 }
 type Context={request:Request;env:Env};
 function json(body:unknown,status=200){return new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'}});}
@@ -54,6 +55,7 @@ export async function onRequest({request,env}:Context):Promise<Response>{
     const receipt=await delivery.json() as {id?:string};
     if(!receipt.id)return json({message:'Delivery could not be verified. Please retry.'},502);
     await env.ENQUIRY_LIMITS.put(key,fingerprint,{expirationTtl:86400});
+    try { await env.onPersist?.(data); } catch { /* non-blocking */ }
     return json({success:true});
   } catch {return json({message:'The enquiry service is temporarily unavailable. Please try again.'},502);}
 }
