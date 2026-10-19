@@ -3,6 +3,9 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
 export const inputClass = 'ss-input w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100';
 
+export { AnimatedSelect } from './AnimatedSelect';
+export type { SelectOption } from './AnimatedSelect';
+
 export function Field({ name, label, error, hint, children }: { name: string; label: string; error?: string; hint?: string; children: ReactNode }) {
   return <div className="space-y-2"><label htmlFor={`booking-${name}`} className="block text-sm font-semibold text-slate-800">{label}</label>{children}{hint && <span id={`booking-${name}-hint`} className="block text-xs leading-relaxed text-slate-600">{hint}</span>}{error && <span id={`booking-${name}-error`} className="block text-sm text-red-700">{error}</span>}</div>;
 }

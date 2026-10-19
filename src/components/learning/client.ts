@@ -16,9 +16,12 @@ export function trackLearningPage(path:string){
 }
 export function setAdminCsrf(value:string){adminCsrf=value;}
 export async function learningApi<T>(path:string, input?:unknown, method=input===undefined?'GET':'POST'):Promise<T> {
-  const response=await fetch(`/api/learning${path}`,{method,credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(20000),headers:{Accept:'application/json',...(input===undefined?{}:{'Content-Type':'application/json'}),'X-CSRF-Token':path.startsWith('/admin')?adminCsrf:csrf},body:input===undefined?undefined:JSON.stringify(input)});
+  let response:Response;
+  try{response=await fetch(`/api/learning${path}`,{method,credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(20000),headers:{Accept:'application/json',...(input===undefined?{}:{'Content-Type':'application/json'}),'X-CSRF-Token':path.startsWith('/admin')?adminCsrf:csrf},body:input===undefined?undefined:JSON.stringify(input)});}
+  catch{throw new Error('The learning service could not be reached. Check your connection and retry. If you just submitted an answer, it may already be saved.');}
   let data:unknown;
-  try{data=await response.json();}catch{throw new Error('The learning API is not connected. Please try again later.');}
+  try{data=await response.json();}catch{throw new Error('The learning service is unavailable. Please retry shortly.');}
+  if(typeof data!=='object'||data===null)throw new Error('The learning service returned an invalid response. Please retry shortly.');
   if(!response.ok) throw new Error(typeof data==='object' && data && 'message' in data && typeof data.message==='string' ? data.message : 'The learning service could not complete the request.');
   return data as T;
 }

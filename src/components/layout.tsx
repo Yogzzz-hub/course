@@ -65,7 +65,7 @@ export function Footer() {
         <div><h2>Take the next step</h2><Link to="/book-session">Book a counselling call</Link><Link to="/contact">Contact & FAQs</Link><Link to="/programmes">Programme fees & catalogue</Link>{academy.email && <a href={`mailto:${academy.email}`}>{academy.email}</a>}{academy.phone && <a href={`tel:${academy.phone}`}>{academy.phone}</a>}</div>
         <button className="back-top" onClick={top} aria-label="Back to top" data-magnetic><ArrowUp size={20}/></button>
       </div>
-      <div className="footer-wordmark" aria-hidden="true">{academy.name.replace(/\s+(Technical\s+)?Academy$/i, '')}</div>
+      <div className="footer-wordmark" aria-hidden="true">{academy.name}</div>
       <div className="footer-bottom"><span>© {new Date().getFullYear()} {academy.name}. {academy.brandApproved ? 'Learn. Build. Evolve.' : 'Brand identity pending approval.'}</span><div><Link to="/privacy-policy">Privacy policy</Link><Link to="/terms-and-conditions">Terms & conditions</Link></div></div>
       <p className="footer-disclaimer">Internships depend on eligibility, availability and confirmed package terms. Placement support does not guarantee employment.</p>
     </div>

@@ -15,12 +15,14 @@ Edit the ignored `.env.learning.local`: put that password in `DATABASE_URL` (URL
 
 ```powershell
 npm run db:migrate
-npm run api:dev
-# In another terminal:
-npm run dev
+npm run dev:learning
 ```
 
 Open http://127.0.0.1:5173. Vite reads the learning proxy target from `.env.learning.local`. `npm run preview` serves static HTML only; it does not start APIs.
+
+The combined command checks PostgreSQL and all seven migrations before starting the API, waits for a healthy API response, then starts Vite on the exact `APP_ORIGIN` port. Ctrl+C stops both Node services. It does not start, create, migrate or stop your database. Separate `npm run api:dev` and `npm run dev` terminals remain supported. For assessment connection errors, verify `/api/learning/health` returns `status: ok`.
+
+Challenge authors can set `rubric: {sampleCorrectness, edgeCases, understanding}` on a new challenge version. Weights must be nonnegative integers totaling 100. Omitted weights preserve the existing 60/20/20 rubric. Grader 1.1.0, result displays and leaderboard points use the stored challenge snapshot. Change the challenge version when changing a published rubric; never retroactively edit an existing version. Code quality remains unscored.
 
 Provision an administrator from a trusted operator terminal:
 

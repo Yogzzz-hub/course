@@ -788,7 +788,7 @@ button.header-cta { display: none; }
 .site-footer .logo svg { color: var(--accent-soft) !important; }
 .site-footer .footer-bottom { border-color: transparent; }
 .site-footer .back-top { border-color: var(--stage-line); color: #fff; background: rgb(255 255 255 / .06); }
-.footer-wordmark { margin-top: 40px; font-family: var(--font-display); font-weight: 600; font-size: clamp(3rem, 12.4vw, 12.5rem); line-height: .82; padding-bottom: .04em; letter-spacing: -.07em; text-align: center; white-space: nowrap; color: var(--accent); user-select: none; }
+.footer-wordmark { margin-top: 40px; font-family: var(--font-display); font-weight: 600; font-size: clamp(2.2rem, 7.6vw, 8.2rem); line-height: .88; padding-bottom: .04em; letter-spacing: -.05em; text-align: center; white-space: nowrap; color: var(--accent); user-select: none; }
 
 /* ---------- Mobile drawer ---------- */
 /* ---------- Mobile menu: a full-screen night sky with large numbered links ---------- */

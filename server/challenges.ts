@@ -1,10 +1,13 @@
 import { extendedChallenges } from './challenges-extended.ts';
+import { challengeRubric, type Rubric } from './rubric.ts';
+import type { UnderstandingQuestion } from './understanding.ts';
 
 export interface Challenge {
+  rubric?:Rubric;
   id:string; version:number; title:string; category:string; difficulty:string; statement:string; starter:string;
   samples:{input:unknown;output:unknown}[]; hidden:{input:unknown;output:unknown}[];
   reference:string; faulty:string[];
-  understanding:{prompt:string;options:string[];answer:number;explanation:string};
+  understanding:UnderstandingQuestion;
 }
 export const challenges:Challenge[]=[
   {id:'sum-values',version:1,title:'Sum a sequence',category:'Arrays, loops and functions',difficulty:'beginner',
@@ -31,4 +34,4 @@ export const challenges:Challenge[]=[
     understanding:{prompt:'When [1, 9] is followed by [2, 3], why must the merged end use max(previous_end, end)?',options:['Otherwise the merged interval incorrectly shrinks','It makes the result unsorted','It removes all negative endpoints','It prevents JSON parsing errors'],answer:0,explanation:'The second interval is contained in the first. Replacing 9 with 3 would discard covered availability.'}},
   ...extendedChallenges,
 ];
-export function publicChallenge(c:Challenge) {return {id:c.id,version:c.version,title:c.title,category:c.category,difficulty:c.difficulty,statement:c.statement,starter:c.starter,samples:c.samples};}
+export function publicChallenge(c:Challenge) {return {id:c.id,version:c.version,title:c.title,category:c.category,difficulty:c.difficulty,statement:c.statement,starter:c.starter,samples:c.samples,rubric:challengeRubric(c)};}

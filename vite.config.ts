@@ -27,5 +27,5 @@ export default defineConfig(({ mode }) => {
       });
     },
   };
-  return { plugins: [react(), tailwindcss(), unavailableApi], build: { manifest: true }, server: { port: 5173, proxy: { '/api/learning': { target: env.VITE_LEARNING_PROXY_TARGET || 'http://127.0.0.1:8787' }, ...(target ? { '/api': { target, changeOrigin: true } } : {}) } }, preview: { port: 4173 } };
+  return { plugins: [react(), tailwindcss(), unavailableApi], build: { manifest: true }, server: { port: 5173, watch: { ignored: ['**/.local/**', '**/test-results*/**', '**/playwright-report/**', '**/.build/**', '**/dist/**'] }, proxy: { '/api/learning': { target: env.VITE_LEARNING_PROXY_TARGET || 'http://127.0.0.1:8787' }, ...(target ? { '/api': { target, changeOrigin: true } } : {}) } }, preview: { port: 4173 } };
 });

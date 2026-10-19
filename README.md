@@ -21,6 +21,8 @@ npm run dev
 
 Open http://127.0.0.1:5173. `npm run dev` serves the frontend; Cloudflare Functions require the Cloudflare local runtime or deployment. An unconfigured frontend deliberately does not accept enquiries or invent appointment slots.
 
+For the assessment, roadmaps, coding arena and learning dashboard, start the configured PostgreSQL database and use `npm run dev:learning`. This checks database migrations and API health, then starts both the learning API and frontend. See [learning platform setup](docs/LEARNING-OPERATIONS.md). Starting only `npm run dev` leaves the learning API disconnected.
+
 At `/student-panel`, choose **Open local demo** to explore Prospect and Enrolled views with clearly labelled sample data. Demo actions cannot create payments, bookings or submissions. The demo and its data are excluded from production builds. Choose **Exit demo** to return to the real session connection.
 
 Without a local backend, `/api/*` returns an explicit JSON 503 response. To connect one, set `VITE_DEV_API_PROXY_TARGET` in `.env.local` and restart Vite; existing `VITE_STUDENT_API_URL` and `VITE_ADMIN_API_URL` also support configured HTTPS services. Sign-in destination pages explain the missing authentication integration instead of showing a 404; configure the sign-in URLs for your real identity provider.

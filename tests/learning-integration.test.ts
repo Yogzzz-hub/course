@@ -26,16 +26,24 @@ describe.skipIf(!enabled)('Learning API against PostgreSQL',()=>{
   afterAll(async()=>{await db?.end();if(root){try{if(schemaCreated)await root.query(`DROP SCHEMA ${schema} CASCADE`);}finally{await root.end();}}});
   it('completes a real assessment, protects keys, recovers concurrent retries, and generates a roadmap',async()=>{
     const s=await session();let response=await call('/attempts','POST',{track:1},s);expect(response.status).toBe(201);let a=await response.json();const aid=a.id;
-    for(let i=0;i<10;i++){
+    expect(a.total).toBe(12);
+    for(let i=0;i<12;i++){
       expect(a.question).not.toHaveProperty('answer');const key=bank.find(q=>q.id===a.question.id)!;const input={questionId:key.id,version:key.version,option:a.question.options.indexOf(key.options[key.answer])};
       if(i===0){const retries=await Promise.all([call(`/attempts/${aid}/answer`,'POST',input,s),call(`/attempts/${aid}/answer`,'POST',input,s)]);expect(retries.map(r=>r.status)).toEqual([200,200]);a=await retries[0].json();expect(a.answered).toBe(1);}
       else {response=await call(`/attempts/${aid}/answer`,'POST',input,s);expect(response.status).toBe(200);a=await response.json();}
     }
-    expect(a.result.correct).toBe(10);expect(a.result.percent).toBe(100);
+    expect(a.result.correct).toBe(12);expect(a.result.percent).toBe(100);expect(a.result.skills).toHaveLength(12);
     const plan=await call(`/attempts/${aid}/roadmap`,'POST',{role:'Backend Developer'},s);expect(plan.status).toBe(200);expect((await plan.json()).steps.length).toBeGreaterThan(0);
     const other=await session();expect((await call(`/attempts/${aid}`,'GET',undefined,other)).status).toBe(404);
     expect((await call('/events','POST',{name:'payment_confirmed',path:'/'},s)).status).toBe(400);
     expect((await call('/data','DELETE',{},s)).status).toBe(200);expect((await call(`/attempts/${aid}`,'GET',undefined,s)).status).toBe(401);
+  });
+  it('completes a focused check in each of the 12 areas without trusting a client score',async()=>{
+    for(const skill of [...new Set(bank.map(q=>q.skill))]){
+      const s=await session();let a=await (await call('/attempts','POST',{track:1,skill},s)).json();expect(a.total).toBe(3);
+      for(let i=0;i<3;i++){expect(a.question.skill).toBe(skill);const key=bank.find(q=>q.id===a.question.id)!;a=await (await call(`/attempts/${a.id}/answer`,'POST',{questionId:key.id,version:key.version,option:a.question.options.indexOf(key.options[key.answer])},s)).json();}
+      expect(a.result.correct).toBe(3);expect(a.result.skills).toHaveLength(1);
+    }
   });
   it('rejects forged scores, missing CSRF, hostile origins and unauthenticated administration',async()=>{
     const s=await session();expect((await call('/attempts','POST',{track:1,score:100},s)).status).toBe(400);
@@ -75,6 +83,10 @@ describe.skipIf(!enabled)('Learning API against PostgreSQL',()=>{
       expect((await call(`/submissions/${first.id}/understanding`,'POST',{option:0},s)).status).toBe(409);
       expect((await call('/submissions','POST',{...input,score:100},s)).status).toBe(400);
       await db.query("UPDATE learning_submissions SET state='graded',code=NULL,result=$2 WHERE id=$1",[first.id,JSON.stringify({correctness:60,edgeCases:20,outcomes:[],graderVersion:'test-worker'})]);
+      const checkpoint=await (await call(`/submissions/${first.id}`,'GET',undefined,s)).json();
+      expect(['reasoning','complexity','modification']).toContain(checkpoint.followup.kind);expect(checkpoint.followup.version).toBe(1);
+      expect(checkpoint.followup).not.toHaveProperty('answer');expect(checkpoint.followup).not.toHaveProperty('explanation');
+      const same=await (await call('/submissions','POST',input,s)).json();expect(same.followup).toEqual(checkpoint.followup);
       const order=(await db.query('SELECT understanding_order FROM learning_submissions WHERE id=$1',[first.id])).rows[0].understanding_order;
       const graded=await (await call(`/submissions/${first.id}/understanding`,'POST',{option:order.indexOf(0)},s)).json();expect(graded.result.total).toBe(100);
       const retry=await (await call(`/submissions/${first.id}/understanding`,'POST',{option:order.indexOf(1)},s)).json();expect(retry.result.total).toBe(100);
@@ -103,6 +115,13 @@ describe.skipIf(!enabled)('Learning API against PostgreSQL',()=>{
     const owner=(await db.query('SELECT id,user_id FROM learning_sessions WHERE token_hash=$1',[hash(s.cookie.split('=')[1])])).rows[0];
     const {challenges}=await import('../server/challenges');const sid=randomUUID();
     await db.query("INSERT INTO learning_submissions(id,session_id,request_id,fingerprint,challenge,mode,assisted,state,result,understanding_order,understanding_answer) VALUES($1,$2,$3,'test',$4,'independent',false,'graded',$5,'[0,1,2,3]',0)",[sid,owner.id,randomUUID(),JSON.stringify(challenges[0]),JSON.stringify({correctness:60,edgeCases:20,outcomes:[],graderVersion:'test'})]);
+    // A stored rubric must drive both the learner's report and ranked points.
+    await db.query("UPDATE learning_submissions SET challenge=jsonb_set(challenge,'{rubric}',$2::jsonb),result=$3 WHERE id=$1",[sid,JSON.stringify({sampleCorrectness:40,edgeCases:35,understanding:25}),JSON.stringify({correctness:40,edgeCases:35,outcomes:[],graderVersion:'test-custom-rubric'})]);
+    const report=await (await call(`/submissions/${sid}`,'GET',undefined,s)).json();
+    expect(report.result.rubric.understanding).toBe(25);expect(report.result.understanding).toBe(25);expect(report.result.total).toBe(100);
+    await db.query('UPDATE learning_submissions SET assisted=true WHERE id=$1',[sid]);await recordPoints(db,sid);
+    expect((await db.query('SELECT * FROM learning_points WHERE user_id=$1',[owner.user_id])).rowCount).toBe(0);
+    await db.query('UPDATE learning_submissions SET assisted=false WHERE id=$1',[sid]);
     await recordPoints(db,sid);await recordPoints(db,sid);
     expect((await db.query('SELECT * FROM learning_points WHERE user_id=$1',[owner.user_id])).rowCount).toBe(1);
     expect((await db.query('SELECT * FROM learning_point_history WHERE user_id=$1',[owner.user_id])).rowCount).toBe(1);

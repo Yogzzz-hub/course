@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "dev:learning": "node scripts/dev-learning.mjs",
     "api:dev": "node --env-file-if-exists=.env.learning.local server/index.ts",
     "judge:worker": "node --env-file-if-exists=.env.learning.local server/worker.ts",
     "db:migrate": "node --env-file-if-exists=.env.learning.local server/manage.ts migrate",

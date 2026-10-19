@@ -19,3 +19,7 @@ Infrastructure gates: PostgreSQL must be reachable; candidate code must never ex
 ## Continuation — 18 October 2026
 
 Retain the implemented platform and existing integration boundaries. Expand the three-exercise Python bank with conditions, error handling, idempotent backend processing and stack-based algorithms. Add explicit boundary cases and multiple faulty implementations for each exercise. Repair challenge switching so an old submission cannot appear under a different problem, and preserve in-page drafts. Improve fixture-runner diagnostics without introducing an unsafe execution fallback. Run type/lint/unit/build/browser checks and distinguish unavailable PostgreSQL/Docker infrastructure from application failures in the delivery report.
+
+## Continuation — 19 October 2026
+
+Investigate disconnected assessment startup first; provide a combined local API/frontend command with database/migration preflight. Add per-challenge rubric configuration with backward-compatible defaults, authoritative snapshot-based understanding/ranking, and accurate UI denominators. Improve connection-loss messages without automatically retrying mutations. Validate these paths with unit, database and browser suites. Existing external payment, identity, booking and isolated-judge provisioning remain separate production gates.

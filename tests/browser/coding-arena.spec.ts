@@ -3,11 +3,38 @@ import AxeBuilder from '@axe-core/playwright';
 import { challenges, publicChallenge } from '../../server/challenges';
 
 // UI contract fixtures only: these tests do not claim to execute candidate code.
+test('unavailable judge explains disabled actions and recovery preserves the draft',async({page})=>{
+  let available=false;
+  await page.route('**/api/learning/challenges',route=>route.fulfill({json:{challenges:challenges.map(publicChallenge),available,message:available?'Isolated judging is available.':'Judging service is unavailable.'}}));
+  await page.goto('/python-coding-challenge');
+  const run=page.getByRole('button',{name:'Run sample tests',exact:true});
+  const submit=page.getByRole('button',{name:'Submit to isolated judge',exact:true});
+  await expect(run).toBeDisabled();await expect(submit).toBeDisabled();
+  await expect(page.getByText('Running code is currently unavailable.',{exact:true})).toBeVisible();
+  await page.locator('.cm-content').fill('print(42)');
+  await page.getByRole('button',{name:'Check execution availability',exact:true}).click();
+  await expect(run).toBeDisabled();await expect(page.locator('.cm-content')).toHaveText('print(42)');
+  available=true;
+  await page.getByRole('button',{name:'Check execution availability',exact:true}).click();
+  await expect(run).toBeEnabled();await expect(submit).toBeEnabled();
+  await expect(page.locator('.cm-content')).toHaveText('print(42)');
+});
 const graded = {
   id: 'fixture-submission', state: 'graded', purpose: 'submit', correction: null,
   result: { correctness: 60, edgeCases: 20, understanding: null, total: null, quality: 'Not scored.', outcomes: [] },
   followup: { prompt: 'Explain the fixture result', options: ['Correct', 'Incorrect', 'Another', 'Neither'], answered: false },
 };
+test('measured resources and complexity checkpoints are explained without authorship claims',async({page})=>{
+  await setup(page);
+  const fixture={...graded,result:{...graded.result,performance:{maxTimeSeconds:0.012,maxMemoryKB:2048,timeCases:5,memoryCases:5,totalCases:5,notice:'These measurements do not establish Big-O complexity or AI authorship.'}},followup:{...graded.followup,id:'sum-values-complexity',version:1,kind:'complexity'}};
+  await page.route('**/api/learning/submissions',route=>route.fulfill({status:202,json:fixture}));
+  await page.getByRole('button',{name:'Submit to isolated judge',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'Execution evidence',exact:true})).toBeVisible();
+  await expect(page.getByText('0.012 seconds',{exact:true})).toBeVisible();
+  await expect(page.getByText('2,048 KB',{exact:true})).toBeVisible();
+  await expect(page.getByText('Complexity checkpoint',{exact:true})).toBeVisible();
+  await expect(page.getByText('These measurements do not establish Big-O complexity or AI authorship.')).toBeVisible();
+});
 async function setup(page: import('@playwright/test').Page, state: 'graded' | 'queued' = 'graded') {
   await page.route('**/api/learning/challenges', route => route.fulfill({ json: { challenges: challenges.map(publicChallenge), available: true, message: 'Test fixture service' } }));
   await page.route('**/api/learning/session', route => route.fulfill({ json: { csrf: 'fixture-csrf', analytics: false } }));

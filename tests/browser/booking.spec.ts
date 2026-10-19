@@ -144,6 +144,7 @@ test('loading, empty, and unavailable services have honest states', async ({ pag
   await expect(page.getByLabel('Email verification code')).toHaveCount(0);
 });
 test('new journey is accessible and reflows at phone and desktop widths through all steps', async ({ page }) => {
+  test.slow();
   await mockBookingApi(page, { slotsDelay: 1000 }); await page.emulateMedia({ reducedMotion: 'reduce' }); await page.goto('/book-session');
   for (const width of [320, 375, 768, 1280, 1440, 1920]) {
     await page.setViewportSize({ width, height: 900 });

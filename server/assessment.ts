@@ -1,9 +1,11 @@
 import { randomInt } from 'node:crypto';
-import type { Question } from './bank.ts';
+import { skills, type Question } from './bank.ts';
 import { z } from 'zod';
+import { skillAreas } from '../src/data/skillAreas.ts';
 
 export interface Answer { question: Question; selected: number; correct: boolean }
 export const GRADER_VERSION = 'assessment-1.0.0';
+export function assessmentLength(bank:Question[]){const areas=new Set(bank.map(q=>q.skill)).size;return areas===1?Math.min(3,bank.length):Math.min(bank.length,Math.max(10,areas));}
 export function shuffle<T>(items: readonly T[]): T[] {
   const result = [...items];
   for (let i = result.length - 1; i > 0; i--) { const j = randomInt(i + 1); [result[i], result[j]] = [result[j], result[i]]; }
@@ -37,15 +39,15 @@ export function grade(answers: Answer[]) {
 export const roleSkills = {
   'Python Developer': ['python','logic','debugging','sql'],
   'Backend Developer': ['python','sql','backend','apis','debugging'],
-  'Full-Stack Developer': ['web','javascript','python','sql','backend','apis'],
-  'Frontend Developer': ['web','javascript','apis','debugging'],
-  'Software Engineer': ['logic','python','debugging','backend','sql'],
+  'Full-Stack Developer': ['web','javascript','react','python','sql','backend','apis','fullstack','devops'],
+  'Frontend Developer': ['web','javascript','react','apis','debugging'],
+  'Software Engineer': ['logic','python','debugging','backend','sql','devops','ai'],
 } as const;
 export type CareerRole = keyof typeof roleSkills;
 export const profileSchema=z.object({
   education:z.enum(['not-specified','school','undergraduate','graduate','other']).default('not-specified'),
   experience:z.enum(['beginner','some-experience','professional']).default('beginner'),
-  existingSkills:z.array(z.enum(['python','logic','sql','javascript','backend','debugging','apis','web'])).max(8).default([]),
+  existingSkills:z.array(z.enum(skills)).max(12).default([]),
   interests:z.array(z.enum(['web','data','automation','backend','frontend'])).max(5).default([]),
   jobDescription:z.string().max(6000).default(''),
 }).strict();
@@ -65,6 +67,6 @@ export function roadmap(result: ReturnType<typeof grade>, role: CareerRole, prof
       return { skill, evidence: evidence ? `${evidence.correct}/${evidence.total} observed answers correct` : 'Not assessed',
         priority: !evidence || evidence.percent < 70 ? 'Practice next' : 'Extend with a project',
         selfReported:profile.existingSkills.includes(skill),requestedInJob:jobSkills.includes(skill),
-        project: `${projects[skill]} ${guidance}`, module: evidence?.module ?? '/programmes' };
+        project: `${projects[skill]??skillAreas.find(area=>area.id===skill)?.project} ${guidance}`, module: evidence?.module ?? `/programmes/${skillAreas.find(area=>area.id===skill)!.module}` };
     }).sort((a,b) => Number(b.priority === 'Practice next') - Number(a.priority === 'Practice next') || Number(b.requestedInJob)-Number(a.requestedInJob)) };
 }

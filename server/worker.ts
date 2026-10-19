@@ -1,6 +1,7 @@
 import { pool } from './db.ts';
 import { judgeCode, judgeConfig, verifyJudgeConfiguration } from './judge.ts';
 import { recordPoints } from './ranking.ts';
+import { challengeRubric } from './rubric.ts';
 const config=judgeConfig();
 await verifyJudgeConfiguration(config);
 const worker=await pool.connect();
@@ -26,7 +27,7 @@ try {
       try{
         await worker.query("UPDATE learning_submissions SET state='graded',result=$2,code=NULL,updated_at=now() WHERE id=$1 AND state='running'",[job.id,JSON.stringify(result)]);
         const correction=(await worker.query('SELECT score FROM learning_score_corrections WHERE submission_id=$1 ORDER BY id DESC LIMIT 1',[job.id])).rows[0];
-        if(job.understanding_answer!==null)await recordPoints(worker,job.id,correction?.score??result.correctness+result.edgeCases+(job.understanding_answer===job.challenge.understanding.answer?20:0));
+        if(job.understanding_answer!==null)await recordPoints(worker,job.id,correction?.score??result.correctness+result.edgeCases+(job.understanding_answer===job.challenge.understanding.answer?challengeRubric(job.challenge).understanding:0));
         await worker.query('COMMIT');
       }catch(error){await worker.query('ROLLBACK');throw error;}
     }catch {

@@ -1,12 +1,18 @@
 import { describe,it,expect } from 'vitest';
 import { bank, questionSchema } from '../server/bank';
-import { grade,nextQuestion,publicQuestion,roadmap,type Answer } from '../server/assessment';
+import { assessmentLength,grade,nextQuestion,publicQuestion,roadmap,type Answer } from '../server/assessment';
 import { permitted,passwordHash,verifyPassword } from '../server/security';
 import { challenges,publicChallenge } from '../server/challenges';
 import { isPrivatePath } from '../src/utils/seo';
 import { classifyAttribution,csvCell,leadPriority,orderedFunnel } from '../server/insights';
 import { challengePoints } from '../server/ranking';
 describe('Authoritative learning rules',()=>{
+  it('covers 12 areas, supports focused checks and preserves legacy lengths',()=>{
+    const skills=[...new Set(bank.map(q=>q.skill))];expect(skills).toHaveLength(12);expect(assessmentLength(bank)).toBe(12);
+    expect(assessmentLength(bank.filter(q=>!['react','devops','ai','fullstack'].includes(q.skill)))).toBe(10);
+    for(const skill of skills){const focused=bank.filter(q=>q.skill===skill);expect(new Set(focused.map(q=>q.difficulty))).toEqual(new Set([1,2,3]));expect(assessmentLength(focused)).toBe(3);}
+    const answers:Answer[]=[];for(let i=0;i<12;i++){const q=nextQuestion(bank,answers,1)!;answers.push({question:q,selected:q.answer,correct:true});}expect(new Set(answers.map(a=>a.question.skill)).size).toBe(12);
+  });
   it('keeps challenge identities unique and requires boundary fixtures and understanding keys',()=>{
     expect(challenges).toHaveLength(7);
     expect(new Set(challenges.map(c=>c.id)).size).toBe(challenges.length);
@@ -25,7 +31,7 @@ describe('Authoritative learning rules',()=>{
     }
   });
   it('validates the entire versioned bank and covers every skill at each difficulty',()=>{
-    expect(bank).toHaveLength(24);expect(new Set(bank.map(q=>q.id)).size).toBe(24);
+    expect(bank).toHaveLength(36);expect(new Set(bank.map(q=>q.id)).size).toBe(36);
     for(const q of bank)expect(questionSchema.safeParse(q).success).toBe(true);
     expect(questionSchema.safeParse({...bank[0],answer:7}).success).toBe(false);
     expect(questionSchema.safeParse({...bank[0],options:['x','x','y','z']}).success).toBe(false);
@@ -45,7 +51,7 @@ describe('Authoritative learning rules',()=>{
     for(const c of challenges){expect(publicChallenge(c)).not.toHaveProperty('hidden');expect(publicChallenge(c)).not.toHaveProperty('reference');expect(publicChallenge(c)).not.toHaveProperty('understanding');}
   });
   it('marks unmeasured skills as unassessed rather than treating self-report as evidence',()=>{
-    const result=grade([{question:bank[0],selected:0,correct:true}]);const plan=roadmap(result,'Backend Developer');
+    const py=bank.find(q=>q.skill==='python')!;const result=grade([{question:py,selected:py.answer,correct:true}]);const plan=roadmap(result,'Backend Developer');
     expect(plan.steps.find(s=>s.skill==='sql')?.evidence).toBe('Not assessed');expect(plan.steps.at(-1)?.skill).toBe('python');
   });
   it('enforces role boundaries and password verification',()=>{

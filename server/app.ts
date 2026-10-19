@@ -1,12 +1,15 @@
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import type { Pool, PoolClient } from 'pg';
-import { questionSchema, type Question } from './bank.ts';
+import { questionSchema, skills, type Question } from './bank.ts';
+import { assessmentLength } from './assessment.ts';
 import { grade, nextQuestion, publicQuestion, roadmap, roleSkills, shuffle, profileSchema, type Answer, type CareerRole } from './assessment.ts';
 import { hash, permitted, token, verifyPassword } from './security.ts';
 import { challenges, publicChallenge } from './challenges.ts';
 import { leaderboard,registrationSchema,registerLearner,loginLearner } from './community.ts';
 import { recordPoints } from './ranking.ts';
+import { challengeRubric } from './rubric.ts';
+import { understandingQuestions } from './understanding.ts';
 import { classifyAttribution,conversionReport,csvCell } from './insights.ts';
 
 class ApiError extends Error { status: number; constructor(status: number, message: string) { super(message); this.status=status; } }
@@ -23,7 +26,7 @@ async function body(request: Request) {
 function cookie(request: Request, name: string) {return request.headers.get('cookie')?.split(';').map(s=>s.trim()).find(s=>s.startsWith(name+'='))?.slice(name.length+1) ?? '';}
 function viewAttempt(row: Record<string,unknown>) {
   const answers=row.answers as Answer[];
-  return {id:row.id,answered:answers.length,total:10,track:row.track,result:row.result,
+  return {id:row.id,answered:answers.length,total:assessmentLength(row.bank as Question[]),track:row.track,result:row.result,
     question: row.result ? null : publicQuestion(row.current_question as Question,row.option_order as number[])};
 }
 export function createApp(db: Pool, origin: string, secure = true) {
@@ -61,10 +64,11 @@ export function createApp(db: Pool, origin: string, secure = true) {
     const challenge=row.challenge as typeof challenges[number];
     const result=row.result as {correctness:number;edgeCases:number;outcomes:{passed:boolean;kind:string;status:string}[];graderVersion:string}|null;
     const answered=typeof row.understanding_answer==='number';
-    const understanding=answered && row.understanding_answer===challenge.understanding.answer ? 20 : 0;
+    const rubric=challengeRubric(challenge);
+    const understanding=answered && row.understanding_answer===challenge.understanding.answer ? rubric.understanding : 0;
     return {id:row.id,state:row.state,purpose:row.purpose,correction:row.correction||null,result:result?{...result,understanding:answered?understanding:null,total:answered?result.correctness+result.edgeCases+understanding:null,
-      rubric:{sampleCorrectness:60,edgeCases:20,understanding:20},quality:'Not scored. Different valid implementations are accepted.'}:null,
-      followup:row.state==='graded'&&row.purpose!=='sample'?{prompt:challenge.understanding.prompt,options:(row.understanding_order as number[]).map(i=>challenge.understanding.options[i]),answered,...(answered?{explanation:challenge.understanding.explanation}:{})}:null};
+      rubric,quality:'Not scored. Different valid implementations are accepted.'}:null,
+      followup:row.state==='graded'&&row.purpose!=='sample'?{id:challenge.understanding.id,version:challenge.understanding.version,kind:challenge.understanding.kind,prompt:challenge.understanding.prompt,options:(row.understanding_order as number[]).map(i=>challenge.understanding.options[i]),answered,...(answered?{explanation:challenge.understanding.explanation}:{})}:null};
   }
   return async function handle(request:Request, peer='unknown'):Promise<Response> {
     const requestId=randomUUID();
@@ -254,8 +258,9 @@ export function createApp(db: Pool, origin: string, secure = true) {
         if(prior){if(prior.fingerprint!==fingerprint)throw new ApiError(409,'The retry must contain the original submission.');return json(submissionView(prior));}
         if(!await judgingAvailable())throw new ApiError(503,'Live judging is not configured. Your code has not been executed or graded.');
         await rate(`submission:${s.id}`,10,3600);
-        const challenge=challenges.find(c=>c.id===input.challengeId && c.version===input.version);
-        if(!challenge)throw new ApiError(404,'Challenge version unavailable.');
+        const sourceChallenge=challenges.find(c=>c.id===input.challengeId && c.version===input.version);
+        if(!sourceChallenge)throw new ApiError(404,'Challenge version unavailable.');
+        const challenge={...sourceChallenge,understanding:shuffle(understandingQuestions(sourceChallenge))[0]};
         const client=await db.connect();try{await client.query('BEGIN');await client.query('SELECT pg_advisory_xact_lock(81244303)');
           const retry=(await client.query('SELECT * FROM learning_submissions WHERE session_id=$1 AND request_id=$2',[s.id,input.requestId])).rows[0];
           if(retry){if(retry.fingerprint!==fingerprint)throw new ApiError(409,'The retry must contain the original submission.');await client.query('COMMIT');return json(submissionView(retry));}
@@ -326,9 +331,9 @@ export function createApp(db: Pool, origin: string, secure = true) {
       if(path==='/api/learning/attempts' && request.method==='GET'){return json({attempts:(await db.query('SELECT * FROM learning_attempts WHERE session_id=$1 AND expires_at>now() ORDER BY created_at DESC LIMIT 10',[s.id])).rows.map(viewAttempt)});}
       if(path==='/api/learning/attempts' && request.method==='POST') {
         await rate(`start:${s.id}`,10,3600);
-        const input=z.object({track:z.number().int().min(1).max(3)}).strict().parse(await body(request));
-        const bank=(await db.query("SELECT DISTINCT ON(id) content FROM learning_questions WHERE status='published' ORDER BY id,version DESC")).rows.map(row=>questionSchema.parse(row.content));
-        if(bank.length<10) throw new ApiError(503,'The reviewed question bank is not available yet.');
+        const input=z.object({track:z.number().int().min(1).max(3),skill:z.enum(skills).optional()}).strict().parse(await body(request));
+        const bank=(await db.query("SELECT DISTINCT ON(id) content FROM learning_questions WHERE status='published' ORDER BY id,version DESC")).rows.map(row=>questionSchema.parse(row.content)).filter(q=>!input.skill||q.skill===input.skill);
+        if(bank.length<(input.skill?3:12)) throw new ApiError(503,'The reviewed question bank is not available yet.');
         const q=nextQuestion(bank,[],input.track)!, order=shuffle([0,1,2,3]);
         const attempt=(await db.query('INSERT INTO learning_attempts(id,session_id,track,bank,current_question,option_order) VALUES($1,$2,$3,$4,$5,$6) RETURNING *',[randomUUID(),s.id,input.track,JSON.stringify(bank),JSON.stringify(q),JSON.stringify(order)])).rows[0];
         await event(db,s.id,'assessment_started');return json(viewAttempt(attempt),201);
@@ -362,7 +367,7 @@ export function createApp(db: Pool, origin: string, secure = true) {
             const q=row.current_question as Question;
             if(row.result || q.id!==input.questionId || q.version!==input.version) throw new ApiError(409,'The question changed. Resume your assessment.');
             const selected=row.option_order[input.option];answers.push({question:q,selected,correct:selected===q.answer});
-            const result=answers.length===10 ? grade(answers) : null;
+            const result=answers.length===assessmentLength(row.bank) ? grade(answers) : null;
             const next=result?null:nextQuestion(row.bank,answers,row.track);
             if(!result && !next) throw new ApiError(503,'No reviewed questions remain.');
             const updated=(await client.query('UPDATE learning_attempts SET answers=$2,result=$3,current_question=$4,option_order=$5,completed_at=CASE WHEN $3::jsonb IS NOT NULL THEN now() ELSE NULL END WHERE id=$1 RETURNING *',[attemptId,JSON.stringify(answers),result?JSON.stringify(result):null,next?JSON.stringify(next):null,JSON.stringify(shuffle([0,1,2,3]))])).rows[0];
