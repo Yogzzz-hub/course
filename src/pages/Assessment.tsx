@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { careerRoles, learningApi, learningSession, setLearningAnalytics, type Attempt, type Roadmap } from '../components/learning/client';
-import '../components/learning/learning.css';
-import '../components/learning/assessment.css';
 import { ProfileFields, ShareRoadmap, emptyProfile } from '../components/learning/RoadmapTools';
 import { LearningContact } from '../components/learning/LearningContact';
 import { ExperimentLink } from '../components/learning/ExperimentLink';

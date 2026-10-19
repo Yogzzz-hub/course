@@ -37,3 +37,11 @@ No production deployment was performed. The standalone Python coding arena still
 ## Run
 
 With PostgreSQL running, apply `npm run db:migrate`, then run `npm run dev:learning`. Open `http://127.0.0.1:5173/assessment`. Hosted environments need the same question-bank seeding and a verified deployment before the new experience is available there.
+
+## Desktop and phone alignment refresh
+
+The reported screenshot showed inline, unstyled topic content. Fresh browser checks could not reproduce the missing stylesheet: the development route already loaded its CSS. To remove the lazy-route stylesheet dependency, learning and assessment styles now load from the main application entry, in the intended cascade order. Production HTML includes these base styles before hydration. The assessment route no longer imports its own CSS.
+
+Reduced the duplicate header/top spacing, tightened responsive heading sizes, aligned card labels and descriptions to a common left edge, equalized topic-card heights and footer placement, and adjusted the start toolbar's offset below the floating header. Narrow phones stack the toolbar action; answer actions use full width. Results show their text before the centered score ring on phones. Existing palettes and functionality remain.
+
+Validation: lint, TypeScript and production build passed. Six new production-browser checks passed, covering 320/390/768/1024/1440px layout, card alignment, column counts, header/toolbar clearance, horizontal overflow, mobile accessibility, internal navigation and reload. All five database-backed learning journeys also passed. Desktop and phone screenshots were visually reviewed. No hosted deployment was performed; refresh the local assessment page to load the new app entry.
