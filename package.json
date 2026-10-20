@@ -5,7 +5,7 @@
   "description": "Apex Global Academy — Unified High-Performance Full-Stack Academy & Enterprise CRM",
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "prisma generate && next build && node -e \"const fs = require('fs'); if (!fs.existsSync('dist')) fs.mkdirSync('dist', { recursive: true }); fs.cpSync('public', 'dist', { recursive: true });\"",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",

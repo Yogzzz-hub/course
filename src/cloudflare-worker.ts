@@ -29,6 +29,7 @@ const worker = {
     // 3. If Backend Target is configured, proxy API requests and Dynamic App routes
     if (backendTarget) {
       const isApiOrAppRoute =
+        pathname === '/' ||
         pathname.startsWith('/api') ||
         pathname.startsWith('/login') ||
         pathname.startsWith('/admin') ||
