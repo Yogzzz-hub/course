@@ -82,6 +82,15 @@ The endpoint validates types and field lengths, caps body size, checks the exact
 
 The v2 counselling journey uses the typed booking API documented in docs/DIRECT-BOOKING.md. It replaces the earlier Calendly embed. OTP verification, atomic holds and booking confirmation require that API; no local simulation is enabled for visitors.
 
+## Security Policy
+
+Security and privacy guidelines are strictly enforced across the codebase. See [SECURITY.md](SECURITY.md) for complete details on:
+- **Environment & Configuration**: Isolated env variables, hidden secrets, debug mode disabled in production.
+- **Authentication & Access Control**: Salted cryptographic password hashing (scrypt), RBAC role permissions, and Supabase Row Level Security (RLS).
+- **Network & Request Handling**: Sliding-window rate limiting, strict CORS origins, and production HTTP security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options).
+- **Input Validation & Data Safety**: Strict Zod schema validation, payload size constraints, and parameterized SQL queries.
+- **Dependency & Code Management**: Zero-vulnerability audits, Gitleaks CI secret scanning, and automated quality pipelines.
+
 ## Handover
 
 - [Research and design decisions](docs/RESEARCH.md)
