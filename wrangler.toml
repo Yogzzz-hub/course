@@ -1,0 +1,14 @@
+name = "aintrix-academy"
+pages_build_output_dir = "dist"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+NEXT_PUBLIC_SUPABASE_URL = "https://bzrziphgocbsopvidknp.supabase.co"
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_jCEWQltUSbu89lmGoSXKUw_9erWEpBV"
+VITE_SUPABASE_URL = "https://bzrziphgocbsopvidknp.supabase.co"
+VITE_SUPABASE_ANON_KEY = "sb_publishable_jCEWQltUSbu89lmGoSXKUw_9erWEpBV"
+RECEIVER_EMAIL = "aintrixacademy2026@gmail.com"
+ENQUIRY_TO = "aintrixacademy2026@gmail.com"
+ENQUIRY_FROM = "Aintrix Academy <aintrixacademy2026@gmail.com>"
+LEGAL_APPROVED = "true"

@@ -265,8 +265,8 @@ export default async function handler(req: unknown, res?: unknown) {
       return sendResponse(res, { slots });
     }
 
-    // 5. POST /api/booking/slots/hold
-    if (pathname.endsWith('/slots/hold')) {
+    // 5. POST /api/booking/slots/hold or /api/booking/holds
+    if (pathname.endsWith('/slots/hold') || pathname.endsWith('/holds')) {
       const slotId = typeof body.slotId === 'string' ? body.slotId : '';
       const programmeId = typeof body.programmeId === 'string' ? body.programmeId : '';
 
@@ -291,8 +291,8 @@ export default async function handler(req: unknown, res?: unknown) {
       });
     }
 
-    // 6. POST /api/booking/slots/release
-    if (pathname.endsWith('/slots/release')) {
+    // 6. POST /api/booking/slots/release or /api/booking/holds/release
+    if (pathname.endsWith('/slots/release') || pathname.endsWith('/holds/release')) {
       const holdId = typeof body.holdId === 'string' ? body.holdId : '';
       if (holdId) holdStore.delete(holdId);
       const nodeRes = res as NodeServerResponse | undefined;
