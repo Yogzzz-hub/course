@@ -66,6 +66,100 @@ function json(data: unknown, status = 200, headers: Record<string, string> = {})
   });
 }
 
+function formatSessionDate(isoString: string): string {
+  try {
+    const d = new Date(isoString);
+    return (
+      new Intl.DateTimeFormat('en-IN', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Asia/Kolkata',
+        hour12: true,
+      }).format(d) + ' IST'
+    );
+  } catch {
+    return isoString;
+  }
+}
+
+function renderBookingConfirmationHtml(name: string, bookingId: string, programmeTitle: string, formattedDate: string): string {
+  return `
+    <div style="background-color: #f8fafc; padding: 40px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+      <div style="max-width: 580px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+        
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 36px 32px; text-align: center;">
+          <div style="color: #38bdf8; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;">Aintrix Academy Admissions</div>
+          <h1 style="color: #ffffff; font-size: 24px; font-weight: 700; margin: 8px 0 0 0; letter-spacing: -0.5px;">Session Confirmed</h1>
+          <div style="margin-top: 14px;">
+            <span style="background-color: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; font-size: 13px; font-weight: 600; padding: 4px 14px; border-radius: 9999px; display: inline-block;">
+              ✓ Booking Confirmed
+            </span>
+          </div>
+        </div>
+
+        <!-- Content -->
+        <div style="padding: 32px 32px 24px 32px;">
+          <p style="font-size: 16px; color: #1e293b; line-height: 1.6; margin-top: 0;">
+            Hello <strong>${name}</strong>,
+          </p>
+          <p style="font-size: 15px; color: #475569; line-height: 1.6; margin-bottom: 24px;">
+            Your 1-on-1 admission counselling and career evaluation session has been successfully booked with our academic admissions team.
+          </p>
+
+          <!-- Details Card -->
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 28px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; width: 130px; vertical-align: top;">Booking ID</td>
+                <td style="padding: 8px 0; color: #0f172a; font-family: monospace; font-size: 14px; font-weight: 700;">${bookingId}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; vertical-align: top;">Programme</td>
+                <td style="padding: 8px 0; color: #0f172a; font-weight: 600;">${programmeTitle}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; vertical-align: top;">Date & Time</td>
+                <td style="padding: 8px 0; color: #0284c7; font-weight: 700;">${formattedDate}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; vertical-align: top;">Format</td>
+                <td style="padding: 8px 0; color: #0f172a;">1-on-1 Online Video Consultation</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; vertical-align: top;">Status</td>
+                <td style="padding: 8px 0; color: #059669; font-weight: 600;">Confirmed & Reserved</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- What to expect -->
+          <h3 style="font-size: 15px; color: #0f172a; margin: 0 0 12px 0; font-weight: 700;">What to expect in your session:</h3>
+          <ul style="margin: 0 0 24px 0; padding-left: 20px; color: #475569; font-size: 14px; line-height: 1.8;">
+            <li>Personalized walkthrough of the <strong>${programmeTitle}</strong> curriculum and hands-on projects.</li>
+            <li>Custom career pathway evaluation matching your background and aspirational tech roles.</li>
+            <li>Detailed discussion on tuition assistance, scholarships, and flexible payment plans.</li>
+          </ul>
+
+          <p style="font-size: 13px; color: #64748b; line-height: 1.6; border-top: 1px solid #e2e8f0; padding-top: 20px; margin-bottom: 0;">
+            Need to reschedule or have questions before the session? Simply reply directly to this email or contact us at <a href="mailto:aintrixacademy2026@gmail.com" style="color: #0284c7; text-decoration: none;">aintrixacademy2026@gmail.com</a>.
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="background-color: #f1f5f9; padding: 20px 32px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b;">
+          <div style="font-weight: 600; color: #334155;">Aintrix Academy</div>
+          <div style="margin-top: 4px;">Connecting ambitious engineers to modern full-stack software careers.</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function generateSlots(): Array<{ id: string; startsAt: string; endsAt: string }> {
   const slots: Array<{ id: string; startsAt: string; endsAt: string }> = [];
   const now = new Date();
@@ -339,6 +433,28 @@ export async function onRequest({ request, env }: { request: Request; env: Booki
     bookingStore.set(bookingId, booking);
     if (holdId) holdStore.delete(holdId);
 
+    // Format programme title and session time
+    const prog = programmes.find((p) => p.id === programmeId);
+    const programmeTitle = prog ? prog.title : programmeId.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    const formattedDate = formatSessionDate(slot.startsAt);
+    const confirmationHtml = renderBookingConfirmationHtml(name, bookingId, programmeTitle, formattedDate);
+
+    const adminHtml = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 540px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
+        <h2 style="color: #0f172a; margin-top: 0;">New Counselling Session Booked</h2>
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+          <tr><td style="padding: 6px 0; color: #64748b; width: 120px;">Student:</td><td style="font-weight: 600; color: #0f172a;">${name}</td></tr>
+          <tr><td style="padding: 6px 0; color: #64748b;">Email:</td><td style="color: #0f172a;">${email}</td></tr>
+          <tr><td style="padding: 6px 0; color: #64748b;">Phone:</td><td style="color: #0f172a;">${(about.phone as string) || 'Not provided'}</td></tr>
+          <tr><td style="padding: 6px 0; color: #64748b;">Programme:</td><td style="font-weight: 600; color: #0f172a;">${programmeTitle}</td></tr>
+          <tr><td style="padding: 6px 0; color: #64748b;">Booking ID:</td><td style="font-family: monospace; font-weight: 700; color: #0284c7;">${bookingId}</td></tr>
+          <tr><td style="padding: 6px 0; color: #64748b;">Date & Time:</td><td style="font-weight: 600; color: #0f172a;">${formattedDate}</td></tr>
+          <tr><td style="padding: 6px 0; color: #64748b;">Background:</td><td style="color: #475569;">${(brief.background as string) || 'N/A'}</td></tr>
+          <tr><td style="padding: 6px 0; color: #64748b;">Goals:</td><td style="color: #475569;">${(brief.goals as string) || 'N/A'}</td></tr>
+        </table>
+      </div>
+    `;
+
     // Confirmation emails (awaited so serverless worker completes dispatch)
     const adminEmail = env.ENQUIRY_TO || 'aintrixacademy2026@gmail.com';
     await Promise.allSettled([
@@ -346,13 +462,15 @@ export async function onRequest({ request, env }: { request: Request; env: Booki
         env,
         email,
         `Session Confirmed: Your Aintrix Academy Counselling Session (${bookingId})`,
-        `Hello ${name},\n\nYour 1-on-1 admission counselling session is confirmed!\n\nBooking ID: ${bookingId}\nProgramme: ${programmeId}\nDate & Time: ${slot.startsAt}\n\nOur team will connect with you at your chosen time.\n\nWarm regards,\nAintrix Academy Admissions`
+        `Hello ${name},\n\nYour 1-on-1 admission counselling session is confirmed!\n\nBooking ID: ${bookingId}\nProgramme: ${programmeTitle}\nDate & Time: ${formattedDate}\n\nOur team will connect with you at your chosen time.\n\nWarm regards,\nAintrix Academy Admissions`,
+        confirmationHtml
       ),
       sendEdgeEmail(
         env,
         adminEmail,
         `New Counselling Booking: ${name} (${bookingId})`,
-        `New Booking received:\n\nStudent: ${name}\nEmail: ${email}\nPhone: ${about.phone || 'N/A'}\nProgramme: ${programmeId}\nSlot: ${slot.startsAt}`
+        `New Booking received:\n\nStudent: ${name}\nEmail: ${email}\nPhone: ${about.phone || 'N/A'}\nProgramme: ${programmeTitle}\nSlot: ${formattedDate}`,
+        adminHtml
       ),
     ]);
 
