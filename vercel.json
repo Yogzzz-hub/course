@@ -4,7 +4,10 @@
   "outputDirectory": "dist",
   "cleanUrls": true,
   "trailingSlash": false,
-  "rewrites": [{ "source": "/api/learning/:path*", "destination": "/api/learning" }],
+  "rewrites": [
+    { "source": "/api/learning/:path*", "destination": "/api/learning" },
+    { "source": "/api/booking/:path*", "destination": "/api/booking" }
+  ],
   "headers": [{
     "source": "/(.*)",
     "headers": [

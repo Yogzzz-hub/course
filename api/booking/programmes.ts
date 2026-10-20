@@ -1,7 +1,7 @@
-import { allBookingProgrammes } from '../../src/data/bookingProgrammes.ts';
+import { programmes } from './data.ts';
 
 const payload = {
-  programmes: allBookingProgrammes,
+  programmes,
 };
 
 const headers = {
