@@ -439,19 +439,105 @@ export async function onRequest({ request, env }: { request: Request; env: Booki
     const formattedDate = formatSessionDate(slot.startsAt);
     const confirmationHtml = renderBookingConfirmationHtml(name, bookingId, programmeTitle, formattedDate);
 
+    const studentPhone = (about.phone as string) || 'Not provided';
+    const rawCleanPhone = studentPhone.replace(/\s+/g, '');
+    const studentBackground = (brief.background as string) || 'N/A';
+    const studentGoals = (brief.goals as string) || 'N/A';
+
     const adminHtml = `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 540px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
-        <h2 style="color: #0f172a; margin-top: 0;">New Counselling Session Booked</h2>
-        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-          <tr><td style="padding: 6px 0; color: #64748b; width: 120px;">Student:</td><td style="font-weight: 600; color: #0f172a;">${name}</td></tr>
-          <tr><td style="padding: 6px 0; color: #64748b;">Email:</td><td style="color: #0f172a;">${email}</td></tr>
-          <tr><td style="padding: 6px 0; color: #64748b;">Phone:</td><td style="color: #0f172a;">${(about.phone as string) || 'Not provided'}</td></tr>
-          <tr><td style="padding: 6px 0; color: #64748b;">Programme:</td><td style="font-weight: 600; color: #0f172a;">${programmeTitle}</td></tr>
-          <tr><td style="padding: 6px 0; color: #64748b;">Booking ID:</td><td style="font-family: monospace; font-weight: 700; color: #0284c7;">${bookingId}</td></tr>
-          <tr><td style="padding: 6px 0; color: #64748b;">Date & Time:</td><td style="font-weight: 600; color: #0f172a;">${formattedDate}</td></tr>
-          <tr><td style="padding: 6px 0; color: #64748b;">Background:</td><td style="color: #475569;">${(brief.background as string) || 'N/A'}</td></tr>
-          <tr><td style="padding: 6px 0; color: #64748b;">Goals:</td><td style="color: #475569;">${(brief.goals as string) || 'N/A'}</td></tr>
-        </table>
+      <div style="background-color: #f1f5f9; padding: 40px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+          
+          <!-- Header -->
+          <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 32px 28px; border-bottom: 3px solid #38bdf8;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td>
+                  <div style="color: #38bdf8; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;">AINTRIX ACADEMY ADMISSIONS</div>
+                  <h1 style="color: #ffffff; font-size: 22px; font-weight: 700; margin: 6px 0 0 0; letter-spacing: -0.5px;">New Counselling Lead Booked</h1>
+                </td>
+                <td style="text-align: right; vertical-align: middle;">
+                  <span style="background-color: #38bdf8; color: #0f172a; font-size: 11px; font-weight: 700; padding: 6px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 1px;">
+                    New Lead
+                  </span>
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Body -->
+          <div style="padding: 28px 28px 20px 28px;">
+            
+            <!-- Student Info Highlight Card -->
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                <tr>
+                  <td style="padding: 8px 0; color: #64748b; width: 140px; font-weight: 500;">Student Name</td>
+                  <td style="padding: 8px 0; color: #0f172a; font-weight: 700; font-size: 16px;">${name}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #64748b; font-weight: 500;">Email Address</td>
+                  <td style="padding: 8px 0;">
+                    <a href="mailto:${email}" style="color: #0284c7; text-decoration: none; font-weight: 600;">${email}</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #64748b; font-weight: 500;">Phone Number</td>
+                  <td style="padding: 8px 0;">
+                    <a href="tel:${rawCleanPhone}" style="color: #0284c7; text-decoration: none; font-weight: 600;">${studentPhone}</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #64748b; font-weight: 500;">Programme</td>
+                  <td style="padding: 8px 0; color: #0f172a; font-weight: 600;">${programmeTitle}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #64748b; font-weight: 500;">Booking Reference</td>
+                  <td style="padding: 8px 0; color: #0f172a; font-family: monospace; font-weight: 700;">${bookingId}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #64748b; font-weight: 500;">Reserved Session Slot</td>
+                  <td style="padding: 8px 0; color: #059669; font-weight: 700;">${formattedDate}</td>
+                </tr>
+              </table>
+            </div>
+
+            <!-- Brief & Notes Card -->
+            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+              <h3 style="font-size: 13px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 12px 0;">Student Pre-Session Brief</h3>
+              <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                <tr>
+                  <td style="padding: 6px 0; color: #64748b; width: 140px; vertical-align: top;">Background:</td>
+                  <td style="padding: 6px 0; color: #1e293b; line-height: 1.5;">${studentBackground}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; color: #64748b; vertical-align: top;">Career Goals:</td>
+                  <td style="padding: 6px 0; color: #1e293b; line-height: 1.5;">${studentGoals}</td>
+                </tr>
+              </table>
+            </div>
+
+            <!-- Action Buttons -->
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+              <tr>
+                <td style="padding-right: 8px; width: 50%;">
+                  <a href="mailto:${email}?subject=Regarding%20Your%20Aintrix%20Academy%20Counselling%20Session%20(${bookingId})" style="display: block; text-align: center; background-color: #0f172a; color: #ffffff; font-size: 14px; font-weight: 600; padding: 12px 16px; border-radius: 6px; text-decoration: none;">
+                    Reply via Email
+                  </a>
+                </td>
+                <td style="padding-left: 8px; width: 50%;">
+                  <a href="tel:${rawCleanPhone}" style="display: block; text-align: center; background-color: #0284c7; color: #ffffff; font-size: 14px; font-weight: 600; padding: 12px 16px; border-radius: 6px; text-decoration: none;">
+                    Call Student
+                  </a>
+                </td>
+              </tr>
+            </table>
+
+            <div style="font-size: 12px; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+              Automated Admissions Dispatch • Aintrix Academy Management Engine
+            </div>
+          </div>
+        </div>
       </div>
     `;
 
