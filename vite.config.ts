@@ -1,7 +1,9 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { allBookingProgrammes } from './src/data/bookingProgrammes.ts';
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
   const target = env.VITE_DEV_API_PROXY_TARGET;
@@ -32,5 +34,22 @@ export default defineConfig(({ mode }) => {
       });
     },
   };
-  return { plugins: [react(), tailwindcss(), unavailableApi], build: { manifest: true }, server: { port: 5173, watch: { ignored: ['**/.local/**', '**/test-results*/**', '**/playwright-report/**', '**/.build/**', '**/dist/**'] }, proxy: { '/api/learning': { target: env.VITE_LEARNING_PROXY_TARGET || 'http://127.0.0.1:8787' }, ...(target ? { '/api': { target, changeOrigin: true } } : {}) } }, preview: { port: 4173 } };
+  return {
+    resolve: {
+      alias: {
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
+      },
+    },
+    plugins: [react(), tailwindcss(), unavailableApi],
+    build: { manifest: true },
+    server: {
+      port: 5173,
+      watch: { ignored: ['**/.local/**', '**/test-results*/**', '**/playwright-report/**', '**/.build/**', '**/dist/**'] },
+      proxy: {
+        '/api/learning': { target: env.VITE_LEARNING_PROXY_TARGET || 'http://127.0.0.1:8787' },
+        ...(target ? { '/api': { target, changeOrigin: true } } : {}),
+      },
+    },
+    preview: { port: 4173 },
+  };
 });
