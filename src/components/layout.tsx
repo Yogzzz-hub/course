@@ -57,7 +57,7 @@ export function Header({ onBook }: { onBook?: () => void }) {
 export function Footer() {
   const top = () => window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
   return <><Personalization/><footer className="site-footer stage">
-    <Marquee className="footer-marquee" speed={60} items={['Learn', 'Build', 'Evolve'].map(word => <span className="footer-marquee-word">{word}</span>)}/>
+    <Marquee className="footer-marquee" speed={60} items={['Learn', 'Build', 'Evolve'].map(word => <span key={word} className="footer-marquee-word">{word}</span>)}/>
     <div className="container">
       <div className="footer-grid">
         <div className="footer-brand"><Logo/><p>Turn understanding into ability.<br/>And ambition into your next chapter.</p></div>

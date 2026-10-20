@@ -222,7 +222,7 @@ function SearchBox({
   if (!can("search.read")) return null;
   const visible = value.trim().length >= 2 && term === value.trim();
   return (
-    <div className="relative min-w-0 flex-1">
+    <div className="relative min-w-0 w-full order-last sm:order-none sm:w-auto sm:flex-1">
       <label htmlFor="admin-search" className="sr-only">
         Search admin workspace
       </label>
@@ -484,25 +484,29 @@ function Workspace({ academyName }: { academyName: string }) {
       </aside>
       <div className={collapsed ? "lg:pl-20" : "lg:pl-64"}>
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
-          <div className="flex flex-wrap items-center gap-3 px-4 py-3 sm:px-7">
-            <a href="/" className="logo lg:hidden" aria-label={`${academyName} home`}>
-              <LogoMark size={26} />
-            </a>
-            <span className="text-sm font-bold lg:hidden">
-              {academyName} Admin
-            </span>
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:justify-start sm:px-7">
+            <div className="flex items-center gap-2 lg:hidden">
+              <a href="/" className="logo shrink-0" aria-label={`${academyName} home`}>
+                <LogoMark size={26} />
+              </a>
+              <span className="text-sm font-bold truncate">
+                {academyName} Admin
+              </span>
+            </div>
+            <div className="flex items-center gap-2 ml-auto sm:ml-0 sm:order-last">
+              <PaletteMenu />
+              <Notifications navigate={setSelected} />
+              <Button
+                secondary
+                busy={logout.isPending}
+                aria-label="Sign out of admin workspace"
+                onClick={() => logout.mutate()}
+              >
+                <LogOut size={16} />
+                <span className="hidden sm:inline">Sign out</span>
+              </Button>
+            </div>
             <SearchBox navigate={setSelected} />
-            <PaletteMenu/>
-            <Notifications navigate={setSelected} />
-            <Button
-              secondary
-              busy={logout.isPending}
-              aria-label="Sign out of admin workspace"
-              onClick={() => logout.mutate()}
-            >
-              <LogOut size={16} />
-              <span className="hidden sm:inline">Sign out</span>
-            </Button>
           </div>
           <nav
             aria-label="Mobile admin navigation"

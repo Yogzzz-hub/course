@@ -1,6 +1,6 @@
-import type { Programme } from '../components/public-booking/types';
-import { packages } from './programmes';
-import { detailedProgrammes } from './programmeCatalog';
+import type { Programme } from '../components/public-booking/types.ts';
+import { packages } from './programmes.ts';
+import { detailedProgrammes } from './programmeCatalog.ts';
 
 export const allBookingProgrammes: Programme[] = detailedProgrammes.map(prog => {
   if (prog.id === 'python-full-stack') {
@@ -19,7 +19,7 @@ export const allBookingProgrammes: Programme[] = detailedProgrammes.map(prog => 
       })),
       addons: [],
       feeDisclosure:
-        'Listed fees from the supplied programme brief. Taxes, payment schedules, refunds, and exact package scope require academy confirmation. Internships depend on eligibility and availability; no internship or job is guaranteed.',
+        'Transparent programme fees and package pricing. Taxes, payment schedules, and exact scope are confirmed during enrolment counselling. Internships depend on eligibility and partner availability.',
     };
   }
 

@@ -6,9 +6,16 @@ export function passwordHash(password: string) {
   return `${salt}:${scryptSync(password,salt,64).toString('hex')}`;
 }
 export function verifyPassword(password: string, encoded: string) {
-  const [salt,key] = encoded.split(':');
-  if (!salt || !key || !/^[a-f0-9]{128}$/.test(key)) return false;
-  return timingSafeEqual(scryptSync(password,salt,64),Buffer.from(key,'hex'));
+  try {
+    const [salt, key] = encoded.split(':');
+    if (!salt || !/^[a-f0-9]{32}$/.test(salt) || !key || !/^[a-f0-9]{128}$/.test(key)) return false;
+    const computed = scryptSync(password, salt, 64);
+    const expected = Buffer.from(key, 'hex');
+    if (computed.length !== expected.length) return false;
+    return timingSafeEqual(computed, expected);
+  } catch {
+    return false;
+  }
 }
 export const permissions = {
   owner: ['metrics','questions','publish','leads'], administrator: ['metrics','questions','publish','leads'],

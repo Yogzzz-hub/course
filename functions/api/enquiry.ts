@@ -1,4 +1,4 @@
-import { validateEnquiry, type Enquiry } from '../../src/utils/enquiry';
+import { validateEnquiry, type Enquiry } from '../../src/utils/enquiry.ts';
 
 interface KV { get(key:string):Promise<string|null>; put(key:string,value:string,options:{expirationTtl:number}):Promise<void> }
 export interface Env {

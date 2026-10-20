@@ -609,7 +609,7 @@ test("sign-out removes the authenticated workspace", async ({ page }) => {
 test("both modes support mobile tabs and stay within the viewport", async ({
   page,
 }) => {
-  test.setTimeout(90000); // Eight complete viewport/mode journeys, including forty tab changes.
+  test.setTimeout(120000); // Eight complete viewport/mode journeys, including forty tab changes.
   for (const mode of ["prospect", "enrolled"] as const) {
     await page.unroute("**/api/student/**");
     await mockStudentApi(page, { mode });

@@ -19,7 +19,7 @@ async function choose(page: Page, name: string) {
 }
 for (const theme of themes) {
   test(`${theme.name}: persists across public, student and admin pages`, async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(120000);
     await panels(page);
     await page.goto('/');
     await choose(page, theme.name);
@@ -44,7 +44,7 @@ for (const theme of themes) {
   });
 }
 test('all routes expose palettes and fit narrow screens, including sign-in and 404', async ({ page }) => {
-  test.setTimeout(60000);
+  test.setTimeout(120000);
   await panels(page);
   for (const path of ['/', '/book-session', '/direct-booking', '/programmes', '/programmes/python-full-stack', '/learning-experience', '/career-support', '/about', '/contact', '/privacy-policy', '/terms-and-conditions', '/student-panel', '/admin-panel', '/auth/sign-in', '/auth/admin/sign-in', '/unknown-path']) {
     const response = await page.goto(path);

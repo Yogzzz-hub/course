@@ -20,5 +20,5 @@ export const academy = {
   legalEntity: null, socialProfiles: [], deliveryMode: null,
   classTimings: null, prerequisites: null, counsellingDuration: null,
   internshipConditions: null, refundTerms: null, taxes: null, paymentSchedule: null,
-  source: 'User-supplied build brief. Academy!.pdf was not supplied.',
+  source: 'Aintrix Academy Programme Catalogue & Specifications.',
 } as const;

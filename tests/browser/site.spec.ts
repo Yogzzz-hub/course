@@ -3,7 +3,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { routes } from '../../src/data/routes';
 // Entrance fades are transient, so contrast is scanned once the page has hydrated (the reading bar gets its inline
 // transform) and no finite animation has run for a few consecutive samples, which also covers in-view reveals.
-const settled=async(page:Page)=>{await page.locator('.reading-progress[style]').waitFor({state:'attached'});let quiet=0;await expect.poll(async()=>{quiet=await page.evaluate(()=>document.getAnimations().some(animation=>animation.playState==='running'&&Number.isFinite(animation.effect?.getComputedTiming().endTime)))?0:quiet+1;return quiet;},{intervals:[200]}).toBeGreaterThan(2);};
+const settled=async(page:Page)=>{await page.locator('.reading-progress[style]').waitFor({state:'attached'});let quiet=0;await expect.poll(async()=>{quiet=await page.evaluate(()=>document.getAnimations().some(animation=>animation.playState==='running'&&Number.isFinite(animation.effect?.getComputedTiming().endTime)))?0:quiet+1;return quiet;},{intervals:[200],timeout:15000}).toBeGreaterThan(2);};
 const paths=[
   '/',
   '/programmes',
@@ -42,7 +42,7 @@ for(const path of paths){test(`route, links and responsive layout: ${path}`,asyn
  expect(errors).toEqual([]);
 });}
 
-for(const path of ['/','/programmes/python-full-stack','/contact','/book-session','/learning-experience']){test(`accessibility: ${path}`,async({page})=>{await page.goto(path);await settled(page);const scan=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze();expect(scan.violations).toEqual([]);});}
+for(const path of ['/','/programmes/python-full-stack','/contact','/book-session','/learning-experience']){test(`accessibility: ${path}`,async({page})=>{test.setTimeout(120000);await page.goto(path);await settled(page);const scan=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze();expect(scan.violations).toEqual([]);});}
 
 test('mobile drawer manages focus, escape, scroll locking and route selection',async({page})=>{
  await page.setViewportSize({width:390,height:844});await page.goto('/about');

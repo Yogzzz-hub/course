@@ -61,7 +61,7 @@
 .ss-student progress::-moz-progress-bar { background: linear-gradient(90deg, var(--accent), var(--accent-soft-dark)); }
 
 /* Navigation */
-.ss-student .student-bottom-nav { left: 12px; right: 12px; bottom: 10px; border: 1px solid var(--border); border-radius: 26px; background: color-mix(in srgb, var(--surface) 82%, transparent) !important; backdrop-filter: blur(18px) saturate(1.6); -webkit-backdrop-filter: blur(18px) saturate(1.6); box-shadow: 0 20px 50px -24px color-mix(in srgb, var(--accent) 50%, transparent); }
+.ss-student .student-bottom-nav { left: 12px; right: 12px; bottom: max(10px, env(safe-area-inset-bottom)); padding-bottom: max(6px, env(safe-area-inset-bottom)); border: 1px solid var(--border); border-radius: 26px; background: color-mix(in srgb, var(--surface) 82%, transparent) !important; backdrop-filter: blur(18px) saturate(1.6); -webkit-backdrop-filter: blur(18px) saturate(1.6); box-shadow: 0 20px 50px -24px color-mix(in srgb, var(--accent) 50%, transparent); }
 :is(.ss-student, .ss-admin) nav :is(a, button)[aria-current="page"] { position: relative; }
 :is(.ss-student, .ss-admin) aside nav :is(a, button) { border-radius: 14px; transition: background .25s, color .25s, transform .35s cubic-bezier(.22,1,.36,1); }
 :is(.ss-student, .ss-admin) aside nav :is(a, button):hover { transform: translateX(4px); }

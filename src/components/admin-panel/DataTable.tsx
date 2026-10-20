@@ -1,4 +1,4 @@
-﻿import { useId, useMemo, useState, type ReactNode } from "react";
+import { useId, useMemo, useState, type ReactNode } from "react";
 import {
   useTable,
   tableFeatures,
@@ -88,14 +88,15 @@ export function DataTable<T extends { id: string }>({
         <Empty>No matching {label.toLowerCase()}.</Empty>
       ) : (
         <>
-          <p className="text-xs text-slate-500 lg:hidden">
-            Scroll horizontally to see all columns.
-          </p>
+          <div className="flex items-center gap-1.5 text-xs text-slate-500 lg:hidden">
+            <span aria-hidden="true">↔</span>
+            <span>Swipe horizontally to view all columns.</span>
+          </div>
           <div
             tabIndex={0}
             role="region"
             aria-label={`${label} table`}
-            className="overflow-x-auto rounded-xl border border-slate-200"
+            className="overflow-x-auto rounded-xl border border-slate-200 touch-pan-x overscroll-x-contain focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
           >
             <table className="min-w-[900px] w-full text-left text-sm">
               <caption className="sr-only">{label}</caption>

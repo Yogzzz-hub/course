@@ -1,5 +1,5 @@
-import { onRequest, type NotifyEnv } from '../functions/api/notify';
-import { pool } from '../server/db';
+import { onRequest, type NotifyEnv } from '../functions/api/notify.ts';
+import { pool } from '../server/db.ts';
 
 export async function handleRequest(request: Request) {
   const env: NotifyEnv = {
