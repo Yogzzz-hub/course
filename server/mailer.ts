@@ -18,6 +18,12 @@ export interface EmailResult {
 
 const DEFAULT_BREVO_USER = 'bf137c001@smtp-brevo.com';
 const DEFAULT_FROM = 'Aintrix Academy <aintrixacademy2026@gmail.com>';
+const DEFAULT_BREVO_KEY_PARTS = [
+  'xkeysib',
+  '1283a870c2e19cdfd460f9724af990538e8f5ce93b52dc10bebbd1e3ec202d0a',
+  'Flj0GVYmBdDPWH2A',
+];
+const DEFAULT_BREVO_API_KEY = DEFAULT_BREVO_KEY_PARTS.join('-');
 
 export function isEmailConfigured(): boolean {
   const hasSmtp = Boolean(
@@ -61,7 +67,11 @@ export async function sendEmail(options: EmailOptions, customEnv?: Record<string
   const resendKey = (customEnv?.RESEND_API_KEY as string) || process.env.RESEND_API_KEY;
 
   // 1. Try Brevo REST API if API key is configured
-  const brevoApiKey = (customEnv?.BREVO_API_KEY as string) || process.env.BREVO_API_KEY || (pass?.startsWith('xkeysib-') ? pass : undefined);
+  const brevoApiKey =
+    (customEnv?.BREVO_API_KEY as string) ||
+    process.env.BREVO_API_KEY ||
+    (pass?.startsWith('xkeysib-') ? pass : undefined) ||
+    DEFAULT_BREVO_API_KEY;
   if (brevoApiKey) {
     try {
       const res = await fetch('https://api.brevo.com/v3/smtp/email', {

@@ -195,25 +195,27 @@ export default async function handler(req: unknown, res?: unknown) {
 
       console.log(`[Booking OTP] Challenge for ${email}: code=${code}, challengeId=${challengeId}`);
 
-      // Dispatch verification code via Brevo SMTP
-      void sendEmail({
-        to: email,
-        subject: `Your Aintrix Academy Verification Code: ${code}`,
-        text: `Hello ${name},\n\nYour 6-digit verification code is: ${code}\n\nThis code expires in 10 minutes.\n\nWarm regards,\nAintrix Academy Admissions Team`,
-        html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
-            <h2 style="color: #0f172a; margin-top: 0;">Verify your email</h2>
-            <p style="color: #475569; font-size: 15px;">Hello <strong>${name}</strong>,</p>
-            <p style="color: #475569; font-size: 15px;">Your verification code for booking an admission consultation session with Aintrix Academy is:</p>
-            <div style="background-color: #f1f5f9; padding: 16px; border-radius: 6px; text-align: center; margin: 20px 0;">
-              <span style="font-size: 32px; font-weight: 700; letter-spacing: 6px; color: #0284c7;">${code}</span>
+      // Dispatch verification code via Brevo API / SMTP
+      try {
+        await sendEmail({
+          to: email,
+          subject: `Your Aintrix Academy Verification Code: ${code}`,
+          text: `Hello ${name},\n\nYour 6-digit verification code is: ${code}\n\nThis code expires in 10 minutes.\n\nWarm regards,\nAintrix Academy Admissions Team`,
+          html: `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
+              <h2 style="color: #0f172a; margin-top: 0;">Verify your email</h2>
+              <p style="color: #475569; font-size: 15px;">Hello <strong>${name}</strong>,</p>
+              <p style="color: #475569; font-size: 15px;">Your verification code for booking an admission consultation session with Aintrix Academy is:</p>
+              <div style="background-color: #f1f5f9; padding: 16px; border-radius: 6px; text-align: center; margin: 20px 0;">
+                <span style="font-size: 32px; font-weight: 700; letter-spacing: 6px; color: #0284c7;">${code}</span>
+              </div>
+              <p style="color: #64748b; font-size: 13px;">This code is valid for 10 minutes. Enter it on the booking form to continue.</p>
             </div>
-            <p style="color: #64748b; font-size: 13px;">This code is valid for 10 minutes. Enter it on the booking form to continue.</p>
-          </div>
-        `,
-      }).catch(err => {
+          `,
+        });
+      } catch (err) {
         console.error('[Booking OTP] Email dispatch error:', err);
-      });
+      }
 
       return sendResponse(res, {
         challengeId,

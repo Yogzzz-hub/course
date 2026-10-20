@@ -199,12 +199,23 @@ export async function onRequest({ request, env }: { request: Request; env: Booki
       }
     }
 
-    // Dispatch email
-    void sendEdgeEmail(
+    // Dispatch email (awaited so serverless isolate does not terminate prematurely)
+    await sendEdgeEmail(
       env,
       email,
       `Your Aintrix Academy Verification Code: ${code}`,
-      `Hello ${name},\n\nYour 6-digit verification code is: ${code}\n\nThis code expires in 10 minutes.\n\nWarm regards,\nAintrix Academy Admissions Team`
+      `Hello ${name},\n\nYour 6-digit verification code is: ${code}\n\nThis code expires in 10 minutes.\n\nWarm regards,\nAintrix Academy Admissions Team`,
+      `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
+          <h2 style="color: #0f172a; margin-top: 0;">Verify your email</h2>
+          <p style="color: #475569; font-size: 15px;">Hello <strong>${name}</strong>,</p>
+          <p style="color: #475569; font-size: 15px;">Your verification code for booking an admission counselling session with Aintrix Academy is:</p>
+          <div style="background-color: #f1f5f9; padding: 16px; border-radius: 6px; text-align: center; margin: 20px 0;">
+            <span style="font-size: 32px; font-weight: 700; letter-spacing: 6px; color: #0284c7;">${code}</span>
+          </div>
+          <p style="color: #64748b; font-size: 13px;">This code is valid for 10 minutes. Enter it on the booking form to continue.</p>
+        </div>
+      `
     );
 
     return json({
@@ -328,21 +339,22 @@ export async function onRequest({ request, env }: { request: Request; env: Booki
     bookingStore.set(bookingId, booking);
     if (holdId) holdStore.delete(holdId);
 
-    // Confirmation emails
-    void sendEdgeEmail(
-      env,
-      email,
-      `Session Confirmed: Your Aintrix Academy Counselling Session (${bookingId})`,
-      `Hello ${name},\n\nYour 1-on-1 admission counselling session is confirmed!\n\nBooking ID: ${bookingId}\nProgramme: ${programmeId}\nDate & Time: ${slot.startsAt}\n\nOur team will connect with you at your chosen time.\n\nWarm regards,\nAintrix Academy Admissions`
-    );
-
+    // Confirmation emails (awaited so serverless worker completes dispatch)
     const adminEmail = env.ENQUIRY_TO || 'aintrixacademy2026@gmail.com';
-    void sendEdgeEmail(
-      env,
-      adminEmail,
-      `New Counselling Booking: ${name} (${bookingId})`,
-      `New Booking received:\n\nStudent: ${name}\nEmail: ${email}\nPhone: ${about.phone || 'N/A'}\nProgramme: ${programmeId}\nSlot: ${slot.startsAt}`
-    );
+    await Promise.allSettled([
+      sendEdgeEmail(
+        env,
+        email,
+        `Session Confirmed: Your Aintrix Academy Counselling Session (${bookingId})`,
+        `Hello ${name},\n\nYour 1-on-1 admission counselling session is confirmed!\n\nBooking ID: ${bookingId}\nProgramme: ${programmeId}\nDate & Time: ${slot.startsAt}\n\nOur team will connect with you at your chosen time.\n\nWarm regards,\nAintrix Academy Admissions`
+      ),
+      sendEdgeEmail(
+        env,
+        adminEmail,
+        `New Counselling Booking: ${name} (${bookingId})`,
+        `New Booking received:\n\nStudent: ${name}\nEmail: ${email}\nPhone: ${about.phone || 'N/A'}\nProgramme: ${programmeId}\nSlot: ${slot.startsAt}`
+      ),
+    ]);
 
     return json({
       bookingId,
