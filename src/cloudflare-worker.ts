@@ -22,6 +22,15 @@ function jsonResponse(data: unknown, status = 200, headers: Record<string, strin
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    // Populate process.env so Node utilities like nodemailer access Cloudflare env vars
+    if (typeof process !== 'undefined' && process.env) {
+      for (const [key, value] of Object.entries(env)) {
+        if (typeof value === 'string') {
+          process.env[key] = value;
+        }
+      }
+    }
+
     const url = new URL(request.url);
     const pathname = url.pathname;
 

@@ -28,11 +28,11 @@ export function isEmailConfigured(): boolean {
   return hasSmtp || hasResend;
 }
 
-export function createSmtpTransporter() {
-  const host = process.env.SMTP_HOST || 'smtp-relay.brevo.com';
-  const port = Number(process.env.SMTP_PORT) || 587;
-  const user = process.env.SMTP_USER || DEFAULT_BREVO_USER;
-  const pass = process.env.SMTP_PASS || process.env.BREVO_SMTP_KEY;
+export function createSmtpTransporter(customEnv?: Record<string, unknown>) {
+  const host = (customEnv?.SMTP_HOST as string) || process.env.SMTP_HOST || 'smtp-relay.brevo.com';
+  const port = Number(customEnv?.SMTP_PORT || process.env.SMTP_PORT) || 587;
+  const user = (customEnv?.SMTP_USER as string) || process.env.SMTP_USER || DEFAULT_BREVO_USER;
+  const pass = (customEnv?.SMTP_PASS as string) || (customEnv?.BREVO_SMTP_KEY as string) || process.env.SMTP_PASS || process.env.BREVO_SMTP_KEY;
 
   if (!pass) return null;
 
@@ -54,12 +54,50 @@ export function createSmtpTransporter() {
   });
 }
 
-export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
-  const from = options.from || process.env.SMTP_FROM || process.env.ENQUIRY_FROM || DEFAULT_FROM;
+export async function sendEmail(options: EmailOptions, customEnv?: Record<string, unknown>): Promise<EmailResult> {
+  const from = options.from || (customEnv?.SMTP_FROM as string) || (customEnv?.ENQUIRY_FROM as string) || process.env.SMTP_FROM || process.env.ENQUIRY_FROM || DEFAULT_FROM;
   const to = Array.isArray(options.to) ? options.to.join(', ') : options.to;
+  const pass = (customEnv?.SMTP_PASS as string) || (customEnv?.BREVO_SMTP_KEY as string) || process.env.SMTP_PASS || process.env.BREVO_SMTP_KEY;
+  const resendKey = (customEnv?.RESEND_API_KEY as string) || process.env.RESEND_API_KEY;
 
-  // 1. Try Brevo SMTP via nodemailer
-  const transporter = createSmtpTransporter();
+  // 1. Try Brevo REST API if API key is configured
+  const brevoApiKey = (customEnv?.BREVO_API_KEY as string) || process.env.BREVO_API_KEY || (pass?.startsWith('xkeysib-') ? pass : undefined);
+  if (brevoApiKey) {
+    try {
+      const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'api-key': brevoApiKey,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          sender: { name: 'Aintrix Academy', email: 'aintrixacademy2026@gmail.com' },
+          to: (Array.isArray(options.to) ? options.to : [options.to]).map((email) => ({ email })),
+          subject: options.subject,
+          htmlContent: options.html || `<p>${options.text.replace(/\n/g, '<br/>')}</p>`,
+          textContent: options.text,
+        }),
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (res.ok) {
+        const data = (await res.json()) as { messageId?: string };
+        return {
+          success: true,
+          id: data.messageId,
+          provider: 'brevo-smtp',
+        };
+      }
+      const errBody = await res.text();
+      console.error('[Mailer] Brevo REST API error:', errBody);
+    } catch (err: unknown) {
+      console.error('[Mailer] Brevo REST API network error:', err);
+    }
+  }
+
+  // 2. Try Brevo SMTP via nodemailer
+  const transporter = createSmtpTransporter(customEnv);
   if (transporter) {
     try {
       const info = await transporter.sendMail({
@@ -80,8 +118,8 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
       const errorMsg = err instanceof Error ? err.message : String(err);
       console.error('[Mailer] Brevo SMTP delivery error:', errorMsg);
 
-      // If resend is also configured, attempt fallback
-      if (!process.env.RESEND_API_KEY) {
+      // If neither resend nor brevo-api worked, return error result
+      if (!resendKey && !brevoApiKey) {
         return {
           success: false,
           error: errorMsg,
@@ -91,8 +129,8 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
     }
   }
 
-  // 2. Fallback to Resend API if configured
-  if (process.env.RESEND_API_KEY) {
+  // 3. Fallback to Resend API if configured
+  if (resendKey) {
     try {
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',

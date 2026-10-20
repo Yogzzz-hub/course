@@ -1,4 +1,5 @@
 import { programmes } from './data.ts';
+import { sendEmail } from '../../../server/mailer.ts';
 
 interface OtpRecord {
   code: string;
@@ -26,6 +27,13 @@ interface BookingRecord {
 
 export interface BookingEnv {
   RESEND_API_KEY?: string;
+  BREVO_API_KEY?: string;
+  SMTP_HOST?: string;
+  SMTP_PORT?: string | number;
+  SMTP_USER?: string;
+  SMTP_PASS?: string;
+  BREVO_SMTP_KEY?: string;
+  SMTP_FROM?: string;
   NEXT_PUBLIC_SUPABASE_URL?: string;
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?: string;
   SUPABASE_SERVICE_ROLE_KEY?: string;
@@ -95,37 +103,28 @@ async function sendEdgeEmail(
   text: string,
   html?: string
 ): Promise<{ success: boolean; id?: string }> {
-  const from = env.ENQUIRY_FROM || 'Aintrix Academy <aintrixacademy2026@gmail.com>';
+  try {
+    const result = await sendEmail(
+      {
+        to,
+        subject,
+        text,
+        html,
+        from: env.SMTP_FROM || env.ENQUIRY_FROM || 'Aintrix Academy <aintrixacademy2026@gmail.com>',
+      },
+      env as Record<string, unknown>
+    );
 
-  // 1. If Resend API Key is set in Cloudflare Dashboard
-  if (env.RESEND_API_KEY) {
-    try {
-      const res = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${env.RESEND_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from,
-          to: [to],
-          subject,
-          text,
-          ...(html ? { html } : {}),
-        }),
-        signal: AbortSignal.timeout(8000),
-      });
-
-      if (res.ok) {
-        const data = await res.json() as { id?: string };
-        return { success: true, id: data.id };
-      }
-    } catch {
-      // Non-blocking fallback
+    if (result.success) {
+      console.log(`[Booking Mailer] Email dispatched to ${to} via ${result.provider}`);
+      return { success: true, id: result.id };
     }
+    console.error(`[Booking Mailer] Dispatch attempt returned: ${result.error || 'Failed'}`);
+  } catch (err) {
+    console.error('[Booking Mailer] Error in sendEdgeEmail:', err);
   }
 
-  // Graceful simulation
+  // Fallback acknowledgment
   return { success: true, id: `sim-${Date.now()}` };
 }
 
