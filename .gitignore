@@ -11,4 +11,7 @@ playwright-report/
 .vercel
 test-results-learning/
 .local/
-CRM/
+.next/
+*.tsbuildinfo
+backups/*.db
+backups/*.json

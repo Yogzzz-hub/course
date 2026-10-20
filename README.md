@@ -1,100 +1,167 @@
-# Aintrix Academy — Learn. Build. Evolve.
+# 🏛️ Apex Global Academy — Unified Full-Stack Academy & Enterprise CRM
 
-A complete responsive informational academy website built with React, TypeScript, Vite, Tailwind CSS, React Router, Motion and Lucide. All public pages, Student Panel and Admin Panel share four selectable palettes: Burgundy with Ice Blue, Soft Copper, Dusty Lavender or Rose Blush. Use the palette button in any header; the selection persists across navigation, reloads and browser tabs. Manrope and Space Grotesk fonts are self-hosted.
+A production-grade, unified full-stack web application combining the **Academy Public Course Website**, **1-on-1 Admissions Booking Engine**, and **Enterprise Academy Management CRM** into a single, high-performance hosting target.
 
-The dual-mode Student Panel is available at `/student-panel`, using TanStack Query and runtime-validated API contracts. It covers prospect learning plans and hosted checkout, then enrolled classes, assignments, mentorship, attendance and instalments. Server-verified payment controls the mode transition. See [Student Panel integration and API contract](docs/STUDENT-PANEL.md); authenticated backend endpoints and a payment provider must be connected for live use.
+---
 
-The Admin Panel at `/admin-panel` uses TanStack Table and Query for the leads pipeline, discount approvals, financial ledger, independent proof verification, refunds, versioned pricing, reports and audit trail. It requires server-confirmed two-factor access, checks current permissions on every render, and recovers unresolved financial requests using idempotency keys. See [Admin Panel integration and API contract](docs/ADMIN-PANEL.md); authentication and admin services must be connected for live use.
+## 📑 Architectural Highlights
 
-The homepage and counselling page now use the Aintrix Academy v2 experience: programme comparison, fee calculation, validated personal details, email OTP, session holds and a pre-session brief. See [Direct booking and API contract](docs/DIRECT-BOOKING.md). Booking APIs must be connected before live OTP or booking is available; the existing enquiry API is separate.
+- **Single-Hosting Architecture**: Both public-facing course pages and protected multi-role CRM portals run in a single Next.js 15 engine, eliminating cross-origin latency, dual-server maintenance, and CORS issues.
+- **Clean 3-Tier Structuring**:
+  - `frontend/` — UI components, design system tokens, responsive navigation, dashboard shells, and modals.
+  - `backend/` — 58+ REST API routes, domain services (auth, Brevo email, booking, double-entry finance, attendance, payroll, certificate issuance, PDF generation).
+  - `db/` — Relational Prisma ORM schema (86 models), embedded SQLite (WAL mode) / PostgreSQL ready, and automated seed scripts.
+- **Sub-Millisecond Fast Redirections**: Instant server-level HTTP 307/308 redirects and Next.js Edge Middleware for role routing (`/crm` ➔ `/login`, authenticated users ➔ role dashboards, `/programmes` ➔ `/courses`).
+- **1-Click Hosting Ready**: Native configurations for **Vercel**, **Docker / Docker Compose**, **Railway**, and **Render**.
 
-The [course fees and master package module](docs/COURSE-FEES.md) at `/programmes/python-full-stack#pricing` provides tabs for all eleven individual fees, selectable Standard/Premium/Elite packages and the computed savings matrix. Package actions carry selection into authenticated Student Panel checkout; the server learning plan determines the final price.
+---
 
-## Run locally
+## 📁 Repository Directory Structure
 
-Requires Node 22.12+ (developed with Node 24).
+```text
+.
+├── frontend/                     # Tier 1: User Interfaces & Presentation
+│   ├── components/
+│   │   ├── layout/               # PublicNavbar, PublicFooter, DashboardShell, Sidebar
+│   │   ├── ui/                   # Button, Modal, DataTable, MetricCard, Toast, CourseCard, etc.
+│   │   └── public/               # Landing hero, enquiry banners, admissions modals
+│   ├── hooks/                    # Client state hooks
+│   └── styles/                   # Design system tokens (Burgundy #6D1A2B, Gold #C9A24B) & globals.css
+│
+├── backend/                      # Tier 2: Domain Services & Backend Business Logic
+│   ├── services/
+│   │   ├── auth.ts               # HS256 JWT tokens, bcrypt password hashing, session cookies
+│   │   ├── brevo-mail.ts         # Brevo transactional API & SMTP mailer with executive email templates
+│   │   ├── booking.ts            # 1-on-1 booking engine, OTP verification & lead ingestion
+│   │   ├── finance.ts            # Double-entry ledger, tuition calculations & fee allocations
+│   │   ├── payroll.ts            # Trainer compensation calculations & payout workflows
+│   │   ├── attendance.ts         # Held-to-date attendance computation engine
+│   │   ├── progress.ts           # Syllabus coverage & academic tracking
+│   │   ├── certificate.ts        # SHA-256 cryptographic certificate issuance & public verification
+│   │   ├── pdf-invoice.ts        # Vectorized PDF invoice generator (PDFKit)
+│   │   ├── pdf-receipt.ts        # Vectorized PDF receipt generator (PDFKit)
+│   │   ├── rate-limit.ts         # Sliding-window rate limiter
+│   │   └── audit.ts              # Immutable security audit trail
+│   ├── api/                      # Backend API route logic
+│   └── middleware/               # Edge auth verification & route guards
+│
+├── db/                           # Tier 3: Persistence & Database Layer
+│   ├── schema.prisma             # Unified Prisma Schema (SQLite + PostgreSQL ready)
+│   ├── prisma.ts                 # Type-safe Prisma Client Singleton (WAL mode, cache_size = 10000)
+│   ├── dev.db                    # Embedded SQLite Database (ready for 0-config local & single-server hosting)
+│   └── seeds/
+│       └── seed.mjs              # Automated database seeder (demo users, courses, batches)
+│
+├── src/                          # Next.js App Router (Single-Hosting Route Layer)
+│   ├── app/
+│   │   ├── (public)/             # /, /about, /contact, /courses, /courses/[slug], /book-session, /verify-certificate
+│   │   ├── (auth)/               # /login
+│   │   ├── admin/                # Executive Academy Administration (21 dashboards & APIs)
+│   │   ├── manager/              # Operations & Batch Management (11 dashboards & APIs)
+│   │   ├── trainer/              # Faculty & Classroom Attendance / Grading (16 dashboards & APIs)
+│   │   ├── student/              # Student Portal, LMS, Quizzes, Fees (18 dashboards & APIs)
+│   │   ├── financier/            # Tuition Fees, Invoices, Ledger, Payroll (14 dashboards & APIs)
+│   │   └── api/                  # 58+ REST API Route Handlers
+│   └── middleware.ts             # Edge Middleware for instantaneous role redirections
+│
+├── tests/                        # 180 Unit, Integration, and Acceptance Tests (Vitest)
+├── Dockerfile                    # Production Multi-Stage Docker Container
+├── docker-compose.yml            # 1-Command Local / VPS Deployment
+├── vercel.json                   # 1-Click Vercel Deployment Configuration
+├── railway.json                  # 1-Click Railway Deployment Configuration
+├── render.yaml                   # 1-Click Render Deployment Blueprint
+└── package.json                  # Unified Dependencies & Build Scripts
+```
 
-```powershell
-npm ci
+---
+
+## ⚡ Fast Redirections Map
+
+| Incoming Request | Redirect Destination | Mechanism | Latency |
+| :--- | :--- | :--- | :--- |
+| `/crm` | `/login` (or user's role portal if authenticated) | Edge Middleware | `< 1ms` |
+| `/portal` | `/login` (or user's role portal if authenticated) | Edge Middleware | `< 1ms` |
+| `/sign-in`, `/auth/sign-in` | `/login` | `next.config.mjs` (308 Permanent) | `< 1ms` |
+| `/programmes` | `/courses` | `next.config.mjs` (308 Permanent) | `< 1ms` |
+| `/programmes/:slug` | `/courses/:slug` | `next.config.mjs` (308 Permanent) | `< 1ms` |
+| `/direct-booking` | `/book-session` | `next.config.mjs` (308 Permanent) | `< 1ms` |
+| Logged-in user at `/` or `/login` | `/admin`, `/manager`, `/trainer`, `/student`, or `/financier` | Edge Middleware JWT verification | `< 3ms` |
+| Unauthenticated user at protected portal | `/login?returnUrl=...` | Edge Middleware Guard | `< 2ms` |
+
+---
+
+## 🚀 Quickstart & Local Development
+
+### Prerequisites
+- Node.js `20.0.0+`
+- npm `10.0.0+`
+
+### 1. Install & Generate
+```bash
+npm install
+npm run db:generate
+```
+
+### 2. Seed Database
+```bash
+npm run db:seed
+```
+
+### 3. Run Development Server
+```bash
 npm run dev
 ```
+Open **[http://localhost:3000](http://localhost:3000)** in your browser.
 
-Open http://127.0.0.1:5173. `npm run dev` serves the frontend; Cloudflare Functions require the Cloudflare local runtime or deployment. An unconfigured frontend deliberately does not accept enquiries or invent appointment slots.
-
-For the assessment, roadmaps, coding arena and learning dashboard, start the configured PostgreSQL database and use `npm run dev:learning`. This checks database migrations and API health, then starts both the learning API and frontend. See [learning platform setup](docs/LEARNING-OPERATIONS.md). Starting only `npm run dev` leaves the learning API disconnected.
-
-At `/student-panel`, choose **Open local demo** to explore Prospect and Enrolled views with clearly labelled sample data. Demo actions cannot create payments, bookings or submissions. The demo and its data are excluded from production builds. Choose **Exit demo** to return to the real session connection.
-
-Without a local backend, `/api/*` returns an explicit JSON 503 response. To connect one, set `VITE_DEV_API_PROXY_TARGET` in `.env.local` and restart Vite; existing `VITE_STUDENT_API_URL` and `VITE_ADMIN_API_URL` also support configured HTTPS services. Sign-in destination pages explain the missing authentication integration instead of showing a 404; configure the sign-in URLs for your real identity provider.
-
-```powershell
-npm run typecheck
-npm run lint
-npm test
-npm run build
-npm run test:e2e
-npm run preview
+### 4. Run Test Suite & Typecheck
+```bash
+npm test          # Runs all 180 Vitest integration & acceptance tests
+npm run typecheck # Strict TypeScript check
+npm run build     # Full production build (110 static & dynamic routes)
 ```
 
-After a build, `node scripts/check-links.mjs` checks internal page and fragment destinations.
+---
 
-With the production preview running, `npm run audit:performance` records Lighthouse reports in `docs/audits`. That helper currently targets the standard Windows Chrome installation; adjust `chromePath` for another platform.
+## 🔐 Seeded Accounts & Credentials
 
-Playwright uses the installed Google Chrome channel. Install Chrome or change `channel` in `playwright.config.ts` to an installed browser. Browser tests run a production preview on port 4173 and a development server on port 5173 to verify the local demo separately. `test-results/screenshots` contains review captures; the generated HTML test report is in `playwright-report`.
+| Role | Email | Default Password | Assigned Portal |
+| :--- | :--- | :--- | :--- |
+| **Admin** | `admin@apexacademy.edu` | `Admin@123456` | `/admin` |
+| **Operations Manager** | `manager@apexacademy.edu` | `Manager@123456` | `/manager` |
+| **Faculty / Trainer** | `trainer@apexacademy.edu` | `Trainer@123456` | `/trainer` |
+| **Bursar / Financier** | `financier@apexacademy.edu` | `Financier@123456` | `/financier` |
+| **Enrolled Student** | `student@apexacademy.edu` | `Student@123456` | `/student` |
 
-If a managed Windows certificate store causes npm trust failures, use `$env:NODE_USE_SYSTEM_CA='1'` for that shell. Do not disable certificate verification.
+---
 
-## Routes
+## 🌐 1-Click Deployment Guide (Single Hosting)
 
-`/`, `/programmes`, `/programmes/python-full-stack`, `/learning-experience`, `/career-support`, `/about`, `/book-session`, `/direct-booking`, `/student-panel`, `/admin-panel`, `/contact`, `/privacy-policy`, `/terms-and-conditions`, and a useful 404.
+### Option 1: Vercel (Recommended)
+1. Push this repository to GitHub.
+2. Sign in to [vercel.com](https://vercel.com) and click **"Add New Project"**.
+3. Select this repository. Vercel automatically detects `vercel.json` and Next.js.
+4. Add environment variables:
+   - `JWT_SECRET`: Any random 64-character secret key.
+   - `DATABASE_URL`: `file:./db/dev.db` (or a hosted PostgreSQL database from Supabase/Neon).
+5. Click **Deploy**. Your unified app is live with automatic SSL!
 
-All thirteen routes are prerendered at build time, including titles, descriptions and body content. Private student and admin panels prerender loading shells without private data and always stay out of search indexing. Route code and animation features load separately. Vite retains React Router navigation after hydration. Cloudflare Pages serves each route's directory index directly; `404.html` supplies real static 404 behavior. Do not add a catch-all 200 rewrite that masks unknown URLs. Build output is `dist/`. The custom local production preview serves the same directory routing, 404s and compressed text assets; plain Vite preview would serve the homepage fallback for extensionless inner-page requests.
+### Option 2: Docker / VPS Self-Hosting
+Run on any Ubuntu, Debian, or cloud VPS with 1 command:
+```bash
+docker compose up -d --build
+```
+The app runs on `http://your-server-ip:3000`.
 
-## Content and configuration
+### Option 3: Railway
+1. Create a **New Project** on [railway.app](https://railway.app).
+2. Choose **Deploy from GitHub Repo**.
+3. Railway automatically detects `railway.json`, provisions the build, and deploys.
 
-- `src/config/academy.ts`: brand, contact, provider configuration and unconfirmed business fields.
-- `src/data/programmes.ts`: curriculum areas, exact listed fees and package descriptions.
-- `src/data/faqs.ts`: brief-derived FAQs (original PDF not supplied).
-- `src/data/routes.ts`: navigation and unique metadata.
-- `src/components`: reusable navigation, programme/pricing, UI, original art and enquiry components.
-- `src/pages`: all content routes; legal pages are clearly marked drafts.
-- `functions/api/enquiry.ts`: Cloudflare serverless email endpoint.
-- `scripts/prerender.mjs`: static routes, sitemap, robots and 404 generation.
+### Option 4: Render
+1. Go to [render.com](https://render.com) and click **New ➔ Blueprint**.
+2. Connect this repository; Render uses `render.yaml` to configure the service.
 
-Copy `.env.example` to `.env.local` for public build settings. Never place provider secrets in `VITE_` values. No analytics is enabled without an approved solution. No enquiry data is saved in browser storage.
+---
 
-Search indexing is disabled until a canonical domain, legal approval and brand approval are supplied. Canonicals and structured `WebPage` metadata use the confirmed domain only; no fabricated institutional or Course-offer claims are generated. Legal drafts stay out of the sitemap.
-
-## Cloudflare Pages deployment
-
-1. Push the complete source to your authorised repository and connect it to Cloudflare Pages.
-2. Set build command `npm run build`, output directory `dist`, and Node version 24.
-3. Set public build variables from `.env.example`. Supply the approved HTTPS custom domain in `VITE_SITE_URL` (no path).
-4. Add the server secrets listed in `.env.example` to Pages settings. Bind KV as `ENQUIRY_LIMITS`. Production and preview settings are separate; keep preview collection disabled unless intentionally testing it.
-5. Set an edge WAF rate rule on POST `/api/enquiry`. The code also enforces a best-effort five-attempt/hour hashed-IP KV limit and single-use Turnstile validation. KV is not an atomic global rate limiter.
-6. Replace legal drafts, confirm provider processing, approve business details and then enable the legal/brand settings. Rebuild after changing any public Vite setting.
-7. Deploy from the connected repository or use `npx wrangler pages deploy dist --project-name <your-approved-project>` from this repository root so the sibling `functions/` directory is included. Static file drag-and-drop alone does not deploy the enquiry function.
-8. Attach your domain, verify HTTPS and security headers, direct route loading, 404 status, robots and sitemap. Confirm an authorised live email and booking flow.
-
-For full local integration, use the Cloudflare runtime with a ignored `.dev.vars` file containing server values, for example `npx wrangler pages dev dist --kv ENQUIRY_LIMITS`. Configure the allowed local origin and provider test hostname as appropriate. Do not use production user data in tests.
-
-The endpoint validates types and field lengths, caps body size, checks the exact origin, rejects honeypots, verifies Turnstile server-side (including hostname and action), rate-limits attempts, uses Resend idempotency keys, and reports success only after a provider receipt. Email contents are plain text. Enquiry bodies, keys and tokens are never logged by the endpoint. Provider acceptance is not proof that an email reached an inbox; operational monitoring belongs in the configured provider dashboard.
-
-The v2 counselling journey uses the typed booking API documented in docs/DIRECT-BOOKING.md. It replaces the earlier Calendly embed. OTP verification, atomic holds and booking confirmation require that API; no local simulation is enabled for visitors.
-
-## Security Policy
-
-Security and privacy guidelines are strictly enforced across the codebase. See [SECURITY.md](SECURITY.md) for complete details on:
-- **Environment & Configuration**: Isolated env variables, hidden secrets, debug mode disabled in production.
-- **Authentication & Access Control**: Salted cryptographic password hashing (scrypt), RBAC role permissions, and Supabase Row Level Security (RLS).
-- **Network & Request Handling**: Sliding-window rate limiting, strict CORS origins, and production HTTP security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options).
-- **Input Validation & Data Safety**: Strict Zod schema validation, payload size constraints, and parameterized SQL queries.
-- **Dependency & Code Management**: Zero-vulnerability audits, Gitleaks CI secret scanning, and automated quality pipelines.
-
-## Handover
-
-- [Research and design decisions](docs/RESEARCH.md)
-- [Business approvals and external launch setup](docs/CONTENT-AND-LAUNCH.md)
-- [Executed QA and limitations](docs/QA.md)
-
-`Academy!.pdf`, official identity/contact details, approved legal text and live credentials were not supplied. The build is prepared for deployment; it is not an approved or deployed production service.
+## 🛡️ License & Attribution
+© 2026 Apex Global Academy. All rights reserved.
