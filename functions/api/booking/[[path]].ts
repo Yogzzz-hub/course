@@ -87,77 +87,420 @@ function formatSessionDate(isoString: string): string {
 }
 
 function renderBookingConfirmationHtml(name: string, bookingId: string, programmeTitle: string, formattedDate: string): string {
-  return `
-    <div style="background-color: #f8fafc; padding: 40px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-      <div style="max-width: 580px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-        
-        <!-- Header -->
-        <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 36px 32px; text-align: center;">
-          <div style="color: #38bdf8; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;">Aintrix Academy Admissions</div>
-          <h1 style="color: #ffffff; font-size: 24px; font-weight: 700; margin: 8px 0 0 0; letter-spacing: -0.5px;">Session Confirmed</h1>
-          <div style="margin-top: 14px;">
-            <span style="background-color: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; font-size: 13px; font-weight: 600; padding: 4px 14px; border-radius: 9999px; display: inline-block;">
-              ✓ Booking Confirmed
-            </span>
-          </div>
-        </div>
+  return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Session Confirmed - Aintrix Academy</title>
+<!--[if mso]>
+<style type="text/css">
+body, table, td, a, span { font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif !important; }
+</style>
+<![endif]-->
+<style type="text/css">
+  body { margin: 0; padding: 0; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; background-color: #f1f5f9; }
+  table { border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+  table, td { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+  img { border: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
+  a { text-decoration: none; }
+</style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <center style="width: 100%; background-color: #f1f5f9; padding: 32px 0;">
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#f1f5f9" align="center" style="background-color: #f1f5f9; width: 100%; margin: 0 auto;">
+      <tr>
+        <td align="center" valign="top" style="padding: 0 12px;">
+          <!--[if (gte mso 9)|(IE)]>
+          <table align="center" border="0" cellspacing="0" cellpadding="0" width="600">
+          <tr>
+          <td align="center" valign="top" width="600">
+          <![endif]-->
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" align="center" style="max-width: 600px; width: 100%; margin: 0 auto; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05); table-layout: fixed;">
+            <tr>
+              <td bgcolor="#0f172a" style="background-color: #0f172a; padding: 28px 32px; text-align: center; border-bottom: 3px solid #10b981;">
+                <div style="font-size: 13px; font-weight: 800; letter-spacing: 2px; color: #38bdf8; text-transform: uppercase;">AINTRIX ACADEMY</div>
+                <h1 style="color: #ffffff; font-size: 22px; font-weight: 700; margin: 8px 0 0 0; line-height: 1.3;">Session Confirmed</h1>
+                <div style="margin-top: 12px;">
+                  <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center">
+                    <tr>
+                      <td bgcolor="#064e3b" style="background-color: #064e3b; border: 1px solid #10b981; border-radius: 20px; padding: 4px 14px;">
+                        <span style="font-size: 12px; font-weight: 700; color: #6ee7b7; letter-spacing: 0.5px; text-transform: uppercase;">
+                          ✓ Booking Confirmed &amp; Reserved
+                        </span>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 28px 32px 18px 32px;">
+                <p style="font-size: 16px; color: #0f172a; line-height: 1.5; margin: 0 0 8px 0;">
+                  Hello <strong>${name}</strong>,
+                </p>
+                <p style="font-size: 14px; color: #475569; line-height: 1.6; margin: 0;">
+                  Your 1-on-1 admission counselling and career evaluation session has been successfully reserved with our senior academic admissions advisors.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 0 32px 22px 32px;">
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#f8fafc" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #10b981; border-radius: 8px; padding: 18px 20px;">
+                  <tr>
+                    <td>
+                      <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.8px;">Appointment Details</div>
+                      <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 12px; font-size: 14px;">
+                        <tr>
+                          <td width="130" style="padding: 6px 0; color: #64748b; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px;">Date &amp; Time</td>
+                          <td style="padding: 6px 0; color: #0f172a; font-weight: 700; font-size: 15px;">${formattedDate}</td>
+                        </tr>
+                        <tr>
+                          <td width="130" style="padding: 6px 0; color: #64748b; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px;">Programme</td>
+                          <td style="padding: 6px 0; color: #0f172a; font-weight: 600;">${programmeTitle}</td>
+                        </tr>
+                        <tr>
+                          <td width="130" style="padding: 6px 0; color: #64748b; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px;">Format</td>
+                          <td style="padding: 6px 0; color: #334155;">1-on-1 Online Consultation (Google Meet)</td>
+                        </tr>
+                        <tr>
+                          <td width="130" style="padding: 6px 0; color: #64748b; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px;">Booking ID</td>
+                          <td style="padding: 6px 0;">
+                            <span style="font-family: monospace; font-size: 13px; font-weight: 700; color: #0f172a; background-color: #ffffff; padding: 2px 7px; border-radius: 4px; border: 1px solid #cbd5e1;">${bookingId}</span>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 0 32px 24px 32px;">
+                <div style="font-size: 12px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.8px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; margin-bottom: 12px;">
+                  What We Will Cover in Your Session
+                </div>
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                  <tr>
+                    <td width="24" valign="top" style="padding: 6px 0; color: #10b981; font-weight: 700; font-size: 15px;">✓</td>
+                    <td style="padding: 6px 0 6px 8px; color: #475569; font-size: 13px; line-height: 1.5;">
+                      <strong>Curriculum Deep-Dive:</strong> Walkthrough of practical engineering modules and production capstone projects.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td width="24" valign="top" style="padding: 6px 0; color: #10b981; font-weight: 700; font-size: 15px;">✓</td>
+                    <td style="padding: 6px 0 6px 8px; color: #475569; font-size: 13px; line-height: 1.5;">
+                      <strong>Career Transition Roadmap:</strong> Tailoring placement strategy and salary benchmarks to your target role.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td width="24" valign="top" style="padding: 6px 0; color: #10b981; font-weight: 700; font-size: 15px;">✓</td>
+                    <td style="padding: 6px 0 6px 8px; color: #475569; font-size: 13px; line-height: 1.5;">
+                      <strong>Scholarships &amp; Tuition Options:</strong> Discussion on merit fee assistance, EMI, and flexible installment plans.
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 0 32px 28px 32px;">
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#f1f5f9" style="background-color: #f1f5f9; border-radius: 8px; padding: 14px 16px;">
+                  <tr>
+                    <td>
+                      <div style="font-size: 12px; color: #475569; line-height: 1.5;">
+                        Need to reschedule or have questions before your call? Simply reply directly to this email or reach our admissions desk at <a href="mailto:aintrixacademy2026@gmail.com" style="color: #0284c7; font-weight: 600; text-decoration: none;">aintrixacademy2026@gmail.com</a>.
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td bgcolor="#f8fafc" style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 18px 32px; text-align: center;">
+                <div style="font-size: 12px; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.5px;">
+                  AINTRIX ACADEMY
+                </div>
+                <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                  Bridging ambitious engineers to high-growth software careers.
+                </div>
+              </td>
+            </tr>
+          </table>
+          <!--[if (gte mso 9)|(IE)]>
+          </td>
+          </tr>
+          </table>
+          <![endif]-->
+        </td>
+      </tr>
+    </table>
+  </center>
+</body>
+</html>`;
+}
 
-        <!-- Content -->
-        <div style="padding: 32px 32px 24px 32px;">
-          <p style="font-size: 16px; color: #1e293b; line-height: 1.6; margin-top: 0;">
-            Hello <strong>${name}</strong>,
-          </p>
-          <p style="font-size: 15px; color: #475569; line-height: 1.6; margin-bottom: 24px;">
-            Your 1-on-1 admission counselling and career evaluation session has been successfully booked with our academic admissions team.
-          </p>
+function renderOtpEmailHtml(name: string, code: string): string {
+  return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Verification Code - Aintrix Academy</title>
+<!--[if mso]>
+<style type="text/css">
+body, table, td, a, span { font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif !important; }
+</style>
+<![endif]-->
+<style type="text/css">
+  body { margin: 0; padding: 0; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; background-color: #f1f5f9; }
+  table { border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+  table, td { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+</style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <center style="width: 100%; background-color: #f1f5f9; padding: 32px 0;">
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#f1f5f9" align="center" style="background-color: #f1f5f9; width: 100%; margin: 0 auto;">
+      <tr>
+        <td align="center" valign="top" style="padding: 0 12px;">
+          <!--[if (gte mso 9)|(IE)]>
+          <table align="center" border="0" cellspacing="0" cellpadding="0" width="520">
+          <tr>
+          <td align="center" valign="top" width="520">
+          <![endif]-->
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" align="center" style="max-width: 520px; width: 100%; margin: 0 auto; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05); table-layout: fixed;">
+            <tr>
+              <td bgcolor="#0f172a" style="background-color: #0f172a; padding: 22px 28px; text-align: center; border-bottom: 3px solid #0284c7;">
+                <span style="font-size: 15px; font-weight: 800; letter-spacing: 1.5px; color: #ffffff; text-transform: uppercase;">AINTRIX</span>
+                <span style="font-size: 15px; font-weight: 400; letter-spacing: 1.5px; color: #38bdf8; text-transform: uppercase;"> ACADEMY</span>
+                <div style="font-size: 11px; font-weight: 600; color: #94a3b8; letter-spacing: 0.5px; margin-top: 3px; text-transform: uppercase;">Admissions Verification</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 28px 28px 20px 28px;">
+                <h2 style="color: #0f172a; font-size: 20px; font-weight: 700; margin: 0 0 10px 0;">Verify your email address</h2>
+                <p style="color: #475569; font-size: 14px; line-height: 1.55; margin: 0 0 16px 0;">
+                  Hello <strong>${name}</strong>,<br/>
+                  Enter the one-time verification code below to confirm your admission counselling appointment:
+                </p>
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#f1f5f9" style="background-color: #f1f5f9; border: 1px dashed #cbd5e1; border-radius: 8px; margin: 20px 0; text-align: center;">
+                  <tr>
+                    <td style="padding: 18px 12px; text-align: center;">
+                      <span style="font-family: 'Courier New', Courier, monospace; font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #0284c7; display: inline-block;">${code}</span>
+                    </td>
+                  </tr>
+                </table>
+                <p style="color: #64748b; font-size: 12px; line-height: 1.5; margin: 0;">
+                  ⏱ This code is valid for <strong>10 minutes</strong>. If you did not initiate this request, you can safely disregard this email.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td bgcolor="#f8fafc" style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 14px 28px; text-align: center; font-size: 11px; color: #94a3b8;">
+                Aintrix Academy Admissions • Secure Verification Portal
+              </td>
+            </tr>
+          </table>
+          <!--[if (gte mso 9)|(IE)]>
+          </td>
+          </tr>
+          </table>
+          <![endif]-->
+        </td>
+      </tr>
+    </table>
+  </center>
+</body>
+</html>`;
+}
 
-          <!-- Details Card -->
-          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 28px;">
-            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-              <tr>
-                <td style="padding: 8px 0; color: #64748b; width: 130px; vertical-align: top;">Booking ID</td>
-                <td style="padding: 8px 0; color: #0f172a; font-family: monospace; font-size: 14px; font-weight: 700;">${bookingId}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #64748b; vertical-align: top;">Programme</td>
-                <td style="padding: 8px 0; color: #0f172a; font-weight: 600;">${programmeTitle}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #64748b; vertical-align: top;">Date & Time</td>
-                <td style="padding: 8px 0; color: #0284c7; font-weight: 700;">${formattedDate}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #64748b; vertical-align: top;">Format</td>
-                <td style="padding: 8px 0; color: #0f172a;">1-on-1 Online Video Consultation</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #64748b; vertical-align: top;">Status</td>
-                <td style="padding: 8px 0; color: #059669; font-weight: 600;">Confirmed & Reserved</td>
-              </tr>
-            </table>
-          </div>
+function renderAdminBookingNotificationHtml(params: {
+  name: string;
+  email: string;
+  phone: string;
+  bookingId: string;
+  programmeTitle: string;
+  formattedDate: string;
+  background: string;
+  goals: string;
+}): string {
+  const { name, email, phone, bookingId, programmeTitle, formattedDate, background, goals } = params;
+  const cleanPhone = (phone || '').replace(/\s+/g, '');
 
-          <!-- What to expect -->
-          <h3 style="font-size: 15px; color: #0f172a; margin: 0 0 12px 0; font-weight: 700;">What to expect in your session:</h3>
-          <ul style="margin: 0 0 24px 0; padding-left: 20px; color: #475569; font-size: 14px; line-height: 1.8;">
-            <li>Personalized walkthrough of the <strong>${programmeTitle}</strong> curriculum and hands-on projects.</li>
-            <li>Custom career pathway evaluation matching your background and aspirational tech roles.</li>
-            <li>Detailed discussion on tuition assistance, scholarships, and flexible payment plans.</li>
-          </ul>
-
-          <p style="font-size: 13px; color: #64748b; line-height: 1.6; border-top: 1px solid #e2e8f0; padding-top: 20px; margin-bottom: 0;">
-            Need to reschedule or have questions before the session? Simply reply directly to this email or contact us at <a href="mailto:aintrixacademy2026@gmail.com" style="color: #0284c7; text-decoration: none;">aintrixacademy2026@gmail.com</a>.
-          </p>
-        </div>
-
-        <!-- Footer -->
-        <div style="background-color: #f1f5f9; padding: 20px 32px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b;">
-          <div style="font-weight: 600; color: #334155;">Aintrix Academy</div>
-          <div style="margin-top: 4px;">Connecting ambitious engineers to modern full-stack software careers.</div>
-        </div>
-      </div>
-    </div>
-  `;
+  return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>New Counselling Booking</title>
+<!--[if mso]>
+<style type="text/css">
+body, table, td, a, span { font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif !important; }
+</style>
+<![endif]-->
+<style type="text/css">
+  body { margin: 0; padding: 0; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; background-color: #f1f5f9; }
+  table { border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+  table, td { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+  img { border: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
+  a { text-decoration: none; }
+</style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <center style="width: 100%; background-color: #f1f5f9; padding: 32px 0;">
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#f1f5f9" align="center" style="background-color: #f1f5f9; width: 100%; margin: 0 auto;">
+      <tr>
+        <td align="center" valign="top" style="padding: 0 12px;">
+          <!--[if (gte mso 9)|(IE)]>
+          <table align="center" border="0" cellspacing="0" cellpadding="0" width="600">
+          <tr>
+          <td align="center" valign="top" width="600">
+          <![endif]-->
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" align="center" style="max-width: 600px; width: 100%; margin: 0 auto; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05); table-layout: fixed;">
+            <tr>
+              <td bgcolor="#0f172a" style="background-color: #0f172a; padding: 22px 28px; border-bottom: 3px solid #0284c7;">
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                  <tr>
+                    <td align="left" valign="middle">
+                      <span style="font-size: 16px; font-weight: 800; letter-spacing: 1.5px; color: #ffffff; text-transform: uppercase;">AINTRIX</span>
+                      <span style="font-size: 16px; font-weight: 500; letter-spacing: 1.5px; color: #38bdf8; text-transform: uppercase;"> ACADEMY</span>
+                      <div style="font-size: 11px; font-weight: 600; color: #94a3b8; letter-spacing: 0.6px; margin-top: 3px; text-transform: uppercase;">Admissions Management System</div>
+                    </td>
+                    <td align="right" valign="middle">
+                      <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td bgcolor="#082f49" style="background-color: #082f49; border: 1px solid #0284c7; border-radius: 20px; padding: 4px 12px;">
+                            <span style="font-size: 11px; font-weight: 700; color: #38bdf8; letter-spacing: 0.5px; text-transform: uppercase;">
+                              ● NEW LEAD
+                            </span>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 28px 28px 16px 28px;">
+                <div style="font-size: 11px; font-weight: 700; color: #0284c7; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Admissions Lead Dispatch</div>
+                <h1 style="margin: 0; font-size: 21px; font-weight: 700; color: #0f172a; line-height: 1.3;">1-on-1 Counselling Session Booked</h1>
+                <p style="margin: 8px 0 0 0; font-size: 14px; color: #475569; line-height: 1.55;">
+                  A prospective student has scheduled an admission consultation. Details and schedule are verified below.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 0 28px 20px 28px;">
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#f8fafc" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #0284c7; border-radius: 8px; padding: 16px 18px;">
+                  <tr>
+                    <td>
+                      <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.6px;">Confirmed Session Slot</div>
+                      <div style="font-size: 16px; font-weight: 700; color: #0f172a; margin-top: 3px;">${formattedDate}</div>
+                      <div style="font-size: 12px; color: #64748b; margin-top: 4px;">
+                        <strong>Format:</strong> 1-on-1 Video Consultation (45 min) &nbsp;•&nbsp; <strong>Status:</strong> Confirmed
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 0 28px 20px 28px;">
+                <div style="font-size: 12px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.8px; padding-bottom: 8px; border-bottom: 2px solid #0f172a; margin-bottom: 12px;">
+                  Candidate Summary
+                </div>
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="font-size: 14px;">
+                  <tr>
+                    <td width="140" style="padding: 10px 0; color: #64748b; font-weight: 600; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; font-size: 12px; letter-spacing: 0.4px;">Student Name</td>
+                    <td style="padding: 10px 0; color: #0f172a; font-weight: 700; border-bottom: 1px solid #f1f5f9;">${name}</td>
+                  </tr>
+                  <tr>
+                    <td width="140" style="padding: 10px 0; color: #64748b; font-weight: 600; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; font-size: 12px; letter-spacing: 0.4px;">Email Address</td>
+                    <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9;">
+                      <a href="mailto:${email}" style="color: #0284c7; text-decoration: none; font-weight: 600;">${email}</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td width="140" style="padding: 10px 0; color: #64748b; font-weight: 600; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; font-size: 12px; letter-spacing: 0.4px;">Phone Number</td>
+                    <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9;">
+                      <a href="tel:${cleanPhone}" style="color: #0284c7; text-decoration: none; font-weight: 600;">${phone}</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td width="140" style="padding: 10px 0; color: #64748b; font-weight: 600; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; font-size: 12px; letter-spacing: 0.4px;">Programme</td>
+                    <td style="padding: 10px 0; color: #0f172a; font-weight: 600; border-bottom: 1px solid #f1f5f9;">${programmeTitle}</td>
+                  </tr>
+                  <tr>
+                    <td width="140" style="padding: 10px 0; color: #64748b; font-weight: 600; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; font-size: 12px; letter-spacing: 0.4px;">Booking Ref</td>
+                    <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9;">
+                      <span style="font-family: monospace; font-size: 13px; font-weight: 700; color: #0f172a; background-color: #f1f5f9; padding: 2px 7px; border-radius: 4px; border: 1px solid #cbd5e1;">${bookingId}</span>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 0 28px 24px 28px;">
+                <div style="font-size: 12px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.8px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; margin-bottom: 12px;">
+                  Candidate Intake Notes
+                </div>
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#f8fafc" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px;">
+                  <tr>
+                    <td style="padding-bottom: 10px;">
+                      <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;">Background &amp; Status</div>
+                      <div style="font-size: 13px; color: #1e293b; line-height: 1.5;">${background}</div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="border-top: 1px solid #e2e8f0; padding-top: 10px;">
+                      <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;">Career Goals &amp; Interests</div>
+                      <div style="font-size: 13px; color: #1e293b; line-height: 1.5;">${goals}</div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 0 28px 28px 28px;">
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                  <tr>
+                    <td width="48%" align="center" bgcolor="#0f172a" style="background-color: #0f172a; border-radius: 6px;">
+                      <a href="mailto:${email}?subject=Regarding%20Your%20Aintrix%20Academy%20Counselling%20Session%20(${bookingId})" style="display: block; padding: 12px 16px; color: #ffffff; font-size: 13px; font-weight: 600; text-align: center; text-decoration: none; border-radius: 6px;">
+                        ✉ Reply via Email
+                      </a>
+                    </td>
+                    <td width="4%">&nbsp;</td>
+                    <td width="48%" align="center" bgcolor="#ffffff" style="background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px;">
+                      <a href="tel:${cleanPhone}" style="display: block; padding: 11px 16px; color: #0f172a; font-size: 13px; font-weight: 600; text-align: center; text-decoration: none; border-radius: 6px;">
+                        📞 Call Candidate
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td bgcolor="#f8fafc" style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 16px 28px; text-align: center;">
+                <div style="font-size: 11px; font-weight: 600; color: #64748b; letter-spacing: 0.5px; text-transform: uppercase;">
+                  Aintrix Academy Admissions Engine
+                </div>
+                <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                  Automated verified dispatch • Confidential candidate record • ${bookingId}
+                </div>
+              </td>
+            </tr>
+          </table>
+          <!--[if (gte mso 9)|(IE)]>
+          </td>
+          </tr>
+          </table>
+          <![endif]-->
+        </td>
+      </tr>
+    </table>
+  </center>
+</body>
+</html>`;
 }
 
 function generateSlots(): Array<{ id: string; startsAt: string; endsAt: string }> {
@@ -299,17 +642,7 @@ export async function onRequest({ request, env }: { request: Request; env: Booki
       email,
       `Your Aintrix Academy Verification Code: ${code}`,
       `Hello ${name},\n\nYour 6-digit verification code is: ${code}\n\nThis code expires in 10 minutes.\n\nWarm regards,\nAintrix Academy Admissions Team`,
-      `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
-          <h2 style="color: #0f172a; margin-top: 0;">Verify your email</h2>
-          <p style="color: #475569; font-size: 15px;">Hello <strong>${name}</strong>,</p>
-          <p style="color: #475569; font-size: 15px;">Your verification code for booking an admission counselling session with Aintrix Academy is:</p>
-          <div style="background-color: #f1f5f9; padding: 16px; border-radius: 6px; text-align: center; margin: 20px 0;">
-            <span style="font-size: 32px; font-weight: 700; letter-spacing: 6px; color: #0284c7;">${code}</span>
-          </div>
-          <p style="color: #64748b; font-size: 13px;">This code is valid for 10 minutes. Enter it on the booking form to continue.</p>
-        </div>
-      `
+      renderOtpEmailHtml(name, code)
     );
 
     return json({
@@ -444,102 +777,16 @@ export async function onRequest({ request, env }: { request: Request; env: Booki
     const studentBackground = (brief.background as string) || 'N/A';
     const studentGoals = (brief.goals as string) || 'N/A';
 
-    const adminHtml = `
-      <div style="background-color: #f1f5f9; padding: 40px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-          
-          <!-- Header -->
-          <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 32px 28px; border-bottom: 3px solid #38bdf8;">
-            <table style="width: 100%; border-collapse: collapse;">
-              <tr>
-                <td>
-                  <div style="color: #38bdf8; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;">AINTRIX ACADEMY ADMISSIONS</div>
-                  <h1 style="color: #ffffff; font-size: 22px; font-weight: 700; margin: 6px 0 0 0; letter-spacing: -0.5px;">New Counselling Lead Booked</h1>
-                </td>
-                <td style="text-align: right; vertical-align: middle;">
-                  <span style="background-color: #38bdf8; color: #0f172a; font-size: 11px; font-weight: 700; padding: 6px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 1px;">
-                    New Lead
-                  </span>
-                </td>
-              </tr>
-            </table>
-          </div>
-
-          <!-- Body -->
-          <div style="padding: 28px 28px 20px 28px;">
-            
-            <!-- Student Info Highlight Card -->
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
-              <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                <tr>
-                  <td style="padding: 8px 0; color: #64748b; width: 140px; font-weight: 500;">Student Name</td>
-                  <td style="padding: 8px 0; color: #0f172a; font-weight: 700; font-size: 16px;">${name}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #64748b; font-weight: 500;">Email Address</td>
-                  <td style="padding: 8px 0;">
-                    <a href="mailto:${email}" style="color: #0284c7; text-decoration: none; font-weight: 600;">${email}</a>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #64748b; font-weight: 500;">Phone Number</td>
-                  <td style="padding: 8px 0;">
-                    <a href="tel:${rawCleanPhone}" style="color: #0284c7; text-decoration: none; font-weight: 600;">${studentPhone}</a>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #64748b; font-weight: 500;">Programme</td>
-                  <td style="padding: 8px 0; color: #0f172a; font-weight: 600;">${programmeTitle}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #64748b; font-weight: 500;">Booking Reference</td>
-                  <td style="padding: 8px 0; color: #0f172a; font-family: monospace; font-weight: 700;">${bookingId}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #64748b; font-weight: 500;">Reserved Session Slot</td>
-                  <td style="padding: 8px 0; color: #059669; font-weight: 700;">${formattedDate}</td>
-                </tr>
-              </table>
-            </div>
-
-            <!-- Brief & Notes Card -->
-            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
-              <h3 style="font-size: 13px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 12px 0;">Student Pre-Session Brief</h3>
-              <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                <tr>
-                  <td style="padding: 6px 0; color: #64748b; width: 140px; vertical-align: top;">Background:</td>
-                  <td style="padding: 6px 0; color: #1e293b; line-height: 1.5;">${studentBackground}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 6px 0; color: #64748b; vertical-align: top;">Career Goals:</td>
-                  <td style="padding: 6px 0; color: #1e293b; line-height: 1.5;">${studentGoals}</td>
-                </tr>
-              </table>
-            </div>
-
-            <!-- Action Buttons -->
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
-              <tr>
-                <td style="padding-right: 8px; width: 50%;">
-                  <a href="mailto:${email}?subject=Regarding%20Your%20Aintrix%20Academy%20Counselling%20Session%20(${bookingId})" style="display: block; text-align: center; background-color: #0f172a; color: #ffffff; font-size: 14px; font-weight: 600; padding: 12px 16px; border-radius: 6px; text-decoration: none;">
-                    Reply via Email
-                  </a>
-                </td>
-                <td style="padding-left: 8px; width: 50%;">
-                  <a href="tel:${rawCleanPhone}" style="display: block; text-align: center; background-color: #0284c7; color: #ffffff; font-size: 14px; font-weight: 600; padding: 12px 16px; border-radius: 6px; text-decoration: none;">
-                    Call Student
-                  </a>
-                </td>
-              </tr>
-            </table>
-
-            <div style="font-size: 12px; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 16px;">
-              Automated Admissions Dispatch • Aintrix Academy Management Engine
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
+    const adminHtml = renderAdminBookingNotificationHtml({
+      name,
+      email,
+      phone: studentPhone,
+      bookingId,
+      programmeTitle,
+      formattedDate,
+      background: studentBackground,
+      goals: studentGoals,
+    });
 
     // Confirmation emails (awaited so serverless worker completes dispatch)
     const adminEmail = env.ENQUIRY_TO || 'aintrixacademy2026@gmail.com';
