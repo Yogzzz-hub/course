@@ -800,21 +800,33 @@ export default async function handler(req: unknown, res?: unknown) {
         goals: studentGoals,
       });
 
-      // Confirmation emails
-      await Promise.allSettled([
+      // Strict Recipient Separation:
+      // 1. Candidate receives ONLY the student session confirmation receipt
+      // 2. Admin receives ONLY the admissions lead dispatch dossier
+      const studentRecipient = email;
+      const adminRecipient = (process.env.ENQUIRY_TO || 'aintrixacademy2026@gmail.com').trim();
+
+      const emailTasks: Promise<unknown>[] = [
         sendEmail({
-          to: email,
+          to: studentRecipient,
           subject: `Session Confirmed: Your Aintrix Academy Counselling Session (${bookingId})`,
           text: `Hello ${name},\n\nYour 1-on-1 admission counselling session is confirmed!\n\nBooking ID: ${bookingId}\nProgramme: ${programmeTitle}\nDate & Time: ${formattedDate}\n\nOur team will connect with you at your chosen time.\n\nWarm regards,\nAintrix Academy Admissions`,
           html: studentHtml,
         }),
-        sendEmail({
-          to: 'aintrixacademy2026@gmail.com',
-          subject: `New Counselling Booking: ${name} (${bookingId})`,
-          text: `New Booking received:\n\nStudent: ${name}\nEmail: ${email}\nPhone: ${about.phone || 'N/A'}\nProgramme: ${programmeTitle}\nSlot: ${formattedDate}`,
-          html: adminHtml,
-        }),
-      ]);
+      ];
+
+      if (adminRecipient) {
+        emailTasks.push(
+          sendEmail({
+            to: adminRecipient,
+            subject: `New Counselling Booking: ${name} (${bookingId})`,
+            text: `New Booking received:\n\nStudent: ${name}\nEmail: ${email}\nPhone: ${about.phone || 'N/A'}\nProgramme: ${programmeTitle}\nSlot: ${formattedDate}`,
+            html: adminHtml,
+          })
+        );
+      }
+
+      await Promise.allSettled(emailTasks);
 
       return sendResponse(res, {
         bookingId,
