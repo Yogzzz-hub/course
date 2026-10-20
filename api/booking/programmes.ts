@@ -1,7 +1,5 @@
 import { allBookingProgrammes } from '../../src/data/bookingProgrammes.ts';
 
-export const config = { runtime: 'edge' };
-
 const payload = {
   programmes: allBookingProgrammes,
 };
