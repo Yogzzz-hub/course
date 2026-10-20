@@ -255,22 +255,6 @@ export function AnimatedSelect({
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
           >
-            {placeholder && (
-              <li
-                role="option"
-                aria-selected={currentValue === ''}
-                className={`animated-select-option ${currentValue === '' ? 'is-selected' : ''} ${highlightedIndex === -1 ? 'is-highlighted' : ''}`}
-                onClick={() => selectValue('')}
-                onMouseEnter={() => setHighlightedIndex(-1)}
-              >
-                <span className="animated-select-option-text text-slate-500 italic">{placeholder}</span>
-                {currentValue === '' && (
-                  <span className="animated-select-check-icon" aria-hidden="true">
-                    <Check size={16} />
-                  </span>
-                )}
-              </li>
-            )}
             {options.map((option, index) => {
               const isSelected = option.value === currentValue;
               const isHighlighted = index === highlightedIndex;
