@@ -2,14 +2,25 @@ import { validateEnquiry, type Enquiry } from '../../src/utils/enquiry.ts';
 
 interface KV { get(key:string):Promise<string|null>; put(key:string,value:string,options:{expirationTtl:number}):Promise<void> }
 export interface Env {
-  RESEND_API_KEY:string; ENQUIRY_FROM:string; ENQUIRY_TO:string; TURNSTILE_SECRET_KEY:string;
-  TURNSTILE_SITE_KEY:string; ALLOWED_ORIGIN:string; RATE_LIMIT_SALT:string; LEGAL_APPROVED:string;
-  ENQUIRY_LIMITS:KV;
-  onPersist?:(enquiry:Enquiry)=>Promise<void>;
+  RESEND_API_KEY?: string;
+  SMTP_PASS?: string;
+  ENQUIRY_FROM: string;
+  ENQUIRY_TO: string;
+  TURNSTILE_SECRET_KEY: string;
+  TURNSTILE_SITE_KEY: string;
+  ALLOWED_ORIGIN: string;
+  RATE_LIMIT_SALT: string;
+  LEGAL_APPROVED: string;
+  ENQUIRY_LIMITS: KV;
+  onPersist?: (enquiry: Enquiry) => Promise<void>;
+  sendMail?: (options: { from: string; to: string; replyTo?: string; subject: string; text: string }) => Promise<{ success: boolean; id?: string }>;
 }
 type Context={request:Request;env:Env};
 function json(body:unknown,status=200){return new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'}});}
-function configured(env:Env){return Boolean(env.RESEND_API_KEY&&env.ENQUIRY_FROM&&env.ENQUIRY_TO&&env.TURNSTILE_SECRET_KEY&&env.TURNSTILE_SITE_KEY&&env.ALLOWED_ORIGIN&&env.RATE_LIMIT_SALT&&env.ENQUIRY_LIMITS&&env.LEGAL_APPROVED==='true');}
+function configured(env:Env){
+  const hasMail = Boolean(env.RESEND_API_KEY || env.sendMail || env.SMTP_PASS);
+  return Boolean(hasMail && env.ENQUIRY_FROM && env.ENQUIRY_TO && env.TURNSTILE_SECRET_KEY && env.TURNSTILE_SITE_KEY && env.ALLOWED_ORIGIN && env.RATE_LIMIT_SALT && env.ENQUIRY_LIMITS && env.LEGAL_APPROVED==='true');
+}
 async function hash(value:string){const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value));return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('');}
 async function limitedBody(request:Request){
   const reader=request.body?.getReader();if(!reader)return '';
@@ -50,10 +61,21 @@ export async function onRequest({request,env}:Context):Promise<Response>{
     if(!verification.ok)return json({message:'Spam verification is temporarily unavailable. Please retry.'},502);
     const challenge=await verification.json() as {success:boolean;hostname?:string;action?:string};
     if(!challenge.success||challenge.hostname!==new URL(env.ALLOWED_ORIGIN).hostname||challenge.action!=='enquiry')return json({message:'Spam verification expired or failed. Please verify again.'},400);
-    const delivery=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${env.RESEND_API_KEY}`,'Content-Type':'application/json','Idempotency-Key':`enquiry-${id}`},body:JSON.stringify({from:env.ENQUIRY_FROM,to:[env.ENQUIRY_TO],reply_to:data.email,subject:'Academy programme enquiry',text:`Name: ${data.name}\nEmail: ${data.email}\nPhone: ${data.phone||'Not supplied'}\nProgramme: Python Full-Stack Software Engineering\nPreferred contact: ${data.contactMethod}\nConsent to enquiry response: yes\n\n${data.message||'No additional message.'}`}),signal:AbortSignal.timeout(8000)});
-    if(!delivery.ok)return json({message:'The enquiry service could not accept your message. Please try again.'},502);
-    const receipt=await delivery.json() as {id?:string};
-    if(!receipt.id)return json({message:'Delivery could not be verified. Please retry.'},502);
+    if (env.sendMail) {
+      const emailResult = await env.sendMail({
+        from: env.ENQUIRY_FROM,
+        to: env.ENQUIRY_TO,
+        replyTo: data.email,
+        subject: 'Academy programme enquiry',
+        text: `Name: ${data.name}\nEmail: ${data.email}\nPhone: ${data.phone||'Not supplied'}\nProgramme: Python Full-Stack Software Engineering\nPreferred contact: ${data.contactMethod}\nConsent to enquiry response: yes\n\n${data.message||'No additional message.'}`,
+      });
+      if (!emailResult.success) return json({message:'The enquiry service could not accept your message. Please try again.'},502);
+    } else {
+      const delivery=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${env.RESEND_API_KEY}`,'Content-Type':'application/json','Idempotency-Key':`enquiry-${id}`},body:JSON.stringify({from:env.ENQUIRY_FROM,to:[env.ENQUIRY_TO],reply_to:data.email,subject:'Academy programme enquiry',text:`Name: ${data.name}\nEmail: ${data.email}\nPhone: ${data.phone||'Not supplied'}\nProgramme: Python Full-Stack Software Engineering\nPreferred contact: ${data.contactMethod}\nConsent to enquiry response: yes\n\n${data.message||'No additional message.'}`}),signal:AbortSignal.timeout(8000)});
+      if(!delivery.ok)return json({message:'The enquiry service could not accept your message. Please try again.'},502);
+      const receipt=await delivery.json() as {id?:string};
+      if(!receipt.id)return json({message:'Delivery could not be verified. Please retry.'},502);
+    }
     await env.ENQUIRY_LIMITS.put(key,fingerprint,{expirationTtl:86400});
     try { await env.onPersist?.(data); } catch { /* non-blocking */ }
     return json({success:true});

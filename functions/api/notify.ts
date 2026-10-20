@@ -11,6 +11,7 @@ export interface NotifyEnv {
   ENQUIRY_LIMITS?: KV;
   ALLOWED_ORIGIN?: string;
   onPersist?: (body: Record<string, unknown>) => Promise<void>;
+  sendMail?: (options: { from: string; to: string; replyTo?: string; subject: string; text: string }) => Promise<{ success: boolean; id?: string }>;
 }
 
 const DEFAULT_RECEIVER = 'aintrixacademy2026@gmail.com';
@@ -136,6 +137,24 @@ export async function onRequest({ request, env }: { request: Request; env: Notif
       `Time: ${String(body.timestamp || new Date().toISOString()).slice(0, 50)}\n` +
       `--------------------------------------------------\n` +
       `Recipient: ${receiver}`;
+  }
+
+  if (env.sendMail) {
+    try {
+      const sent = await env.sendMail({
+        from,
+        to: receiver,
+        replyTo: studentEmail,
+        subject,
+        text,
+      });
+      if (sent.success) {
+        try { await env.onPersist?.(body); } catch { /* non-blocking */ }
+        return json({ success: true, delivered: true, id: sent.id, receiver });
+      }
+    } catch {
+      // Non-blocking fallback
+    }
   }
 
   if (env.RESEND_API_KEY) {

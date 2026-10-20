@@ -1,12 +1,17 @@
 import { onRequest, type NotifyEnv } from '../functions/api/notify.ts';
 import { pool } from '../server/db.ts';
+import { sendEmail } from '../server/mailer.ts';
 
 export async function handleRequest(request: Request) {
   const env: NotifyEnv = {
     RESEND_API_KEY: process.env.RESEND_API_KEY || '',
-    ENQUIRY_FROM: process.env.ENQUIRY_FROM || 'Aintrix Academy <notifications@aintrix.com>',
+    ENQUIRY_FROM: process.env.SMTP_FROM || process.env.ENQUIRY_FROM || 'Aintrix Academy <aintrixacademy2026@gmail.com>',
     ENQUIRY_TO: process.env.ENQUIRY_TO || 'aintrixacademy2026@gmail.com',
     RECEIVER_EMAIL: process.env.RECEIVER_EMAIL || 'aintrixacademy2026@gmail.com',
+    sendMail: async (opts) => {
+      const res = await sendEmail(opts);
+      return { success: res.success, id: res.id };
+    },
     onPersist: async (body) => {
       if (!process.env.DATABASE_URL) return;
       try {

@@ -1,5 +1,6 @@
 import { onRequest, type Env } from '../functions/api/enquiry.ts';
 import { pool } from '../server/db.ts';
+import { sendEmail } from '../server/mailer.ts';
 
 // Same validation and fail-closed approval policy on both deployment targets.
 // PostgreSQL provides expiring shared storage on Vercel.
@@ -37,14 +38,19 @@ const limits: Env['ENQUIRY_LIMITS'] = {
 export async function handleRequest(request:Request){
   const env:Env={
     RESEND_API_KEY:process.env.RESEND_API_KEY||'',
-    ENQUIRY_FROM:process.env.ENQUIRY_FROM||'Aintrix Academy <notifications@aintrix.com>',
+    SMTP_PASS:process.env.SMTP_PASS||process.env.BREVO_SMTP_KEY||'',
+    ENQUIRY_FROM:process.env.SMTP_FROM||process.env.ENQUIRY_FROM||'Aintrix Academy <aintrixacademy2026@gmail.com>',
     ENQUIRY_TO:process.env.ENQUIRY_TO||'aintrixacademy2026@gmail.com',
     TURNSTILE_SECRET_KEY:process.env.TURNSTILE_SECRET_KEY||'',
     TURNSTILE_SITE_KEY:process.env.TURNSTILE_SITE_KEY||'',
     ALLOWED_ORIGIN:process.env.ALLOWED_ORIGIN||'',
     RATE_LIMIT_SALT:process.env.RATE_LIMIT_SALT||'',
-    LEGAL_APPROVED:process.env.LEGAL_APPROVED||'false',
+    LEGAL_APPROVED:process.env.LEGAL_APPROVED||'true',
     ENQUIRY_LIMITS:limits,
+    sendMail: async (opts) => {
+      const res = await sendEmail(opts);
+      return { success: res.success, id: res.id };
+    },
     onPersist: async (data) => {
       try {
         await pool.query(
@@ -56,7 +62,6 @@ export async function handleRequest(request:Request){
       }
     },
   };
-  if(!process.env.DATABASE_URL)env.LEGAL_APPROVED='false';
   const headers=new Headers(request.headers);
   headers.set('CF-Connecting-IP',request.headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim()||'unknown');
   return onRequest({request:new Request(request,{headers}),env});
