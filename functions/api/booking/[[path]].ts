@@ -887,7 +887,6 @@ export async function onRequest({ request, env }: { request: Request; env: Booki
     const confirmationHtml = renderBookingConfirmationHtml(name, bookingId, programmeTitle, formattedDate);
 
     const studentPhone = (about.phone as string) || 'Not provided';
-    const rawCleanPhone = studentPhone.replace(/\s+/g, '');
     const studentBackground = (brief.background as string) || 'N/A';
     const studentGoals = (brief.goals as string) || 'N/A';
 
