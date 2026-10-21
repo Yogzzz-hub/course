@@ -1,8 +1,0 @@
-export const faqs = [
-  { question: 'Do I need previous coding experience?', answer: 'The programme includes programming fundamentals. Specific entry requirements and the right starting point for your background need to be confirmed with the academy during counselling.' },
-  { question: 'How long is the programme?', answer: 'The Python Full-Stack Software Engineering programme is seven months. Class timings, delivery mode and the detailed teaching schedule are awaiting confirmation.' },
-  { question: 'What will I learn?', answer: 'The learning areas include Python, SQL and PostgreSQL, Django, HTML, CSS, JavaScript, React, REST APIs, testing, Git, Docker, deployment, cloud fundamentals, DSA, interview preparation and AI-assisted development.' },
-  { question: 'How much does the programme cost?', answer: 'The listed master packages are Standard at ₹59,999, Premium at ₹79,999 and Elite at ₹99,999. Individual-course fees total ₹1,57,000. Taxes, payment schedules and detailed package conditions must be confirmed before enrolment.' },
-  { question: 'Are internships and placements guaranteed?', answer: 'No. Internship opportunities depend on eligibility, availability and confirmed package conditions. Placement support means preparation and guidance; employment decisions are made by employers. No job, internship or salary is guaranteed.' },
-  { question: 'Can I discuss my goals before choosing a package?', answer: 'Yes, the counselling journey is designed to help you discuss your background, learning goals, curriculum and package questions. Appointment availability and confirmation are managed by the booking provider when scheduling is available.' },
-];

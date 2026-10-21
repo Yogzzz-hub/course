@@ -1,8 +1,5 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { CourseNavbar } from "@/frontend/components/layout/CourseNavbar";
-import { CourseFooter } from "@/frontend/components/layout/CourseFooter";
-import { HomeLanding } from "@/frontend/components/home/HomeLanding";
 
 export const dynamic = "force-dynamic";
 
@@ -27,18 +24,6 @@ export default async function HomePage() {
     }
   }
 
-  return (
-    <div className="min-h-screen bg-[#140D13] flex flex-col justify-between text-white selection:bg-[#681C35] selection:text-white">
-      {/* Sleek Course Navigation with prominent CRM Portal Sign-In */}
-      <CourseNavbar />
-
-      {/* Full Interactive Course Experience (3D Eclipse, Arenas, Programs, Pricing) */}
-      <main className="flex-1">
-        <HomeLanding />
-      </main>
-
-      {/* Academy Footer */}
-      <CourseFooter />
-    </div>
-  );
+  // Direct unauthenticated visitors to CRM portal login
+  redirect("/login");
 }
