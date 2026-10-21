@@ -90,6 +90,33 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Create real-time In-App Notification for Admin and Manager accounts
+    try {
+      const staffUsers = await prisma.user.findMany({
+        where: {
+          role: { in: ["ADMIN", "MANAGER"] },
+          isActive: true,
+        },
+        select: { id: true },
+      });
+
+      const progTitle = lead.courseInterest?.title || "Executive Engineering";
+      for (const staff of staffUsers) {
+        await prisma.notification.create({
+          data: {
+            userId: staff.id,
+            title: `New Student Applicant: ${lead.fullName}`,
+            message: `${lead.fullName} (${lead.email}) submitted an application for ${progTitle}. Phone: ${lead.phone}.`,
+            category: "ACADEMIC",
+            linkUrl: "/admin/admissions",
+            isRead: false,
+          },
+        });
+      }
+    } catch (notifErr) {
+      console.warn("Failed to create staff notification:", notifErr);
+    }
+
     await logAuditEvent({
       action: "PUBLIC_ENQUIRY_SUBMITTED",
       entityType: "Lead",

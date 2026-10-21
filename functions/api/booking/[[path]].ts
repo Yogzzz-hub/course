@@ -45,6 +45,8 @@ export interface BookingEnv {
   ENQUIRY_FROM?: string;
   ENQUIRY_TO?: string;
   ALLOWED_ORIGIN?: string;
+  BACKEND_URL?: string;
+  NEXT_PUBLIC_BACKEND_URL?: string;
 }
 
 // In-memory fallback stores for edge execution
@@ -750,14 +752,62 @@ export async function onRequest({ request, env }: { request: Request; env: Booki
       }
     }
 
-    // Dispatch email (awaited so serverless isolate does not terminate prematurely)
-    await sendEdgeEmail(
-      env,
-      email,
-      `Your Aintrix Academy Verification Code: ${code}`,
-      `Hello ${name},\n\nYour 6-digit verification code is: ${code}\n\nThis code expires in 10 minutes.\n\nWarm regards,\nAintrix Academy Admissions Team`,
-      renderOtpEmailHtml(name, code)
-    );
+    // Dispatch candidate verification code email
+    const emailPromises: Promise<unknown>[] = [
+      sendEdgeEmail(
+        env,
+        email,
+        `Your Aintrix Academy Verification Code: ${code}`,
+        `Hello ${name},\n\nYour 6-digit verification code is: ${code}\n\nThis code expires in 10 minutes.\n\nWarm regards,\nAintrix Academy Admissions Team`,
+        renderOtpEmailHtml(name, code)
+      ),
+    ];
+
+    // Notify Admin of new applicant starting verification
+    const adminEmail = (env.ENQUIRY_TO || 'aintrixacademy2026@gmail.com').trim();
+    if (adminEmail) {
+      emailPromises.push(
+        sendEdgeEmail(
+          env,
+          adminEmail,
+          `New Admission Applicant: ${name} (${email})`,
+          `New applicant started counselling registration:\n\nName: ${name}\nEmail: ${email}\nPhone: ${about.phone || 'N/A'}\nStatus: ${about.currentStatus || 'N/A'}\nProgramme: ${about.programmeId || 'N/A'}`,
+          `<div style="font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif; max-width: 540px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+            <div style="background-color: #0f172a; padding: 14px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+              <span style="font-size: 14px; font-weight: 800; color: #ffffff; letter-spacing: 1px; text-transform: uppercase;">AINTRIX ACADEMY ADMISSIONS</span>
+            </div>
+            <h2 style="color: #0f172a; font-size: 18px; margin-top: 0;">New Prospective Student Application</h2>
+            <p style="color: #475569; font-size: 13px;">A new applicant has submitted their contact details and requested verification:</p>
+            <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px;">
+              <tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 8px 0; color: #64748b; width: 35%;">Applicant Name:</td><td style="padding: 8px 0; font-weight: 600; color: #0f172a;">${name}</td></tr>
+              <tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 8px 0; color: #64748b;">Email Address:</td><td style="padding: 8px 0; font-weight: 600; color: #0284c7;">${email}</td></tr>
+              <tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 8px 0; color: #64748b;">Phone Number:</td><td style="padding: 8px 0; font-weight: 600; color: #0f172a;">${about.phone || 'Not provided'}</td></tr>
+              <tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 8px 0; color: #64748b;">Current Status:</td><td style="padding: 8px 0; font-weight: 600; color: #0f172a;">${about.currentStatus || 'Prospective'}</td></tr>
+              <tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 8px 0; color: #64748b;">Programme of Interest:</td><td style="padding: 8px 0; font-weight: 600; color: #0f172a;">${about.programmeId || 'General'}</td></tr>
+            </table>
+            <p style="color: #64748b; font-size: 11px; margin-top: 16px; border-top: 1px solid #e2e8f0; padding-top: 12px;">This applicant has also been synchronized into the Executive Admin Dashboard and Admissions pipeline.</p>
+          </div>`
+        )
+      );
+    }
+
+    // Synchronize Lead & In-App Notification to CRM Database
+    const backendTarget = (env.BACKEND_URL || env.NEXT_PUBLIC_BACKEND_URL || 'https://course-backend-h5z1.onrender.com').toString().trim().replace(/\/$/, '');
+    fetch(`${backendTarget}/api/enquiries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fullName: name,
+        email,
+        phone: (about.phone as string) || '+1000000000',
+        schedulePreference: 'FLEXIBLE',
+        message: `Applicant Status: ${about.currentStatus || 'Prospective'}. Programme: ${about.programmeId || 'General'}. Verification OTP initiated.`,
+        source: 'Website 1-on-1 Application Form',
+        consentGiven: true,
+      }),
+    }).catch((err) => console.warn('CRM lead sync notice:', err));
+
+    await Promise.allSettled(emailPromises);
 
     return json({
       challengeId,
@@ -928,6 +978,22 @@ export async function onRequest({ request, env }: { request: Request; env: Booki
         )
       );
     }
+
+    // Synchronize confirmed booking to CRM database
+    const backendTarget = (env.BACKEND_URL || env.NEXT_PUBLIC_BACKEND_URL || 'https://course-backend-h5z1.onrender.com').toString().trim().replace(/\/$/, '');
+    fetch(`${backendTarget}/api/enquiries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fullName: name,
+        email,
+        phone: studentPhone,
+        schedulePreference: 'FLEXIBLE',
+        message: `CONFIRMED APPOINTMENT. Booking ID: ${bookingId} | Programme: ${programmeTitle} | Slot: ${formattedDate}`,
+        source: 'Website 1-on-1 Booking Wizard',
+        consentGiven: true,
+      }),
+    }).catch((err) => console.warn('CRM booking sync notice:', err));
 
     await Promise.allSettled(emailTasks);
 

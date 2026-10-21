@@ -53,6 +53,7 @@ interface AppShellProps {
 
 interface NotificationItem {
   id: string;
+  title?: string;
   subject?: string;
   message: string;
   linkUrl?: string;
@@ -544,7 +545,7 @@ function AppShellInner({ user, children }: AppShellProps) {
                           >
                             <div className="flex items-start justify-between gap-2">
                               <p className="font-semibold leading-tight">
-                                {n.subject || "Academic Alert"}
+                                {n.title || n.subject || "Academic Alert"}
                               </p>
                               {!n.isRead && (
                                 <button

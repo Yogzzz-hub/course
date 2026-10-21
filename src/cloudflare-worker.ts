@@ -68,7 +68,18 @@ export default {
       pathname.startsWith('/api/student') ||
       pathname.startsWith('/api/trainer') ||
       pathname.startsWith('/api/financier') ||
-      pathname.startsWith('/api/manager');
+      pathname.startsWith('/api/manager') ||
+      pathname.startsWith('/api/notifications') ||
+      pathname.startsWith('/api/enquiries') ||
+      pathname.startsWith('/api/leads') ||
+      pathname.startsWith('/api/admissions') ||
+      pathname.startsWith('/api/courses') ||
+      pathname.startsWith('/api/certificates') ||
+      pathname.startsWith('/api/invoices') ||
+      pathname.startsWith('/api/receipts') ||
+      pathname.startsWith('/api/reports') ||
+      pathname.startsWith('/api/calendar') ||
+      pathname.startsWith('/api/webhooks');
 
     if (isCrmRoute && BACKEND_URL) {
       const targetUrl = new URL(pathname + url.search, BACKEND_URL);
