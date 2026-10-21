@@ -102,26 +102,37 @@ export default function LoginPage() {
         return;
       }
 
-      // Route immediately based on user role
+      // Route immediately based on user role and preserve returnUrl if valid
+      const searchParams = new URLSearchParams(window.location.search);
+      const returnUrl = searchParams.get("returnUrl");
+      let targetDashboard = "/student";
+
       switch (data.user.role) {
         case "ADMIN":
-          router.push("/admin");
+          targetDashboard = "/admin";
           break;
         case "TRAINER":
-          router.push("/trainer");
+          targetDashboard = "/trainer";
           break;
         case "MANAGER":
-          router.push("/manager");
+          targetDashboard = "/manager";
           break;
         case "FINANCIER":
-          router.push("/financier");
+          targetDashboard = "/financier";
           break;
         case "STUDENT":
-          router.push("/student");
+          targetDashboard = "/student";
           break;
-        default:
-          router.push("/student");
       }
+
+      const destination =
+        returnUrl &&
+        (data.user.role === "ADMIN" || returnUrl.startsWith(targetDashboard))
+          ? returnUrl
+          : targetDashboard;
+
+      // Use hard navigation for full cookie persistence & clean SSR session hydration
+      window.location.href = destination;
     } catch {
       setStaffError("Network communication error. Please try again.");
       setStaffLoading(false);
@@ -199,7 +210,9 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/student");
+      const searchParams = new URLSearchParams(window.location.search);
+      const returnUrl = searchParams.get("returnUrl");
+      window.location.href = returnUrl || "/student";
     } catch {
       setStudentError("Network communication error. Please try again.");
       setStudentLoading(false);

@@ -49,6 +49,8 @@ export default {
       pathname === '/financier' || pathname.startsWith('/financier/') ||
       pathname === '/manager' || pathname.startsWith('/manager/') ||
       pathname === '/verify-certificate' || pathname.startsWith('/verify-certificate/') ||
+      pathname === '/crm' || pathname.startsWith('/crm/') ||
+      pathname === '/portal' || pathname.startsWith('/portal/') ||
       pathname.startsWith('/_next/') ||
       pathname.startsWith('/api/auth') ||
       pathname.startsWith('/api/admin') ||
@@ -71,6 +73,19 @@ export default {
           body: request.method !== 'GET' && request.method !== 'HEAD' ? request.body : undefined,
           redirect: 'manual',
         });
+
+        const loc = response.headers.get('location');
+        if (loc) {
+          const respHeaders = new Headers(response.headers);
+          const rewrittenLoc = loc.replace(new URL(BACKEND_URL).origin, url.origin);
+          respHeaders.set('location', rewrittenLoc);
+          return new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: respHeaders,
+          });
+        }
+
         return response;
       } catch (err) {
         console.error('CRM Proxy fetch error:', err);

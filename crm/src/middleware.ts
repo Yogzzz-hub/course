@@ -3,7 +3,10 @@ import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'apex-global-academy-production-jwt-super-secret-key-32b'
+  process.env.JWT_SECRET || 'default-academy-secret-key-32-chars-long!!'
+);
+const FALLBACK_SECRET = new TextEncoder().encode(
+  'apex-global-academy-production-jwt-super-secret-key-32b'
 );
 
 const PORTAL_ROLES: Record<string, string> = {
@@ -27,8 +30,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 2. Extract session token
-  const token = request.cookies.get('auth_token')?.value;
+  // 2. Extract session token (support both academy_session and auth_token cookies)
+  const token =
+    request.cookies.get('academy_session')?.value ||
+    request.cookies.get('auth_token')?.value;
+
   let sessionPayload: { role?: string; userId?: string; email?: string } | null = null;
 
   if (token) {
@@ -36,7 +42,12 @@ export async function middleware(request: NextRequest) {
       const { payload } = await jwtVerify(token, JWT_SECRET);
       sessionPayload = payload as { role?: string; userId?: string; email?: string };
     } catch {
-      // Invalid/expired token - will be cleared on login
+      try {
+        const { payload } = await jwtVerify(token, FALLBACK_SECRET);
+        sessionPayload = payload as { role?: string; userId?: string; email?: string };
+      } catch {
+        // Invalid or expired token
+      }
     }
   }
 
@@ -70,7 +81,7 @@ export async function middleware(request: NextRequest) {
     const requiredRole = PORTAL_ROLES[protectedPrefix];
     const userRole = sessionPayload.role.toUpperCase();
 
-    // Admin can access everything, others restricted to their portal
+    // Admin can access everything, others restricted to their assigned portal
     if (userRole !== 'ADMIN' && userRole !== requiredRole) {
       const portalMap: Record<string, string> = {
         ADMIN: '/admin',

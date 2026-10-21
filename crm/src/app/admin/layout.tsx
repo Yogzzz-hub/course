@@ -1,15 +1,17 @@
 import { AppShell } from "@/components/layout/AppShell";
+import { getSession } from "@/lib/auth";
 
 export const metadata = {
   title: "Admin Portal | Apex Global Academy",
 };
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const session = await getSession();
   return (
     <AppShell
       user={{
-        name: "System Admin",
-        email: "admin@apexacademy.edu",
+        name: session?.name || "System Admin",
+        email: session?.email || "admin@apexacademy.edu",
         role: "ADMIN",
       }}
     >

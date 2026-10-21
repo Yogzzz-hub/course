@@ -38,7 +38,9 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
 
 export async function getSession(): Promise<SessionPayload | null> {
   const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  const token =
+    cookieStore.get(SESSION_COOKIE_NAME)?.value ||
+    cookieStore.get("auth_token")?.value;
   if (!token) return null;
   return await verifySessionToken(token);
 }
@@ -90,24 +92,28 @@ export async function requireAuth(allowedRoles?: Role[]): Promise<SessionPayload
 export async function setSessionCookie(payload: SessionPayload) {
   const token = await createSessionToken(payload);
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE_NAME, token, {
+  const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "lax" as const,
     path: "/",
     maxAge: 60 * 60 * 24 * 7, // 7 days
-  });
+  };
+  cookieStore.set(SESSION_COOKIE_NAME, token, cookieOptions);
+  cookieStore.set("auth_token", token, cookieOptions);
 }
 
 export async function clearSessionCookie() {
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE_NAME, "", {
+  const clearOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "lax" as const,
     path: "/",
     maxAge: 0,
-  });
+  };
+  cookieStore.set(SESSION_COOKIE_NAME, "", clearOptions);
+  cookieStore.set("auth_token", "", clearOptions);
 }
 
 import { sendStudentOtpEmail } from "./smtp";

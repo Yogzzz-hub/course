@@ -311,9 +311,9 @@ function AppShellInner({ user, children }: AppShellProps) {
     setIsLoggingOut(true);
     try {
       await fetch("/api/auth/logout", { method: "POST" });
-      router.push("/login");
+      window.location.href = "/login";
     } catch {
-      router.push("/login");
+      window.location.href = "/login";
     }
   };
 
