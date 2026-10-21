@@ -6,6 +6,7 @@ import { PublicNavbar } from "@/components/layout/PublicNavbar";
 import { PublicFooter } from "@/components/layout/PublicFooter";
 import { CourseCard } from "@/components/ui/CourseCard";
 import { LandingClientHero, LandingEnquiryBanner } from "@/components/public/LandingClientSection";
+import { EclipseHeroSection } from "@/components/public/EclipseSphere";
 import {
   ShieldCheck,
   Award,
@@ -70,32 +71,8 @@ export default async function HomePage() {
       <PublicNavbar />
 
       <main className="flex-1">
-        {/* Hero Section */}
-        <section className="relative overflow-hidden py-16 sm:py-24 lg:py-28 border-b border-[#E9E0D8] bg-gradient-to-b from-white via-[#FBF9F5] to-[#F5F0E8]/50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-            {/* Top Institutional Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FAF6EC] border border-[#DEC278] text-[#997324] text-xs font-semibold shadow-2xs">
-              <GraduationCap className="w-4 h-4 text-[#C9A24B]" />
-              <span className="tracking-wide uppercase text-[11px]">
-                Academy of Advanced Computing & Software Architecture
-              </span>
-            </div>
-
-            {/* Hero Main Heading */}
-            <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#251923] max-w-4xl mx-auto leading-[1.15]">
-              Rigorous Engineering Education for the Modern Enterprise
-            </h1>
-
-            {/* Subheading */}
-            <p className="text-sm sm:text-base lg:text-lg text-[#6B6268] max-w-2xl mx-auto leading-relaxed">
-              Master distributed systems, cloud-native architecture, production database engineering,
-              and full-stack software design. Guided by verified industry practitioners with atomic syllabus tracking and cryptographic credentials.
-            </p>
-
-            {/* Action Buttons */}
-            <LandingClientHero />
-          </div>
-        </section>
+        {/* Interactive 3D Cosmic Eclipse Sphere Hero */}
+        <EclipseHeroSection />
 
         {/* 4 Academic Pillars Section */}
         <section className="py-16 sm:py-20 border-b border-[#E9E0D8] bg-white">

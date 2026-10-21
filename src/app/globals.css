@@ -135,3 +135,162 @@ select:focus, input:focus, textarea:focus {
   border-color: #6D1A2B !important;
   box-shadow: 0 0 0 3px rgba(109, 26, 43, 0.12) !important;
 }
+
+/* ==============================================================================
+   3D Eclipse Sphere & Cosmic Background
+   ============================================================================== */
+.eclipse {
+  --flare: -0.72rad;
+  --moon-x: -0.9%;
+  --moon-y: 0.8%;
+  --reveal: 0;
+  position: relative;
+  aspect-ratio: 1;
+  pointer-events: none;
+  isolation: isolate;
+  contain: layout;
+}
+
+.eclipse > *,
+.eclipse-css > * {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.eclipse-css {
+  inset: 0;
+  transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.eclipse-halo {
+  inset: 4%;
+  background: radial-gradient(
+    circle closest-side,
+    rgba(201, 162, 75, 0.28) 38%,
+    rgba(109, 26, 43, 0.55) 46%,
+    rgba(109, 26, 43, 0.16) 70%,
+    transparent
+  );
+}
+
+.eclipse-corona {
+  inset: 12%;
+  opacity: 0.75;
+  filter: blur(5px);
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgba(246, 235, 207, 0.75) 0deg 0.8deg,
+    transparent 2.4deg 6deg,
+    rgba(201, 162, 75, 0.55) 6.6deg 7.4deg,
+    transparent 9deg 13.5deg
+  );
+  -webkit-mask: radial-gradient(circle closest-side, transparent 48%, #000 50%, rgba(0, 0, 0, 0.45) 64%, transparent);
+  mask: radial-gradient(circle closest-side, transparent 48%, #000 50%, rgba(0, 0, 0, 0.45) 64%, transparent);
+  animation: corona-turn 180s linear infinite;
+}
+
+.eclipse-corona-b {
+  inset: 4%;
+  opacity: 0.45;
+  filter: blur(9px);
+  background: repeating-conic-gradient(
+    from 4deg,
+    rgba(201, 162, 75, 0.6) 0deg 1.4deg,
+    transparent 4deg 11deg
+  );
+  -webkit-mask: radial-gradient(circle closest-side, transparent 40%, #000 42%, transparent 88%);
+  mask: radial-gradient(circle closest-side, transparent 40%, #000 42%, transparent 88%);
+  animation: corona-turn 260s linear infinite reverse;
+}
+
+.eclipse-sun {
+  inset: 31%;
+  background: radial-gradient(circle, #fff 0 58%, rgba(201, 162, 75, 0.7));
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9),
+              0 0 14px 2px #fff,
+              0 0 40px 8px rgba(201, 162, 75, 0.85),
+              0 0 110px 26px rgba(201, 162, 75, 0.38),
+              0 0 220px 70px rgba(109, 26, 43, 0.5);
+}
+
+.eclipse-moon {
+  inset: 30.77%;
+  background: radial-gradient(circle at 36% 32%, #1b121d, #07050a 55%, #020103);
+  box-shadow: inset 0 0 24px rgba(201, 162, 75, 0.12);
+  transform: translate(var(--moon-x), var(--moon-y));
+}
+
+.eclipse-gl {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  opacity: 0;
+  transition: opacity 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.eclipse[data-gl="on"] .eclipse-gl {
+  opacity: 1;
+}
+
+.eclipse[data-gl="on"] .eclipse-css {
+  opacity: 0;
+}
+
+.eclipse-flare {
+  inset: 0;
+  border-radius: 0;
+  transform: rotate(var(--flare));
+}
+
+.eclipse-flare i {
+  position: absolute;
+  left: 69%;
+  top: 50%;
+}
+
+.eclipse-flare i::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: -5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0.9;
+  box-shadow: 0 0 10px 3px #fff,
+              0 0 30px 9px #c9a24b,
+              0 0 70px 20px rgba(201, 162, 75, 0.4);
+}
+
+.eclipse-flare i::after {
+  content: '';
+  position: absolute;
+  left: -15vmin;
+  top: -1px;
+  width: 30vmin;
+  height: 2px;
+  border-radius: 2px;
+  opacity: 0.42;
+  background: linear-gradient(90deg, transparent, rgba(201, 162, 75, 0.6), transparent);
+  transform: rotate(calc(-1 * var(--flare)));
+}
+
+@keyframes corona-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.hero-sky {
+  background-image: radial-gradient(1.2px 1.2px at 22px 34px, #fff, transparent),
+                    radial-gradient(1px 1px at 144px 86px, rgba(255, 255, 255, 0.7), transparent),
+                    radial-gradient(1.4px 1.4px at 92px 168px, rgba(255, 255, 255, 0.8), transparent),
+                    radial-gradient(1px 1px at 214px 214px, rgba(255, 255, 255, 0.6), transparent),
+                    radial-gradient(1px 1px at 262px 44px, rgba(255, 255, 255, 0.55), transparent);
+  background-size: 300px 260px;
+  -webkit-mask: radial-gradient(70% 70% at 70% 42%, #000 20%, transparent 85%);
+  mask: radial-gradient(70% 70% at 70% 42%, #000 20%, transparent 85%);
+}
+
