@@ -476,25 +476,6 @@ function AppShellInner({ user, children }: AppShellProps) {
               >
                 <Menu className="w-5 h-5" />
               </button>
-
-              {/* Capsule Navigation Bar (Desktop Quick-Switch) */}
-              <div className="hidden md:inline-flex nav-capsule">
-                {navItems.slice(0, 5).map((item) => {
-                  const isActive =
-                    pathname === item.href ||
-                    (item.href !== `/${currentUser.role.toLowerCase()}` && pathname.startsWith(item.href));
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={cn("nav-capsule-item", isActive && "active")}
-                    >
-                      <span>{item.title}</span>
-                      {isActive && <span className="pulse-dot" />}
-                    </Link>
-                  );
-                })}
-              </div>
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3 relative">
