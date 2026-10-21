@@ -19,8 +19,15 @@ import {
   Eye,
   EyeOff,
   Lock,
+  Layers,
+  Sparkles,
+  Award,
+  TrendingUp,
+  CheckCircle2,
+  Calendar,
 } from "lucide-react";
 import { ThemeSwitcher } from "@/components/ui/ThemeSwitcher";
+import { BrandLogo, AintrixLogoMark } from "@/components/ui/BrandLogo";
 import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
@@ -135,7 +142,7 @@ export default function LoginPage() {
           ? returnUrl
           : defaultDashboard;
 
-      // Full document navigation ensures session cookies are bound and SSR is hydrated cleanly
+      // Full document navigation ensures session cookies are bound cleanly
       window.location.href = destination;
     } catch {
       setError("Network communication error. Please try again.");
@@ -224,392 +231,566 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen flex flex-col justify-between py-6 sm:py-10 px-3 sm:px-6 lg:px-8 transition-colors duration-300"
+      className="min-h-screen relative flex flex-col justify-between transition-colors duration-300 overflow-x-hidden"
       style={{
         backgroundColor: "var(--bg)",
         color: "var(--text)",
       }}
     >
-      {/* Top Navbar with Academy Return Link & 4-Theme Switcher */}
-      <div className="max-w-4xl mx-auto w-full flex items-center justify-between mb-4">
+      {/* Background Decorative Ambient Glows */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden -z-10">
+        <div
+          className="absolute -top-[20%] -left-[10%] w-[50vw] h-[50vw] rounded-full blur-3xl opacity-20 transition-all duration-700"
+          style={{ backgroundColor: "var(--accent)" }}
+        />
+        <div
+          className="absolute -bottom-[20%] -right-[10%] w-[50vw] h-[50vw] rounded-full blur-3xl opacity-15 transition-all duration-700"
+          style={{ backgroundColor: "#1CE798" }}
+        />
+        <div className="absolute inset-0 bg-[radial-gradient(#00000008_1px,transparent_1px)] [background-size:24px_24px] opacity-40" />
+      </div>
+
+      {/* Top Navbar: Return Link & Theme Switcher */}
+      <header className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex items-center justify-between z-20">
         <Link
           href="/"
-          className="flex items-center gap-1.5 text-xs font-semibold opacity-70 hover:opacity-100 transition-opacity"
+          className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full border border-current/10 hover:border-current/25 transition-all hover:-translate-x-0.5 opacity-80 hover:opacity-100"
           style={{ color: "var(--text)" }}
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Return to Academy</span>
         </Link>
-        <ThemeSwitcher />
-      </div>
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md space-y-6">
-        {/* Brand Header */}
-        <div className="text-center space-y-2">
-          <Link href="/" className="inline-flex items-center gap-2.5 group">
-            <div
-              className="w-12 h-12 rounded-2xl text-white flex items-center justify-center font-bold text-2xl shadow-md transition-all duration-300"
-              style={{ backgroundColor: "var(--accent)" }}
-            >
-              A
-            </div>
-          </Link>
-          <h2 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">
-            Apex Global Academy
-          </h2>
-          <p className="text-xs sm:text-sm opacity-70 max-w-sm mx-auto leading-relaxed">
-            Unified Institutional Sign-In Portal
-          </p>
+        <div className="flex items-center gap-3">
+          <ThemeSwitcher />
         </div>
+      </header>
 
-        {/* 1-Click Role Auto-Fill Pills (All 5 Roles) */}
-        <div
-          className="p-4 rounded-2xl border shadow-xs text-xs space-y-3"
-          style={{
-            backgroundColor: "var(--surface)",
-            borderColor: "var(--border)",
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 font-bold" style={{ color: "var(--accent)" }}>
-              <div
-                className="w-5 h-5 rounded-md flex items-center justify-center"
-                style={{ backgroundColor: "var(--surface-alt)" }}
-              >
-                <KeyRound className="w-3.5 h-3.5" style={{ color: "var(--accent)" }} />
-              </div>
-              <span className="text-xs">Quick-Select Role Accounts</span>
-            </div>
-            <span className="text-[10px] opacity-60 font-medium hidden sm:inline">1-Click Credential Fill</span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => fillCredentials("ADMIN")}
-              className={cn(
-                "px-2.5 py-2 min-h-[44px] rounded-xl text-[11px] font-semibold border flex items-center gap-2 transition-all hover:opacity-90 active:scale-98 text-left",
-                selectedRole === "ADMIN" && "ring-2"
-              )}
-              style={{
-                backgroundColor: "var(--surface-alt)",
-                borderColor: selectedRole === "ADMIN" ? "var(--accent)" : "var(--border)",
-                color: "var(--text)",
-              }}
-            >
-              <ShieldCheck className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--accent)" }} />
-              <span className="truncate">Admin</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => fillCredentials("TRAINER")}
-              className={cn(
-                "px-2.5 py-2 min-h-[44px] rounded-xl text-[11px] font-semibold border flex items-center gap-2 transition-all hover:opacity-90 active:scale-98 text-left",
-                selectedRole === "TRAINER" && "ring-2"
-              )}
-              style={{
-                backgroundColor: "var(--surface-alt)",
-                borderColor: selectedRole === "TRAINER" ? "var(--accent)" : "var(--border)",
-                color: "var(--text)",
-              }}
-            >
-              <Presentation className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--accent)" }} />
-              <span className="truncate">Trainer</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => fillCredentials("STUDENT")}
-              className={cn(
-                "px-2.5 py-2 min-h-[44px] rounded-xl text-[11px] font-semibold border flex items-center gap-2 transition-all hover:opacity-90 active:scale-98 text-left",
-                selectedRole === "STUDENT" && "ring-2"
-              )}
-              style={{
-                backgroundColor: "var(--surface-alt)",
-                borderColor: selectedRole === "STUDENT" ? "var(--accent)" : "var(--border)",
-                color: "var(--text)",
-              }}
-            >
-              <GraduationCap className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--accent)" }} />
-              <span className="truncate">Student</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => fillCredentials("MANAGER")}
-              className={cn(
-                "px-2.5 py-2 min-h-[44px] rounded-xl text-[11px] font-semibold border flex items-center gap-2 transition-all hover:opacity-90 active:scale-98 text-left",
-                selectedRole === "MANAGER" && "ring-2"
-              )}
-              style={{
-                backgroundColor: "var(--surface-alt)",
-                borderColor: selectedRole === "MANAGER" ? "var(--accent)" : "var(--border)",
-                color: "var(--text)",
-              }}
-            >
-              <Briefcase className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--accent)" }} />
-              <span className="truncate">Manager</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => fillCredentials("FINANCIER")}
-              className={cn(
-                "px-2.5 py-2 min-h-[44px] rounded-xl text-[11px] font-semibold border flex items-center gap-2 transition-all hover:opacity-90 active:scale-98 text-left col-span-2 sm:col-span-1",
-                selectedRole === "FINANCIER" && "ring-2"
-              )}
-              style={{
-                backgroundColor: "var(--surface-alt)",
-                borderColor: selectedRole === "FINANCIER" ? "var(--accent)" : "var(--border)",
-                color: "var(--text)",
-              }}
-            >
-              <Coins className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--accent)" }} />
-              <span className="truncate">Financier</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Universal Single Sign-In Card */}
-        <div
-          className="rounded-3xl border shadow-xl p-6 sm:p-8 space-y-5"
-          style={{
-            backgroundColor: "var(--surface)",
-            borderColor: "var(--border)",
-          }}
-        >
-          {authMode === "CREDENTIALS" ? (
-            <form onSubmit={handleCredentialSubmit} className="space-y-4">
-              {error && (
-                <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2.5">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <span className="break-words leading-relaxed">{error}</span>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-xs font-semibold mb-1.5 opacity-90">
-                  Email or Institutional ID
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    required
-                    autoComplete="username"
-                    value={identifier}
-                    onChange={(e) => {
-                      setIdentifier(e.target.value);
-                      setSelectedRole(null);
-                    }}
-                    placeholder="e.g. admin@apexacademy.edu, student@apexacademy.edu"
-                    className="w-full px-3.5 py-2.5 rounded-xl border text-sm min-h-[44px] transition-all"
-                    style={{
-                      backgroundColor: "var(--surface-alt)",
-                      borderColor: "var(--border)",
-                      color: "var(--text)",
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-semibold opacity-90">
-                    Password
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="text-[11px] font-medium opacity-70 hover:opacity-100 flex items-center gap-1"
-                  >
-                    {showPassword ? (
-                      <>
-                        <EyeOff className="w-3 h-3" />
-                        <span>Hide</span>
-                      </>
-                    ) : (
-                      <>
-                        <Eye className="w-3 h-3" />
-                        <span>Show</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    required
-                    autoComplete="current-password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••••••"
-                    className="w-full px-3.5 py-2.5 rounded-xl border text-sm min-h-[44px] transition-all"
-                    style={{
-                      backgroundColor: "var(--surface-alt)",
-                      borderColor: "var(--border)",
-                      color: "var(--text)",
-                    }}
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white shadow-md btn-luxury flex items-center justify-center gap-2 min-h-[44px]"
-                style={{ backgroundColor: "var(--accent)" }}
-              >
-                <span>{loading ? "Authenticating..." : "Sign In to Academy"}</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-
-              <div className="pt-3 border-t text-center" style={{ borderColor: "var(--border)" }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthMode("STUDENT_OTP");
-                    setStudentEmail(identifier.includes("@") ? identifier : "");
-                  }}
-                  className="text-xs font-semibold hover:underline transition-colors"
-                  style={{ color: "var(--accent)" }}
-                >
-                  Need passwordless access? Student sign-in via Email OTP →
-                </button>
-              </div>
-            </form>
-          ) : (
-            /* Optional Passwordless Email OTP for Students */
+      {/* Main Content: Split Grid with Progression Showcase (Left) and Sign-In Card (Right) */}
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 flex items-center">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+          
+          {/* Left Column: Academic Progression & Institutional Excellence */}
+          <div className="lg:col-span-6 space-y-6 lg:pr-6">
             <div className="space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b" style={{ borderColor: "var(--border)" }}>
-                <div className="flex items-center gap-2">
-                  <Mail className="w-4 h-4" style={{ color: "var(--accent)" }} />
-                  <span className="text-xs font-bold">Student Email OTP Sign-In</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setAuthMode("CREDENTIALS")}
-                  className="text-[11px] font-semibold hover:underline opacity-80"
-                >
-                  ← Back to Password Login
-                </button>
+              {/* Brand Capsule directly matching Image 2 */}
+              <div className="inline-block">
+                <BrandLogo variant="capsule" markSize={36} />
               </div>
 
-              {otpError && (
-                <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2.5">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <span className="break-words leading-relaxed">{otpError}</span>
-                </div>
-              )}
-              {otpMessage && (
-                <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-start gap-2.5">
-                  <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <span className="break-words leading-relaxed">{otpMessage}</span>
-                </div>
-              )}
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-extrabold tracking-tight leading-[1.15]">
+                Engineering Rigor & <br className="hidden sm:inline" />
+                <span
+                  className="bg-clip-text text-transparent bg-gradient-to-r"
+                  style={{
+                    backgroundImage: "linear-gradient(135deg, var(--text) 0%, var(--accent) 100%)",
+                  }}
+                >
+                  Academic Progression
+                </span>
+              </h1>
 
-              {!otpSent ? (
-                <form onSubmit={handleRequestOtp} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold mb-1.5 opacity-90">
-                      Registered Student Email
-                    </label>
-                    <input
-                      type="email"
-                      required
-                      value={studentEmail}
-                      onChange={(e) => setStudentEmail(e.target.value)}
-                      placeholder="student@apexacademy.edu"
-                      className="w-full px-3.5 py-2.5 rounded-xl border text-sm min-h-[44px] transition-all"
-                      style={{
-                        backgroundColor: "var(--surface-alt)",
-                        borderColor: "var(--border)",
-                        color: "var(--text)",
-                      }}
-                    />
-                    <p className="mt-1.5 text-[11px] opacity-60">
-                      A 6-digit one-time code will be dispatched to your registered student inbox.
-                    </p>
+              <p className="text-sm sm:text-base opacity-75 max-w-xl leading-relaxed">
+                A unified institutional governance portal connecting students, faculty instructors, admissions, and leadership through verified real-time progression.
+              </p>
+            </div>
+
+            {/* Progression Pillars */}
+            <div className="space-y-3 pt-2">
+              <div
+                className="p-4 rounded-2xl border transition-all duration-300 hover:shadow-sm flex items-start gap-3.5"
+                style={{
+                  backgroundColor: "var(--surface)",
+                  borderColor: "var(--border)",
+                }}
+              >
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+                  style={{ backgroundColor: "var(--surface-alt)" }}
+                >
+                  <TrendingUp className="w-4 h-4 text-[#10B981]" />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xs font-bold font-display tracking-wide uppercase">
+                      Curriculum Progression
+                    </h2>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                      100% Verified
+                    </span>
+                  </div>
+                  <p className="text-xs opacity-70 leading-relaxed">
+                    Granular subtopic coverage, multi-version syllabus timetables, and automated module milestone tracking.
+                  </p>
+                </div>
+              </div>
+
+              <div
+                className="p-4 rounded-2xl border transition-all duration-300 hover:shadow-sm flex items-start gap-3.5"
+                style={{
+                  backgroundColor: "var(--surface)",
+                  borderColor: "var(--border)",
+                }}
+              >
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+                  style={{ backgroundColor: "var(--surface-alt)" }}
+                >
+                  <CheckCircle2 className="w-4 h-4" style={{ color: "var(--accent)" }} />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xs font-bold font-display tracking-wide uppercase">
+                      Attendance & Class Integrity
+                    </h2>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20">
+                      Live Audit
+                    </span>
+                  </div>
+                  <p className="text-xs opacity-70 leading-relaxed">
+                    Deterministic session occurrence generation, tamper-proof student attendance logs, and formal backdate governance.
+                  </p>
+                </div>
+              </div>
+
+              <div
+                className="p-4 rounded-2xl border transition-all duration-300 hover:shadow-sm flex items-start gap-3.5"
+                style={{
+                  backgroundColor: "var(--surface)",
+                  borderColor: "var(--border)",
+                }}
+              >
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+                  style={{ backgroundColor: "var(--surface-alt)" }}
+                >
+                  <Award className="w-4 h-4 text-amber-500" />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xs font-bold font-display tracking-wide uppercase">
+                      Credential Certification
+                    </h2>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                      Cryptographic
+                    </span>
+                  </div>
+                  <p className="text-xs opacity-70 leading-relaxed">
+                    Instant public verification badges, verifiable diploma tokens, and executive academic completion certificates.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Metrics Bar */}
+            <div className="grid grid-cols-3 gap-3 pt-1 text-center">
+              <div
+                className="p-3 rounded-xl border"
+                style={{
+                  backgroundColor: "var(--surface)",
+                  borderColor: "var(--border)",
+                }}
+              >
+                <span className="block text-lg font-bold font-display leading-tight" style={{ color: "var(--accent)" }}>
+                  5 Portals
+                </span>
+                <span className="text-[10px] opacity-60 font-medium">Unified Sign-In</span>
+              </div>
+              <div
+                className="p-3 rounded-xl border"
+                style={{
+                  backgroundColor: "var(--surface)",
+                  borderColor: "var(--border)",
+                }}
+              >
+                <span className="block text-lg font-bold font-display leading-tight text-emerald-600">
+                  100%
+                </span>
+                <span className="text-[10px] opacity-60 font-medium">Audit Compliance</span>
+              </div>
+              <div
+                className="p-3 rounded-xl border"
+                style={{
+                  backgroundColor: "var(--surface)",
+                  borderColor: "var(--border)",
+                }}
+              >
+                <span className="block text-lg font-bold font-display leading-tight text-amber-600">
+                  Live
+                </span>
+                <span className="text-[10px] opacity-60 font-medium">Session Sync</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Creative, Professionally Aligned Sign-In Card */}
+          <div className="lg:col-span-6 flex justify-center">
+            <div className="w-full max-w-md space-y-4">
+              
+              {/* The Sign-In Luxury Card */}
+              <div
+                className="rounded-3xl border shadow-xl p-6 sm:p-8 space-y-5 backdrop-blur-xl relative"
+                style={{
+                  backgroundColor: "var(--surface)",
+                  borderColor: "var(--border)",
+                }}
+              >
+                {/* Header within Card */}
+                <div className="space-y-1.5 text-center sm:text-left">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <h2 className="text-xl sm:text-2xl font-display font-extrabold tracking-tight">
+                      Institutional Sign-In
+                    </h2>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border tracking-wide uppercase opacity-75">
+                      Single Gateway
+                    </span>
+                  </div>
+                  <p className="text-xs opacity-70">
+                    Enter your academic credentials or select your authorized profile below.
+                  </p>
+                </div>
+
+                {/* Sleek, Integrated 1-Click Role Switcher (Compact & Professionally Aligned) */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px] font-semibold opacity-75">
+                    <span className="flex items-center gap-1.5">
+                      <KeyRound className="w-3.5 h-3.5" style={{ color: "var(--accent)" }} />
+                      <span>Authorized Role Profiles</span>
+                    </span>
+                    <span className="text-[10px] opacity-60">1-Click Auto-Fill</span>
                   </div>
 
-                  <button
-                    type="submit"
-                    disabled={otpLoading}
-                    className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white shadow-md btn-luxury flex items-center justify-center gap-2 min-h-[44px]"
-                    style={{ backgroundColor: "var(--accent)" }}
-                  >
-                    <span>{otpLoading ? "Dispatching..." : "Send Verification Code"}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </form>
-              ) : (
-                <form onSubmit={handleVerifyOtp} className="space-y-4">
-                  <div>
-                    <div className="flex justify-between items-center mb-1.5">
-                      <label className="text-xs font-semibold opacity-90">
-                        Enter 6-Digit OTP Code
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => setOtpSent(false)}
-                        className="text-[11px] font-semibold hover:underline"
-                        style={{ color: "var(--accent)" }}
-                      >
-                        Change Email
-                      </button>
-                    </div>
-                    <input
-                      type="text"
-                      maxLength={6}
-                      required
-                      value={otpCode}
-                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
-                      placeholder="123456"
-                      className="w-full px-3.5 py-2.5 rounded-xl border text-center text-xl font-mono tracking-widest min-h-[48px]"
-                      style={{
-                        backgroundColor: "var(--surface-alt)",
-                        borderColor: "var(--border)",
-                        color: "var(--text)",
-                      }}
-                    />
-                    {devOtpHint && (
-                      <p className="mt-2 text-xs text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-200">
-                        Dev Test OTP: <strong>{devOtpHint}</strong>
-                      </p>
-                    )}
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={otpLoading}
-                    className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white shadow-md btn-luxury flex items-center justify-center gap-2 min-h-[44px]"
-                    style={{ backgroundColor: "var(--accent)" }}
-                  >
-                    <span>{otpLoading ? "Verifying..." : "Confirm & Enter Student Portal"}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-
-                  <div className="text-center">
+                  <div className="grid grid-cols-5 gap-1.5 p-1 rounded-2xl bg-stone-100/60 dark:bg-stone-900/60 border border-current/5">
                     <button
                       type="button"
-                      disabled={cooldown > 0 || otpLoading}
-                      onClick={handleRequestOtp}
-                      className="text-xs opacity-70 hover:opacity-100 disabled:opacity-40"
+                      onClick={() => fillCredentials("ADMIN")}
+                      className={cn(
+                        "py-2 px-1 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all active:scale-95 text-center min-h-[44px]",
+                        selectedRole === "ADMIN"
+                          ? "bg-white text-stone-950 shadow-xs ring-1 ring-black/10"
+                          : "opacity-70 hover:opacity-100 hover:bg-white/40"
+                      )}
+                      title="Admin: admin@apexacademy.edu"
                     >
-                      {cooldown > 0 ? `Resend code in ${cooldown}s` : "Resend Code"}
+                      <ShieldCheck className="w-3.5 h-3.5 text-[#6D1A2B]" />
+                      <span className="leading-none truncate max-w-full">Admin</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => fillCredentials("TRAINER")}
+                      className={cn(
+                        "py-2 px-1 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all active:scale-95 text-center min-h-[44px]",
+                        selectedRole === "TRAINER"
+                          ? "bg-white text-stone-950 shadow-xs ring-1 ring-black/10"
+                          : "opacity-70 hover:opacity-100 hover:bg-white/40"
+                      )}
+                      title="Trainer: trainer@apexacademy.edu"
+                    >
+                      <Presentation className="w-3.5 h-3.5 text-[#10B981]" />
+                      <span className="leading-none truncate max-w-full">Trainer</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => fillCredentials("STUDENT")}
+                      className={cn(
+                        "py-2 px-1 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all active:scale-95 text-center min-h-[44px]",
+                        selectedRole === "STUDENT"
+                          ? "bg-white text-stone-950 shadow-xs ring-1 ring-black/10"
+                          : "opacity-70 hover:opacity-100 hover:bg-white/40"
+                      )}
+                      title="Student: student@apexacademy.edu"
+                    >
+                      <GraduationCap className="w-3.5 h-3.5 text-blue-600" />
+                      <span className="leading-none truncate max-w-full">Student</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => fillCredentials("MANAGER")}
+                      className={cn(
+                        "py-2 px-1 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all active:scale-95 text-center min-h-[44px]",
+                        selectedRole === "MANAGER"
+                          ? "bg-white text-stone-950 shadow-xs ring-1 ring-black/10"
+                          : "opacity-70 hover:opacity-100 hover:bg-white/40"
+                      )}
+                      title="Manager: manager@apexacademy.edu"
+                    >
+                      <Briefcase className="w-3.5 h-3.5 text-purple-600" />
+                      <span className="leading-none truncate max-w-full">Manager</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => fillCredentials("FINANCIER")}
+                      className={cn(
+                        "py-2 px-1 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all active:scale-95 text-center min-h-[44px]",
+                        selectedRole === "FINANCIER"
+                          ? "bg-white text-stone-950 shadow-xs ring-1 ring-black/10"
+                          : "opacity-70 hover:opacity-100 hover:bg-white/40"
+                      )}
+                      title="Financier: financier@apexacademy.edu"
+                    >
+                      <Coins className="w-3.5 h-3.5 text-amber-600" />
+                      <span className="leading-none truncate max-w-full">Financier</span>
                     </button>
                   </div>
-                </form>
-              )}
+                </div>
+
+                {/* Primary Credential Sign-In Form */}
+                {authMode === "CREDENTIALS" ? (
+                  <form onSubmit={handleCredentialSubmit} className="space-y-4">
+                    {error && (
+                      <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2.5 animate-in fade-in">
+                        <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                        <span className="break-words leading-relaxed">{error}</span>
+                      </div>
+                    )}
+
+                    <div className="space-y-1">
+                      <label className="block text-xs font-semibold opacity-90">
+                        Email or Institutional ID
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none opacity-40">
+                          <Mail className="w-4 h-4" />
+                        </div>
+                        <input
+                          type="text"
+                          required
+                          autoComplete="username"
+                          value={identifier}
+                          onChange={(e) => {
+                            setIdentifier(e.target.value);
+                            setSelectedRole(null);
+                          }}
+                          placeholder="e.g. admin@apexacademy.edu, STU-2026-0001"
+                          className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border text-sm min-h-[44px] transition-all focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                          style={{
+                            backgroundColor: "var(--surface-alt)",
+                            borderColor: "var(--border)",
+                            color: "var(--text)",
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold opacity-90">
+                          Password
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="text-[11px] font-medium opacity-70 hover:opacity-100 flex items-center gap-1 p-0.5"
+                        >
+                          {showPassword ? (
+                            <>
+                              <EyeOff className="w-3 h-3" />
+                              <span>Hide</span>
+                            </>
+                          ) : (
+                            <>
+                              <Eye className="w-3 h-3" />
+                              <span>Show</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none opacity-40">
+                          <Lock className="w-4 h-4" />
+                        </div>
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          required
+                          autoComplete="current-password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="••••••••••••"
+                          className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border text-sm min-h-[44px] transition-all focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                          style={{
+                            backgroundColor: "var(--surface-alt)",
+                            borderColor: "var(--border)",
+                            color: "var(--text)",
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white shadow-md flex items-center justify-center gap-2 min-h-[44px] transition-all duration-200 active:scale-[0.99] hover:opacity-95"
+                      style={{ backgroundColor: "var(--accent)" }}
+                    >
+                      <span>{loading ? "Authenticating..." : "Sign In to Aintrix Portal"}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+
+                    <div className="pt-2 border-t text-center" style={{ borderColor: "var(--border)" }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAuthMode("STUDENT_OTP");
+                          setStudentEmail(identifier.includes("@") ? identifier : "");
+                        }}
+                        className="text-xs font-semibold hover:underline transition-colors opacity-80 hover:opacity-100"
+                        style={{ color: "var(--accent)" }}
+                      >
+                        Student passwordless access via Email OTP &rarr;
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  /* Optional Passwordless Email OTP for Students */
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between pb-2 border-b" style={{ borderColor: "var(--border)" }}>
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4" style={{ color: "var(--accent)" }} />
+                        <span className="text-xs font-bold">Student Email OTP Sign-In</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setAuthMode("CREDENTIALS")}
+                        className="text-[11px] font-semibold hover:underline opacity-80"
+                      >
+                        &larr; Back to Password Login
+                      </button>
+                    </div>
+
+                    {otpError && (
+                      <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2.5">
+                        <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                        <span className="break-words leading-relaxed">{otpError}</span>
+                      </div>
+                    )}
+                    {otpMessage && (
+                      <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-start gap-2.5">
+                        <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                        <span className="break-words leading-relaxed">{otpMessage}</span>
+                      </div>
+                    )}
+
+                    {!otpSent ? (
+                      <form onSubmit={handleRequestOtp} className="space-y-4">
+                        <div className="space-y-1">
+                          <label className="block text-xs font-semibold opacity-90">
+                            Registered Student Email
+                          </label>
+                          <input
+                            type="email"
+                            required
+                            value={studentEmail}
+                            onChange={(e) => setStudentEmail(e.target.value)}
+                            placeholder="student@apexacademy.edu"
+                            className="w-full px-3.5 py-2.5 rounded-xl border text-sm min-h-[44px] transition-all"
+                            style={{
+                              backgroundColor: "var(--surface-alt)",
+                              borderColor: "var(--border)",
+                              color: "var(--text)",
+                            }}
+                          />
+                          <p className="text-[11px] opacity-60">
+                            A 6-digit one-time code will be dispatched to your student inbox.
+                          </p>
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={otpLoading}
+                          className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white shadow-md flex items-center justify-center gap-2 min-h-[44px] transition-all"
+                          style={{ backgroundColor: "var(--accent)" }}
+                        >
+                          <span>{otpLoading ? "Dispatching..." : "Send Verification Code"}</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
+                      </form>
+                    ) : (
+                      <form onSubmit={handleVerifyOtp} className="space-y-4">
+                        <div className="space-y-1">
+                          <div className="flex justify-between items-center">
+                            <label className="text-xs font-semibold opacity-90">
+                              Enter 6-Digit OTP Code
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setOtpSent(false)}
+                              className="text-[11px] font-semibold hover:underline"
+                              style={{ color: "var(--accent)" }}
+                            >
+                              Change Email
+                            </button>
+                          </div>
+                          <input
+                            type="text"
+                            maxLength={6}
+                            required
+                            value={otpCode}
+                            onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+                            placeholder="123456"
+                            className="w-full px-3.5 py-2.5 rounded-xl border text-center text-xl font-mono tracking-widest min-h-[48px]"
+                            style={{
+                              backgroundColor: "var(--surface-alt)",
+                              borderColor: "var(--border)",
+                              color: "var(--text)",
+                            }}
+                          />
+                          {devOtpHint && (
+                            <p className="text-xs text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-200">
+                              Dev Test OTP: <strong>{devOtpHint}</strong>
+                            </p>
+                          )}
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={otpLoading}
+                          className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white shadow-md flex items-center justify-center gap-2 min-h-[44px] transition-all"
+                          style={{ backgroundColor: "var(--accent)" }}
+                        >
+                          <span>{otpLoading ? "Verifying..." : "Confirm & Enter Student Portal"}</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
+
+                        <div className="text-center">
+                          <button
+                            type="button"
+                            disabled={cooldown > 0 || otpLoading}
+                            onClick={handleRequestOtp}
+                            className="text-xs opacity-70 hover:opacity-100 disabled:opacity-40"
+                          >
+                            {cooldown > 0 ? `Resend code in ${cooldown}s` : "Resend Code"}
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Security & Verification Footer */}
+              <div className="flex items-center justify-center gap-3 text-[11px] opacity-60">
+                <span className="flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>256-Bit Encrypted</span>
+                </span>
+                <span>•</span>
+                <span>Role-Based Access</span>
+                <span>•</span>
+                <span>Tamper-Proof Audit</span>
+              </div>
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      </main>
 
       {/* Footer */}
-      <div className="text-center text-xs opacity-60 mt-8">
-        © {new Date().getFullYear()} Apex Global Academy. Unified institutional access gateway.
-      </div>
+      <footer className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-xs opacity-60">
+        &copy; {new Date().getFullYear()} Aintrix Academy. Unified institutional governance & academic progression.
+      </footer>
     </div>
   );
 }

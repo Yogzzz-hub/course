@@ -56,7 +56,7 @@ export default function NotFound() {
         {/* Footer Brand */}
         <div className="pt-4 border-t border-stone-100 flex items-center justify-center gap-2 text-[11px] text-[#A4999D]">
           <GraduationCap className="w-3.5 h-3.5 text-[#C9A24B]" />
-          <span>Apex Global Academy Operations System</span>
+          <span>Aintrix Academy Operations System</span>
         </div>
       </div>
     </div>

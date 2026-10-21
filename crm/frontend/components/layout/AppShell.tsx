@@ -34,6 +34,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ToastProvider } from "@/components/ui/Toast";
 import { ThemeSwitcher } from "@/components/ui/ThemeSwitcher";
+import { AintrixLogoMark } from "@/components/ui/BrandLogo";
 
 export interface NavItem {
   title: string;
@@ -357,15 +358,12 @@ function AppShellInner({ user, children }: AppShellProps) {
             }}
           >
             <Link href={`/${currentUser.role.toLowerCase()}`} className="flex items-center gap-2.5 group">
-              <div
-                className="w-9 h-9 rounded-xl text-white flex items-center justify-center font-bold text-lg shadow-xs transition-colors"
-                style={{ backgroundColor: "var(--accent)" }}
-              >
-                A
+              <div className="w-9 h-9 rounded-xl bg-[#1A0E15] border border-white/10 flex items-center justify-center p-1.5 shadow-sm shrink-0">
+                <AintrixLogoMark size={22} className="drop-shadow-[0_0_8px_rgba(28,231,152,0.45)]" />
               </div>
-              <div>
-                <span className="font-display font-bold text-sm tracking-tight block leading-tight">
-                  Apex Academy
+              <div className="flex flex-col text-left">
+                <span className="font-display font-extrabold text-sm tracking-tight block leading-tight">
+                  Aintrix Academy
                 </span>
                 <span className="text-[10px] font-bold tracking-wider uppercase opacity-75" style={{ color: "var(--accent)" }}>
                   {currentUser.role} Portal

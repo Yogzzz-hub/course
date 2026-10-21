@@ -4,9 +4,9 @@ import "@fontsource-variable/space-grotesk";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Apex Global Academy | Enterprise Technical & Architecture Academy",
+  title: "Aintrix Academy | Executive Portal & Academic Operations",
   description:
-    "Official portal for Apex Global Academy. Comprehensive programs in software engineering, distributed systems, cloud computing, and applied machine learning.",
+    "Official portal for Aintrix Academy. High-impact software engineering, architecture, live attendance tracking, syllabus progression, and verified certifications.",
 };
 
 export default function RootLayout({
