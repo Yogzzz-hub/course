@@ -134,7 +134,8 @@ export async function clearSessionCookie() {
   cookieStore.set("auth_token", "", clearOptions);
 }
 
-import { sendStudentOtpEmail } from "./smtp";
+import { sendStudentOtpEmail, sendPasswordResetOtpEmail } from "./smtp";
+import { logAuditEvent } from "./audit";
 
 // Student Email OTP management via SMTP
 export async function generateStudentOtp(identifier: string): Promise<{ success: boolean; devOtp?: string; message: string }> {
@@ -300,4 +301,195 @@ export async function verifyStudentOtp(identifier: string, code: string): Promis
   };
 
   return { success: true, user: sessionPayload };
+}
+
+/**
+ * Universal Password Reset OTP generator for all authorized users (Admin, Trainer, Student, Manager, Financier).
+ */
+export async function generatePasswordResetOtp(
+  identifier: string
+): Promise<{ success: boolean; devOtp?: string; maskedEmail?: string; message: string }> {
+  const cleanId = identifier.trim().toLowerCase();
+
+  const user = await prisma.user.findFirst({
+    where: {
+      isActive: true,
+      OR: [
+        { email: cleanId },
+        { studentProfile: { registrationNumber: identifier.trim().toUpperCase() } },
+        { trainerProfile: { employeeCode: identifier.trim().toUpperCase() } },
+      ],
+    },
+    include: {
+      studentProfile: true,
+      trainerProfile: true,
+    },
+  });
+
+  if (!user) {
+    return {
+      success: true,
+      message: "If an active institutional account matches this identifier, a verification code has been dispatched.",
+    };
+  }
+
+  // Generate 6-digit OTP
+  const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+  const otpHash = await bcrypt.hash(otpCode, 8);
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+  // Invalidate previous active OTPs for this user
+  await prisma.otpRecord.updateMany({
+    where: {
+      OR: [
+        { identifier: cleanId, consumed: false },
+        { identifier: user.email.toLowerCase(), consumed: false },
+      ],
+    },
+    data: { consumed: true },
+  });
+
+  // Create new OTP record
+  await prisma.otpRecord.create({
+    data: {
+      identifier: cleanId,
+      otpHash,
+      expiresAt,
+    },
+  });
+
+  if (cleanId !== user.email.toLowerCase()) {
+    await prisma.otpRecord.create({
+      data: {
+        identifier: user.email.toLowerCase(),
+        otpHash,
+        expiresAt,
+      },
+    });
+  }
+
+  // Dispatch email
+  await sendPasswordResetOtpEmail(user.email, user.name, otpCode, user.id);
+
+  const maskedEmail = user.email.replace(/(.{2})(.*)(?=@)/, (_m, a, b) => a + "*".repeat(b.length));
+  const isDev = process.env.DEV_OTP_TEST_MODE === "true" || process.env.NODE_ENV !== "production";
+
+  if (isDev) {
+    console.log(`[PASSWORD RESET DEV OTP] User: ${user.email} / Code: ${otpCode}`);
+    return {
+      success: true,
+      devOtp: otpCode,
+      maskedEmail,
+      message: `A 6-digit verification code has been dispatched to ${maskedEmail}.`,
+    };
+  }
+
+  return {
+    success: true,
+    maskedEmail,
+    message: `A 6-digit verification code has been dispatched to ${maskedEmail}.`,
+  };
+}
+
+/**
+ * Validates OTP and updates account password securely.
+ */
+export async function resetPasswordWithOtp(
+  identifier: string,
+  code: string,
+  newPassword: string
+): Promise<{ success: boolean; error?: string; message?: string }> {
+  const cleanId = identifier.trim().toLowerCase();
+
+  if (!newPassword || newPassword.length < 6) {
+    return { success: false, error: "New password must be at least 6 characters in length." };
+  }
+
+  const user = await prisma.user.findFirst({
+    where: {
+      isActive: true,
+      OR: [
+        { email: cleanId },
+        { studentProfile: { registrationNumber: identifier.trim().toUpperCase() } },
+        { trainerProfile: { employeeCode: identifier.trim().toUpperCase() } },
+      ],
+    },
+  });
+
+  if (!user) {
+    return { success: false, error: "No active user account found matching this identifier." };
+  }
+
+  const otpRecord = await prisma.otpRecord.findFirst({
+    where: {
+      OR: [
+        { identifier: cleanId },
+        { identifier: user.email.toLowerCase() },
+      ],
+      consumed: false,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (!otpRecord) {
+    return { success: false, error: "No active verification code found. Please request a new code." };
+  }
+
+  if (new Date() > otpRecord.expiresAt) {
+    await prisma.otpRecord.update({
+      where: { id: otpRecord.id },
+      data: { consumed: true },
+    });
+    return { success: false, error: "This verification code has expired. Please request a new one." };
+  }
+
+  if (otpRecord.attempts >= 3) {
+    await prisma.otpRecord.update({
+      where: { id: otpRecord.id },
+      data: { consumed: true },
+    });
+    return { success: false, error: "Too many failed attempts. This code has been invalidated." };
+  }
+
+  const isValid = await bcrypt.compare(code.trim(), otpRecord.otpHash);
+  if (!isValid) {
+    await prisma.otpRecord.update({
+      where: { id: otpRecord.id },
+      data: { attempts: { increment: 1 } },
+    });
+    return { success: false, error: `Invalid verification code. ${2 - otpRecord.attempts} attempts remaining.` };
+  }
+
+  // Mark all unconsumed OTP records for this user as consumed
+  await prisma.otpRecord.updateMany({
+    where: {
+      OR: [
+        { identifier: cleanId },
+        { identifier: user.email.toLowerCase() },
+      ],
+      consumed: false,
+    },
+    data: { consumed: true },
+  });
+
+  // Hash new password and update user record
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { passwordHash },
+  });
+
+  // Log audit event
+  logAuditEvent({
+    userId: user.id,
+    action: "USER_PASSWORD_RESET_OTP",
+    entityType: "User",
+    entityId: user.id,
+    details: { email: user.email, role: user.role },
+  }).catch(() => {});
+
+  return {
+    success: true,
+    message: "Your password has been successfully updated! You can now sign in with your new password.",
+  };
 }

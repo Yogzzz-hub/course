@@ -25,6 +25,7 @@ import {
   TrendingUp,
   CheckCircle2,
   Calendar,
+  RotateCcw,
 } from "lucide-react";
 import { ThemeSwitcher } from "@/components/ui/ThemeSwitcher";
 import { BrandLogo, AintrixLogoMark } from "@/components/ui/BrandLogo";
@@ -33,8 +34,8 @@ import { cn } from "@/lib/utils";
 export default function LoginPage() {
   const router = useRouter();
 
-  // Mode: Primary credential sign-in vs optional student OTP fallback
-  const [authMode, setAuthMode] = useState<"CREDENTIALS" | "STUDENT_OTP">("CREDENTIALS");
+  // Mode: Primary credential sign-in vs forgot password vs optional student OTP fallback
+  const [authMode, setAuthMode] = useState<"CREDENTIALS" | "FORGOT_PASSWORD" | "STUDENT_OTP">("CREDENTIALS");
 
   // Universal Credential State (Admin, Trainer, Student, Manager, Financier)
   const [identifier, setIdentifier] = useState("");
@@ -43,6 +44,20 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
+
+  // Forgot Password / Password Reset State (Non-refresh inline flow)
+  const [resetStep, setResetStep] = useState<"REQUEST" | "VERIFY_AND_RESET" | "SUCCESS">("REQUEST");
+  const [resetIdentifier, setResetIdentifier] = useState("");
+  const [resetOtpCode, setResetOtpCode] = useState("");
+  const [resetNewPassword, setResetNewPassword] = useState("");
+  const [resetConfirmPassword, setResetConfirmPassword] = useState("");
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetError, setResetError] = useState("");
+  const [resetSuccessMsg, setResetSuccessMsg] = useState("");
+  const [resetMaskedEmail, setResetMaskedEmail] = useState("");
+  const [devResetOtp, setDevResetOtp] = useState<string | null>(null);
+  const [resetCooldown, setResetCooldown] = useState(0);
 
   // Student OTP Fallback State
   const [studentEmail, setStudentEmail] = useState("");
@@ -147,6 +162,99 @@ export default function LoginPage() {
     } catch {
       setError("Network communication error. Please try again.");
       setLoading(false);
+    }
+  };
+
+  // Forgot Password: Request OTP Handler (Non-refresh inline transition)
+  const handleRequestResetOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError("");
+    setResetSuccessMsg("");
+    setResetLoading(true);
+    setDevResetOtp(null);
+
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier: resetIdentifier }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setResetError(data.error || "Could not dispatch reset code. Please check your identifier.");
+        setResetLoading(false);
+        return;
+      }
+
+      setResetSuccessMsg(data.message || "A 6-digit verification code has been dispatched.");
+      if (data.maskedEmail) setResetMaskedEmail(data.maskedEmail);
+      if (data.devOtp) setDevResetOtp(data.devOtp);
+      setResetLoading(false);
+      setResetStep("VERIFY_AND_RESET");
+
+      setResetCooldown(60);
+      const timer = setInterval(() => {
+        setResetCooldown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch {
+      setResetLoading(false);
+      setResetError("Network communication error. Please try again.");
+    }
+  };
+
+  // Forgot Password: Submit OTP and New Password Handler (Non-refresh)
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError("");
+
+    if (resetOtpCode.length !== 6) {
+      setResetError("Please enter the complete 6-digit verification code.");
+      return;
+    }
+
+    if (resetNewPassword.length < 6) {
+      setResetError("New password must be at least 6 characters in length.");
+      return;
+    }
+
+    if (resetNewPassword !== resetConfirmPassword) {
+      setResetError("Passwords do not match. Please verify both entries.");
+      return;
+    }
+
+    setResetLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          identifier: resetIdentifier,
+          code: resetOtpCode,
+          newPassword: resetNewPassword,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setResetError(data.error || "Password reset failed. Code may have expired or is invalid.");
+        setResetLoading(false);
+        return;
+      }
+
+      setResetLoading(false);
+      setResetStep("SUCCESS");
+      setResetSuccessMsg(data.message || "Your password has been successfully updated!");
+    } catch {
+      setResetLoading(false);
+      setResetError("Network error during password reset. Please try again.");
     }
   };
 
@@ -439,108 +547,116 @@ export default function LoginPage() {
                 <div className="space-y-1.5 text-center sm:text-left">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <h2 className="text-xl sm:text-2xl font-display font-extrabold tracking-tight">
-                      Institutional Sign-In
+                      {authMode === "FORGOT_PASSWORD"
+                        ? "Account Recovery"
+                        : authMode === "STUDENT_OTP"
+                        ? "Student Sign-In"
+                        : "Institutional Sign-In"}
                     </h2>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border tracking-wide uppercase opacity-75">
-                      Single Gateway
+                      {authMode === "FORGOT_PASSWORD" ? "Password Reset" : "Single Gateway"}
                     </span>
                   </div>
                   <p className="text-xs opacity-70">
-                    Enter your academic credentials or select your authorized profile below.
+                    {authMode === "FORGOT_PASSWORD"
+                      ? "Reset your password securely via email verification code."
+                      : "Enter your academic credentials or select your authorized profile below."}
                   </p>
                 </div>
 
-                {/* Sleek, Integrated 1-Click Role Switcher (Compact & Professionally Aligned) */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-[11px] font-semibold opacity-75">
-                    <span className="flex items-center gap-1.5">
-                      <KeyRound className="w-3.5 h-3.5" style={{ color: "var(--accent)" }} />
-                      <span>Authorized Role Profiles</span>
-                    </span>
-                    <span className="text-[10px] opacity-60">1-Click Auto-Fill</span>
+                {/* Sleek, Integrated 1-Click Role Switcher (Visible in Credentials Mode) */}
+                {authMode === "CREDENTIALS" && (
+                  <div className="space-y-1.5 animate-in fade-in">
+                    <div className="flex items-center justify-between text-[11px] font-semibold opacity-75">
+                      <span className="flex items-center gap-1.5">
+                        <KeyRound className="w-3.5 h-3.5" style={{ color: "var(--accent)" }} />
+                        <span>Authorized Role Profiles</span>
+                      </span>
+                      <span className="text-[10px] opacity-60">1-Click Auto-Fill</span>
+                    </div>
+
+                    <div className="grid grid-cols-5 gap-1.5 p-1 rounded-2xl bg-stone-100/60 dark:bg-stone-900/60 border border-current/5">
+                      <button
+                        type="button"
+                        onClick={() => fillCredentials("ADMIN")}
+                        className={cn(
+                          "py-2 px-1 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all active:scale-95 text-center min-h-[44px]",
+                          selectedRole === "ADMIN"
+                            ? "bg-white text-stone-950 shadow-xs ring-1 ring-black/10"
+                            : "opacity-70 hover:opacity-100 hover:bg-white/40"
+                        )}
+                        title="Admin: admin@apexacademy.edu"
+                      >
+                        <ShieldCheck className="w-3.5 h-3.5 text-[#6D1A2B]" />
+                        <span className="leading-none truncate max-w-full">Admin</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => fillCredentials("TRAINER")}
+                        className={cn(
+                          "py-2 px-1 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all active:scale-95 text-center min-h-[44px]",
+                          selectedRole === "TRAINER"
+                            ? "bg-white text-stone-950 shadow-xs ring-1 ring-black/10"
+                            : "opacity-70 hover:opacity-100 hover:bg-white/40"
+                        )}
+                        title="Trainer: trainer@apexacademy.edu"
+                      >
+                        <Presentation className="w-3.5 h-3.5 text-[#10B981]" />
+                        <span className="leading-none truncate max-w-full">Trainer</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => fillCredentials("STUDENT")}
+                        className={cn(
+                          "py-2 px-1 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all active:scale-95 text-center min-h-[44px]",
+                          selectedRole === "STUDENT"
+                            ? "bg-white text-stone-950 shadow-xs ring-1 ring-black/10"
+                            : "opacity-70 hover:opacity-100 hover:bg-white/40"
+                        )}
+                        title="Student: student@apexacademy.edu"
+                      >
+                        <GraduationCap className="w-3.5 h-3.5 text-blue-600" />
+                        <span className="leading-none truncate max-w-full">Student</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => fillCredentials("MANAGER")}
+                        className={cn(
+                          "py-2 px-1 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all active:scale-95 text-center min-h-[44px]",
+                          selectedRole === "MANAGER"
+                            ? "bg-white text-stone-950 shadow-xs ring-1 ring-black/10"
+                            : "opacity-70 hover:opacity-100 hover:bg-white/40"
+                        )}
+                        title="Manager: manager@apexacademy.edu"
+                      >
+                        <Briefcase className="w-3.5 h-3.5 text-purple-600" />
+                        <span className="leading-none truncate max-w-full">Manager</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => fillCredentials("FINANCIER")}
+                        className={cn(
+                          "py-2 px-1 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all active:scale-95 text-center min-h-[44px]",
+                          selectedRole === "FINANCIER"
+                            ? "bg-white text-stone-950 shadow-xs ring-1 ring-black/10"
+                            : "opacity-70 hover:opacity-100 hover:bg-white/40"
+                        )}
+                        title="Financier: financier@apexacademy.edu"
+                      >
+                        <Coins className="w-3.5 h-3.5 text-amber-600" />
+                        <span className="leading-none truncate max-w-full">Financier</span>
+                      </button>
+                    </div>
                   </div>
+                )}
 
-                  <div className="grid grid-cols-5 gap-1.5 p-1 rounded-2xl bg-stone-100/60 dark:bg-stone-900/60 border border-current/5">
-                    <button
-                      type="button"
-                      onClick={() => fillCredentials("ADMIN")}
-                      className={cn(
-                        "py-2 px-1 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all active:scale-95 text-center min-h-[44px]",
-                        selectedRole === "ADMIN"
-                          ? "bg-white text-stone-950 shadow-xs ring-1 ring-black/10"
-                          : "opacity-70 hover:opacity-100 hover:bg-white/40"
-                      )}
-                      title="Admin: admin@apexacademy.edu"
-                    >
-                      <ShieldCheck className="w-3.5 h-3.5 text-[#6D1A2B]" />
-                      <span className="leading-none truncate max-w-full">Admin</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => fillCredentials("TRAINER")}
-                      className={cn(
-                        "py-2 px-1 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all active:scale-95 text-center min-h-[44px]",
-                        selectedRole === "TRAINER"
-                          ? "bg-white text-stone-950 shadow-xs ring-1 ring-black/10"
-                          : "opacity-70 hover:opacity-100 hover:bg-white/40"
-                      )}
-                      title="Trainer: trainer@apexacademy.edu"
-                    >
-                      <Presentation className="w-3.5 h-3.5 text-[#10B981]" />
-                      <span className="leading-none truncate max-w-full">Trainer</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => fillCredentials("STUDENT")}
-                      className={cn(
-                        "py-2 px-1 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all active:scale-95 text-center min-h-[44px]",
-                        selectedRole === "STUDENT"
-                          ? "bg-white text-stone-950 shadow-xs ring-1 ring-black/10"
-                          : "opacity-70 hover:opacity-100 hover:bg-white/40"
-                      )}
-                      title="Student: student@apexacademy.edu"
-                    >
-                      <GraduationCap className="w-3.5 h-3.5 text-blue-600" />
-                      <span className="leading-none truncate max-w-full">Student</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => fillCredentials("MANAGER")}
-                      className={cn(
-                        "py-2 px-1 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all active:scale-95 text-center min-h-[44px]",
-                        selectedRole === "MANAGER"
-                          ? "bg-white text-stone-950 shadow-xs ring-1 ring-black/10"
-                          : "opacity-70 hover:opacity-100 hover:bg-white/40"
-                      )}
-                      title="Manager: manager@apexacademy.edu"
-                    >
-                      <Briefcase className="w-3.5 h-3.5 text-purple-600" />
-                      <span className="leading-none truncate max-w-full">Manager</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => fillCredentials("FINANCIER")}
-                      className={cn(
-                        "py-2 px-1 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all active:scale-95 text-center min-h-[44px]",
-                        selectedRole === "FINANCIER"
-                          ? "bg-white text-stone-950 shadow-xs ring-1 ring-black/10"
-                          : "opacity-70 hover:opacity-100 hover:bg-white/40"
-                      )}
-                      title="Financier: financier@apexacademy.edu"
-                    >
-                      <Coins className="w-3.5 h-3.5 text-amber-600" />
-                      <span className="leading-none truncate max-w-full">Financier</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Primary Credential Sign-In Form */}
+                {/* VIEW 1: Primary Credential Sign-In Form */}
                 {authMode === "CREDENTIALS" ? (
-                  <form onSubmit={handleCredentialSubmit} className="space-y-4">
+                  <form onSubmit={handleCredentialSubmit} className="space-y-4 animate-in fade-in">
                     {error && (
                       <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2.5 animate-in fade-in">
                         <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -581,23 +697,41 @@ export default function LoginPage() {
                         <label className="text-xs font-semibold opacity-90">
                           Password
                         </label>
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="text-[11px] font-medium opacity-70 hover:opacity-100 flex items-center gap-1 p-0.5"
-                        >
-                          {showPassword ? (
-                            <>
-                              <EyeOff className="w-3 h-3" />
-                              <span>Hide</span>
-                            </>
-                          ) : (
-                            <>
-                              <Eye className="w-3 h-3" />
-                              <span>Show</span>
-                            </>
-                          )}
-                        </button>
+                        <div className="flex items-center gap-3">
+                          {/* Forgot Password Inline Trigger */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAuthMode("FORGOT_PASSWORD");
+                              setResetStep("REQUEST");
+                              setResetIdentifier(identifier || "");
+                              setResetError("");
+                              setResetSuccessMsg("");
+                            }}
+                            className="text-[11px] font-semibold hover:underline transition-colors opacity-75 hover:opacity-100"
+                            style={{ color: "var(--accent)" }}
+                          >
+                            Forgot password?
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="text-[11px] font-medium opacity-70 hover:opacity-100 flex items-center gap-1 p-0.5"
+                          >
+                            {showPassword ? (
+                              <>
+                                <EyeOff className="w-3 h-3" />
+                                <span>Hide</span>
+                              </>
+                            ) : (
+                              <>
+                                <Eye className="w-3 h-3" />
+                                <span>Show</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
                       </div>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none opacity-40">
@@ -644,9 +778,258 @@ export default function LoginPage() {
                       </button>
                     </div>
                   </form>
+                ) : authMode === "FORGOT_PASSWORD" ? (
+                  /* VIEW 2: Non-Refresh Inline Forgot Password & Reset Flow */
+                  <div className="space-y-4 animate-in fade-in">
+                    <div className="flex items-center justify-between pb-2 border-b" style={{ borderColor: "var(--border)" }}>
+                      <div className="flex items-center gap-2">
+                        <KeyRound className="w-4 h-4" style={{ color: "var(--accent)" }} />
+                        <span className="text-xs font-bold">Reset Account Password</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAuthMode("CREDENTIALS");
+                          if (resetIdentifier && !identifier) setIdentifier(resetIdentifier);
+                        }}
+                        className="text-[11px] font-semibold hover:underline opacity-80"
+                      >
+                        &larr; Back to Sign In
+                      </button>
+                    </div>
+
+                    {resetError && (
+                      <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2.5 animate-in fade-in">
+                        <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                        <span className="break-words leading-relaxed">{resetError}</span>
+                      </div>
+                    )}
+
+                    {resetSuccessMsg && resetStep !== "SUCCESS" && (
+                      <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-start gap-2.5 animate-in fade-in">
+                        <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                        <span className="break-words leading-relaxed">{resetSuccessMsg}</span>
+                      </div>
+                    )}
+
+                    {/* Step A: Request OTP */}
+                    {resetStep === "REQUEST" ? (
+                      <form onSubmit={handleRequestResetOtp} className="space-y-4">
+                        <p className="text-xs opacity-75 leading-relaxed">
+                          Enter your registered email address or institutional ID. We will dispatch a 6-digit verification code to securely reset your password.
+                        </p>
+
+                        <div className="space-y-1">
+                          <label className="block text-xs font-semibold opacity-90">
+                            Email or Institutional ID
+                          </label>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none opacity-40">
+                              <Mail className="w-4 h-4" />
+                            </div>
+                            <input
+                              type="text"
+                              required
+                              value={resetIdentifier}
+                              onChange={(e) => setResetIdentifier(e.target.value)}
+                              placeholder="e.g. admin@apexacademy.edu, STU-2026-0001"
+                              className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border text-sm min-h-[44px] transition-all focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                              style={{
+                                backgroundColor: "var(--surface-alt)",
+                                borderColor: "var(--border)",
+                                color: "var(--text)",
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={resetLoading}
+                          className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white shadow-md flex items-center justify-center gap-2 min-h-[44px] transition-all active:scale-[0.99] hover:opacity-95"
+                          style={{ backgroundColor: "var(--accent)" }}
+                        >
+                          <span>{resetLoading ? "Dispatching Reset Code..." : "Send Verification Code"}</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
+                      </form>
+                    ) : resetStep === "VERIFY_AND_RESET" ? (
+                      /* Step B: Verify OTP & Enter New Password */
+                      <form onSubmit={handleResetPasswordSubmit} className="space-y-3.5">
+                        <div className="flex items-center justify-between text-xs pb-1">
+                          <span className="opacity-75 text-[11px] truncate max-w-[220px]">
+                            Code sent to: <strong className="font-semibold">{resetMaskedEmail || resetIdentifier}</strong>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setResetStep("REQUEST");
+                              setResetError("");
+                            }}
+                            className="text-[11px] font-semibold hover:underline shrink-0"
+                            style={{ color: "var(--accent)" }}
+                          >
+                            Change Email/ID
+                          </button>
+                        </div>
+
+                        {/* OTP Input */}
+                        <div className="space-y-1">
+                          <label className="block text-xs font-semibold opacity-90">
+                            6-Digit Verification Code
+                          </label>
+                          <input
+                            type="text"
+                            maxLength={6}
+                            required
+                            value={resetOtpCode}
+                            onChange={(e) => setResetOtpCode(e.target.value.replace(/\D/g, ""))}
+                            placeholder="123456"
+                            className="w-full px-3.5 py-2.5 rounded-xl border text-center text-xl font-mono tracking-widest min-h-[48px] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                            style={{
+                              backgroundColor: "var(--surface-alt)",
+                              borderColor: "var(--border)",
+                              color: "var(--text)",
+                            }}
+                          />
+                          {devResetOtp && (
+                            <p className="mt-1 text-xs text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-200">
+                              Dev Test Reset OTP: <strong>{devResetOtp}</strong>
+                            </p>
+                          )}
+                        </div>
+
+                        {/* New Password */}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs font-semibold opacity-90">
+                              New Password
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setShowResetPassword(!showResetPassword)}
+                              className="text-[11px] font-medium opacity-70 hover:opacity-100 flex items-center gap-1 p-0.5"
+                            >
+                              {showResetPassword ? (
+                                <>
+                                  <EyeOff className="w-3 h-3" />
+                                  <span>Hide</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Eye className="w-3 h-3" />
+                                  <span>Show</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none opacity-40">
+                              <Lock className="w-4 h-4" />
+                            </div>
+                            <input
+                              type={showResetPassword ? "text" : "password"}
+                              required
+                              minLength={6}
+                              value={resetNewPassword}
+                              onChange={(e) => setResetNewPassword(e.target.value)}
+                              placeholder="Minimum 6 characters"
+                              className="w-full pl-10 pr-3.5 py-2 rounded-xl border text-sm min-h-[42px] transition-all focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                              style={{
+                                backgroundColor: "var(--surface-alt)",
+                                borderColor: "var(--border)",
+                                color: "var(--text)",
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Confirm New Password */}
+                        <div className="space-y-1">
+                          <label className="block text-xs font-semibold opacity-90">
+                            Confirm New Password
+                          </label>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none opacity-40">
+                              <Lock className="w-4 h-4" />
+                            </div>
+                            <input
+                              type={showResetPassword ? "text" : "password"}
+                              required
+                              minLength={6}
+                              value={resetConfirmPassword}
+                              onChange={(e) => setResetConfirmPassword(e.target.value)}
+                              placeholder="Repeat new password"
+                              className="w-full pl-10 pr-3.5 py-2 rounded-xl border text-sm min-h-[42px] transition-all focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                              style={{
+                                backgroundColor: "var(--surface-alt)",
+                                borderColor: "var(--border)",
+                                color: "var(--text)",
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={resetLoading}
+                          className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white shadow-md flex items-center justify-center gap-2 min-h-[44px] transition-all active:scale-[0.99] hover:opacity-95"
+                          style={{ backgroundColor: "var(--accent)" }}
+                        >
+                          <span>{resetLoading ? "Updating Password..." : "Confirm & Reset Password"}</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
+
+                        <div className="text-center pt-1">
+                          <button
+                            type="button"
+                            disabled={resetCooldown > 0 || resetLoading}
+                            onClick={handleRequestResetOtp}
+                            className="text-xs opacity-70 hover:opacity-100 disabled:opacity-40"
+                          >
+                            {resetCooldown > 0 ? `Resend code in ${resetCooldown}s` : "Resend Verification Code"}
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      /* Step C: Success Screen */
+                      <div className="space-y-4 text-center py-2 animate-in zoom-in-95">
+                        <div className="w-14 h-14 mx-auto rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-600 shadow-sm">
+                          <CheckCircle2 className="w-8 h-8" />
+                        </div>
+
+                        <div className="space-y-1">
+                          <h3 className="text-base font-bold font-display">Password Reset Successful</h3>
+                          <p className="text-xs opacity-75 max-w-xs mx-auto leading-relaxed">
+                            Your account password has been updated securely. You can now sign in with your new password.
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAuthMode("CREDENTIALS");
+                            if (resetIdentifier) setIdentifier(resetIdentifier);
+                            setPassword("");
+                            setResetStep("REQUEST");
+                            setResetOtpCode("");
+                            setResetNewPassword("");
+                            setResetConfirmPassword("");
+                            setResetError("");
+                            setResetSuccessMsg("");
+                          }}
+                          className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white shadow-md flex items-center justify-center gap-2 min-h-[44px] transition-all active:scale-[0.99] hover:opacity-95"
+                          style={{ backgroundColor: "var(--accent)" }}
+                        >
+                          <span>Proceed to Sign In</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 ) : (
-                  /* Optional Passwordless Email OTP for Students */
-                  <div className="space-y-4">
+                  /* VIEW 3: Optional Passwordless Email OTP for Students */
+                  <div className="space-y-4 animate-in fade-in">
                     <div className="flex items-center justify-between pb-2 border-b" style={{ borderColor: "var(--border)" }}>
                       <div className="flex items-center gap-2">
                         <Mail className="w-4 h-4" style={{ color: "var(--accent)" }} />

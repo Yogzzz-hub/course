@@ -240,3 +240,92 @@ export async function sendStudentOtpEmail(
     recipientId,
   });
 }
+
+/**
+ * Sends an Account Password Reset Code via SMTP Email.
+ */
+export async function sendPasswordResetOtpEmail(
+  toEmail: string,
+  userName: string,
+  otpCode: string,
+  recipientId?: string
+): Promise<SendEmailResult> {
+  const subject = `Your Aintrix Academy Password Reset Code: ${otpCode}`;
+
+  const text =
+    `Hello ${userName || "Member"},\n\n` +
+    `You recently requested to reset the password for your Aintrix Academy account.\n\n` +
+    `Your 6-digit password reset verification code is:\n\n` +
+    `   ${otpCode}\n\n` +
+    `This code will expire in 10 minutes.\n\n` +
+    `If you did not request a password reset, please ignore this email or contact support immediately.\n\n` +
+    `Warm regards,\nAintrix Academy Security Team`;
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Reset Code</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0F0A0E; margin: 0; padding: 24px; color: #FFFFFF;">
+  <div style="max-width: 520px; margin: 0 auto; background-color: #1A0E15; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.12); overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);">
+    <!-- Brand Header -->
+    <div style="background-color: #26111D; padding: 24px 32px; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+      <h1 style="color: #ffffff; font-size: 22px; font-weight: 800; margin: 0; letter-spacing: 0.5px;">
+        AINTRIX ACADEMY
+      </h1>
+      <p style="color: #1CE798; font-size: 11px; margin: 6px 0 0; text-transform: uppercase; letter-spacing: 2px; font-weight: 700;">
+        Account Security & Identity Gateway
+      </p>
+    </div>
+
+    <!-- Body -->
+    <div style="padding: 32px;">
+      <h2 style="font-size: 18px; font-weight: 700; color: #ffffff; margin-top: 0; margin-bottom: 12px;">
+        Password Reset Verification Code
+      </h2>
+      <p style="font-size: 14px; line-height: 1.6; color: #D4C7B5; margin: 0 0 24px;">
+        Hello ${userName || "Member"}, please use the 6-digit verification code below to reset the password for your Aintrix Academy portal account.
+      </p>
+
+      <!-- OTP Code Box -->
+      <div style="background: rgba(28, 231, 152, 0.08); border: 2px dashed #1CE798; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px;">
+        <span style="font-family: monospace, Courier, monospace; font-size: 38px; font-weight: 800; letter-spacing: 8px; color: #1CE798;">
+          ${otpCode}
+        </span>
+        <p style="font-size: 11px; color: #D4C7B5; margin: 8px 0 0; font-weight: 700; letter-spacing: 1px;">
+          EXPIRES IN 10 MINUTES
+        </p>
+      </div>
+
+      <p style="font-size: 12px; line-height: 1.6; color: #A89F95; margin: 0 0 16px;">
+        <strong>Security Notice:</strong> Never share this verification code with anyone. Aintrix Academy administrators will never ask for your verification code.
+      </p>
+
+      <p style="font-size: 12px; line-height: 1.6; color: #786F68; margin: 0;">
+        If you did not request this password reset, please ignore this email. Your current password remains secure and unchanged.
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div style="background-color: #120A0F; padding: 16px 32px; border-top: 1px solid rgba(255, 255, 255, 0.06); text-align: center;">
+      <p style="font-size: 11px; color: #786F68; margin: 0;">
+        &copy; ${new Date().getFullYear()} Aintrix Academy. All rights reserved.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+
+  return sendEmail({
+    to: toEmail,
+    subject,
+    text,
+    html,
+    eventType: "USER_PASSWORD_RESET_OTP",
+    recipientId,
+  });
+}
