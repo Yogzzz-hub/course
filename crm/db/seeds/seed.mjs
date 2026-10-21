@@ -6,6 +6,12 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("Seeding Academy CRM database...");
 
+  const userCount = await prisma.user.count().catch(() => 0);
+  if (userCount > 0) {
+    console.log(`Database already initialized with ${userCount} users. Preserving existing records.`);
+    return;
+  }
+
   // Clear existing data safely
   await prisma.auditEvent.deleteMany();
   await prisma.subtopicCoverage.deleteMany();
@@ -68,6 +74,21 @@ async function main() {
       phone: "+15550000001",
     },
   });
+
+  const customAdminEmail = process.env.ADMIN_EMAIL?.toLowerCase().trim();
+  if (customAdminEmail && customAdminEmail !== "admin@apexacademy.edu") {
+    await prisma.user.upsert({
+      where: { email: customAdminEmail },
+      update: {},
+      create: {
+        email: customAdminEmail,
+        name: "Academy Administrator",
+        role: "ADMIN",
+        passwordHash: passwordHash,
+        phone: "+919999999999",
+      },
+    }).catch(() => {});
+  }
 
   // Manager
   const managerUser = await prisma.user.create({
