@@ -15,7 +15,7 @@
     "test:challenge-fixtures": "node scripts/validate-challenges.mjs",
     "dev": "vite --host 127.0.0.1",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint .",
+    "lint": "eslint src",
     "build": "npm run typecheck && vite build && vite build --ssr src/entry-server.tsx --outDir .build/server && node scripts/prerender.mjs",
     "preview": "node scripts/preview.mjs",
     "test": "vitest run",
