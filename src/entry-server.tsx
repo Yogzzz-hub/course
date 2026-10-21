@@ -3,19 +3,17 @@ import { StaticRouter } from 'react-router-dom';
 import App, { loadInitialPage } from './App';
 import { academy } from './config/academy';
 import { routes } from './data/routes';
+import { pageMeta } from './seo';
 export { routes, academy };
+export { robotsTxt, sitemapXml, sitemapPaths } from './seo';
+export { landingPaths } from './data/landingPages';
 const escape=(text:string)=>text.replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]!));
 export async function render(path:string){
- const route=routes.find(r=>r.path===path);
- const titleBrand=['/', '/book-session', '/direct-booking'].includes(path)?'Technical Academy':academy.name;
- const title=`${route?.title || 'Page not found'} | ${titleBrand}`;
- const description=route?.description || 'Find your way back to the academy.';
- const launchReady=academy.siteUrl && academy.brandApproved && academy.legalApproved;
- const noindex=['/student-panel', '/admin-panel', '/trainer-panel', '/auth/sign-in', '/auth/admin/sign-in'].includes(path) || !launchReady || !route || path.includes('policy') || path.includes('terms');
- const canonical=academy.siteUrl && route ? `<link rel="canonical" href="${escape(academy.siteUrl+path)}"/><meta property="og:url" content="${escape(academy.siteUrl+path)}"/>` : '';
- const structured=academy.siteUrl && academy.brandApproved && route && !['/student-panel', '/admin-panel', '/trainer-panel', '/auth/sign-in', '/auth/admin/sign-in'].includes(path) ? `<script id="academy-structured-data" type="application/ld+json">${JSON.stringify({'@context':'https://schema.org','@type':'WebPage',name:title,url:academy.siteUrl+path,description}).replace(/</g,'\\u003c')}</script>` : '';
+ const page=pageMeta(path);
+ const canonical=page.canonical ? `<link rel="canonical" href="${escape(page.canonical)}"/><meta property="og:url" content="${escape(page.canonical)}"/>` : '';
+ const structured=page.structuredData ? `<script id="academy-structured-data" type="application/ld+json">${JSON.stringify(page.structuredData).replace(/</g,'\\u003c')}</script>` : '';
  // Match the client's resolved route and avoid deferred streaming fragments in static HTML.
  const initialPage = await loadInitialPage(path);
  const html = renderToString(<StaticRouter location={path}><App initialPage={initialPage} initialPath={path}/></StaticRouter>);
- return { html,head:`<title>${escape(title)}</title><meta name="description" content="${escape(description)}"/><meta name="robots" content="${noindex?'noindex, nofollow':'index, follow'}"/><meta property="og:title" content="${escape(title)}"/><meta property="og:description" content="${escape(description)}"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary"/>${canonical}${structured}`};
+ return { html,head:`<title>${escape(page.title)}</title><meta name="description" content="${escape(page.description)}"/><meta name="robots" content="${page.robots}"/><meta property="og:title" content="${escape(page.title)}"/><meta property="og:description" content="${escape(page.description)}"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary"/>${canonical}${structured}`};
 }

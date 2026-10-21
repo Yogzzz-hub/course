@@ -25,7 +25,18 @@ const paths=[
   '/direct-booking',
   '/contact',
   '/privacy-policy',
-  '/terms-and-conditions'
+  '/terms-and-conditions',
+  '/skill-test',
+  '/coding-arena',
+  '/roadmap',
+  '/leaderboard',
+  '/privacy-choices',
+  '/python-aptitude-test',
+  '/developer-readiness-test',
+  '/python-coding-challenge',
+  '/backend-developer-roadmap',
+  '/full-stack-developer-roadmap',
+  '/python-interview-practice'
 ];
 const widths=[320,360,375,390,430,768,1024,1280,1440,1920];
 

@@ -5,6 +5,7 @@ import { BookingJourney } from './BookingJourney';
 import { useBookingJourney } from './useBookingJourney';
 import './public-booking.css';
 import { Footer, Header } from '../layout';
+import { ReadinessBand } from '../home/ReadinessBand';
 import { ExplodedStack, HomeHero, JourneyDeck, ProgrammeIndex, StatsBand, TechMarquee } from '../home/HomeSections';
 
 export interface PublicWebsiteProps {
@@ -86,6 +87,7 @@ export function PublicWebsite({
     <Header onBook={() => goToBooking()}/>
     <main id="main" tabIndex={-1} className="home-main">
       <HomeHero onBook={() => goToBooking()}/>
+      <ReadinessBand/>
       <TechMarquee/>
       <StatsBand/>
       <ExplodedStack/>

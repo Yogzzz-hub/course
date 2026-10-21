@@ -5,6 +5,7 @@ import { MasterPackageCards } from './MasterPackageCards';
 import { academyFeeCatalogue, packageSelection, validateCatalogue } from './pricing';
 import type { CourseFeesComparisonProps, FeeView, MasterPackage } from './types';
 import './course-fees.css';
+import { track } from '../../analytics/events';
 
 const views = [
   { id: 'individual', label: 'Individual Courses', icon: BookOpen },
@@ -24,11 +25,15 @@ export function CourseFeesComparison({ catalogue = academyFeeCatalogue, initialV
   const selected = catalogue.packages.find(tier => tier.id === selectedId) ?? catalogue.packages[0];
   const invalid = validateCatalogue(catalogue);
 
+  function showView(next: FeeView) {
+    setView(next);
+    if (next !== view) track('package_compared', { view: next });
+  }
   function activateTab(event: KeyboardEvent<HTMLButtonElement>, index: number) {
     const destination = event.key === 'ArrowRight' ? (index + 1) % views.length : event.key === 'ArrowLeft' ? (index + views.length - 1) % views.length : event.key === 'Home' ? 0 : event.key === 'End' ? views.length - 1 : null;
     if (destination === null) return;
     event.preventDefault();
-    setView(views[destination].id);
+    showView(views[destination].id);
     tabs.current[destination]?.focus();
   }
   async function proceed(tier: MasterPackage) {
@@ -37,6 +42,7 @@ export function CourseFeesComparison({ catalogue = academyFeeCatalogue, initialV
     setSelectedId(tier.id);
     setBusyId(tier.id);
     setError('');
+    track('enrollment_started', { package: tier.id });
     try { await onProceed(packageSelection(catalogue, tier)); }
     catch { setError('We could not open checkout for this package. Please try again.'); }
     finally { inFlight.current = false; setBusyId(null); }
@@ -45,7 +51,7 @@ export function CourseFeesComparison({ catalogue = academyFeeCatalogue, initialV
     <div className="mb-6"><h3 id={`${id}-title`} className="text-2xl font-semibold tracking-tight">Course fees &amp; master packages</h3><p className="mt-3 text-sm leading-6 text-slate-600"><span>{catalogue.programmeName}</span>. Compare individual fees, package inclusions and listed savings.</p></div>
     {invalid ? <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-800">{invalid} Please contact the academy for current fees.</div> : <>
       <div role="tablist" aria-label="Course fee views" className="mb-6 grid gap-2 rounded-2xl border border-slate-200 bg-white p-2 sm:grid-cols-3">
-        {views.map(({ id: value, label, icon: Icon }, index) => <button key={value} ref={element => { tabs.current[index] = element; }} type="button" role="tab" id={`${id}-tab-${value}`} aria-controls={`${id}-panel-${value}`} aria-selected={view === value} tabIndex={view === value ? 0 : -1} onClick={() => setView(value)} onKeyDown={event => activateTab(event, index)} className={`flex min-h-12 items-center justify-center gap-2 rounded-xl px-3 py-3 text-center text-xs font-semibold leading-5 ${view === value ? 'bg-indigo-700 text-white' : 'text-slate-600 hover:bg-slate-50'}`}><Icon size={17} className="shrink-0" aria-hidden="true"/>{label}</button>)}
+        {views.map(({ id: value, label, icon: Icon }, index) => <button key={value} ref={element => { tabs.current[index] = element; }} type="button" role="tab" id={`${id}-tab-${value}`} aria-controls={`${id}-panel-${value}`} aria-selected={view === value} tabIndex={view === value ? 0 : -1} onClick={() => showView(value)} onKeyDown={event => activateTab(event, index)} className={`flex min-h-12 items-center justify-center gap-2 rounded-xl px-3 py-3 text-center text-xs font-semibold leading-5 ${view === value ? 'bg-indigo-700 text-white' : 'text-slate-600 hover:bg-slate-50'}`}><Icon size={17} className="shrink-0" aria-hidden="true"/>{label}</button>)}
       </div>
       <div id={`${id}-panel-individual`} role="tabpanel" aria-labelledby={`${id}-tab-individual`} tabIndex={0} hidden={view !== 'individual'}>{catalogue.courses.length ? <IndividualCourseTable catalogue={catalogue}/> : <Empty>Individual course fees have not been published yet.</Empty>}</div>
       <div id={`${id}-panel-packages`} role="tabpanel" aria-labelledby={`${id}-tab-packages`} tabIndex={0} hidden={view !== 'packages'}>

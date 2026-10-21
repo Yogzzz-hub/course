@@ -58,9 +58,10 @@ export function HomeHero({ onBook }: { onBook: () => void }) {
           <span className="hero-line"><span style={{ '--line': 0 } as CSSProperties}>Build the skills.</span></span>
           <span className="hero-line hero-line-lit"><span style={{ '--line': 1 } as CSSProperties}>Shape your next chapter.</span></span>
         </h1>
-        <p className="eclipse-lede">Explore technical programmes with transparent fees and a clear learning path. Start with a conversation about where you are and where you want to go.</p>
+        <p className="eclipse-lede">Find out where your skills really stand with a free developer skill test, then explore programmes with transparent fees and a clear learning path.</p>
         <div className="eclipse-actions">
-          <Link to="/programmes" className="btn-glow" data-magnetic><span>Explore programmes</span><ArrowUpRight size={17} aria-hidden="true"/></Link>
+          <Link to="/skill-test" className="btn-glow" data-magnetic><span>Take the Free Skill Test</span><ArrowUpRight size={17} aria-hidden="true"/></Link>
+          <Link to="/programmes" className="btn-ghost" data-magnetic><span>Explore programmes</span></Link>
           <button type="button" onClick={onBook} className="btn-ghost ss-hero-cta" data-magnetic><span>Book counselling</span></button>
         </div>
       </motion.div>

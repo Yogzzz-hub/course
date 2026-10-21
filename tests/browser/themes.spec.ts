@@ -62,7 +62,7 @@ test('theme selection survives component remounts when storage is blocked', asyn
   await choose(page, 'Burgundy + Dusty Lavender');
   await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Programmes', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'theme-3');
-  await page.getByRole('link', { name: 'Shadow Sphere Technical Academy home', exact: true }).first().click();
+  await page.getByRole('link', { name: 'Aintrix Academy home', exact: true }).first().click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'theme-3');
 });
 test('local demo is explicit, read-only, themed and absent from production', async ({ page }) => {

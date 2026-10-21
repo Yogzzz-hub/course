@@ -33,5 +33,5 @@ export function PaletteMenu() {
 }
 
 export function WorkspaceAppearance() {
-  return <div className="workspace-appearance"><a href="/" className="workspace-home">Shadow Sphere <span>Technical Academy</span></a><PaletteMenu/></div>;
+  return <div className="workspace-appearance"><a href="/" className="workspace-home">Aintrix <span>Academy</span></a><PaletteMenu/></div>;
 }

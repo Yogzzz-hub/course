@@ -4,7 +4,7 @@ function approvedUrl(value: string | undefined, host?: string) {
   try { const url = new URL(value); return url.protocol === 'https:' && (!host || url.hostname === host) ? url.href.replace(/\/$/, '') : ''; } catch { return ''; }
 }
 export const academy = {
-  name: env.VITE_ACADEMY_NAME || 'Shadow Sphere Technical Academy',
+  name: env.VITE_ACADEMY_NAME || 'Aintrix Academy',
   brandApproved: env.VITE_BRAND_APPROVED === 'true',
   legalApproved: env.VITE_LEGAL_APPROVED === 'true',
   siteUrl: approvedUrl(env.VITE_SITE_URL),
@@ -18,3 +18,6 @@ export const academy = {
   internshipConditions: null, refundTerms: null, taxes: null, paymentSchedule: null,
   source: 'User-supplied build brief. Academy!.pdf was not supplied.',
 } as const;
+
+/** Wordmark parts for the logo: "Aintrix" over a small "Academy" label. */
+export const brandWordmark = { name: academy.name.replace(/\s+(Technical\s+)?Academy$/i, '') || academy.name, label: /Technical Academy$/i.test(academy.name) ? 'Technical Academy' : 'Academy' };

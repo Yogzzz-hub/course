@@ -8,6 +8,8 @@ import { Accordion, BookingCTA, Button, FAQ, SectionHeading, Tags, TextLink } fr
 import { CourseFeesComparison } from '../components/course-fees';
 import type { FeeView } from '../components/course-fees';
 import { checkoutHref } from '../utils/checkoutIntent';
+import { track } from '../analytics/events';
+import { ContextPromptCard } from '../components/platform/ui';
 
 const validViews: FeeView[] = ['individual', 'packages', 'savings'];
 const sectionIds = ['overview', 'curriculum', 'projects', 'pricing'];
@@ -45,6 +47,7 @@ export default function ProgrammeDetails() {
     ? 'Software engineering\n& placement preparation'
     : `${prog.name}\n& practical implementation`;
   const durationSegments = prog.isFlagship ? 7 : parseInt(durationNumber, 10) || 4;
+  useEffect(() => { track('course_viewed', { programme: prog.id }); }, [prog.id]);
 
   return (
     <>
@@ -84,6 +87,7 @@ export default function ProgrammeDetails() {
         </div>
       </section>
 
+      <div className="container"><ContextPromptCard className="pf-prompt-slot"/></div>
       <nav className="programme-anchor-nav" aria-label="Programme sections">
         <div className="container">
           {[

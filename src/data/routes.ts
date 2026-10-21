@@ -1,10 +1,12 @@
+import { landingPages } from './landingPages';
+
 export const routes = [
   { path: '/auth/sign-in', title: 'Student Sign-in', description: 'Student account access and authentication service information.' },
   { path: '/auth/admin/sign-in', title: 'Admin Sign-in', description: 'Secure administration account access and authentication service information.' },
   { path: '/admin-panel', title: 'Admin Panel', description: 'Private academy administration for leads, approvals, payments, programme pricing and reports.' },
   { path: '/trainer-panel', title: 'Trainer Panel', description: 'Private trainer workspace for combined class-session entry, attendance and syllabus progress.' },
   { path: '/student-panel', title: 'Student Panel', description: 'Your private learning plan, programme activity and payments workspace.' },
-  { path: '/', title: 'Shadow Sphere — Learn. Build. Evolve.', description: 'Explore technical programmes, compare package fees and book counselling through email verification, session selection and a pre-session brief.' },
+  { path: '/', title: 'Aintrix Academy — Learn. Build. Evolve.', description: 'Explore technical programmes, compare package fees and book counselling through email verification, session selection and a pre-session brief.' },
   { path: '/programmes', title: 'Programmes', description: 'Explore Python Full-Stack Software Engineering and all specialised engineering tracks.' },
   { path: '/programmes/python-full-stack', title: 'Python Full-Stack Programme', description: 'Explore the Python full-stack curriculum, eleven learning areas, seven-month duration and Standard, Premium and Elite package fees.' },
   { path: '/programmes/full-stack-app-dev', title: 'Full-Stack Application Development', description: 'Architect end-to-end applications connecting React client interfaces with Django REST backends and PostgreSQL data.' },
@@ -21,14 +23,21 @@ export const routes = [
   { path: '/learning-experience', title: 'The Learning Experience', description: 'Understand, practise, build, refine and prepare. Explore a structured, practical approach to technical learning.' },
   { path: '/career-support', title: 'Career Support', description: 'Understand mentorship, technical feedback, portfolio preparation and the conditions that apply to internships and placement support.' },
   { path: '/about', title: 'About the Academy', description: 'Discover the philosophy behind a future-focused technical academy connecting theoretical understanding with practical engineering.' },
-  { path: '/book-session', title: 'Shadow Sphere — Book Counselling', description: 'Verify your email, choose an available counselling session and share your background, learning goals and preferred programme start date.' },
-  { path: '/direct-booking', title: 'Shadow Sphere — Programmes & Direct Booking', description: 'Compare technical programmes and package fees, verify your email, choose a counselling session and prepare your pre-session brief.' },
+  { path: '/book-session', title: 'Aintrix Academy — Book Counselling', description: 'Verify your email, choose an available counselling session and share your background, learning goals and preferred programme start date.' },
+  { path: '/direct-booking', title: 'Aintrix Academy — Programmes & Direct Booking', description: 'Compare technical programmes and package fees, verify your email, choose a counselling session and prepare your pre-session brief.' },
   { path: '/contact', title: 'Contact & FAQs', description: 'Ask about the Python full-stack programme, explore common questions and enquire about your learning options.' },
+  { path: '/skill-test', title: 'Free Developer Skill Test', description: 'Take a free, adaptive developer readiness test across Python, logic, SQL, JavaScript, APIs and debugging, with explained answers and course recommendations.' },
+  { path: '/coding-arena', title: 'Coding Challenge Arena', description: 'Python coding challenges judged against public and hidden tests in an isolated sandbox, with understanding checks after every submission.' },
+  { path: '/roadmap', title: 'Your Personalised Learning Roadmap', description: 'Turn your skill test results into an ordered learning roadmap for Python, backend, full-stack, frontend or software engineering roles.' },
+  { path: '/leaderboard', title: 'Leaderboard', description: 'Verified challenge points, ranking rules and achievement badges for learners who choose to take part.' },
+  { path: '/admin', title: 'Growth & Assessment Console', description: 'Private console for assessment content, grading review, conversion metrics and experiments.' },
+  { path: '/privacy-choices', title: 'Privacy Choices', description: 'Choose whether optional analytics run, see what is stored on this device and delete it.' },
+  ...landingPages.map(page => ({ path: page.path, title: page.title, description: page.description })),
   { path: '/privacy-policy', title: 'Privacy Policy — Review Draft', description: 'Review the draft privacy notice and the outstanding business approvals required before enquiry collection is enabled.' },
   { path: '/terms-and-conditions', title: 'Terms & Conditions — Review Draft', description: 'Review draft website terms and the enrolment, fee and internship conditions awaiting academy approval.' },
 ];
 export const navigation = [
   { to: '/', label: 'Home' },
   { to: '/programmes', label: 'Programmes' }, { to: '/learning-experience', label: 'Learning experience' },
-  { to: '/about', label: 'About' }, { to: '/contact', label: 'Contact' },
+  { to: '/skill-test', label: 'Skill test' }, { to: '/about', label: 'About' }, { to: '/contact', label: 'Contact' },
 ];
