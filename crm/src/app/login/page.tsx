@@ -358,16 +358,37 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-[radial-gradient(#00000008_1px,transparent_1px)] [background-size:24px_24px] opacity-40" />
       </div>
 
-      {/* Top Navbar: Return Link & Theme Switcher */}
+      {/* Top Navbar: Return Link, Live Telemetry & Theme Switcher */}
       <header className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex items-center justify-between z-20">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full border border-current/10 hover:border-current/25 transition-all hover:-translate-x-0.5 opacity-80 hover:opacity-100"
-          style={{ color: "var(--text)" }}
+          className="inline-flex items-center gap-2 text-xs font-semibold px-3.5 py-1.5 rounded-full border transition-all hover:-translate-x-0.5 opacity-85 hover:opacity-100 shadow-2xs"
+          style={{
+            backgroundColor: "var(--surface)",
+            borderColor: "var(--border)",
+            color: "var(--text)",
+          }}
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Return to Academy</span>
         </Link>
+
+        <div
+          className="hidden sm:inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-[11px] font-semibold border shadow-2xs"
+          style={{
+            backgroundColor: "var(--surface)",
+            borderColor: "var(--border)",
+            color: "var(--text)",
+          }}
+        >
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <span className="opacity-90">Systems Operational</span>
+          <span className="opacity-40">•</span>
+          <span className="opacity-70 text-[10px] tracking-wider uppercase font-mono">Term 2026-Q4</span>
+        </div>
 
         <div className="flex items-center gap-3">
           <ThemeSwitcher />
@@ -406,86 +427,119 @@ export default function LoginPage() {
             {/* Progression Pillars */}
             <div className="space-y-3 pt-2">
               <div
-                className="p-4 rounded-2xl border transition-all duration-300 hover:shadow-sm flex items-start gap-3.5"
+                className="p-4 rounded-2xl border transition-all duration-300 hover:shadow-md space-y-2.5"
                 style={{
                   backgroundColor: "var(--surface)",
                   borderColor: "var(--border)",
                 }}
               >
-                <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
-                  style={{ backgroundColor: "var(--surface-alt)" }}
-                >
-                  <TrendingUp className="w-4 h-4 text-[#10B981]" />
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-xs font-bold font-display tracking-wide uppercase">
-                      Curriculum Progression
-                    </h2>
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                      100% Verified
-                    </span>
+                <div className="flex items-start gap-3.5">
+                  <div
+                    className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+                    style={{ backgroundColor: "var(--surface-alt)" }}
+                  >
+                    <TrendingUp className="w-4 h-4 text-[#10B981]" />
                   </div>
-                  <p className="text-xs opacity-70 leading-relaxed">
-                    Granular subtopic coverage, multi-version syllabus timetables, and automated module milestone tracking.
-                  </p>
+                  <div className="space-y-1 flex-1 min-w-0">
+                    <div className="flex items-center justify-between flex-wrap gap-1">
+                      <h2 className="text-xs font-bold font-display tracking-wide uppercase">
+                        Curriculum Progression
+                      </h2>
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                        100% Verified
+                      </span>
+                    </div>
+                    <p className="text-xs opacity-70 leading-relaxed">
+                      Granular subtopic coverage, multi-version syllabus timetables, and automated module milestone tracking.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-1 space-y-1">
+                  <div className="flex justify-between text-[11px] opacity-75 font-medium">
+                    <span>Active Engineering Track</span>
+                    <span className="font-bold text-emerald-600">88/88 Subtopics (100%)</span>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-stone-200/60 dark:bg-stone-800/60 overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full w-full" />
+                  </div>
                 </div>
               </div>
 
               <div
-                className="p-4 rounded-2xl border transition-all duration-300 hover:shadow-sm flex items-start gap-3.5"
+                className="p-4 rounded-2xl border transition-all duration-300 hover:shadow-md space-y-2.5"
                 style={{
                   backgroundColor: "var(--surface)",
                   borderColor: "var(--border)",
                 }}
               >
-                <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
-                  style={{ backgroundColor: "var(--surface-alt)" }}
-                >
-                  <CheckCircle2 className="w-4 h-4" style={{ color: "var(--accent)" }} />
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-xs font-bold font-display tracking-wide uppercase">
-                      Attendance & Class Integrity
-                    </h2>
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20">
-                      Live Audit
-                    </span>
+                <div className="flex items-start gap-3.5">
+                  <div
+                    className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+                    style={{ backgroundColor: "var(--surface-alt)" }}
+                  >
+                    <CheckCircle2 className="w-4 h-4" style={{ color: "var(--accent)" }} />
                   </div>
-                  <p className="text-xs opacity-70 leading-relaxed">
-                    Deterministic session occurrence generation, tamper-proof student attendance logs, and formal backdate governance.
-                  </p>
+                  <div className="space-y-1 flex-1 min-w-0">
+                    <div className="flex items-center justify-between flex-wrap gap-1">
+                      <h2 className="text-xs font-bold font-display tracking-wide uppercase">
+                        Attendance & Class Integrity
+                      </h2>
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20">
+                        Live Audit
+                      </span>
+                    </div>
+                    <p className="text-xs opacity-70 leading-relaxed">
+                      Deterministic session occurrence generation, tamper-proof student attendance logs, and formal backdate governance.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-1 flex items-center justify-between text-[11px]">
+                  <span className="flex items-center gap-1.5 opacity-75">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>0-Latency Telemetry Sync</span>
+                  </span>
+                  <span className="font-mono text-blue-600 font-semibold px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-[10px]">
+                    SHA-256 Audit Trail
+                  </span>
                 </div>
               </div>
 
               <div
-                className="p-4 rounded-2xl border transition-all duration-300 hover:shadow-sm flex items-start gap-3.5"
+                className="p-4 rounded-2xl border transition-all duration-300 hover:shadow-md space-y-2.5"
                 style={{
                   backgroundColor: "var(--surface)",
                   borderColor: "var(--border)",
                 }}
               >
-                <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
-                  style={{ backgroundColor: "var(--surface-alt)" }}
-                >
-                  <Award className="w-4 h-4 text-amber-500" />
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-xs font-bold font-display tracking-wide uppercase">
-                      Credential Certification
-                    </h2>
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">
-                      Cryptographic
-                    </span>
+                <div className="flex items-start gap-3.5">
+                  <div
+                    className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+                    style={{ backgroundColor: "var(--surface-alt)" }}
+                  >
+                    <Award className="w-4 h-4 text-amber-500" />
                   </div>
-                  <p className="text-xs opacity-70 leading-relaxed">
-                    Instant public verification badges, verifiable diploma tokens, and executive academic completion certificates.
-                  </p>
+                  <div className="space-y-1 flex-1 min-w-0">
+                    <div className="flex items-center justify-between flex-wrap gap-1">
+                      <h2 className="text-xs font-bold font-display tracking-wide uppercase">
+                        Credential Certification
+                      </h2>
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                        Cryptographic
+                      </span>
+                    </div>
+                    <p className="text-xs opacity-70 leading-relaxed">
+                      Instant public verification badges, verifiable diploma tokens, and executive academic completion certificates.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-1 flex items-center justify-between text-[11px]">
+                  <span className="opacity-75">Instant Public QR Verification</span>
+                  <span className="font-mono text-amber-600 font-semibold px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-[10px]">
+                    Cryptographically Sealed
+                  </span>
                 </div>
               </div>
             </div>
@@ -575,80 +629,111 @@ export default function LoginPage() {
                       <span className="text-[10px] opacity-60">1-Click Auto-Fill</span>
                     </div>
 
-                    <div className="grid grid-cols-5 gap-1.5 p-1 rounded-2xl bg-stone-100/60 dark:bg-stone-900/60 border border-current/5">
+                    <div
+                      className="grid grid-cols-5 gap-1.5 p-1.5 rounded-2xl border shadow-2xs"
+                      style={{
+                        backgroundColor: "var(--surface-alt)",
+                        borderColor: "var(--border)",
+                      }}
+                    >
                       <button
                         type="button"
                         onClick={() => fillCredentials("ADMIN")}
                         className={cn(
-                          "py-2 px-1 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all active:scale-95 text-center min-h-[44px]",
+                          "py-2 px-1 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all active:scale-95 text-center min-h-[46px] border",
                           selectedRole === "ADMIN"
-                            ? "bg-white text-stone-950 shadow-xs ring-1 ring-black/10"
-                            : "opacity-70 hover:opacity-100 hover:bg-white/40"
+                            ? "shadow-sm ring-1 ring-[#6D1A2B]/30"
+                            : "hover:opacity-100 hover:bg-white/40 dark:hover:bg-white/5 opacity-80"
                         )}
+                        style={{
+                          backgroundColor: selectedRole === "ADMIN" ? "var(--surface)" : "transparent",
+                          borderColor: selectedRole === "ADMIN" ? "#6D1A2B" : "transparent",
+                          color: "var(--text)",
+                        }}
                         title="Admin: admin@apexacademy.edu"
                       >
-                        <ShieldCheck className="w-3.5 h-3.5 text-[#6D1A2B]" />
-                        <span className="leading-none truncate max-w-full">Admin</span>
+                        <ShieldCheck className="w-3.5 h-3.5 text-[#E11D48]" />
+                        <span className="leading-none truncate max-w-full font-semibold">Admin</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => fillCredentials("TRAINER")}
                         className={cn(
-                          "py-2 px-1 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all active:scale-95 text-center min-h-[44px]",
+                          "py-2 px-1 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all active:scale-95 text-center min-h-[46px] border",
                           selectedRole === "TRAINER"
-                            ? "bg-white text-stone-950 shadow-xs ring-1 ring-black/10"
-                            : "opacity-70 hover:opacity-100 hover:bg-white/40"
+                            ? "shadow-sm ring-1 ring-[#10B981]/30"
+                            : "hover:opacity-100 hover:bg-white/40 dark:hover:bg-white/5 opacity-80"
                         )}
+                        style={{
+                          backgroundColor: selectedRole === "TRAINER" ? "var(--surface)" : "transparent",
+                          borderColor: selectedRole === "TRAINER" ? "#10B981" : "transparent",
+                          color: "var(--text)",
+                        }}
                         title="Trainer: trainer@apexacademy.edu"
                       >
                         <Presentation className="w-3.5 h-3.5 text-[#10B981]" />
-                        <span className="leading-none truncate max-w-full">Trainer</span>
+                        <span className="leading-none truncate max-w-full font-semibold">Trainer</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => fillCredentials("STUDENT")}
                         className={cn(
-                          "py-2 px-1 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all active:scale-95 text-center min-h-[44px]",
+                          "py-2 px-1 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all active:scale-95 text-center min-h-[46px] border",
                           selectedRole === "STUDENT"
-                            ? "bg-white text-stone-950 shadow-xs ring-1 ring-black/10"
-                            : "opacity-70 hover:opacity-100 hover:bg-white/40"
+                            ? "shadow-sm ring-1 ring-blue-500/30"
+                            : "hover:opacity-100 hover:bg-white/40 dark:hover:bg-white/5 opacity-80"
                         )}
+                        style={{
+                          backgroundColor: selectedRole === "STUDENT" ? "var(--surface)" : "transparent",
+                          borderColor: selectedRole === "STUDENT" ? "#2563EB" : "transparent",
+                          color: "var(--text)",
+                        }}
                         title="Student: student@apexacademy.edu"
                       >
-                        <GraduationCap className="w-3.5 h-3.5 text-blue-600" />
-                        <span className="leading-none truncate max-w-full">Student</span>
+                        <GraduationCap className="w-3.5 h-3.5 text-[#2563EB]" />
+                        <span className="leading-none truncate max-w-full font-semibold">Student</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => fillCredentials("MANAGER")}
                         className={cn(
-                          "py-2 px-1 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all active:scale-95 text-center min-h-[44px]",
+                          "py-2 px-1 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all active:scale-95 text-center min-h-[46px] border",
                           selectedRole === "MANAGER"
-                            ? "bg-white text-stone-950 shadow-xs ring-1 ring-black/10"
-                            : "opacity-70 hover:opacity-100 hover:bg-white/40"
+                            ? "shadow-sm ring-1 ring-purple-500/30"
+                            : "hover:opacity-100 hover:bg-white/40 dark:hover:bg-white/5 opacity-80"
                         )}
+                        style={{
+                          backgroundColor: selectedRole === "MANAGER" ? "var(--surface)" : "transparent",
+                          borderColor: selectedRole === "MANAGER" ? "#9333EA" : "transparent",
+                          color: "var(--text)",
+                        }}
                         title="Manager: manager@apexacademy.edu"
                       >
-                        <Briefcase className="w-3.5 h-3.5 text-purple-600" />
-                        <span className="leading-none truncate max-w-full">Manager</span>
+                        <Briefcase className="w-3.5 h-3.5 text-[#9333EA]" />
+                        <span className="leading-none truncate max-w-full font-semibold">Manager</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => fillCredentials("FINANCIER")}
                         className={cn(
-                          "py-2 px-1 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all active:scale-95 text-center min-h-[44px]",
+                          "py-2 px-1 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all active:scale-95 text-center min-h-[46px] border",
                           selectedRole === "FINANCIER"
-                            ? "bg-white text-stone-950 shadow-xs ring-1 ring-black/10"
-                            : "opacity-70 hover:opacity-100 hover:bg-white/40"
+                            ? "shadow-sm ring-1 ring-amber-500/30"
+                            : "hover:opacity-100 hover:bg-white/40 dark:hover:bg-white/5 opacity-80"
                         )}
+                        style={{
+                          backgroundColor: selectedRole === "FINANCIER" ? "var(--surface)" : "transparent",
+                          borderColor: selectedRole === "FINANCIER" ? "#D97706" : "transparent",
+                          color: "var(--text)",
+                        }}
                         title="Financier: financier@apexacademy.edu"
                       >
-                        <Coins className="w-3.5 h-3.5 text-amber-600" />
-                        <span className="leading-none truncate max-w-full">Financier</span>
+                        <Coins className="w-3.5 h-3.5 text-[#D97706]" />
+                        <span className="leading-none truncate max-w-full font-semibold">Financier</span>
                       </button>
                     </div>
                   </div>
