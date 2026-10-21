@@ -16,159 +16,162 @@ import {
   Coins,
   Mail,
   ArrowLeft,
+  Eye,
+  EyeOff,
+  Lock,
 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
 import { ThemeSwitcher } from "@/components/ui/ThemeSwitcher";
 import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"STUDENT" | "STAFF">("STAFF");
 
-  // Staff State
-  const [staffEmail, setStaffEmail] = useState("");
-  const [staffPassword, setStaffPassword] = useState("");
-  const [staffLoading, setStaffLoading] = useState(false);
-  const [staffError, setStaffError] = useState("");
+  // Mode: Primary credential sign-in vs optional student OTP fallback
+  const [authMode, setAuthMode] = useState<"CREDENTIALS" | "STUDENT_OTP">("CREDENTIALS");
 
-  // Student OTP State
-  const [studentId, setStudentId] = useState("");
+  // Universal Credential State (Admin, Trainer, Student, Manager, Financier)
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+
+  // Student OTP Fallback State
+  const [studentEmail, setStudentEmail] = useState("");
   const [otpCode, setOtpCode] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [devOtpHint, setDevOtpHint] = useState<string | null>(null);
-  const [studentLoading, setStudentLoading] = useState(false);
-  const [studentError, setStudentError] = useState("");
-  const [studentMessage, setStudentMessage] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpError, setOtpError] = useState("");
+  const [otpMessage, setOtpMessage] = useState("");
   const [cooldown, setCooldown] = useState(0);
 
   // Prefetch target dashboards in background
   useEffect(() => {
-    router.prefetch("/student");
-    router.prefetch("/trainer");
     router.prefetch("/admin");
+    router.prefetch("/trainer");
+    router.prefetch("/student");
     router.prefetch("/manager");
     router.prefetch("/financier");
   }, [router]);
 
-  // Quick filler for testing accounts
+  // Quick-Select Auto-Fill for Testing & Demonstration
   const fillCredentials = (role: string) => {
+    setSelectedRole(role);
+    setError("");
+    setAuthMode("CREDENTIALS");
+
     switch (role) {
-      case "STUDENT":
-        setActiveTab("STUDENT");
-        setStudentId("student@apexacademy.edu");
-        setOtpSent(false);
-        setOtpCode("");
+      case "ADMIN":
+        setIdentifier("admin@apexacademy.edu");
+        setPassword("Admin@123456");
         break;
       case "TRAINER":
-        setActiveTab("STAFF");
-        setStaffEmail("trainer@apexacademy.edu");
-        setStaffPassword("Trainer@123456");
+        setIdentifier("trainer@apexacademy.edu");
+        setPassword("Trainer@123456");
+        break;
+      case "STUDENT":
+        setIdentifier("student@apexacademy.edu");
+        setPassword("Student@123456");
         break;
       case "MANAGER":
-        setActiveTab("STAFF");
-        setStaffEmail("manager@apexacademy.edu");
-        setStaffPassword("Manager@123456");
-        break;
-      case "ADMIN":
-        setActiveTab("STAFF");
-        setStaffEmail("admin@apexacademy.edu");
-        setStaffPassword("Admin@123456");
+        setIdentifier("manager@apexacademy.edu");
+        setPassword("Manager@123456");
         break;
       case "FINANCIER":
-        setActiveTab("STAFF");
-        setStaffEmail("financier@apexacademy.edu");
-        setStaffPassword("Financier@123456");
+        setIdentifier("financier@apexacademy.edu");
+        setPassword("Financier@123456");
         break;
     }
   };
 
-  // Staff login submission
-  const handleStaffSubmit = async (e: React.FormEvent) => {
+  // Universal Credential Submission (All Roles)
+  const handleCredentialSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setStaffError("");
-    setStaffLoading(true);
+    setError("");
+    setLoading(true);
 
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: staffEmail, password: staffPassword }),
+        body: JSON.stringify({ identifier, password }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        setStaffError(data.error || "Authentication failed. Please verify your credentials.");
-        setStaffLoading(false);
+        setError(data.error || "Authentication failed. Please verify your credentials.");
+        setLoading(false);
         return;
       }
 
-      // Route immediately based on user role and preserve returnUrl if valid
+      // Resolve redirect destination based on role and returnUrl
       const searchParams = new URLSearchParams(window.location.search);
       const returnUrl = searchParams.get("returnUrl");
-      let targetDashboard = "/student";
+      let defaultDashboard = "/student";
 
       switch (data.user.role) {
         case "ADMIN":
-          targetDashboard = "/admin";
+          defaultDashboard = "/admin";
           break;
         case "TRAINER":
-          targetDashboard = "/trainer";
+          defaultDashboard = "/trainer";
           break;
         case "MANAGER":
-          targetDashboard = "/manager";
+          defaultDashboard = "/manager";
           break;
         case "FINANCIER":
-          targetDashboard = "/financier";
+          defaultDashboard = "/financier";
           break;
         case "STUDENT":
-          targetDashboard = "/student";
+          defaultDashboard = "/student";
           break;
       }
 
       const destination =
         returnUrl &&
-        (data.user.role === "ADMIN" || returnUrl.startsWith(targetDashboard))
+        (data.user.role === "ADMIN" || returnUrl.startsWith(defaultDashboard))
           ? returnUrl
-          : targetDashboard;
+          : defaultDashboard;
 
-      // Use hard navigation for full cookie persistence & clean SSR session hydration
+      // Full document navigation ensures session cookies are bound and SSR is hydrated cleanly
       window.location.href = destination;
     } catch {
-      setStaffError("Network communication error. Please try again.");
-      setStaffLoading(false);
+      setError("Network communication error. Please try again.");
+      setLoading(false);
     }
   };
 
-  // Student Request OTP
+  // Student OTP Request
   const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setStudentError("");
-    setStudentMessage("");
-    setStudentLoading(true);
+    setOtpError("");
+    setOtpMessage("");
+    setOtpLoading(true);
     setDevOtpHint(null);
 
     try {
       const res = await fetch("/api/auth/student/otp-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier: studentId }),
+        body: JSON.stringify({ identifier: studentEmail }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        setStudentError(data.error || "Could not dispatch OTP. Verify your student email.");
-        setStudentLoading(false);
+        setOtpError(data.error || "Could not dispatch OTP. Verify your student email.");
+        setOtpLoading(false);
         return;
       }
 
       setOtpSent(true);
-      setStudentMessage(data.message || "A 6-digit verification code has been dispatched.");
+      setOtpMessage(data.message || "A 6-digit verification code has been dispatched.");
       if (data.devOtp) {
         setDevOtpHint(data.devOtp);
       }
-      setStudentLoading(false);
+      setOtpLoading(false);
 
-      // Start 60s cooldown
       setCooldown(60);
       const timer = setInterval(() => {
         setCooldown((prev) => {
@@ -180,33 +183,33 @@ export default function LoginPage() {
         });
       }, 1000);
     } catch {
-      setStudentLoading(false);
-      setStudentError("Network error. Please verify your connection.");
+      setOtpLoading(false);
+      setOtpError("Network error. Please verify your connection.");
     }
   };
 
-  // Student Verify OTP
+  // Student OTP Verification
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (otpCode.length !== 6) {
-      setStudentError("Please enter the complete 6-digit OTP code.");
+      setOtpError("Please enter the complete 6-digit OTP code.");
       return;
     }
 
-    setStudentError("");
-    setStudentLoading(true);
+    setOtpError("");
+    setOtpLoading(true);
 
     try {
       const res = await fetch("/api/auth/student/otp-verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier: studentId, code: otpCode }),
+        body: JSON.stringify({ identifier: studentEmail, code: otpCode }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        setStudentError(data.error || "Verification failed. Code may have expired.");
-        setStudentLoading(false);
+        setOtpError(data.error || "Verification failed. Code may have expired.");
+        setOtpLoading(false);
         return;
       }
 
@@ -214,8 +217,8 @@ export default function LoginPage() {
       const returnUrl = searchParams.get("returnUrl");
       window.location.href = returnUrl || "/student";
     } catch {
-      setStudentError("Network communication error. Please try again.");
-      setStudentLoading(false);
+      setOtpError("Network communication error. Please try again.");
+      setOtpLoading(false);
     }
   };
 
@@ -227,7 +230,7 @@ export default function LoginPage() {
         color: "var(--text)",
       }}
     >
-      {/* Top Navbar with Academy Link & Theme Switcher */}
+      {/* Top Navbar with Academy Return Link & 4-Theme Switcher */}
       <div className="max-w-4xl mx-auto w-full flex items-center justify-between mb-4">
         <Link
           href="/"
@@ -255,11 +258,11 @@ export default function LoginPage() {
             Apex Global Academy
           </h2>
           <p className="text-xs sm:text-sm opacity-70 max-w-sm mx-auto leading-relaxed">
-            Institutional Management Portal & Unified Operations
+            Unified Institutional Sign-In Portal
           </p>
         </div>
 
-        {/* Quick Testing Accounts Helper Banner */}
+        {/* 1-Click Role Auto-Fill Pills (All 5 Roles) */}
         <div
           className="p-4 rounded-2xl border shadow-xs text-xs space-y-3"
           style={{
@@ -277,31 +280,20 @@ export default function LoginPage() {
               </div>
               <span className="text-xs">Quick-Select Role Accounts</span>
             </div>
-            <span className="text-[10px] opacity-60 font-medium hidden sm:inline">1-Click Auto-Fill</span>
+            <span className="text-[10px] opacity-60 font-medium hidden sm:inline">1-Click Credential Fill</span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             <button
               type="button"
-              onClick={() => fillCredentials("TRAINER")}
-              className="px-2.5 py-2 min-h-[44px] rounded-xl text-[11px] font-semibold border flex items-center gap-2 transition-all hover:opacity-90 active:scale-98 text-left"
-              style={{
-                backgroundColor: "var(--surface-alt)",
-                borderColor: "var(--border)",
-                color: "var(--text)",
-              }}
-            >
-              <Presentation className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--accent)" }} />
-              <span className="truncate">Trainer</span>
-            </button>
-
-            <button
-              type="button"
               onClick={() => fillCredentials("ADMIN")}
-              className="px-2.5 py-2 min-h-[44px] rounded-xl text-[11px] font-semibold border flex items-center gap-2 transition-all hover:opacity-90 active:scale-98 text-left"
+              className={cn(
+                "px-2.5 py-2 min-h-[44px] rounded-xl text-[11px] font-semibold border flex items-center gap-2 transition-all hover:opacity-90 active:scale-98 text-left",
+                selectedRole === "ADMIN" && "ring-2"
+              )}
               style={{
                 backgroundColor: "var(--surface-alt)",
-                borderColor: "var(--border)",
+                borderColor: selectedRole === "ADMIN" ? "var(--accent)" : "var(--border)",
                 color: "var(--text)",
               }}
             >
@@ -311,11 +303,31 @@ export default function LoginPage() {
 
             <button
               type="button"
-              onClick={() => fillCredentials("STUDENT")}
-              className="px-2.5 py-2 min-h-[44px] rounded-xl text-[11px] font-semibold border flex items-center gap-2 transition-all hover:opacity-90 active:scale-98 text-left"
+              onClick={() => fillCredentials("TRAINER")}
+              className={cn(
+                "px-2.5 py-2 min-h-[44px] rounded-xl text-[11px] font-semibold border flex items-center gap-2 transition-all hover:opacity-90 active:scale-98 text-left",
+                selectedRole === "TRAINER" && "ring-2"
+              )}
               style={{
                 backgroundColor: "var(--surface-alt)",
-                borderColor: "var(--border)",
+                borderColor: selectedRole === "TRAINER" ? "var(--accent)" : "var(--border)",
+                color: "var(--text)",
+              }}
+            >
+              <Presentation className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--accent)" }} />
+              <span className="truncate">Trainer</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => fillCredentials("STUDENT")}
+              className={cn(
+                "px-2.5 py-2 min-h-[44px] rounded-xl text-[11px] font-semibold border flex items-center gap-2 transition-all hover:opacity-90 active:scale-98 text-left",
+                selectedRole === "STUDENT" && "ring-2"
+              )}
+              style={{
+                backgroundColor: "var(--surface-alt)",
+                borderColor: selectedRole === "STUDENT" ? "var(--accent)" : "var(--border)",
                 color: "var(--text)",
               }}
             >
@@ -326,10 +338,13 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => fillCredentials("MANAGER")}
-              className="px-2.5 py-2 min-h-[44px] rounded-xl text-[11px] font-semibold border flex items-center gap-2 transition-all hover:opacity-90 active:scale-98 text-left"
+              className={cn(
+                "px-2.5 py-2 min-h-[44px] rounded-xl text-[11px] font-semibold border flex items-center gap-2 transition-all hover:opacity-90 active:scale-98 text-left",
+                selectedRole === "MANAGER" && "ring-2"
+              )}
               style={{
                 backgroundColor: "var(--surface-alt)",
-                borderColor: "var(--border)",
+                borderColor: selectedRole === "MANAGER" ? "var(--accent)" : "var(--border)",
                 color: "var(--text)",
               }}
             >
@@ -340,10 +355,13 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => fillCredentials("FINANCIER")}
-              className="px-2.5 py-2 min-h-[44px] rounded-xl text-[11px] font-semibold border flex items-center gap-2 transition-all hover:opacity-90 active:scale-98 text-left col-span-2 sm:col-span-1"
+              className={cn(
+                "px-2.5 py-2 min-h-[44px] rounded-xl text-[11px] font-semibold border flex items-center gap-2 transition-all hover:opacity-90 active:scale-98 text-left col-span-2 sm:col-span-1",
+                selectedRole === "FINANCIER" && "ring-2"
+              )}
               style={{
                 backgroundColor: "var(--surface-alt)",
-                borderColor: "var(--border)",
+                borderColor: selectedRole === "FINANCIER" ? "var(--accent)" : "var(--border)",
                 color: "var(--text)",
               }}
             >
@@ -353,31 +371,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Capsule Tabs Switcher */}
-        <div className="flex justify-center">
-          <div className="nav-capsule">
-            <button
-              type="button"
-              onClick={() => setActiveTab("STAFF")}
-              className={cn("nav-capsule-item", activeTab === "STAFF" && "active")}
-            >
-              <Users className="w-3.5 h-3.5" />
-              <span>Staff & Faculty</span>
-              {activeTab === "STAFF" && <span className="pulse-dot" />}
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("STUDENT")}
-              className={cn("nav-capsule-item", activeTab === "STUDENT" && "active")}
-            >
-              <Mail className="w-3.5 h-3.5" />
-              <span>Student (Email OTP)</span>
-              {activeTab === "STUDENT" && <span className="pulse-dot" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Main Auth Form Card */}
+        {/* Universal Single Sign-In Card */}
         <div
           className="rounded-3xl border shadow-xl p-6 sm:p-8 space-y-5"
           style={{
@@ -385,79 +379,132 @@ export default function LoginPage() {
             borderColor: "var(--border)",
           }}
         >
-          {/* Staff Login View */}
-          {activeTab === "STAFF" && (
-            <form onSubmit={handleStaffSubmit} className="space-y-4">
-              {staffError && (
+          {authMode === "CREDENTIALS" ? (
+            <form onSubmit={handleCredentialSubmit} className="space-y-4">
+              {error && (
                 <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2.5">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <span className="break-words leading-relaxed">{staffError}</span>
+                  <span className="break-words leading-relaxed">{error}</span>
                 </div>
               )}
 
               <div>
                 <label className="block text-xs font-semibold mb-1.5 opacity-90">
-                  Official Staff Email
+                  Email or Institutional ID
                 </label>
-                <input
-                  type="email"
-                  required
-                  value={staffEmail}
-                  onChange={(e) => setStaffEmail(e.target.value)}
-                  placeholder="faculty@apexacademy.edu"
-                  className="w-full px-3.5 py-2.5 rounded-xl border text-sm min-h-[44px] transition-all"
-                  style={{
-                    backgroundColor: "var(--surface-alt)",
-                    borderColor: "var(--border)",
-                    color: "var(--text)",
-                  }}
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    autoComplete="username"
+                    value={identifier}
+                    onChange={(e) => {
+                      setIdentifier(e.target.value);
+                      setSelectedRole(null);
+                    }}
+                    placeholder="e.g. admin@apexacademy.edu, student@apexacademy.edu"
+                    className="w-full px-3.5 py-2.5 rounded-xl border text-sm min-h-[44px] transition-all"
+                    style={{
+                      backgroundColor: "var(--surface-alt)",
+                      borderColor: "var(--border)",
+                      color: "var(--text)",
+                    }}
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold mb-1.5 opacity-90">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  required
-                  value={staffPassword}
-                  onChange={(e) => setStaffPassword(e.target.value)}
-                  placeholder="••••••••••••"
-                  className="w-full px-3.5 py-2.5 rounded-xl border text-sm min-h-[44px] transition-all"
-                  style={{
-                    backgroundColor: "var(--surface-alt)",
-                    borderColor: "var(--border)",
-                    color: "var(--text)",
-                  }}
-                />
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-semibold opacity-90">
+                    Password
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="text-[11px] font-medium opacity-70 hover:opacity-100 flex items-center gap-1"
+                  >
+                    {showPassword ? (
+                      <>
+                        <EyeOff className="w-3 h-3" />
+                        <span>Hide</span>
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="w-3 h-3" />
+                        <span>Show</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••••••"
+                    className="w-full px-3.5 py-2.5 rounded-xl border text-sm min-h-[44px] transition-all"
+                    style={{
+                      backgroundColor: "var(--surface-alt)",
+                      borderColor: "var(--border)",
+                      color: "var(--text)",
+                    }}
+                  />
+                </div>
               </div>
 
               <button
                 type="submit"
-                disabled={staffLoading}
+                disabled={loading}
                 className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white shadow-md btn-luxury flex items-center justify-center gap-2 min-h-[44px]"
                 style={{ backgroundColor: "var(--accent)" }}
               >
-                <span>{staffLoading ? "Authenticating..." : "Sign In to Management Portal"}</span>
+                <span>{loading ? "Authenticating..." : "Sign In to Academy"}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
-            </form>
-          )}
 
-          {/* Student OTP View */}
-          {activeTab === "STUDENT" && (
+              <div className="pt-3 border-t text-center" style={{ borderColor: "var(--border)" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode("STUDENT_OTP");
+                    setStudentEmail(identifier.includes("@") ? identifier : "");
+                  }}
+                  className="text-xs font-semibold hover:underline transition-colors"
+                  style={{ color: "var(--accent)" }}
+                >
+                  Need passwordless access? Student sign-in via Email OTP →
+                </button>
+              </div>
+            </form>
+          ) : (
+            /* Optional Passwordless Email OTP for Students */
             <div className="space-y-4">
-              {studentError && (
+              <div className="flex items-center justify-between pb-2 border-b" style={{ borderColor: "var(--border)" }}>
+                <div className="flex items-center gap-2">
+                  <Mail className="w-4 h-4" style={{ color: "var(--accent)" }} />
+                  <span className="text-xs font-bold">Student Email OTP Sign-In</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAuthMode("CREDENTIALS")}
+                  className="text-[11px] font-semibold hover:underline opacity-80"
+                >
+                  ← Back to Password Login
+                </button>
+              </div>
+
+              {otpError && (
                 <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2.5">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <span className="break-words leading-relaxed">{studentError}</span>
+                  <span className="break-words leading-relaxed">{otpError}</span>
                 </div>
               )}
-              {studentMessage && (
+              {otpMessage && (
                 <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-start gap-2.5">
                   <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <span className="break-words leading-relaxed">{studentMessage}</span>
+                  <span className="break-words leading-relaxed">{otpMessage}</span>
                 </div>
               )}
 
@@ -470,8 +517,8 @@ export default function LoginPage() {
                     <input
                       type="email"
                       required
-                      value={studentId}
-                      onChange={(e) => setStudentId(e.target.value)}
+                      value={studentEmail}
+                      onChange={(e) => setStudentEmail(e.target.value)}
                       placeholder="student@apexacademy.edu"
                       className="w-full px-3.5 py-2.5 rounded-xl border text-sm min-h-[44px] transition-all"
                       style={{
@@ -487,11 +534,11 @@ export default function LoginPage() {
 
                   <button
                     type="submit"
-                    disabled={studentLoading}
+                    disabled={otpLoading}
                     className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white shadow-md btn-luxury flex items-center justify-center gap-2 min-h-[44px]"
                     style={{ backgroundColor: "var(--accent)" }}
                   >
-                    <span>{studentLoading ? "Dispatching..." : "Send Verification Code"}</span>
+                    <span>{otpLoading ? "Dispatching..." : "Send Verification Code"}</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </form>
@@ -534,18 +581,18 @@ export default function LoginPage() {
 
                   <button
                     type="submit"
-                    disabled={studentLoading}
+                    disabled={otpLoading}
                     className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white shadow-md btn-luxury flex items-center justify-center gap-2 min-h-[44px]"
                     style={{ backgroundColor: "var(--accent)" }}
                   >
-                    <span>{studentLoading ? "Verifying..." : "Confirm & Enter Student Portal"}</span>
+                    <span>{otpLoading ? "Verifying..." : "Confirm & Enter Student Portal"}</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
 
                   <div className="text-center">
                     <button
                       type="button"
-                      disabled={cooldown > 0 || studentLoading}
+                      disabled={cooldown > 0 || otpLoading}
                       onClick={handleRequestOtp}
                       className="text-xs opacity-70 hover:opacity-100 disabled:opacity-40"
                     >
@@ -561,7 +608,7 @@ export default function LoginPage() {
 
       {/* Footer */}
       <div className="text-center text-xs opacity-60 mt-8">
-        © {new Date().getFullYear()} Apex Global Academy. Cryptographically secured institutional portal.
+        © {new Date().getFullYear()} Apex Global Academy. Unified institutional access gateway.
       </div>
     </div>
   );

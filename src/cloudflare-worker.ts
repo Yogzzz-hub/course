@@ -40,6 +40,17 @@ export default {
       (env.NEXT_PUBLIC_BACKEND_URL as string) ||
       'https://course-backend-h5z1.onrender.com';
 
+    // 0. Canonical unified /login redirect for any legacy sign-in entrypoints
+    if (
+      pathname === '/sign-in' ||
+      pathname === '/auth/sign-in' ||
+      pathname === '/auth/admin/sign-in' ||
+      pathname === '/admin/login' ||
+      pathname === '/student/login'
+    ) {
+      return Response.redirect(new URL('/login', request.url), 302);
+    }
+
     // 1. CRM Single Domain Proxy Routes (Login, Portals, Auth & Internal Assets)
     const isCrmRoute =
       pathname === '/login' || pathname.startsWith('/login/') ||

@@ -6,10 +6,15 @@ import { z } from "zod";
 import { logAuditEvent } from "@/lib/audit";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
-const LoginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1, "Password is required"),
-});
+const LoginSchema = z
+  .object({
+    email: z.string().optional(),
+    identifier: z.string().optional(),
+    password: z.string().min(1, "Password is required"),
+  })
+  .refine((data) => Boolean(data.email?.trim() || data.identifier?.trim()), {
+    message: "Email or account ID is required",
+  });
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,15 +32,24 @@ export async function POST(req: NextRequest) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Invalid email or password format." },
+        { error: "Invalid credentials format. Please enter your email/ID and password." },
         { status: 400 }
       );
     }
 
-    const { email, password } = parsed.data;
+    const { email, identifier, password } = parsed.data;
+    const rawId = (identifier || email || "").trim();
+    const cleanId = rawId.toLowerCase();
 
-    const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase().trim() },
+    // Query user by email, student registration number, or trainer employee code
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: cleanId },
+          { studentProfile: { registrationNumber: rawId.toUpperCase() } },
+          { trainerProfile: { employeeCode: rawId.toUpperCase() } },
+        ],
+      },
       include: {
         studentProfile: true,
         trainerProfile: true,
