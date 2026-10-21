@@ -88,7 +88,8 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ["var(--font-outfit)", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+        sans: ["var(--font-body)", "Manrope Variable", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+        display: ["var(--font-display)", "Space Grotesk Variable", "sans-serif"],
         serif: ["var(--font-playfair)", "Georgia", "serif"],
       },
       boxShadow: {

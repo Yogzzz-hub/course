@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
+import { ThemeSwitcher } from "@/components/ui/ThemeSwitcher";
 
 export function PublicNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -58,6 +59,7 @@ export function PublicNavbar() {
 
         {/* Action Controls */}
         <div className="hidden sm:flex items-center gap-3">
+          <ThemeSwitcher compact />
           <Link href="/login">
             <Button variant="primary" size="sm" className="font-semibold shadow-xs">
               <span>Portal Sign In</span>
@@ -97,7 +99,11 @@ export function PublicNavbar() {
               </Link>
             );
           })}
-          <div className="pt-3 border-t border-[#E9E0D8] space-y-2">
+          <div className="pt-3 border-t border-[#E9E0D8] space-y-2 flex flex-col items-center">
+            <div className="w-full flex justify-between items-center py-1">
+              <span className="text-xs text-[#6B6268]">Theme Accent</span>
+              <ThemeSwitcher compact />
+            </div>
             <Link
               href="/login"
               onClick={() => setMobileMenuOpen(false)}
