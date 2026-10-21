@@ -33,7 +33,7 @@ const worker = {
     }
 
     // 3. Resolve Backend URL (Render Web Service)
-    const backendTarget = (env.BACKEND_URL || env.NEXT_PUBLIC_BACKEND_URL || 'https://course-backend.onrender.com')
+    const backendTarget = (env.BACKEND_URL || env.NEXT_PUBLIC_BACKEND_URL || 'https://course-backend-h5z1.onrender.com')
       .toString()
       .trim()
       .replace(/\/$/, '');

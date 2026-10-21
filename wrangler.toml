@@ -7,6 +7,8 @@ compatibility_flags = ["nodejs_compat"]
 directory = "./public"
 
 [vars]
+BACKEND_URL = "https://course-backend-h5z1.onrender.com"
+NEXT_PUBLIC_BACKEND_URL = "https://course-backend-h5z1.onrender.com"
 ENQUIRY_TO = "aintrixacademy2026@gmail.com"
 ENQUIRY_FROM = "Aintrix Academy <aintrixacademy2026@gmail.com>"
 RECEIVER_EMAIL = "aintrixacademy2026@gmail.com"
