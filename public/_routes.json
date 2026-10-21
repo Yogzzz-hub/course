@@ -1,5 +1,1 @@
-{
-  "version": 1,
-  "include": ["/*"],
-  "exclude": ["/favicon.svg", "/logo.svg", "/preferences.js"]
-}
+{"version":1,"include":["/api/*"],"exclude":[]}

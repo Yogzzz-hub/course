@@ -1,0 +1,66 @@
+{
+  "name": "apex-crm-portal",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Apex Global Academy — Enterprise CRM, Student, Trainer & Admin Portal",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "prisma generate && next build",
+    "start": "next start -p 10000",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:seed": "node db/seeds/seed.mjs",
+    "db:studio": "prisma studio",
+    "postinstall": "prisma generate"
+  },
+  "prisma": {
+    "schema": "db/schema.prisma"
+  },
+  "overrides": {
+    "braces": "^3.0.3",
+    "deepmerge-ts": "^8.0.2",
+    "tinypool": "^2.1.2",
+    "esbuild": "^0.25.0",
+    "postcss": "^8.5.31",
+    "postcss-selector-parser": "^7.1.7"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.4.1",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.118.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.10.1",
+    "@types/nodemailer": "^8.0.2",
+    "@types/pdfkit": "^0.17.6",
+    "@types/react": "^19.0.1",
+    "@types/react-dom": "^19.0.1",
+    "autoprefixer": "^10.6.1",
+    "bcryptjs": "^2.4.3",
+    "clsx": "^2.1.1",
+    "date-fns": "^3.6.0",
+    "jose": "^5.9.6",
+    "lucide-react": "^0.460.0",
+    "next": "^15.1.0",
+    "nodemailer": "^10.1.7",
+    "pdfkit": "^0.20.2",
+    "postcss": "^8.5.31",
+    "prisma": "^6.4.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^2.5.4",
+    "tailwindcss": "^3.4.16",
+    "typescript": "^5.7.2",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^15.1.0",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
