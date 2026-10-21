@@ -57,6 +57,9 @@ export default async function StudentOverviewPage() {
   });
 
   if (!studentProfile) {
+    if (session.role === "ADMIN") {
+      redirect("/admin");
+    }
     redirect("/login");
   }
 

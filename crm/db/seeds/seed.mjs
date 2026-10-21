@@ -67,6 +67,7 @@ async function main() {
   // Admin
   const adminUser = await prisma.user.create({
     data: {
+      id: "00000000-0000-4000-a000-000000000001",
       email: "admin@apexacademy.edu",
       name: "Victoria Sterling",
       role: "ADMIN",
@@ -93,6 +94,7 @@ async function main() {
   // Manager
   const managerUser = await prisma.user.create({
     data: {
+      id: "00000000-0000-4000-a000-000000000002",
       email: "manager@apexacademy.edu",
       name: "Arthur Pendelton",
       role: "MANAGER",
@@ -110,6 +112,7 @@ async function main() {
   // Financier
   const financierUser = await prisma.user.create({
     data: {
+      id: "00000000-0000-4000-a000-000000000003",
       email: "financier@apexacademy.edu",
       name: "Eleanor Vance",
       role: "FINANCIER",
@@ -127,6 +130,7 @@ async function main() {
   // Trainer 1: David Chen
   const trainer1User = await prisma.user.create({
     data: {
+      id: "00000000-0000-4000-a000-000000000004",
       email: "trainer@apexacademy.edu",
       name: "David Chen",
       role: "TRAINER",
@@ -167,6 +171,7 @@ async function main() {
   // Student 1: Alex Rivera
   const student1User = await prisma.user.create({
     data: {
+      id: "00000000-0000-4000-a000-000000000005",
       email: "student@apexacademy.edu",
       name: "Alex Rivera",
       role: "STUDENT",

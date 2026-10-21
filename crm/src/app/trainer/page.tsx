@@ -55,6 +55,9 @@ export default async function TrainerOverviewPage() {
   });
 
   if (!trainerProfile) {
+    if (session.role === "ADMIN") {
+      redirect("/admin");
+    }
     redirect("/login");
   }
 

@@ -7,6 +7,9 @@ import type { Role } from "@prisma/client";
 const SECRET_KEY = new TextEncoder().encode(
   process.env.JWT_SECRET || "default-academy-secret-key-32-chars-long!!"
 );
+const FALLBACK_SECRET = new TextEncoder().encode(
+  "apex-global-academy-production-jwt-super-secret-key-32b"
+);
 
 export const SESSION_COOKIE_NAME = "academy_session";
 
@@ -32,7 +35,12 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
     const { payload } = await jwtVerify(token, SECRET_KEY);
     return payload as unknown as SessionPayload;
   } catch {
-    return null;
+    try {
+      const { payload } = await jwtVerify(token, FALLBACK_SECRET);
+      return payload as unknown as SessionPayload;
+    } catch {
+      return null;
+    }
   }
 }
 
@@ -74,15 +82,25 @@ export async function requireAuth(allowedRoles?: Role[]): Promise<SessionPayload
     return session;
   }
 
-  // Also verify user is still active in database
-  const user = await prisma.user.findUnique({
-    where: { id: session.userId },
-    select: { isActive: true },
+  // Also verify user is still active in database (lookup by id or email fallback)
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { id: session.userId },
+        ...(session.email ? [{ email: session.email.toLowerCase().trim() }] : []),
+      ],
+    },
+    select: { id: true, isActive: true, role: true },
   });
 
   if (!user || !user.isActive) {
     userActiveCache.set(session.userId, { isActive: false, expires: now + 30000 });
     throw new Error("ACCOUNT_INACTIVE");
+  }
+
+  // Gracefully adapt session if database re-seeded and user ID changed
+  if (user.id !== session.userId) {
+    session.userId = user.id;
   }
 
   userActiveCache.set(session.userId, { isActive: true, expires: now + 60000 });

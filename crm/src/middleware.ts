@@ -51,8 +51,8 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 3. Authenticated user visiting /login or /crm -> Fast redirect to assigned portal
-  if (sessionPayload?.role && (pathname === '/login' || pathname === '/crm' || pathname === '/portal')) {
+  // 3. Authenticated user visiting /crm or /portal -> Fast redirect to assigned portal
+  if (sessionPayload?.role && (pathname === '/crm' || pathname === '/portal')) {
     const role = sessionPayload.role.toUpperCase();
     const portalMap: Record<string, string> = {
       ADMIN: '/admin',
@@ -62,9 +62,7 @@ export async function middleware(request: NextRequest) {
       FINANCIER: '/financier',
     };
     const target = portalMap[role] || '/login';
-    if (target !== pathname) {
-      return NextResponse.redirect(new URL(target, request.url));
-    }
+    return NextResponse.redirect(new URL(target, request.url));
   }
 
   // 4. Protected Portals: Check permissions
@@ -105,7 +103,6 @@ export const config = {
     '/trainer/:path*',
     '/student/:path*',
     '/financier/:path*',
-    '/login',
     '/crm',
     '/portal',
   ],
