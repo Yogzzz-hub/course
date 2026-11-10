@@ -34,6 +34,10 @@ const pageLoaders: Record<string, () => Promise<{ default: ComponentType }>> = {
  '/about': () => import('./pages/About'),
  '/book-session': () => import('./pages/BookSession'),
  '/direct-booking': () => import('./pages/DirectBooking'),
+ '/login': () => import('./pages/Login'),
+ '/trainer': () => import('./pages/TrainerPanel'),
+ '/manager': () => import('./pages/ManagerPanel'),
+ '/financier': () => import('./pages/FinancierPanel'),
  '/student-panel': () => import('./pages/StudentPanel'),
  '/admin-panel': () => import('./pages/AdminPanel'),
  '/auth/sign-in': () => import('./pages/SignIn'),
@@ -90,7 +94,7 @@ class PageErrorBoundary extends Component<{children:ReactNode},{failed:boolean}>
 }
 export default function App({initialPage: InitialPage, initialPath}: {initialPage?: ComponentType; initialPath?: string}) {
  const { pathname } = useLocation();
- if (['/student-panel', '/admin-panel'].includes(pathname)) {
+ if (['/student-panel', '/admin-panel', '/trainer', '/manager', '/financier', '/login'].includes(pathname)) {
    const Page = pageComponents.find(page => page.path === pathname)!.Page;
    return <PageErrorBoundary><Suspense fallback={<main className="container page-hero" role="status">Loading your workspace…</main>}>{InitialPage && initialPath === pathname ? <InitialPage/> : <Page/>}<RouteEffects/></Suspense></PageErrorBoundary>;
  }

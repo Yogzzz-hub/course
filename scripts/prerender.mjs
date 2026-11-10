@@ -6,7 +6,7 @@ for (const match of template.matchAll(/<link rel="stylesheet"[^>]*href="([^"]+)"
  template=template.replace(match[0],`<style>${await readFile(`dist${match[1]}`,'utf8')}</style>`);
 }
 const manifest=JSON.parse(await readFile('dist/.vite/manifest.json','utf8'));
-const pageFiles={'/auth/sign-in':'SignIn','/auth/admin/sign-in':'SignIn','/':'Home','/programmes':'Programmes','/programmes/python-full-stack':'ProgrammeDetails','/learning-experience':'LearningExperience','/career-support':'CareerSupport','/about':'About','/book-session':'BookSession','/direct-booking':'DirectBooking','/student-panel':'StudentPanel','/admin-panel':'AdminPanel','/contact':'Contact','/privacy-policy':'Legal','/terms-and-conditions':'Legal','/404':'NotFound'};
+const pageFiles={'/login':'Login','/trainer':'TrainerPanel','/manager':'ManagerPanel','/financier':'FinancierPanel','/auth/sign-in':'SignIn','/auth/admin/sign-in':'SignIn','/':'Home','/programmes':'Programmes','/programmes/python-full-stack':'ProgrammeDetails','/learning-experience':'LearningExperience','/career-support':'CareerSupport','/about':'About','/book-session':'BookSession','/direct-booking':'DirectBooking','/student-panel':'StudentPanel','/admin-panel':'AdminPanel','/contact':'Contact','/privacy-policy':'Legal','/terms-and-conditions':'Legal','/404':'NotFound'};
 const fontPreloads=(await readdir('dist/assets')).filter(name=>name.includes('-latin-wght-')&&name.endsWith('.woff2')).map(name=>`<link rel="preload" href="/assets/${name}" as="font" type="font/woff2" crossorigin/>`).join('');
 for(const route of [...routes.filter(r=>r.path!=='/admin'),{path:'/404'}]){
  const {head,html}=await render(route.path);
