@@ -132,7 +132,6 @@ export default function Programmes() {
                   transition={{ type: 'spring', stiffness: 260, damping: 28 }}
                 >
                 <article
-                  data-tilt="7"
                   className={`programme-card-item ${card.isFlagship ? 'featured' : ''}`}
                 >
                   <div className="card-badge-row">
@@ -195,7 +194,7 @@ export default function Programmes() {
         </div>
 
         <div className="editorial-grid" style={{ marginTop: '70px' }}>
-          <div data-tilt="6">
+          <div>
             <h2>
               <AnimatedText>Start with your goals.</AnimatedText>
             </h2>
@@ -203,14 +202,14 @@ export default function Programmes() {
               Explore the curriculum and consider what you want to build. Counselling can help you discuss your background and the right starting point.
             </p>
           </div>
-          <div data-tilt="6">
+          <div>
             <h3>Learning that connects.</h3>
             <p>
               Programming foundations lead into interfaces, backend development, data, testing and deployment. Guided exercises and programme projects connect these areas in practice.
             </p>
             <TextLink to="/programmes/python-full-stack#curriculum">Explore the learning areas</TextLink>
           </div>
-          <div data-tilt="6">
+          <div>
             <h3>Make an informed choice.</h3>
             <p>
               Review the listed fees and package inclusions. Prerequisites, teaching format and class timings must be confirmed before enrolment.
