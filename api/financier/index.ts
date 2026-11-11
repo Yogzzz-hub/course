@@ -23,18 +23,40 @@ import type { LedgerAccountCode } from "../../backend/services/financier/types";
 import { sendFeeReminderEmail, sendInvoiceEmail } from "../../backend/services/brevo-mail";
 import { enforceFinancierRateLimit } from "../../backend/services/rate-limit";
 import { createInitialFinancierState } from "../../src/data/financierMock";
+import { getPostgresFinancierStore, resetPostgresFinancierStore } from "../../backend/services/financier/pgStore";
 import { authenticateFinancierRequest } from "./auth";
 
 let sharedStore: FinancierStore | null = null;
+let storeInitPromise: Promise<FinancierStore> | null = null;
+
+export async function getSharedFinancierStoreAsync(): Promise<FinancierStore> {
+  if (sharedStore) return sharedStore;
+  if (!storeInitPromise) {
+    storeInitPromise = getPostgresFinancierStore()
+      .then((s) => {
+        sharedStore = s;
+        return s;
+      })
+      .catch((err) => {
+        console.warn("[Financier API] Postgres connection failed, fallback to memory:", err);
+        sharedStore = createFinancierStore(createInitialFinancierState());
+        return sharedStore;
+      });
+  }
+  return storeInitPromise;
+}
 
 export function getSharedFinancierStore(): FinancierStore {
   if (!sharedStore) {
+    void getSharedFinancierStoreAsync();
     sharedStore = createFinancierStore(createInitialFinancierState());
   }
   return sharedStore;
 }
 
 export function resetSharedFinancierStore(nowIso?: string): FinancierStore {
+  resetPostgresFinancierStore();
+  storeInitPromise = null;
   sharedStore = createFinancierStore(createInitialFinancierState(nowIso));
   return sharedStore;
 }
@@ -248,9 +270,10 @@ function checkWriteRateLimit(actorId: string, req: Request): Response | null {
 
 export async function handleFinancierRequest(
   req: Request,
-  store: FinancierStore = getSharedFinancierStore()
+  storeParam?: FinancierStore
 ): Promise<Response> {
   try {
+    const store = storeParam ?? (await getSharedFinancierStoreAsync());
     const url = new URL(req.url, "http://127.0.0.1");
     const rawPath = url.pathname.replace(/\/+$/, "");
     const subPath = rawPath.startsWith("/api/financier")
@@ -616,8 +639,9 @@ export interface NodeResLike {
 export async function dispatchNodeFinancierRequest(
   req: NodeReqLike,
   res: NodeResLike,
-  store: FinancierStore = getSharedFinancierStore()
+  storeParam?: FinancierStore
 ): Promise<void> {
+  const store = storeParam ?? (await getSharedFinancierStoreAsync());
   const method = (req.method || "GET").toUpperCase();
   const headers = new Headers();
   for (const [k, v] of Object.entries(req.headers || {})) {
