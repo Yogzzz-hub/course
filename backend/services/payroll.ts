@@ -165,3 +165,16 @@ export async function calculateTrainerPayoutForPeriod(
     sessionsBreakdown,
   };
 }
+
+// ============================================================================
+// Financier Portal Integer-Paise Batch Payroll & Dual-Control Additions
+// ============================================================================
+export {
+  PayrollInvariantError,
+  PAYROLL_STATUS_TRANSITIONS,
+  assertValidPayrollTransition,
+  isEligibleHeldSession,
+  calculateTrainerBatchPayrollPaise,
+  validatePayrollAdjustmentInput,
+} from "./financier/payroll";
+

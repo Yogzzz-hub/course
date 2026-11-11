@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { canonicalizeDemoUser, writeCrmSession } from "../utils/authSession";
 import {
   KeyRound,
   GraduationCap,
@@ -74,35 +75,19 @@ export default function LoginPage() {
 
     setTimeout(() => {
       setStaffLoading(false);
-      const email = staffEmail.trim().toLowerCase();
-      let role = "ADMIN";
-      let targetPath = "/admin-panel";
+      const session = canonicalizeDemoUser(staffEmail);
+      const targetPath =
+        session.role === "TRAINER"
+          ? "/trainer"
+          : session.role === "MANAGER"
+            ? "/manager"
+            : session.role === "FINANCIER"
+              ? "/financier"
+              : session.role === "STUDENT"
+                ? "/student-panel"
+                : "/admin-panel";
 
-      if (email.includes("trainer")) {
-        role = "TRAINER";
-        targetPath = "/trainer";
-      } else if (email.includes("manager")) {
-        role = "MANAGER";
-        targetPath = "/manager";
-      } else if (email.includes("financier")) {
-        role = "FINANCIER";
-        targetPath = "/financier";
-      } else if (email.includes("student")) {
-        role = "STUDENT";
-        targetPath = "/student-panel";
-      }
-
-      const session = {
-        userId: `usr-${Date.now()}`,
-        name: role.charAt(0) + role.slice(1).toLowerCase(),
-        email: staffEmail,
-        role,
-        authenticated: true,
-      };
-
-      try {
-        localStorage.setItem("crm_session", JSON.stringify(session));
-      } catch {}
+      writeCrmSession(session);
 
       navigate(targetPath);
     }, 400);
@@ -132,16 +117,8 @@ export default function LoginPage() {
 
     setTimeout(() => {
       setStudentLoading(false);
-      const session = {
-        userId: "std-001",
-        name: "Enrolled Student",
-        email: studentId,
-        role: "STUDENT",
-        authenticated: true,
-      };
-      try {
-        localStorage.setItem("crm_session", JSON.stringify(session));
-      } catch {}
+      const session = canonicalizeDemoUser(studentId || "student@apexacademy.edu", "STUDENT");
+      writeCrmSession(session);
 
       navigate("/student-panel");
     }, 400);

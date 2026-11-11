@@ -11,7 +11,7 @@ const store = new Map<string, RateLimitRecord>();
 
 // Cleanup stale keys every 5 minutes to avoid memory leaks
 if (typeof setInterval !== "undefined") {
-  setInterval(() => {
+  const cleanupTimer = setInterval(() => {
     const now = Date.now();
     for (const [key, record] of store.entries()) {
       // If all timestamps are older than 15 minutes, remove key
@@ -20,6 +20,9 @@ if (typeof setInterval !== "undefined") {
       }
     }
   }, 5 * 60 * 1000);
+  if (typeof cleanupTimer === "object" && cleanupTimer !== null && "unref" in cleanupTimer) {
+    (cleanupTimer as { unref: () => void }).unref();
+  }
 }
 
 export interface RateLimitResult {
@@ -75,3 +78,14 @@ export function getClientIp(req: Request): string {
   }
   return req.headers.get("x-real-ip") || "127.0.0.1";
 }
+
+export function enforceFinancierRateLimit(
+  actorId: string,
+  ip: string,
+  bucket = "financier-write",
+  maxRequests = 40,
+  windowMs = 60 * 1000
+): RateLimitResult {
+  return checkRateLimit(`${bucket}:${actorId}:${ip}`, maxRequests, windowMs);
+}
+

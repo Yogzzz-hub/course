@@ -152,3 +152,9 @@ export async function generateReceiptPdfBuffer(receiptId: string): Promise<Buffe
     doc.end();
   });
 }
+
+export {
+  generateReceiptPdfBytes,
+  generatePayslipPdfBytes,
+} from "./financier/pdf";
+

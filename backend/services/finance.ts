@@ -293,3 +293,36 @@ export async function recordLedgerEntry(
     },
   });
 }
+
+// ============================================================================
+// Financier Portal Strict Integer-Paise & Double-Entry Ledger Additions
+// ============================================================================
+export {
+  MoneyInvariantError,
+  assertPaise,
+  assertNonNegativePaise,
+  assertPositivePaise,
+  sumPaise,
+  addPaise,
+  subtractPaise,
+  multiplyPaise,
+  applyBasisPointsPaise,
+  distributePaiseByWeight,
+  parseRupeesToPaise,
+  formatPaise,
+  formatPaiseToInputRupees,
+  allocatePaymentPaiseOldestFirst,
+} from "./financier/money";
+
+export {
+  UnbalancedJournalError,
+  ImmutableLedgerError,
+  LEDGER_ACCOUNT_META,
+  validateBalancedJournalLines,
+  createBalancedJournalEntry,
+  buildCounterEntryReversal,
+  verifyTrialBalance,
+  computeAccountBalances,
+  paymentMethodToAccountCode,
+} from "./financier/ledger";
+

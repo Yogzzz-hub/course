@@ -59,7 +59,9 @@ function RouteEffects() {
   const firstRender = useRef(true);
   useEffect(() => {
     if(!isPrivatePath(pathname))trackLearningPage(pathname);
-    const route = routes.find(route=>route.path===pathname);
+    const route =
+      routes.find(route=>route.path===pathname) ||
+      (pathname.startsWith('/financier/') ? routes.find(r=>r.path==='/financier') : undefined);
     const titleBrand = academy.name;
     document.title = `${route?.title || 'Page not found'} | ${titleBrand}`;
     const meta = (name:string, value:string, property = false) => {
@@ -94,9 +96,14 @@ class PageErrorBoundary extends Component<{children:ReactNode},{failed:boolean}>
 }
 export default function App({initialPage: InitialPage, initialPath}: {initialPage?: ComponentType; initialPath?: string}) {
  const { pathname } = useLocation();
- if (['/student-panel', '/admin-panel', '/trainer', '/manager', '/financier', '/login'].includes(pathname)) {
-   const Page = pageComponents.find(page => page.path === pathname)!.Page;
-   return <PageErrorBoundary><Suspense fallback={<main className="container page-hero" role="status">Loading your workspace…</main>}>{InitialPage && initialPath === pathname ? <InitialPage/> : <Page/>}<RouteEffects/></Suspense></PageErrorBoundary>;
+ const isPanelRoute =
+   ['/student-panel', '/admin-panel', '/trainer', '/manager', '/login'].includes(pathname) ||
+   pathname === '/financier' ||
+   pathname.startsWith('/financier/');
+ if (isPanelRoute) {
+   const resolvedPath = pathname === '/financier' || pathname.startsWith('/financier/') ? '/financier' : pathname;
+   const Page = pageComponents.find(page => page.path === resolvedPath)!.Page;
+   return <PageErrorBoundary><Suspense fallback={<main className="container page-hero" role="status">Loading your workspace…</main>}>{InitialPage && initialPath === resolvedPath ? <InitialPage/> : <Page/>}<RouteEffects/></Suspense></PageErrorBoundary>;
  }
  // The homepage and booking routes render their own header so the call-to-action can scroll in-page.
  if (['/', '/book-session', '/direct-booking'].includes(pathname)) {
