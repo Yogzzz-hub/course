@@ -17,7 +17,7 @@ import {
   GraduationCap,
   House,
   LogOut,
-  MoreHorizontal,
+  LifeBuoy,
   PanelLeftClose,
   Sparkles,
   Users,
@@ -121,7 +121,8 @@ function MoreView({
         </Button>
       </Card>
       {session.mode === "enrolled" && (
-        <Card>
+        // Desktop already has this link in the sidebar; on mobile this card is the only way in.
+        <Card className="lg:hidden">
           <Users
             size={22}
             className="mb-3 text-indigo-700"
@@ -195,7 +196,7 @@ function Workspace({
       mobileLabel: "Payments",
       icon: CreditCard,
     },
-    { id: "more", label: "More", mobileLabel: "More", icon: MoreHorizontal },
+    { id: "more", label: "Support", mobileLabel: "Support", icon: LifeBuoy },
   ];
   const titles: Record<PanelTab, [string, string]> = {
     home: [
@@ -399,7 +400,7 @@ function Workspace({
                         onClick={() => setShowMentorship(false)}
                       >
                         <ChevronLeft size={16} aria-hidden="true" />
-                        Back to More
+                        Back to Support
                       </Button>
                       <MentorshipView api={api} session={session} />
                     </>

@@ -83,3 +83,41 @@
 /* Access screens (no session yet) get a centred stage glow. */
 .ss-student > .mx-auto.flex.min-h-screen, .ss-admin [class*="min-h-screen"][class*="items-center"] { position: relative; }
 @media (prefers-reduced-motion: reduce) { :is(.ss-student, .ss-admin) * { animation: none !important; } }
+
+/* Manager & Trainer Portals scoped typography & screen-fit layout */
+.manager-workspace {
+  font-family: var(--font-body) !important;
+  font-size: 14px;
+  line-height: 1.55;
+  width: 100%;
+  min-height: 100vh;
+}
+.manager-workspace h1,
+.manager-workspace h2,
+.manager-workspace h3,
+.manager-workspace h4 {
+  font-family: var(--font-body) !important;
+  letter-spacing: -0.01em !important;
+  margin: 0;
+}
+.manager-workspace h1 {
+  font-size: 1.15rem !important;
+  line-height: 1.35 !important;
+  font-weight: 700 !important;
+}
+.manager-workspace h2 {
+  font-size: 1.05rem !important;
+  line-height: 1.35 !important;
+  font-weight: 600 !important;
+}
+.manager-workspace h3 {
+  font-size: 0.925rem !important;
+  line-height: 1.35 !important;
+  font-weight: 600 !important;
+}
+.manager-workspace p {
+  font-size: 0.875rem !important;
+  line-height: 1.55 !important;
+}
+
+

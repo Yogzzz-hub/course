@@ -599,7 +599,7 @@ test("sign-out removes the authenticated workspace", async ({ page }) => {
   await mockStudentApi(page, { mode: "enrolled" });
   await page.goto("/student-panel");
   await desktopNav(page)
-    .getByRole("button", { name: "More", exact: true })
+    .getByRole("button", { name: "Support", exact: true })
     .click();
   await page.getByRole("button", { name: "Sign out" }).click();
   await expect(
@@ -634,7 +634,7 @@ test("both modes support mobile tabs and stay within the viewport", async ({
             ? "Assignments & projects"
             : "My learning plan",
         "Payments",
-        "More",
+        "Support",
       ]) {
         await nav.getByRole("button", { name, exact: true }).click();
         await expect(page.getByRole("heading", { level: 1 })).toBeVisible();

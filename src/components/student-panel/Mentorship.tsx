@@ -24,6 +24,7 @@ import {
   SecureLink,
 } from "./ui";
 import { dateTime, dayKey, timeLabel } from "./utils";
+import { AnimatedSelect } from "../public-booking/AnimatedSelect";
 
 function MentorshipContent({
   data,
@@ -98,30 +99,25 @@ function MentorshipContent({
         ) : (
           <div className="space-y-4">
             <Field name="time-zone" label="Time zone">
-              <select
+              <AnimatedSelect
                 id="student-time-zone"
-                className={`${inputClass} max-w-sm`}
+                className="max-w-sm"
                 value={timeZone}
                 disabled={locked}
-                onChange={(event) => {
-                  setTimeZone(event.target.value);
-                  setDay(null);
-                  setSelectedId(null);
-                }}
-              >
-                {[
+                options={[
                   "Asia/Kolkata",
                   "Asia/Dubai",
                   "Europe/London",
                   "America/New_York",
                   "America/Los_Angeles",
                   "Australia/Sydney",
-                ].map((zone) => (
-                  <option key={zone} value={zone}>
-                    {zone.replace(/_/g, " ")}
-                  </option>
-                ))}
-              </select>
+                ].map((zone) => ({ value: zone, label: zone.replace(/_/g, " ") }))}
+                onChange={(event) => {
+                  setTimeZone(event.target.value);
+                  setDay(null);
+                  setSelectedId(null);
+                }}
+              />
             </Field>
             <QueryView query={slots}>
               {() =>

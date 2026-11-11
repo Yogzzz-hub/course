@@ -91,3 +91,21 @@
     transition: none !important;
   }
 }
+
+/* Modal backdrop. Kept off the "bg-slate-950" class on purpose: portal.css restyles
+   any element with that class as a dark hero card (position: relative), which broke the overlay. */
+.ss-student .student-modal-backdrop {
+  background: color-mix(in srgb, var(--ink) 55%, transparent);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+/* Branded form controls inside the consultation form: match the compact field size,
+   and tint the native date picker with the theme accent. */
+.ss-student .student-modal-backdrop .animated-select-trigger {
+  min-height: 38px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+.ss-student .student-date { accent-color: var(--accent); color-scheme: light; min-height: 38px; }
