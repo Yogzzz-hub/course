@@ -1,0 +1,251 @@
+/* Financier Portal Feature Styles (token-pure via --fin-* CSS custom properties) */
+
+.fin-stack-sm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fin-stack-md {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.fin-stack-lg {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.fin-row-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.fin-row-between {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.fin-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  border-bottom: 1px solid var(--fin-border);
+  padding-bottom: 10px;
+}
+
+.fin-tab-btn {
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--fin-border);
+  background-color: var(--fin-surface);
+  color: var(--fin-ink);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fin-tab-btn:hover {
+  background-color: var(--fin-parchment);
+  border-color: var(--fin-primary);
+}
+
+.fin-tab-btn[aria-selected="true"] {
+  background-color: var(--fin-primary);
+  color: var(--fin-primary-contrast);
+  border-color: var(--fin-primary);
+}
+
+.fin-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.fin-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.fin-form-field--full {
+  grid-column: 1 / -1;
+}
+
+.fin-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--fin-ink);
+}
+
+.fin-field-hint {
+  font-size: 0.75rem;
+  color: var(--fin-muted);
+}
+
+.fin-alert {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--fin-border);
+  font-size: 0.84rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.fin-alert--danger {
+  background-color: var(--fin-danger-bg);
+  border-color: var(--fin-danger);
+  color: var(--fin-danger);
+}
+
+.fin-alert--success {
+  background-color: var(--fin-success-bg);
+  border-color: var(--fin-success);
+  color: var(--fin-success);
+}
+
+.fin-alert--warning {
+  background-color: var(--fin-gold-tint);
+  border-color: var(--fin-gold);
+  color: var(--fin-warning-ink);
+}
+
+.fin-alert--info {
+  background-color: var(--fin-teal-bg);
+  border-color: var(--fin-teal);
+  color: var(--fin-teal);
+}
+
+.fin-kv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.fin-kv-box {
+  background-color: var(--fin-bg);
+  border: 1px solid var(--fin-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.fin-kv-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fin-muted);
+}
+
+.fin-kv-value {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--fin-ink);
+  font-variant-numeric: tabular-nums;
+  word-break: break-word;
+}
+
+.fin-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--fin-muted);
+}
+
+.fin-link {
+  color: var(--fin-primary);
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.fin-link:hover {
+  color: var(--fin-primary-hover);
+}
+
+/* Comparison Progress Bars (Revenue vs Payroll, Ageing buckets) */
+.fin-bar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fin-bar-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fin-bar-track {
+  height: 9px;
+  width: 100%;
+  border-radius: 999px;
+  background-color: var(--fin-parchment);
+  overflow: hidden;
+  display: flex;
+}
+
+.fin-bar-fill-primary {
+  background-color: var(--fin-primary);
+  height: 100%;
+}
+
+.fin-bar-fill-success {
+  background-color: var(--fin-success);
+  height: 100%;
+}
+
+.fin-bar-fill-gold {
+  background-color: var(--fin-gold);
+  height: 100%;
+}
+
+.fin-bar-fill-danger {
+  background-color: var(--fin-danger);
+  height: 100%;
+}
+
+.fin-code-block {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--fin-border);
+  background-color: var(--fin-bg);
+  color: var(--fin-ink);
+  overflow-x: auto;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.fin-sub-text {
+  font-size: 0.76rem;
+  color: var(--fin-muted);
+}
+
+.fin-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 640px) {
+  .fin-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

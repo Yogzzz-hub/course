@@ -167,3 +167,6 @@ export async function generateInvoicePdfBuffer(invoiceId: string): Promise<Buffe
     doc.end();
   });
 }
+
+export { generateInvoicePdfBytes } from "./financier/pdf";
+

@@ -379,3 +379,142 @@ export async function sendEmail(options: EmailOptions, customEnv?: Record<string
   console.log(`[SMTP DEV MODE] Dispatched to ${to}: ${options.subject}`);
   return { success: true, id: `dev-${Date.now()}`, provider: 'simulated' };
 }
+
+function escapeMailHtml(input: string): string {
+  return input
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+export function renderInvoiceEmailHtml(params: {
+  studentName: string;
+  invoiceNumber: string;
+  programmeTitle: string;
+  batchCode: string;
+  dueDate: string;
+  amountFormatted: string;
+  status: string;
+}): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<body style="margin:0;padding:24px;background-color:#FBF9F5;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#251923;">
+  <table role="presentation" width="100%" style="max-width:600px;margin:0 auto;background:#FFFFFF;border:1px solid #E9E0D8;border-radius:12px;overflow:hidden;">
+    <tr>
+      <td style="background:#6D1A2B;padding:24px 28px;color:#FFFFFF;">
+        <div style="font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:#F6EBCF;">Apex Global Academy · Tuition Accounts</div>
+        <h1 style="margin:6px 0 0;font-size:20px;color:#FFFFFF;">Tuition Invoice ${escapeMailHtml(params.invoiceNumber)}</h1>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:24px 28px;">
+        <p style="margin:0 0 12px;font-size:15px;">Dear ${escapeMailHtml(params.studentName)},</p>
+        <p style="margin:0 0 16px;font-size:14px;color:#6B6268;">Your official tuition invoice for <strong>${escapeMailHtml(params.programmeTitle)}</strong> (${escapeMailHtml(params.batchCode)}) is attached to your student fee ledger.</p>
+        <table role="presentation" width="100%" style="background:#F5F0E8;border-radius:8px;padding:14px 16px;font-size:14px;">
+          <tr><td style="padding:4px 0;color:#6B6268;">Invoice Reference</td><td align="right"><strong>${escapeMailHtml(params.invoiceNumber)}</strong></td></tr>
+          <tr><td style="padding:4px 0;color:#6B6268;">Status</td><td align="right"><strong>${escapeMailHtml(params.status)}</strong></td></tr>
+          <tr><td style="padding:4px 0;color:#6B6268;">Due Date</td><td align="right"><strong>${escapeMailHtml(params.dueDate)}</strong></td></tr>
+          <tr><td style="padding:8px 0 0;color:#251923;font-weight:700;">Total Net Due</td><td align="right" style="padding:8px 0 0;color:#6D1A2B;font-weight:700;font-size:16px;">${escapeMailHtml(params.amountFormatted)}</td></tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+export function renderFeeReminderEmailHtml(params: {
+  studentName: string;
+  registrationNumber: string;
+  outstandingFormatted: string;
+  overdueDays: number;
+  batchCode: string;
+}): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<body style="margin:0;padding:24px;background-color:#FBF9F5;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#251923;">
+  <table role="presentation" width="100%" style="max-width:600px;margin:0 auto;background:#FFFFFF;border:1px solid #E9E0D8;border-radius:12px;overflow:hidden;">
+    <tr>
+      <td style="background:#6D1A2B;padding:24px 28px;color:#FFFFFF;border-bottom:4px solid #C9A24B;">
+        <div style="font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:#F6EBCF;">Apex Global Academy · Collections Desk</div>
+        <h1 style="margin:6px 0 0;font-size:20px;color:#FFFFFF;">Tuition Instalment Payment Reminder</h1>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:24px 28px;">
+        <p style="margin:0 0 12px;font-size:15px;">Hello ${escapeMailHtml(params.studentName)} (${escapeMailHtml(params.registrationNumber)}),</p>
+        <p style="margin:0 0 16px;font-size:14px;color:#6B6268;">This is a gentle reminder regarding your pending tuition instalment for <strong>${escapeMailHtml(params.batchCode)}</strong>.</p>
+        <table role="presentation" width="100%" style="background:#F5F0E8;border-radius:8px;padding:14px 16px;font-size:14px;">
+          <tr><td style="padding:4px 0;color:#6B6268;">Outstanding Balance</td><td align="right" style="color:#6D1A2B;font-weight:700;font-size:16px;">${escapeMailHtml(params.outstandingFormatted)}</td></tr>
+          <tr><td style="padding:4px 0;color:#6B6268;">Days Overdue</td><td align="right"><strong>${params.overdueDays} days</strong></td></tr>
+        </table>
+        <p style="margin:16px 0 0;font-size:13px;color:#6B6268;">Please remit your dues via UPI, NEFT/IMPS or Card and reply with your UTR reference for instant receipt issuance.</p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+function shouldSimulateDispatch(to: string, customEnv?: Record<string, unknown>): boolean {
+  const forceLive =
+    customEnv?.FINANCIER_LIVE_BREVO === 'true' || process.env.FINANCIER_LIVE_BREVO === 'true';
+  if (forceLive) return false;
+  const lower = to.trim().toLowerCase();
+  return (
+    Boolean(process.env.VITEST) ||
+    lower.endsWith('@apexacademy.edu') ||
+    lower.endsWith('.test') ||
+    lower.endsWith('@example.com')
+  );
+}
+
+export async function sendInvoiceEmail(
+  params: {
+    to: string;
+    studentName: string;
+    invoiceNumber: string;
+    programmeTitle: string;
+    batchCode: string;
+    dueDate: string;
+    amountFormatted: string;
+    status: string;
+  },
+  customEnv?: Record<string, unknown>
+): Promise<EmailResult & { subject: string }> {
+  const subject = `Invoice ${params.invoiceNumber} — ${params.programmeTitle}`;
+  const html = renderInvoiceEmailHtml(params);
+  const text = `Dear ${params.studentName},\n\nInvoice ${params.invoiceNumber} (${params.status}) for ${params.programmeTitle} is due on ${params.dueDate}. Net amount due: ${params.amountFormatted}.`;
+
+  if (shouldSimulateDispatch(params.to, customEnv)) {
+    return { success: true, id: `brevo-sim-${Date.now()}`, provider: 'simulated', subject };
+  }
+
+  const res = await sendEmail({ to: params.to, subject, text, html }, customEnv);
+  return { ...res, subject };
+}
+
+export async function sendFeeReminderEmail(
+  params: {
+    to: string;
+    studentName: string;
+    registrationNumber: string;
+    outstandingFormatted: string;
+    overdueDays: number;
+    batchCode: string;
+  },
+  customEnv?: Record<string, unknown>
+): Promise<EmailResult & { subject: string }> {
+  const subject = `Tuition Fee Reminder — ${params.registrationNumber} (${params.outstandingFormatted})`;
+  const html = renderFeeReminderEmailHtml(params);
+  const text = `Hello ${params.studentName} (${params.registrationNumber}),\n\nOutstanding balance: ${params.outstandingFormatted} (${params.overdueDays} days overdue) for ${params.batchCode}.`;
+
+  if (shouldSimulateDispatch(params.to, customEnv)) {
+    return { success: true, id: `brevo-sim-${Date.now()}`, provider: 'simulated', subject };
+  }
+
+  const res = await sendEmail({ to: params.to, subject, text, html }, customEnv);
+  return { ...res, subject };
+}
+
