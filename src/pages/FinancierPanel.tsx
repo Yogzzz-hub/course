@@ -474,7 +474,7 @@ export default function FinancierPanel() {
           </div>
         )}
         {/* SUBVIEW 1: OPERATING BANK ACCOUNT LEDGER */}
-        {activeTab === "ledger" && (
+        {activeTab === "ledger" && currentAccount && (
           <div className="space-y-6">
             {/* Header / Account Switcher Card */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
