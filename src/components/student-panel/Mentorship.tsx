@@ -62,14 +62,14 @@ function MentorshipContent({
   return (
     <div className="space-y-5">
       <Card>
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
           <div>
-            <h2 className="text-xl font-semibold">Time with your mentor</h2>
-            <p className="mt-2 text-sm text-slate-600">
+            <h2 className="text-xl md:text-2xl font-semibold">Time with your mentor</h2>
+            <p className="mt-2 text-sm md:text-base text-slate-600">
               Focused support for the problems you’re working through.
             </p>
           </div>
-          <div className="rounded-xl bg-indigo-50 px-5 py-3 text-center">
+          <div className="w-full md:w-auto rounded-xl bg-indigo-50 px-5 py-3 text-center">
             <p className="text-3xl font-bold text-indigo-800">{remaining}</p>
             <p className="mt-1 text-xs font-semibold text-indigo-800">
               sessions available
@@ -133,7 +133,7 @@ function MentorshipContent({
                           key={date}
                           disabled={locked}
                           aria-pressed={chosenDay === date}
-                          className={`min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold ${chosenDay === date ? "border-indigo-600 bg-indigo-50 text-indigo-800" : "border-slate-200 bg-white text-slate-700"}`}
+                          className={`min-h-[44px] min-w-[44px] rounded-xl border px-4 py-2 text-sm font-semibold transition ${chosenDay === date ? "border-indigo-600 bg-indigo-50 text-indigo-800" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}
                           onClick={() => {
                             setDay(date);
                             setSelectedId(null);
@@ -158,7 +158,7 @@ function MentorshipContent({
                             key={slot.id}
                             disabled={locked}
                             aria-pressed={selected?.id === slot.id}
-                            className={`rounded-xl border p-4 text-left ${selected?.id === slot.id ? "border-indigo-600 bg-indigo-50" : "border-slate-200 bg-white hover:bg-slate-50"}`}
+                            className={`min-h-[44px] min-w-[44px] w-full rounded-xl border p-4 text-left transition ${selected?.id === slot.id ? "border-indigo-600 bg-indigo-50" : "border-slate-200 bg-white hover:bg-slate-50"}`}
                             onClick={() => {
                               setSelectedId(slot.id);
                               setConfirmed(false);
@@ -190,10 +190,11 @@ function MentorshipContent({
                   " The booking result is uncertain. Retry the same slot to recover your reservation."}
               </Notice>
             )}
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3">
               <Button
                 disabled={!selected && !uncertainSlot}
                 busy={bookMentorship.isPending}
+                className="w-full sm:w-auto"
                 onClick={async () => {
                   const target = uncertainSlot || selected;
                   if (
@@ -243,6 +244,7 @@ function MentorshipContent({
               <Button
                 secondary
                 disabled={locked}
+                className="w-full sm:w-auto"
                 onClick={() => {
                   setSelectedId(null);
                   void slots.refetch();

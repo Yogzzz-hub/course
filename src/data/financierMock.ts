@@ -1446,3 +1446,278 @@ export function createInitialFinancierState(
     auditLogs,
   };
 }
+
+export interface LedgerLine {
+  id: string;
+  date: string;
+  transactionNumber: string;
+  description: string;
+  category: "Tuition Collection" | "Refund Disbursement" | "Trainer Payout" | "Bank Charge" | "Operating Expense" | "Settlement Transfer";
+  debitMinor: number; // Outflow (expenses, refunds, payouts)
+  creditMinor: number; // Inflow (tuition collection, fees)
+  balanceMinor: number; // Rolling net balance
+  reference?: string;
+  studentName?: string;
+  paymentMethod?: string;
+  status: "Verified" | "Cleared" | "Pending Reconciliation";
+}
+
+export interface FinancierAccount {
+  id: string;
+  code: string;
+  name: string;
+  accountNumber: string;
+  bankName: string;
+  type: "BANK" | "GATEWAY" | "CASH" | "ESCROW";
+  currency: string;
+  netBalanceMinor: number; // in paise, can be negative e.g. -840000 = -₹8,400.00
+  totalInflowMinor: number;
+  totalOutflowMinor: number;
+  pendingReconciliationCount: number;
+  lastReconciledAt: string;
+}
+
+export interface FinancierStudentDebt {
+  id: string;
+  registrationNumber: string;
+  name: string;
+  email: string;
+  phone: string;
+  courseTitle: string;
+  batchCode: string;
+  contractedFeeMinor: number;
+  paidAmountMinor: number;
+  remainingDueMinor: number;
+  overdueMinor: number;
+  nextDueDate: string;
+  status: "CURRENT" | "OVERDUE" | "PAID_IN_FULL" | "DEFERRED";
+  installments: {
+    number: number;
+    amountMinor: number;
+    dueDate: string;
+    status: "PAID" | "DUE" | "OVERDUE";
+  }[];
+}
+
+export const initialAccounts: FinancierAccount[] = [
+  {
+    id: "acc-bank-01",
+    code: "BANK",
+    name: "Operating Bank Account",
+    accountNumber: "HDFC-8829-0192-3341",
+    bankName: "HDFC Corporate Banking",
+    type: "BANK",
+    currency: "INR",
+    netBalanceMinor: -840000, // -₹8,400.00
+    totalInflowMinor: 148500000, // ₹14,85,000
+    totalOutflowMinor: 149340000, // ₹14,93,400
+    pendingReconciliationCount: 2,
+    lastReconciledAt: "11 Nov 2026, 18:30 IST",
+  },
+  {
+    id: "acc-gateway-01",
+    code: "RAZORPAY",
+    name: "Razorpay Primary Settlement Escrow",
+    accountNumber: "RZP-ESC-9921",
+    bankName: "Razorpay Merchant Services",
+    type: "GATEWAY",
+    currency: "INR",
+    netBalanceMinor: 38200000, // ₹3,82,000.00
+    totalInflowMinor: 42000000,
+    totalOutflowMinor: 3800000,
+    pendingReconciliationCount: 0,
+    lastReconciledAt: "12 Nov 2026, 09:15 IST",
+  },
+  {
+    id: "acc-cash-01",
+    code: "PETTY_CASH",
+    name: "Academy Campus Cash Till",
+    accountNumber: "CASH-TILL-01",
+    bankName: "Campus Vault",
+    type: "CASH",
+    currency: "INR",
+    netBalanceMinor: 4500000, // ₹45,000.00
+    totalInflowMinor: 6000000,
+    totalOutflowMinor: 1500000,
+    pendingReconciliationCount: 1,
+    lastReconciledAt: "10 Nov 2026, 17:00 IST",
+  },
+];
+
+export const initialBankLedger: LedgerLine[] = [
+  {
+    id: "led-101",
+    date: "11 Nov 2026",
+    transactionNumber: "TXN-9021",
+    description: "Tuition installment collection - Python Full-Stack (Karthik Subramanian)",
+    category: "Tuition Collection",
+    debitMinor: 0,
+    creditMinor: 4500000, // +₹45,000.00
+    balanceMinor: -840000, // -₹8,400.00
+    reference: "UPI/HDFC/202611119021",
+    studentName: "Karthik Subramanian",
+    paymentMethod: "UPI / Razorpay",
+    status: "Verified",
+  },
+  {
+    id: "led-102",
+    date: "10 Nov 2026",
+    transactionNumber: "PAYOUT-TRN-04",
+    description: "Lead Trainer compensation disbursement - Batch PY-2026-A",
+    category: "Trainer Payout",
+    debitMinor: 6500000, // -₹65,000.00
+    creditMinor: 0,
+    balanceMinor: -5340000, // -₹53,400.00
+    reference: "NEFT/CORP/77321049",
+    paymentMethod: "NEFT Corporate",
+    status: "Cleared",
+  },
+  {
+    id: "led-103",
+    date: "09 Nov 2026",
+    transactionNumber: "TXN-9022",
+    description: "Full tuition receipt - Modern React Frontend (Sneha Patel)",
+    category: "Tuition Collection",
+    debitMinor: 0,
+    creditMinor: 9500000, // +₹95,000.00
+    balanceMinor: 1160000, // +₹11,600.00
+    reference: "NEFT/ICICI/550291",
+    studentName: "Sneha Patel",
+    paymentMethod: "Bank Transfer",
+    status: "Verified",
+  },
+  {
+    id: "led-104",
+    date: "08 Nov 2026",
+    transactionNumber: "EXP-OPS-881",
+    description: "AWS Cloud Infrastructure hosting & student staging labs",
+    category: "Operating Expense",
+    debitMinor: 2840000, // -₹28,400.00
+    creditMinor: 0,
+    balanceMinor: -8340000,
+    reference: "CARD/AUTO/AWS-IN-98",
+    paymentMethod: "Corporate Card",
+    status: "Cleared",
+  },
+  {
+    id: "led-105",
+    date: "07 Nov 2026",
+    transactionNumber: "REF-REQ-02",
+    description: "Course cancellation refund disbursement (Aman Gupta)",
+    category: "Refund Disbursement",
+    debitMinor: 1500000, // -₹15,000.00
+    creditMinor: 0,
+    balanceMinor: -5500000,
+    reference: "IMPS/REF/99321",
+    studentName: "Aman Gupta",
+    paymentMethod: "IMPS Transfer",
+    status: "Cleared",
+  },
+  {
+    id: "led-106",
+    date: "05 Nov 2026",
+    transactionNumber: "TXN-9023",
+    description: "Second installment receipt - DSA & System Design (Aravind Kumar)",
+    category: "Tuition Collection",
+    debitMinor: 0,
+    creditMinor: 3000000, // +₹30,000.00
+    balanceMinor: -4000000,
+    reference: "CARD/EMI/AXIS-771",
+    studentName: "Aravind Kumar",
+    paymentMethod: "Credit Card (EMI)",
+    status: "Verified",
+  },
+  {
+    id: "led-107",
+    date: "02 Nov 2026",
+    transactionNumber: "CHG-HDFC-01",
+    description: "Corporate account maintenance & payment gateway settlement fee",
+    category: "Bank Charge",
+    debitMinor: 120000, // -₹1,200.00
+    creditMinor: 0,
+    balanceMinor: -7000000,
+    reference: "HDFC-DR-CHARGES",
+    paymentMethod: "Auto Debit",
+    status: "Cleared",
+  },
+];
+
+export const initialFinancierStudents: FinancierStudentDebt[] = [
+  {
+    id: "st-01",
+    registrationNumber: "AINTRIX-2026-001",
+    name: "Karthik Subramanian",
+    email: "karthik.subramanian@example.com",
+    phone: "+91 98401 23456",
+    courseTitle: "Python Full-Stack Software Engineering",
+    batchCode: "BATCH-PY-2026-A",
+    contractedFeeMinor: 7500000, // ₹75,000
+    paidAmountMinor: 4500000, // ₹45,000
+    remainingDueMinor: 3000000, // ₹30,000
+    overdueMinor: 0,
+    nextDueDate: "25 Nov 2026",
+    status: "CURRENT",
+    installments: [
+      { number: 1, amountMinor: 4500000, dueDate: "10 Nov 2026", status: "PAID" },
+      { number: 2, amountMinor: 3000000, dueDate: "25 Nov 2026", status: "DUE" },
+    ],
+  },
+  {
+    id: "st-02",
+    registrationNumber: "AINTRIX-2026-002",
+    name: "Sneha Patel",
+    email: "sneha.patel@example.com",
+    phone: "+91 98200 98765",
+    courseTitle: "Modern React & Frontend Engineering",
+    batchCode: "BATCH-FE-2026-B",
+    contractedFeeMinor: 9500000, // ₹95,000
+    paidAmountMinor: 9500000, // ₹95,000
+    remainingDueMinor: 0,
+    overdueMinor: 0,
+    nextDueDate: "—",
+    status: "PAID_IN_FULL",
+    installments: [
+      { number: 1, amountMinor: 9500000, dueDate: "09 Nov 2026", status: "PAID" },
+    ],
+  },
+  {
+    id: "st-03",
+    registrationNumber: "AINTRIX-2026-003",
+    name: "Vikram Malhotra",
+    email: "vikram.malhotra@example.com",
+    phone: "+91 97110 54321",
+    courseTitle: "DSA & System Design Elite",
+    batchCode: "BATCH-DSA-2026-A",
+    contractedFeeMinor: 6500000, // ₹65,000
+    paidAmountMinor: 2500000, // ₹25,000
+    remainingDueMinor: 4000000, // ₹40,000
+    overdueMinor: 2000000, // ₹20,000 overdue
+    nextDueDate: "05 Nov 2026",
+    status: "OVERDUE",
+    installments: [
+      { number: 1, amountMinor: 2500000, dueDate: "15 Oct 2026", status: "PAID" },
+      { number: 2, amountMinor: 2000000, dueDate: "05 Nov 2026", status: "OVERDUE" },
+      { number: 3, amountMinor: 2000000, dueDate: "05 Dec 2026", status: "DUE" },
+    ],
+  },
+  {
+    id: "st-04",
+    registrationNumber: "AINTRIX-2026-004",
+    name: "Aman Gupta",
+    email: "aman.gupta@example.com",
+    phone: "+91 99330 11223",
+    courseTitle: "Full-Stack Application Development",
+    batchCode: "BATCH-PY-2026-B",
+    contractedFeeMinor: 8000000,
+    paidAmountMinor: 3000000,
+    remainingDueMinor: 5000000,
+    overdueMinor: 0,
+    nextDueDate: "20 Nov 2026",
+    status: "CURRENT",
+    installments: [
+      { number: 1, amountMinor: 3000000, dueDate: "01 Nov 2026", status: "PAID" },
+      { number: 2, amountMinor: 2500000, dueDate: "20 Nov 2026", status: "DUE" },
+      { number: 3, amountMinor: 2500000, dueDate: "20 Dec 2026", status: "DUE" },
+    ],
+  },
+];

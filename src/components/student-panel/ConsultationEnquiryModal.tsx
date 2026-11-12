@@ -241,14 +241,14 @@ export function ConsultationEnquiryModal({
             </div>
 
             <div className="flex flex-col gap-2 pt-2 sm:flex-row">
-              <Button type="submit" busy={busy} className="flex-1">
+              <Button type="submit" busy={busy} className="w-full sm:flex-1">
                 <Send size={16} /> Send via Mail
               </Button>
               <a
                 href={mailtoUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                className="inline-flex min-h-[44px] min-w-[44px] w-full sm:w-auto items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 hover:bg-slate-50"
               >
                 <ArrowUpRight size={16} /> Direct Email
               </a>
@@ -272,16 +272,16 @@ export function ConsultationCard({
   return (
     <>
       <Card>
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
           <div className="flex items-start gap-3">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700">
               <Mail size={22} aria-hidden="true" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-slate-950">
+              <h2 className="text-base md:text-lg font-semibold text-slate-950">
                 Need guidance? Enquire for consultation via mail
               </h2>
-              <p className="mt-1 text-xs text-slate-600">
+              <p className="mt-1 text-xs md:text-sm text-slate-600">
                 Send a consultation enquiry directly to our admissions team at <strong className="text-slate-800">{RECEIVER_EMAIL}</strong>.
               </p>
             </div>
@@ -289,7 +289,7 @@ export function ConsultationCard({
           <button
             type="button"
             onClick={() => setIsOpen(true)}
-            className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-indigo-700 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-800 transition"
+            className="inline-flex min-h-[44px] min-w-[44px] w-full md:w-auto items-center justify-center gap-2 rounded-xl bg-indigo-700 px-4 py-2.5 text-xs md:text-sm font-semibold text-white shadow-sm hover:bg-indigo-800 transition shrink-0"
           >
             <Send size={15} aria-hidden="true" />
             Enquire for consultation

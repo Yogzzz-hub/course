@@ -61,7 +61,7 @@
   top: 10px;
 }
 .ss-student .student-bottom-nav {
-  padding-bottom: max(8px, env(safe-area-inset-bottom));
+  /* Dimensions & positioning handled in portal.css */
 }
 .ss-student progress {
   display: block;

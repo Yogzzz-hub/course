@@ -30,7 +30,7 @@ export function NextStepCard({
       {"href" in step ? (
         <a
           href={step.href}
-          className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-indigo-950"
+          className="mt-6 inline-flex min-h-[44px] min-w-[44px] w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-indigo-950"
         >
           {step.action}
           <ArrowRight size={16} aria-hidden="true" />
@@ -38,7 +38,7 @@ export function NextStepCard({
       ) : (
         <Button
           secondary
-          className="relative mt-6"
+          className="relative mt-6 w-full sm:w-auto"
           onClick={() => navigate(step.tab)}
         >
           {step.action}
@@ -66,20 +66,20 @@ export function ProspectHome({
             className="mb-4 text-indigo-700"
             aria-hidden="true"
           />
-          <h2 className="text-lg font-semibold">A plan built around you</h2>
-          <p className="my-3 text-sm leading-relaxed text-slate-600">
+          <h2 className="text-lg md:text-xl font-semibold">A plan built around you</h2>
+          <p className="my-3 text-sm leading-relaxed text-slate-600 md:text-base">
             Keep your counsellor’s recommendation, package inclusions and exact
             fee breakdown together in one place.
           </p>
-          <Button secondary onClick={() => navigate("work")}>
+          <Button secondary onClick={() => navigate("work")} className="w-full sm:w-auto">
             My learning plan
           </Button>
         </Card>
         <Card>
-          <h2 className="text-lg font-semibold">
+          <h2 className="text-lg md:text-xl font-semibold">
             Clear steps. Room to decide.
           </h2>
-          <ol className="mt-4 space-y-3 text-sm text-slate-600">
+          <ol className="mt-4 space-y-3 text-sm md:text-base text-slate-600">
             <li>01 · Talk through your goals</li>
             <li>02 · Review your personalised plan</li>
             <li>03 · Choose a package and enrol</li>
@@ -227,7 +227,7 @@ function PlanDetails({
             Plan valid until {dateTime(plan.expiresAt)}. Your final order is
             confirmed by the server.
           </p>
-          <Button onClick={() => onCheckout(selected.id)}>
+          <Button onClick={() => onCheckout(selected.id)} className="w-full sm:w-auto">
             Continue to checkout
             <ArrowRight size={16} aria-hidden="true" />
           </Button>
