@@ -4,7 +4,7 @@ import type { UseQueryResult } from "@tanstack/react-query";
 import { adminError } from "./api";
 
 export const inputClass =
-  "min-w-0 w-full min-h-[44px] rounded-xl border border-[#DFE5EC] bg-white px-3.5 py-2.5 text-base sm:text-sm text-[#241921] placeholder:text-[#645A62]/60 focus:border-[#681C35] focus:outline-none focus:ring-2 focus:ring-[#681C35]/20 disabled:bg-slate-100 transition";
+  "min-w-0 w-full min-h-[44px] rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3.5 py-2.5 text-base sm:text-sm text-[var(--text)] placeholder:text-[var(--muted)]/60 focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20 disabled:bg-[var(--bg-secondary)] transition";
 
 export function Button({
   children,
@@ -22,16 +22,16 @@ export function Button({
   success?: boolean;
 }) {
   let styleClasses =
-    "bg-[#681C35] text-white !text-white hover:bg-[#52152A] shadow-sm";
+    "bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] !text-white hover:bg-[var(--btn-primary-hover)] shadow-sm";
   if (secondary) {
     styleClasses =
-      "border border-[#DFE5EC] bg-white text-[#241921] hover:bg-[#F3F7FA] hover:border-[#C9D3DF]";
+      "border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] hover:bg-[var(--accent-tint)] hover:border-[var(--accent-border)]";
   } else if (danger) {
     styleClasses =
       "border border-[#F8C0C0] bg-[#FDE8E8] text-[#9E2A2B] hover:bg-[#FBD5D5] hover:border-[#F5ABAB]";
   } else if (success) {
     styleClasses =
-      "bg-[#681C35] text-white !text-white hover:bg-[#52152A] shadow-sm";
+      "bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] !text-white hover:bg-[var(--btn-primary-hover)] shadow-sm";
   }
 
   return (
@@ -61,7 +61,7 @@ export function Card({
 }) {
   return (
     <section
-      className={`min-w-0 w-full rounded-2xl border border-[#DFE5EC] bg-white p-4 sm:p-6 shadow-[0_4px_20px_rgba(36,25,33,0.05),0_1px_3px_rgba(36,25,33,0.03)] hover:shadow-[0_12px_30px_rgba(104,28,53,0.08)] transition-shadow duration-200 ${className}`}
+      className={`min-w-0 w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-6 shadow-[var(--card-shadow)] hover:shadow-[var(--card-shadow-hover)] transition-shadow duration-200 ${className}`}
     >
       {children}
     </section>
@@ -70,7 +70,7 @@ export function Card({
 
 export function Eyebrow({ children }: { children: ReactNode }) {
   return (
-    <p className="mb-1.5 text-[11px] font-bold tracking-[.15em] text-[#681C35] uppercase">
+    <p className="mb-1.5 text-[11px] font-bold tracking-[.15em] text-[var(--accent)] uppercase">
       {children}
     </p>
   );
@@ -91,11 +91,11 @@ export function ScreenTitle({
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
       <div>
         {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#241921]">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text)]">
           {title}
         </h1>
         {subtitle && (
-          <p className="mt-1 text-sm text-[#645A62]">{subtitle}</p>
+          <p className="mt-1 text-sm text-[var(--muted)]">{subtitle}</p>
         )}
       </div>
       {actions && <div className="flex items-center gap-2.5 shrink-0">{actions}</div>}
@@ -116,7 +116,7 @@ export function Notice({
       className={`rounded-xl border p-4 text-sm leading-6 ${
         error
           ? "border-red-200 bg-red-50 text-red-900"
-          : "border-[#A9C9DC] bg-[#F3F7FA] text-[#241921]"
+          : "border-[var(--accent-border)] bg-[var(--accent-tint)] text-[var(--text)]"
       }`}
     >
       {error && (
@@ -136,12 +136,12 @@ export function Empty({
 }) {
   return (
     <Card className="text-center py-10">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#F3F7FA] text-[#681C35] mb-3">
+      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent-tint)] text-[var(--accent)] mb-3">
         <AlertCircle size={22} />
       </div>
-      <h3 className="text-base font-semibold text-[#241921]">{title}</h3>
+      <h3 className="text-base font-semibold text-[var(--text)]">{title}</h3>
       {children && (
-        <p className="mt-1 text-sm text-[#645A62] max-w-sm mx-auto">{children}</p>
+        <p className="mt-1 text-sm text-[var(--muted)] max-w-sm mx-auto">{children}</p>
       )}
     </Card>
   );
@@ -225,22 +225,22 @@ export function KpiCard({
   trend?: { value: string; positive?: boolean };
 }) {
   return (
-    <div className="min-w-0 w-full rounded-2xl border border-[#DFE5EC] bg-white p-4 sm:p-5 shadow-[0_4px_20px_rgba(36,25,33,0.05),0_1px_3px_rgba(36,25,33,0.03)] hover:shadow-[0_12px_30px_rgba(104,28,53,0.08)] transition-all">
+    <div className="min-w-0 w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5 shadow-[var(--card-shadow)] hover:shadow-[var(--card-shadow-hover)] transition-all">
       <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="text-xs font-semibold text-[#645A62] truncate">
+        <span className="text-xs font-semibold text-[var(--muted)] truncate">
           {title}
         </span>
         {Icon && (
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F3F7FA] text-[#681C35]">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-tint)] text-[var(--accent)]">
             <Icon size={18} />
           </div>
         )}
       </div>
-      <div className="text-xl sm:text-2xl font-bold tracking-tight text-[#241921]">
+      <div className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text)]">
         {value}
       </div>
       {(subtext || trend) && (
-        <div className="mt-1.5 flex items-center gap-1.5 text-xs text-[#645A62]">
+        <div className="mt-1.5 flex items-center gap-1.5 text-xs text-[var(--muted)]">
           {trend && (
             <span
               className={`font-semibold ${
@@ -265,13 +265,13 @@ export function Skeleton() {
         {[0, 1, 2, 3].map((item) => (
           <div
             key={item}
-            className="h-28 animate-pulse rounded-2xl bg-slate-200 motion-reduce:animate-none"
+            className="h-28 animate-pulse rounded-2xl bg-[var(--bg-secondary)] motion-reduce:animate-none"
           />
         ))}
       </div>
       <div
         aria-hidden="true"
-        className="h-64 animate-pulse rounded-2xl bg-slate-200 motion-reduce:animate-none"
+        className="h-64 animate-pulse rounded-2xl bg-[var(--bg-secondary)] motion-reduce:animate-none"
       />
     </div>
   );
@@ -308,7 +308,7 @@ export function Label({
   return (
     <label
       htmlFor={id}
-      className="mb-1.5 block text-xs font-semibold text-[#241921]"
+      className="mb-1.5 block text-xs font-semibold text-[var(--text)]"
     >
       {children}
     </label>
@@ -326,7 +326,7 @@ export function SecureLink({
   return (
     <a
       href={href}
-      className="inline-flex min-h-[44px] items-center font-semibold text-[#681C35] hover:text-[#52152A] hover:underline"
+      className="inline-flex min-h-[44px] items-center font-semibold text-[var(--accent)] hover:text-[var(--btn-primary-hover)] hover:underline"
     >
       {children}
     </a>

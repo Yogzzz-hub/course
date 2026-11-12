@@ -114,8 +114,8 @@ export function LeadsSection({
                 onClick={() => setActiveStage(stage.id)}
                 className={`inline-flex min-h-[44px] items-center gap-2 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-semibold transition ${
                   isActive
-                    ? "bg-[#681C35] text-white shadow-sm"
-                    : "border border-[#DFE5EC] bg-white text-[#241921] hover:bg-[#F3F7FA]"
+                    ? "bg-[var(--btn-primary-bg)] text-white shadow-sm"
+                    : "border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] hover:bg-[var(--accent-tint)]"
                 }`}
               >
                 {stage.label}
@@ -123,7 +123,7 @@ export function LeadsSection({
                   className={`rounded-full px-1.5 py-0.5 text-[11px] font-bold ${
                     isActive
                       ? "bg-white/20 text-white"
-                      : "bg-[#F3F7FA] text-[#645A62]"
+                      : "bg-[var(--accent-tint)] text-[var(--muted)]"
                   }`}
                 >
                   {count}
@@ -138,7 +138,7 @@ export function LeadsSection({
           <Search
             size={16}
             aria-hidden="true"
-            className="absolute left-3.5 top-3.5 text-[#645A62]"
+            className="absolute left-3.5 top-3.5 text-[var(--muted)]"
           />
           <input
             type="search"
@@ -151,7 +151,7 @@ export function LeadsSection({
             <button
               type="button"
               onClick={() => setSearchTerm("")}
-              className="absolute right-3 top-3.5 text-[#645A62] hover:text-[#241921]"
+              className="absolute right-3 top-3.5 text-[var(--muted)] hover:text-[var(--text)]"
               aria-label="Clear search"
             >
               <X size={15} />
@@ -173,8 +173,8 @@ export function LeadsSection({
           <>
             {/* Desktop Table View */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left text-sm text-[#241921]">
-                <thead className="bg-[#F3F7FA] border-b border-[#DFE5EC] text-xs font-semibold text-[#645A62] uppercase tracking-wider">
+              <table className="w-full text-left text-sm text-[var(--text)]">
+                <thead className="bg-[var(--accent-tint)] border-b border-[var(--border)] text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">
                   <tr>
                     <th scope="col" className="px-6 py-3.5">
                       Student
@@ -196,7 +196,7 @@ export function LeadsSection({
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#DFE5EC]">
+                <tbody className="divide-y divide-[var(--border)]">
                   {filteredLeads.map((lead) => {
                     const owner = owners.find((o) => o.id === lead.ownerId);
                     const sla = slaLabel(lead.nextActionAt, clock);
@@ -204,20 +204,20 @@ export function LeadsSection({
                     return (
                       <tr
                         key={lead.id}
-                        className="hover:bg-[#F7F9FB] transition"
+                        className="hover:bg-[var(--surface-alt)] transition"
                       >
                         <td className="px-6 py-4">
-                          <div className="font-semibold text-[#241921]">
+                          <div className="font-semibold text-[var(--text)]">
                             {lead.name}
                           </div>
-                          <div className="text-xs text-[#645A62]">
+                          <div className="text-xs text-[var(--muted)]">
                             {lead.email}
                           </div>
                         </td>
-                        <td className="px-6 py-4 font-medium text-[#241921]">
+                        <td className="px-6 py-4 font-medium text-[var(--text)]">
                           {lead.programme}
                         </td>
-                        <td className="px-6 py-4 text-xs text-[#645A62]">
+                        <td className="px-6 py-4 text-xs text-[var(--muted)]">
                           {owner?.name || "Unassigned"}
                         </td>
                         <td className="px-6 py-4">
@@ -228,7 +228,7 @@ export function LeadsSection({
                             className={`text-xs font-medium ${
                               isBreached
                                 ? "text-red-700 font-bold"
-                                : "text-[#645A62]"
+                                : "text-[var(--muted)]"
                             }`}
                           >
                             {sla}
@@ -238,7 +238,7 @@ export function LeadsSection({
                           <button
                             type="button"
                             onClick={() => setSelectedLead(lead)}
-                            className="inline-flex min-h-[36px] min-w-[70px] items-center justify-center rounded-lg border border-[#DFE5EC] px-3 text-xs font-semibold text-[#681C35] hover:bg-[#F3F7FA] hover:border-[#681C35] transition"
+                            className="inline-flex min-h-[36px] min-w-[70px] items-center justify-center rounded-lg border border-[var(--border)] px-3 text-xs font-semibold text-[var(--accent)] hover:bg-[var(--accent-tint)] hover:border-[var(--accent)] transition"
                           >
                             Open
                           </button>
@@ -251,7 +251,7 @@ export function LeadsSection({
             </div>
 
             {/* Mobile Stacked Card View */}
-            <div className="divide-y divide-[#DFE5EC] md:hidden">
+            <div className="divide-y divide-[var(--border)] md:hidden">
               {filteredLeads.map((lead) => {
                 const owner = owners.find((o) => o.id === lead.ownerId);
                 const sla = slaLabel(lead.nextActionAt, clock);
@@ -260,15 +260,15 @@ export function LeadsSection({
                   <article key={lead.id} className="p-4 space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <h3 className="font-bold text-base text-[#241921]">
+                        <h3 className="font-bold text-base text-[var(--text)]">
                           {lead.name}
                         </h3>
-                        <p className="text-xs text-[#645A62]">{lead.email}</p>
+                        <p className="text-xs text-[var(--muted)]">{lead.email}</p>
                       </div>
                       <StatusPill status={lead.stage} />
                     </div>
 
-                    <div className="flex flex-wrap items-center justify-between text-xs text-[#645A62] pt-1 border-t border-[#DFE5EC]">
+                    <div className="flex flex-wrap items-center justify-between text-xs text-[var(--muted)] pt-1 border-t border-[var(--border)]">
                       <span>{lead.programme}</span>
                       <span>Owner: {owner?.name || "Unassigned"}</span>
                     </div>
@@ -278,7 +278,7 @@ export function LeadsSection({
                         className={`text-xs ${
                           isBreached
                             ? "text-red-700 font-bold"
-                            : "text-[#645A62]"
+                            : "text-[var(--muted)]"
                         }`}
                       >
                         SLA: {sla}
@@ -305,56 +305,56 @@ export function LeadsSection({
           aria-modal="true"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
         >
-          <div className="w-full max-w-lg rounded-2xl border border-[#DFE5EC] bg-white p-6 shadow-2xl space-y-4">
+          <div className="w-full max-w-lg rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-2xl space-y-4">
             <div className="flex items-start justify-between">
               <div>
-                <span className="text-xs font-bold text-[#681C35] uppercase">
+                <span className="text-xs font-bold text-[var(--accent)] uppercase">
                   Lead Details
                 </span>
-                <h2 className="text-xl font-bold text-[#241921]">
+                <h2 className="text-xl font-bold text-[var(--text)]">
                   {selectedLead.name}
                 </h2>
-                <p className="text-xs text-[#645A62]">{selectedLead.email}</p>
+                <p className="text-xs text-[var(--muted)]">{selectedLead.email}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedLead(null)}
-                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-[#645A62] hover:bg-[#F3F7FA]"
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-[var(--muted)] hover:bg-[var(--accent-tint)]"
                 aria-label="Close modal"
               >
                 <X size={20} />
               </button>
             </div>
 
-            <div className="rounded-xl border border-[#DFE5EC] bg-[#F7F9FB] p-4 space-y-2 text-sm">
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] p-4 space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-[#645A62]">Programme:</span>
-                <span className="font-semibold text-[#241921]">
+                <span className="text-[var(--muted)]">Programme:</span>
+                <span className="font-semibold text-[var(--text)]">
                   {selectedLead.programme}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#645A62]">Current Stage:</span>
+                <span className="text-[var(--muted)]">Current Stage:</span>
                 <StatusPill status={selectedLead.stage} />
               </div>
               <div className="flex justify-between">
-                <span className="text-[#645A62]">Assigned Counsellor:</span>
-                <span className="font-semibold text-[#241921]">
+                <span className="text-[var(--muted)]">Assigned Counsellor:</span>
+                <span className="font-semibold text-[var(--text)]">
                   {owners.find((o) => o.id === selectedLead.ownerId)?.name ||
                     "Unassigned"}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#645A62]">Last Updated:</span>
-                <span className="text-xs text-[#241921]">
+                <span className="text-[var(--muted)]">Last Updated:</span>
+                <span className="text-xs text-[var(--text)]">
                   {dateTime(selectedLead.updatedAt)}
                 </span>
               </div>
             </div>
 
             {can("leads.write") && (
-              <div className="space-y-2 pt-2 border-t border-[#DFE5EC]">
-                <label className="text-xs font-bold text-[#241921]">
+              <div className="space-y-2 pt-2 border-t border-[var(--border)]">
+                <label className="text-xs font-bold text-[var(--text)]">
                   Update Stage
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -382,8 +382,8 @@ export function LeadsSection({
                       }}
                       className={`min-h-[40px] px-3 rounded-lg text-xs font-semibold border ${
                         selectedLead.stage === st
-                          ? "bg-[#681C35] text-white border-[#681C35]"
-                          : "border-[#DFE5EC] bg-white text-[#241921] hover:bg-[#F3F7FA]"
+                          ? "bg-[var(--btn-primary-bg)] text-white border-[var(--btn-primary-bg)]"
+                          : "border-[var(--border)] bg-[var(--surface)] text-[var(--text)] hover:bg-[var(--accent-tint)]"
                       }`}
                     >
                       {st}

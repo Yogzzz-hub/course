@@ -28,8 +28,9 @@
 }
 .ss-student h1,
 .ss-student h2,
-.ss-student h3 {
-  font-family: "Space Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
+.ss-student h3,
+.ss-student h4 {
+  font-family: "Space Grotesk Variable", "Manrope Variable", ui-sans-serif, system-ui, sans-serif;
 }
 .ss-student :focus-visible {
   outline: 2px solid var(--accent);
