@@ -1,16 +1,30 @@
 import React from "react";
-import { initialReportsData } from "../../data/managerMock";
+import type { ManagerReportsData } from "./types";
 
 export function ReportsView({
+  reports,
   onAddToast,
 }: {
+  reports: ManagerReportsData;
   onAddToast: (toast: { type: "success" | "info" | "warning"; title: string; message: string }) => void;
 }) {
+  const avgRate =
+    reports.monthlyAdmissions.length > 0
+      ? Math.round(
+          (reports.monthlyAdmissions.reduce((sum, m) => sum + (m.leads > 0 ? m.admissions / m.leads : 0), 0) /
+            reports.monthlyAdmissions.length) *
+            100
+        )
+      : 0;
+  const totalRevenueLabel = reports.trackBreakdown.length
+    ? `₹ ${reports.trackBreakdown
+        .reduce((sum, t) => sum + Number(t.revenue.replace(/[^\d.]/g, "") || 0), 0)
+        .toLocaleString("en-IN")}`
+    : "₹ 0";
+
   return (
     <div className="space-y-4">
-      {/* Grid of Report Cards - NO headings or subheadings */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Monthly Admissions conversion */}
         <div
           className="p-4 rounded-xl border shadow-2xs space-y-3"
           style={{
@@ -23,17 +37,22 @@ export function ReportsView({
               Monthly Lead-to-Admissions Velocity
             </span>
             <span className="text-[11px] font-semibold" style={{ color: "var(--accent)" }}>
-              65.9% Avg
+              {avgRate}% Avg
             </span>
           </div>
 
           <div className="space-y-2.5 pt-1">
-            {initialReportsData.monthlyAdmissions.map((m) => {
-              const rate = Math.round((m.admissions / m.leads) * 100);
+            {reports.monthlyAdmissions.length === 0 && (
+              <p className="text-[11px]" style={{ color: "var(--muted)" }}>
+                No lead or admission activity recorded yet.
+              </p>
+            )}
+            {reports.monthlyAdmissions.map((m) => {
+              const rate = m.leads > 0 ? Math.round((m.admissions / m.leads) * 100) : 0;
               return (
                 <div key={m.month} className="space-y-1 text-xs">
                   <div className="flex justify-between text-[11px]">
-                    <span style={{ color: "var(--text)" }}>{m.month} 2026</span>
+                    <span style={{ color: "var(--text)" }}>{m.month}</span>
                     <span style={{ color: "var(--muted)" }}>
                       {m.admissions} enrolled / {m.leads} leads ({rate}%)
                     </span>
@@ -53,7 +72,6 @@ export function ReportsView({
           </div>
         </div>
 
-        {/* Track revenue breakdown */}
         <div
           className="p-4 rounded-xl border shadow-2xs space-y-3"
           style={{
@@ -66,12 +84,17 @@ export function ReportsView({
               Curriculum Revenue Distribution
             </span>
             <span className="text-[11px] font-semibold" style={{ color: "var(--accent)" }}>
-              ₹ 48,50,000 Total
+              {totalRevenueLabel} Total
             </span>
           </div>
 
           <div className="space-y-2 pt-1">
-            {initialReportsData.trackBreakdown.map((t) => (
+            {reports.trackBreakdown.length === 0 && (
+              <p className="text-[11px]" style={{ color: "var(--muted)" }}>
+                No admissions recorded against any course yet.
+              </p>
+            )}
+            {reports.trackBreakdown.map((t) => (
               <div
                 key={t.track}
                 className="p-2.5 rounded-lg border flex items-center justify-between text-xs"

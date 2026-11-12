@@ -6,6 +6,13 @@ import { allBookingProgrammes } from './src/data/bookingProgrammes.ts';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
+  // Server-side env (DATABASE_URL etc.) is read by the /api/* handlers that run
+  // inside this dev server via process.env, but Vite's loadEnv does not populate
+  // process.env. Copy non-VITE_ keys across so the local API can reach Postgres.
+  const serverEnv = loadEnv(mode, process.cwd(), '');
+  for (const key of Object.keys(serverEnv)) {
+    if (!key.startsWith('VITE_') && process.env[key] === undefined) process.env[key] = serverEnv[key];
+  }
   const target = env.VITE_DEV_API_PROXY_TARGET;
   if (target) {
     const url = new URL(target);
@@ -25,6 +32,42 @@ export default defineConfig(({ mode }) => {
             .catch((err) => {
               response.writeHead(500, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
               response.end(JSON.stringify({ error: err instanceof Error ? err.message : 'Financier API error' }));
+            });
+          return;
+        }
+        if (request.url === '/api/manager' || request.url.startsWith('/api/manager/')) {
+          void import('./api/manager/index.ts')
+            .then(({ dispatchNodeManagerRequest }) => dispatchNodeManagerRequest(request, response))
+            .catch((err) => {
+              response.writeHead(500, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+              response.end(JSON.stringify({ error: err instanceof Error ? err.message : 'Manager API error' }));
+            });
+          return;
+        }
+        if (request.url === '/api/trainer' || request.url.startsWith('/api/trainer/')) {
+          void import('./api/trainer/index.ts')
+            .then(({ dispatchNodeTrainerRequest }) => dispatchNodeTrainerRequest(request, response))
+            .catch((err) => {
+              response.writeHead(500, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+              response.end(JSON.stringify({ error: err instanceof Error ? err.message : 'Trainer API error' }));
+            });
+          return;
+        }
+        if (request.url === '/api/student' || request.url.startsWith('/api/student/')) {
+          void import('./api/student/index.ts')
+            .then(({ dispatchNodeStudentRequest }) => dispatchNodeStudentRequest(request, response))
+            .catch((err) => {
+              response.writeHead(500, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+              response.end(JSON.stringify({ error: err instanceof Error ? err.message : 'Student API error' }));
+            });
+          return;
+        }
+        if (request.url === '/api/admin' || request.url.startsWith('/api/admin/')) {
+          void import('./api/admin/index.ts')
+            .then(({ dispatchNodeAdminRequest }) => dispatchNodeAdminRequest(request, response))
+            .catch((err) => {
+              response.writeHead(500, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+              response.end(JSON.stringify({ error: err instanceof Error ? err.message : 'Admin API error' }));
             });
           return;
         }

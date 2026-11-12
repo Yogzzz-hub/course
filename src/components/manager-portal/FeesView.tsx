@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Download, Search, CheckCircle2, AlertCircle } from "lucide-react";
-import type { FeePayment } from "../../data/managerMock";
+import type { FeePayment } from "./types";
 import { ResponsiveTable } from "./ResponsiveTable";
 
 export function FeesView({

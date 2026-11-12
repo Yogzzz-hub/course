@@ -244,7 +244,7 @@
   font-size: 0.8rem;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 639.98px) {
   .fin-form-grid {
     grid-template-columns: 1fr;
   }

@@ -7,7 +7,6 @@ import {
   generateReceiptPdfBytes,
 } from "../../backend/services/financier/pdf.ts";
 import {
-  createFinancierStore,
   FinancierDomainError,
   type FinancierStore,
 } from "../../backend/services/financier/store.ts";
@@ -22,7 +21,6 @@ import { AuditWriteError } from "../../backend/services/financier/audit.ts";
 import type { LedgerAccountCode } from "../../backend/services/financier/types.ts";
 import { sendFeeReminderEmail, sendInvoiceEmail } from "../../backend/services/brevo-mail.ts";
 import { enforceFinancierRateLimit } from "../../backend/services/rate-limit.ts";
-import { createInitialFinancierState } from "../../src/data/financierMock.ts";
 import { getPostgresFinancierStore, resetPostgresFinancierStore } from "../../backend/services/financier/pgStore.ts";
 import { authenticateFinancierRequest } from "./auth.ts";
 
@@ -38,27 +36,29 @@ export async function getSharedFinancierStoreAsync(): Promise<FinancierStore> {
         return s;
       })
       .catch((err) => {
-        console.warn("[Financier API] Postgres connection failed, fallback to memory:", err);
-        sharedStore = createFinancierStore(createInitialFinancierState());
-        return sharedStore;
+        // No in-memory fallback: a database outage must surface as an error
+        // rather than silently serving figures that are not in the ledger.
+        storeInitPromise = null;
+        console.error("[Financier API] Postgres connection failed:", err);
+        throw err;
       });
   }
   return storeInitPromise;
 }
 
+/** The store is only available once PostgreSQL has answered; there is no synchronous stand-in. */
 export function getSharedFinancierStore(): FinancierStore {
   if (!sharedStore) {
-    void getSharedFinancierStoreAsync();
-    sharedStore = createFinancierStore(createInitialFinancierState());
+    throw new Error("Financier store is not loaded yet. Await getSharedFinancierStoreAsync().");
   }
   return sharedStore;
 }
 
-export function resetSharedFinancierStore(nowIso?: string): FinancierStore {
+/** Drops the cached handles so the next request reloads state from PostgreSQL. */
+export function resetSharedFinancierStore(): void {
   resetPostgresFinancierStore();
   storeInitPromise = null;
-  sharedStore = createFinancierStore(createInitialFinancierState(nowIso));
-  return sharedStore;
+  sharedStore = null;
 }
 
 const createInvoiceSchema = z

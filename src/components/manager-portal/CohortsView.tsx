@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import type { CohortSeat } from "../../data/managerMock";
+import type { CohortSeat } from "./types";
 import { Drawer } from "./Drawer";
 
 export function CohortsView({ cohorts }: { cohorts: CohortSeat[] }) {

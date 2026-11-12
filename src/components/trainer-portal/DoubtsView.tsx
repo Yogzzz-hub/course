@@ -1,6 +1,6 @@
 import React from "react";
 import { HelpCircle, Video, CheckCircle2, Clock } from "lucide-react";
-import type { DoubtSession } from "../../data/trainerMock";
+import type { DoubtSession } from "./types";
 import { ResponsiveTable } from "../manager-portal/ResponsiveTable";
 
 export function DoubtsView({

@@ -1,6 +1,6 @@
 import React from "react";
 import { Video, Calendar, Clock } from "lucide-react";
-import type { TrainerScheduleItem } from "../../data/trainerMock";
+import type { TrainerScheduleItem } from "./types";
 import { ResponsiveTable } from "../manager-portal/ResponsiveTable";
 
 export function ScheduleView({ schedule }: { schedule: TrainerScheduleItem[] }) {

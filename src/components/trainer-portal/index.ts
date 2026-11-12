@@ -1,4 +1,5 @@
 export * from "./types";
+export * from "./api";
 export * from "./TrainerSidebar";
 export * from "./TrainerHeader";
 export * from "./DashboardView";

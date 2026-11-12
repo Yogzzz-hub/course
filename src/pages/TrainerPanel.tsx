@@ -1,21 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  initialTrainerStats,
-  initialTrainerBatches,
-  initialTrainerSchedule,
-  initialAttendanceRoster,
-  initialAssignments,
-  initialDoubts,
-  initialTrainerAnnouncements,
-  type TrainerBatch,
-  type TrainerScheduleItem,
-  type AttendanceStudent,
-  type TrainerAssignmentSubmission,
-  type DoubtSession,
-  type TrainerAnnouncement,
-} from "../data/trainerMock";
-import {
+  trainerApi,
   TrainerSidebar,
   TrainerHeader,
   DashboardView,
@@ -27,24 +13,44 @@ import {
   AnnouncementsView,
   TrainerBottomNav,
   type TrainerNavTab,
+  type TrainerBatch,
+  type TrainerScheduleItem,
+  type AttendanceStudent,
+  type TrainerAssignmentSubmission,
+  type DoubtSession,
+  type TrainerAnnouncement,
+  type TrainerStats,
 } from "../components/trainer-portal";
 import { ToastContainer } from "../components/manager-portal/Toast";
 import type { ToastMessage } from "../components/manager-portal/types";
+
+const EMPTY_STATS: TrainerStats = {
+  todayClasses: 0,
+  totalStudents: 0,
+  pendingReviews: 0,
+  openDoubts: 0,
+  nextClassTime: "",
+  nextClassTitle: "",
+  nextClassBatch: "",
+  nextClassStudents: 0,
+};
 
 export default function TrainerPanel() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TrainerNavTab>("dashboard");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  // Live state connected to mocks
-  const [stats, setStats] = useState(initialTrainerStats);
-  const [batches, setBatches] = useState<TrainerBatch[]>(initialTrainerBatches);
-  const [schedule, setSchedule] = useState<TrainerScheduleItem[]>(initialTrainerSchedule);
-  const [rosterMap, setRosterMap] = useState<Record<string, AttendanceStudent[]>>(initialAttendanceRoster);
-  const [selectedBatchForAttendance, setSelectedBatchForAttendance] = useState("BATCH-PY-2026-A");
-  const [assignments, setAssignments] = useState<TrainerAssignmentSubmission[]>(initialAssignments);
-  const [doubts, setDoubts] = useState<DoubtSession[]>(initialDoubts);
-  const [announcements, setAnnouncements] = useState<TrainerAnnouncement[]>(initialTrainerAnnouncements);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const [stats, setStats] = useState<TrainerStats>(EMPTY_STATS);
+  const [batches, setBatches] = useState<TrainerBatch[]>([]);
+  const [schedule, setSchedule] = useState<TrainerScheduleItem[]>([]);
+  const [rosterMap, setRosterMap] = useState<Record<string, AttendanceStudent[]>>({});
+  const [selectedBatchForAttendance, setSelectedBatchForAttendance] = useState("");
+  const [assignments, setAssignments] = useState<TrainerAssignmentSubmission[]>([]);
+  const [doubts, setDoubts] = useState<DoubtSession[]>([]);
+  const [announcements, setAnnouncements] = useState<TrainerAnnouncement[]>([]);
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
@@ -64,6 +70,30 @@ export default function TrainerPanel() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
+  const loadSnapshot = async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const snapshot = await trainerApi.getSnapshot();
+      setStats(snapshot.stats);
+      setBatches(snapshot.batches);
+      setSchedule(snapshot.schedule);
+      setRosterMap(snapshot.rosterMap);
+      setAssignments(snapshot.assignments);
+      setDoubts(snapshot.doubts);
+      setAnnouncements(snapshot.announcements);
+      if (snapshot.batches.length > 0) setSelectedBatchForAttendance(snapshot.batches[0].code);
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : "Could not load trainer data from the database.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadSnapshot();
+  }, []);
+
   const handleLogout = () => {
     try {
       localStorage.removeItem("crm_session");
@@ -74,11 +104,18 @@ export default function TrainerPanel() {
   const handleSaveAttendance = (batchCode: string, records: AttendanceStudent[]) => {
     setRosterMap((prev) => ({ ...prev, [batchCode]: records }));
     const presentCount = records.filter((r) => r.status === "PRESENT").length;
-    addToast({
-      type: "success",
-      title: "Attendance Saved",
-      message: `${presentCount}/${records.length} students logged present for ${batchCode}.`,
-    });
+    trainerApi
+      .saveAttendance(batchCode, records)
+      .then(() => {
+        addToast({
+          type: "success",
+          title: "Attendance Saved",
+          message: `${presentCount}/${records.length} students logged present for ${batchCode}.`,
+        });
+      })
+      .catch((err) => {
+        addToast({ type: "danger", title: "Sync Failed", message: err instanceof Error ? err.message : "Could not save attendance." });
+      });
   };
 
   const handleGradeSubmission = (id: string, score: number, feedback: string) => {
@@ -87,11 +124,18 @@ export default function TrainerPanel() {
         sub.id === id ? { ...sub, status: "GRADED", score, feedback } : sub
       )
     );
-    addToast({
-      type: "success",
-      title: "Submission Graded",
-      message: `Score of ${score}/100 recorded with feedback.`,
-    });
+    trainerApi
+      .gradeSubmission(id, score, feedback)
+      .then(() => {
+        addToast({
+          type: "success",
+          title: "Submission Graded",
+          message: `Score of ${score}/100 recorded with feedback.`,
+        });
+      })
+      .catch((err) => {
+        addToast({ type: "danger", title: "Sync Failed", message: err instanceof Error ? err.message : "Could not save the grade." });
+      });
   };
 
   const handleAcceptDoubt = (id: string) => {
@@ -100,20 +144,34 @@ export default function TrainerPanel() {
         d.id === id ? { ...d, status: "SCHEDULED", meetingTime: "Today, 5:00 PM" } : d
       )
     );
-    addToast({
-      type: "info",
-      title: "Doubt Session Scheduled",
-      message: "Room link sent to student for today at 5:00 PM.",
-    });
+    trainerApi
+      .acceptDoubt(id)
+      .then(() => {
+        addToast({
+          type: "info",
+          title: "Doubt Session Scheduled",
+          message: "Room link sent to student for today at 5:00 PM.",
+        });
+      })
+      .catch((err) => {
+        addToast({ type: "danger", title: "Sync Failed", message: err instanceof Error ? err.message : "Could not schedule the doubt session." });
+      });
   };
 
   const handlePublishAnnouncement = (newAnn: TrainerAnnouncement) => {
     setAnnouncements((prev) => [newAnn, ...prev]);
-    addToast({
-      type: "success",
-      title: "Notice Broadcasted",
-      message: `Published to ${newAnn.batchCode} cohort stream.`,
-    });
+    trainerApi
+      .publishAnnouncement({ title: newAnn.title, body: newAnn.body, batchCode: newAnn.batchCode })
+      .then(() => {
+        addToast({
+          type: "success",
+          title: "Notice Broadcasted",
+          message: `Published to ${newAnn.batchCode} cohort stream.`,
+        });
+      })
+      .catch((err) => {
+        addToast({ type: "danger", title: "Sync Failed", message: err instanceof Error ? err.message : "Could not save the announcement." });
+      });
   };
 
   return (
@@ -172,57 +230,81 @@ export default function TrainerPanel() {
         />
 
         <main className="manager-main p-3 sm:p-5 md:p-6 pb-20 md:pb-6 flex-1 w-full space-y-4">
-          {activeTab === "dashboard" && (
-            <DashboardView
-              stats={stats}
-              batches={batches}
-              doubts={doubts}
-              onNavigateTab={setActiveTab}
-              onSelectBatch={(batch) => {
-                setSelectedBatchForAttendance(batch.code);
-                setActiveTab("batches");
-              }}
-            />
+          {loadError && (
+            <div
+              className="p-3 rounded-lg border text-xs flex items-center justify-between gap-3"
+              style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)", color: "var(--text)" }}
+            >
+              <span>Could not load live data from the database: {loadError}</span>
+              <button
+                className="shrink-0 px-2.5 py-1 rounded-md font-semibold"
+                style={{ backgroundColor: "var(--accent)", color: "white" }}
+                onClick={() => void loadSnapshot()}
+              >
+                Retry
+              </button>
+            </div>
           )}
 
-          {activeTab === "batches" && (
-            <BatchesView
-              batches={batches}
-              onTakeAttendance={(batch) => {
-                setSelectedBatchForAttendance(batch.code);
-                setActiveTab("attendance");
-              }}
-            />
-          )}
+          {loading && !loadError ? (
+            <div className="text-xs py-10 text-center" style={{ color: "var(--muted)" }}>
+              Loading trainer data from the database...
+            </div>
+          ) : (
+            <>
+              {activeTab === "dashboard" && (
+                <DashboardView
+                  stats={stats}
+                  batches={batches}
+                  doubts={doubts}
+                  onNavigateTab={setActiveTab}
+                  onSelectBatch={(batch) => {
+                    setSelectedBatchForAttendance(batch.code);
+                    setActiveTab("batches");
+                  }}
+                />
+              )}
 
-          {activeTab === "schedule" && <ScheduleView schedule={schedule} />}
+              {activeTab === "batches" && (
+                <BatchesView
+                  batches={batches}
+                  onTakeAttendance={(batch) => {
+                    setSelectedBatchForAttendance(batch.code);
+                    setActiveTab("attendance");
+                  }}
+                />
+              )}
 
-          {activeTab === "attendance" && (
-            <AttendanceView
-              rosterMap={rosterMap}
-              selectedBatchCode={selectedBatchForAttendance}
-              onChangeBatch={setSelectedBatchForAttendance}
-              onSaveAttendance={handleSaveAttendance}
-            />
-          )}
+              {activeTab === "schedule" && <ScheduleView schedule={schedule} />}
 
-          {activeTab === "assignments" && (
-            <AssignmentsView
-              submissions={assignments}
-              onGradeSubmission={handleGradeSubmission}
-            />
-          )}
+              {activeTab === "attendance" && (
+                <AttendanceView
+                  rosterMap={rosterMap}
+                  selectedBatchCode={selectedBatchForAttendance}
+                  onChangeBatch={setSelectedBatchForAttendance}
+                  onSaveAttendance={handleSaveAttendance}
+                />
+              )}
 
-          {activeTab === "doubts" && (
-            <DoubtsView doubts={doubts} onAcceptDoubt={handleAcceptDoubt} />
-          )}
+              {activeTab === "assignments" && (
+                <AssignmentsView
+                  submissions={assignments}
+                  onGradeSubmission={handleGradeSubmission}
+                />
+              )}
 
-          {activeTab === "announcements" && (
-            <AnnouncementsView
-              announcements={announcements}
-              batches={batches}
-              onPublishAnnouncement={handlePublishAnnouncement}
-            />
+              {activeTab === "doubts" && (
+                <DoubtsView doubts={doubts} onAcceptDoubt={handleAcceptDoubt} />
+              )}
+
+              {activeTab === "announcements" && (
+                <AnnouncementsView
+                  announcements={announcements}
+                  batches={batches}
+                  onPublishAnnouncement={handlePublishAnnouncement}
+                />
+              )}
+            </>
           )}
         </main>
       </div>
@@ -232,7 +314,7 @@ export default function TrainerPanel() {
         activeTab={activeTab}
         onSelectTab={setActiveTab}
         onOpenMore={() => setMobileSidebarOpen(true)}
-        assignmentsBadgeCount={5}
+        assignmentsBadgeCount={stats.pendingReviews}
       />
 
       {/* Global Interactive Toast Notification Host */}

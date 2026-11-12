@@ -18,16 +18,12 @@ import type {
   FinancierStore,
   StudentStatementView,
 } from "../../../backend/services/financier/store";
-import {
-  createFinancierStore,
-  FinancierDomainError,
-} from "../../../backend/services/financier/store";
+import { FinancierDomainError } from "../../../backend/services/financier/store";
 import {
   generateInvoicePdfBytes,
   generatePayslipPdfBytes,
   generateReceiptPdfBytes,
 } from "../../../backend/services/financier/pdf";
-import { createInitialFinancierState } from "../../data/financierMock";
 import { readCrmSession } from "../../utils/authSession";
 
 export class FinancierApiError extends Error {
@@ -57,14 +53,15 @@ export type FinancierInvoiceDetailResponse = ReturnType<
   FinancierStore["getInvoiceById"]
 >;
 
-// MOCK_DATA fallback store ONLY used when static Vite preview server (`npm run preview`)
-// returns HTTP 503 { available: false }. Never used for auth errors or HTTP business errors!
-let previewFallbackStore: FinancierStore | null = null;
+// The financier panel has no offline dataset. When the API is unreachable the
+// caller gets a clear error instead of stand-in figures, so nothing that looks
+// like real money is ever rendered from the browser's own memory.
 function getPreviewStore(): FinancierStore {
-  if (!previewFallbackStore) {
-    previewFallbackStore = createFinancierStore(createInitialFinancierState());
-  }
-  return previewFallbackStore;
+  throw new FinancierApiError(
+    "The financier service is unavailable. Start the local API (npm run dev) and check DATABASE_URL.",
+    503,
+    "SERVICE_UNAVAILABLE"
+  );
 }
 
 function getPreviewActor(): ActorIdentity {

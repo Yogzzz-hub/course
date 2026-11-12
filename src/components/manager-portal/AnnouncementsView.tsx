@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Send } from "lucide-react";
-import type { Announcement } from "../../data/managerMock";
+import type { Announcement } from "./types";
 
 export function AnnouncementsView({
   announcements,

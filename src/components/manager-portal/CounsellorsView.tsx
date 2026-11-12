@@ -1,5 +1,5 @@
 import React from "react";
-import type { Counsellor } from "../../data/managerMock";
+import type { Counsellor } from "./types";
 
 export function CounsellorsView({
   counsellors,

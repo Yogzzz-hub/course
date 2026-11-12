@@ -6,7 +6,7 @@ import {
   type NodeResLike,
 } from "../api/financier/index";
 import { createFinancierStore } from "../backend/services/financier/store";
-import { createInitialFinancierState } from "../src/data/financierMock";
+import { createInitialFinancierState } from "../src/data/financierSeedData";
 import { enforceFinancierRateLimit } from "../backend/services/rate-limit";
 
 function makeSessionHeader(role: string, email: string, userId = `usr-${role.toLowerCase()}`) {
