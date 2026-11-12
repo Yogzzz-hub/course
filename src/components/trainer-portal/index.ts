@@ -8,4 +8,5 @@ export * from "./AttendanceView";
 export * from "./AssignmentsView";
 export * from "./DoubtsView";
 export * from "./AnnouncementsView";
+export * from "./TrainerBottomNav";
 

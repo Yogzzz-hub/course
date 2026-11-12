@@ -25,6 +25,7 @@ import {
   AssignmentsView,
   DoubtsView,
   AnnouncementsView,
+  TrainerBottomNav,
   type TrainerNavTab,
 } from "../components/trainer-portal";
 import { ToastContainer } from "../components/manager-portal/Toast";
@@ -170,7 +171,7 @@ export default function TrainerPanel() {
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
         />
 
-        <main className="manager-main p-3 sm:p-5 md:p-6 flex-1 w-full space-y-4">
+        <main className="manager-main p-3 sm:p-5 md:p-6 pb-20 md:pb-6 flex-1 w-full space-y-4">
           {activeTab === "dashboard" && (
             <DashboardView
               stats={stats}
@@ -225,6 +226,14 @@ export default function TrainerPanel() {
           )}
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation Bar matching Manager UI */}
+      <TrainerBottomNav
+        activeTab={activeTab}
+        onSelectTab={setActiveTab}
+        onOpenMore={() => setMobileSidebarOpen(true)}
+        assignmentsBadgeCount={5}
+      />
 
       {/* Global Interactive Toast Notification Host */}
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
