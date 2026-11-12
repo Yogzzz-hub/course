@@ -3,6 +3,23 @@ import { Mail, Send, CheckCircle2, ArrowUpRight, X } from 'lucide-react';
 import type { StudentSession } from './contracts';
 import { sendStudentNotification, buildMailtoUrl, RECEIVER_EMAIL } from '../../utils/studentNotification';
 import { Button, Card, Notice } from './ui';
+import { AnimatedSelect } from '../public-booking/AnimatedSelect';
+
+const TIME_SLOTS = [
+  { value: 'morning', label: 'Morning (10:00 AM – 1:00 PM)' },
+  { value: 'afternoon', label: 'Afternoon (2:00 PM – 5:00 PM)' },
+  { value: 'evening', label: 'Evening (6:00 PM – 8:30 PM)' },
+  { value: 'weekend', label: 'Weekend Slots' },
+];
+const TOPICS = [
+  'Curriculum & Learning Pace',
+  'Career Support & Internship Eligibility',
+  'Fee Breakdown & Payment Plans',
+  '1-on-1 Mentor Consultation',
+  'General Enrolment Advice',
+].map(value => ({ value, label: value }));
+/** Today as yyyy-mm-dd in the visitor's local time, so past dates can't be picked. */
+const todayLocal = () => new Date().toLocaleDateString('en-CA');
 
 interface ConsultationEnquiryModalProps {
   session: StudentSession;
@@ -62,7 +79,7 @@ export function ConsultationEnquiryModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="consultation-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
+      className="student-modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4"
       onClick={e => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -166,9 +183,10 @@ export function ConsultationEnquiryModal({
                   <input
                     id="consult-date"
                     type="date"
+                    min={todayLocal()}
                     value={preferredDate}
                     onChange={e => setPreferredDate(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs focus:border-indigo-600 focus:outline-none"
+                    className="student-date w-full rounded-xl border border-slate-300 px-3 py-2 text-xs focus:border-indigo-600 focus:outline-none"
                   />
                 </div>
               </div>
@@ -176,17 +194,14 @@ export function ConsultationEnquiryModal({
                 <label htmlFor="consult-time" className="block text-xs font-semibold text-slate-700">
                   Preferred Time Slot
                 </label>
-                <select
-                  id="consult-time"
-                  value={preferredTime}
-                  onChange={e => setPreferredTime(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-indigo-600 focus:outline-none"
-                >
-                  <option value="morning">Morning (10:00 AM – 1:00 PM)</option>
-                  <option value="afternoon">Afternoon (2:00 PM – 5:00 PM)</option>
-                  <option value="evening">Evening (6:00 PM – 8:30 PM)</option>
-                  <option value="weekend">Weekend Slots</option>
-                </select>
+                <div className="mt-1">
+                  <AnimatedSelect
+                    id="consult-time"
+                    value={preferredTime}
+                    options={TIME_SLOTS}
+                    onChange={e => setPreferredTime(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
 
@@ -194,18 +209,14 @@ export function ConsultationEnquiryModal({
               <label htmlFor="consult-topic" className="block text-xs font-semibold text-slate-700">
                 Consultation Topic
               </label>
-              <select
-                id="consult-topic"
-                value={topics}
-                onChange={e => setTopics(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-indigo-600 focus:outline-none"
-              >
-                <option value="Curriculum & Learning Pace">Curriculum & Learning Pace</option>
-                <option value="Career Support & Internship Eligibility">Career Support & Internship Eligibility</option>
-                <option value="Fee Breakdown & Payment Plans">Fee Breakdown & Payment Plans</option>
-                <option value="1-on-1 Mentor Consultation">1-on-1 Mentor Consultation</option>
-                <option value="General Enrolment Advice">General Enrolment Advice</option>
-              </select>
+              <div className="mt-1">
+                <AnimatedSelect
+                  id="consult-topic"
+                  value={topics}
+                  options={TOPICS}
+                  onChange={e => setTopics(e.target.value)}
+                />
+              </div>
             </div>
 
             <div>
