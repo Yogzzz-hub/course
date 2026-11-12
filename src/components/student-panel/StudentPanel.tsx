@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { PaletteMenu, WorkspaceAppearance } from "../PaletteMenu";
+import { ProfileMenu } from "../ProfileMenu";
 import {
   QueryCache,
   MutationCache,
@@ -18,11 +19,9 @@ import {
   House,
   LogOut,
   LifeBuoy,
-  Menu,
   PanelLeftClose,
   Sparkles,
   Users,
-  X,
 } from "lucide-react";
 import { LogoMark } from "../LogoMark";
 import type { LucideIcon } from "lucide-react";
@@ -109,7 +108,7 @@ function MoreView({
         <h2 className="mb-3 text-lg font-semibold md:text-xl">Your account</h2>
         <p className="text-sm font-semibold md:text-base">{session.name}</p>
         <p className="mt-2 text-sm text-slate-600 md:text-base">{session.email}</p>
-        <p className="my-4 text-xs font-semibold capitalize text-[#681C35]">
+        <p className="my-4 text-xs font-semibold capitalize text-[var(--accent)]">
           {session.mode} workspace
         </p>
         {logout.isError && <Notice error>{friendlyError(logout.error)}</Notice>}
@@ -128,7 +127,7 @@ function MoreView({
         <Card className="lg:hidden">
           <Users
             size={22}
-            className="mb-3 text-[#681C35]"
+            className="mb-3 text-[var(--accent)]"
             aria-hidden="true"
           />
           <h2 className="text-lg font-semibold md:text-xl">Mentorship & attendance</h2>
@@ -169,12 +168,19 @@ function Workspace({
   academyName: string;
 }) {
   const [collapsed, setCollapsed] = useState(false);
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [tab, setTab] = useState<PanelTab>(session.mode === 'prospect' && checkoutPackageId ? 'payments' : 'home');
   const [showMentorship, setShowMentorship] = useState(false);
   const [packageId, setPackageId] = useState(checkoutPackageId);
   const client = useQueryClient();
+  const { logout } = useStudentActions(api, session);
   const enrolled = session.mode === "enrolled";
+  const studentInitials =
+    session.name
+      .split(" ")
+      .map((w) => w[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || "ST";
   const navigate = (next: PanelTab) => {
     setTab(next);
     setShowMentorship(false);
@@ -244,25 +250,40 @@ function Workspace({
         Skip to workspace
       </a>
       <aside
-        className={`fixed inset-y-0 left-0 z-30 hidden flex-col overflow-y-auto border-r border-slate-200 bg-white lg:flex ${sidebarWidth}`}
+        className={`fixed inset-y-0 left-0 z-30 hidden h-dvh flex-col overflow-y-auto overflow-x-hidden border-r border-[var(--sidebar-border)] bg-[var(--sidebar-bg)] text-[var(--sidebar-text)] transition-[width] duration-200 lg:flex ${sidebarWidth}`}
       >
-        <div className="flex h-20 shrink-0 items-center gap-3 border-b border-slate-100 px-5">
-          <a href="/" className="logo flex flex-row items-center flex-nowrap gap-2.5 shrink-0" aria-label={`${academyName} home`}>
-            <LogoMark size={32} className="shrink-0" />
+        <div
+          className={`flex h-16 shrink-0 items-center border-b border-[var(--sidebar-border)] ${
+            collapsed ? "justify-center px-2" : "justify-between gap-2 px-4"
+          }`}
+        >
+          <a href="/" className="logo flex flex-row items-center flex-nowrap gap-2.5 shrink-0 min-w-0" aria-label={`${academyName} home`}>
+            <LogoMark size={28} surface="dark" className="shrink-0" />
             {!collapsed && (
-              <span className="logo-wordmark flex flex-col justify-center leading-tight">
-                <span className="logo-name whitespace-nowrap">{academyName.replace(/\s+(Technical\s+)?Academy$/i, "")}</span>
-                <span className="logo-subtitle whitespace-nowrap">Academy</span>
+              <span className="logo-wordmark flex flex-col justify-center leading-tight min-w-0">
+                <span className="logo-name whitespace-nowrap text-white">{academyName.replace(/\s+(Technical\s+)?Academy$/i, "")}</span>
+                <span className="logo-subtitle whitespace-nowrap text-[var(--accent-soft)]">Academy</span>
               </span>
             )}
           </a>
+          {!collapsed && (
+            <button
+              type="button"
+              aria-label="Collapse sidebar"
+              title="Collapse sidebar"
+              onClick={() => setCollapsed(true)}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--sidebar-text)]/70 hover:bg-[var(--sidebar-hover)] hover:text-white transition cursor-pointer"
+            >
+              <PanelLeftClose size={16} aria-hidden="true" />
+            </button>
+          )}
         </div>
-        <div className="px-3 py-5">
+        <div className="px-3 pt-3 pb-2 shrink-0">
           <span
-            className={`flex items-center justify-center gap-2 rounded-lg bg-indigo-50 py-2 text-xs font-semibold text-indigo-800 ${collapsed ? "px-1" : "px-3"}`}
+            className={`flex items-center justify-center gap-2 rounded-lg border border-[var(--sidebar-border)] bg-[var(--sidebar-surface)] py-2 text-xs font-semibold text-[var(--accent-soft)] ${collapsed ? "px-1" : "px-3"}`}
             title={`${enrolled ? "Enrolled" : "Prospect"} workspace`}
           >
-            <span className="size-2 shrink-0 rounded-full bg-indigo-600" />
+            <span className="size-2 shrink-0 rounded-full bg-[var(--accent-soft)]" />
             {collapsed ? (
               <span className="sr-only">
                 {enrolled ? "Enrolled" : "Prospect"}
@@ -272,41 +293,56 @@ function Workspace({
             )}
           </span>
         </div>
-        <nav aria-label="Workspace navigation" className="space-y-1 px-3">
-          {items.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              title={collapsed ? label : undefined}
-              onClick={() => navigate(id)}
-              aria-current={tab === id && !showMentorship ? "page" : undefined}
-              className={`flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-semibold ${tab === id && !showMentorship ? "bg-indigo-50 text-indigo-800" : "text-slate-600 hover:bg-slate-100"} ${collapsed ? "justify-center" : ""}`}
-            >
-              <Icon size={19} className="shrink-0" aria-hidden="true" />
-              <span className={collapsed ? "sr-only" : ""}>{label}</span>
-            </button>
-          ))}
-          {enrolled && (
-            <button
-              title={collapsed ? "Mentorship & attendance" : undefined}
-              onClick={() => {
-                setTab("more");
-                setShowMentorship(true);
-              }}
-              aria-current={showMentorship ? "page" : undefined}
-              className={`flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-semibold ${showMentorship ? "bg-indigo-50 text-indigo-800" : "text-slate-600 hover:bg-slate-100"} ${collapsed ? "justify-center" : ""}`}
-            >
-              <Users size={19} className="shrink-0" aria-hidden="true" />
-              <span className={collapsed ? "sr-only" : ""}>
-                Mentorship & attendance
-              </span>
-            </button>
+        <nav aria-label="Workspace navigation" className="flex-1 flex flex-col justify-between gap-2 px-3 py-2 overflow-y-auto overflow-x-hidden">
+          <div className="flex-1 flex flex-col justify-between gap-1.5">
+            {items.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                title={collapsed ? label : undefined}
+                onClick={() => navigate(id)}
+                aria-current={tab === id && !showMentorship ? "page" : undefined}
+                className={`group flex flex-1 min-h-[44px] max-h-[68px] w-full items-center gap-3 rounded-xl px-3 text-left text-sm transition ${tab === id && !showMentorship ? "bg-[var(--btn-primary-bg)] text-white font-bold shadow-sm" : "text-[var(--sidebar-text)]/80 hover:bg-[var(--sidebar-hover)] hover:text-white font-semibold"} ${collapsed ? "justify-center" : ""}`}
+              >
+                <Icon size={19} className={`shrink-0 ${tab === id && !showMentorship ? "text-[var(--accent-soft)]" : "text-[var(--sidebar-text)]/70 group-hover:text-white"}`} aria-hidden="true" />
+                <span className={collapsed ? "sr-only" : "truncate"}>{label}</span>
+              </button>
+            ))}
+            {enrolled && (
+              <button
+                title={collapsed ? "Mentorship & attendance" : undefined}
+                onClick={() => {
+                  setTab("more");
+                  setShowMentorship(true);
+                }}
+                aria-current={showMentorship ? "page" : undefined}
+                className={`group flex flex-1 min-h-[44px] max-h-[68px] w-full items-center gap-3 rounded-xl px-3 text-left text-sm transition ${showMentorship ? "bg-[var(--btn-primary-bg)] text-white font-bold shadow-sm" : "text-[var(--sidebar-text)]/80 hover:bg-[var(--sidebar-hover)] hover:text-white font-semibold"} ${collapsed ? "justify-center" : ""}`}
+              >
+                <Users size={19} className={`shrink-0 ${showMentorship ? "text-[var(--accent-soft)]" : "text-[var(--sidebar-text)]/70 group-hover:text-white"}`} aria-hidden="true" />
+                <span className={collapsed ? "sr-only" : "truncate"}>
+                  Mentorship & attendance
+                </span>
+              </button>
+            )}
+          </div>
+          {!collapsed && (
+            <div className="rounded-xl border border-[var(--sidebar-border)] bg-[var(--sidebar-surface)] p-3 text-xs space-y-1 shrink-0">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--accent-soft)]">
+                {enrolled ? "Active Track" : "Admission Status"}
+              </div>
+              <div className="font-bold text-white truncate">
+                {enrolled ? session.programme : "Demo / Counselling"}
+              </div>
+              <div className="text-[11px] text-[var(--sidebar-text)]/75 truncate">
+                {session.email}
+              </div>
+            </div>
           )}
         </nav>
-        <div className="mt-auto border-t border-slate-100 p-3">
+        <div className="mt-auto border-t border-[var(--sidebar-border)] bg-[var(--sidebar-surface)] p-3">
           <button
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             aria-expanded={!collapsed}
-            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100"
+            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl text-xs font-semibold text-[var(--sidebar-text)]/80 hover:bg-[var(--sidebar-hover)] hover:text-white transition"
             onClick={() => setCollapsed((value) => !value)}
           >
             {collapsed ? (
@@ -318,17 +354,9 @@ function Workspace({
           </button>
         </div>
       </aside>
-      <div className={contentOffset}>
+      <div className={`transition-[padding] duration-200 ${contentOffset}`}>
         <header className="flex min-h-20 items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 sm:px-6 md:px-8">
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            <button
-              type="button"
-              onClick={() => setMobileSidebarOpen(true)}
-              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-[#681C35] hover:bg-[#F3F7FA] transition lg:hidden"
-              aria-label="Open side navigation menu"
-            >
-              <Menu size={22} />
-            </button>
             <a href="/" className="logo lg:hidden" aria-label={`${academyName} home`}>
               <LogoMark size={28} />
             </a>
@@ -342,9 +370,16 @@ function Workspace({
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2"><PaletteMenu/>
-          <span className="shrink-0 rounded-full border border-[#DFE5EC] bg-[#F7F9FB] px-3 py-1.5 text-xs font-semibold text-[#681C35]">
+          <span className="hidden sm:inline shrink-0 rounded-full border border-[var(--accent-border)] bg-[var(--accent-tint)] px-3 py-1.5 text-xs font-semibold text-[var(--accent)]">
             {enrolled ? "Enrolled" : "Prospect"}
           </span>
+          <ProfileMenu
+            initials={studentInitials}
+            name={session.name}
+            subtitle={session.email}
+            onLogout={() => logout.mutate()}
+            busy={logout.isPending}
+          />
           </div>
         </header>
         <main
@@ -439,7 +474,7 @@ function Workspace({
       </div>
       <nav
         aria-label="Mobile workspace navigation"
-        className="fixed bottom-0 left-0 right-0 z-40 flex lg:hidden items-center justify-around border-t border-[#DFE5EC] bg-white/95 px-2 py-1 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] backdrop-blur pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+        className="fixed bottom-0 left-0 right-0 z-40 flex lg:hidden items-center justify-around border-t border-[var(--border)] bg-[var(--surface)]/95 px-2 py-1 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] backdrop-blur pb-[max(0.5rem,env(safe-area-inset-bottom))]"
       >
         {items.map(({ id, mobileLabel, icon: Icon }) => {
           const isActive = tab === id;
@@ -450,7 +485,7 @@ function Workspace({
               onClick={() => navigate(id)}
               aria-current={isActive ? "page" : undefined}
               className={`flex min-h-[48px] min-w-[48px] flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 transition ${
-                isActive ? "text-[#681C35] font-bold" : "text-[#645A62] hover:text-[#241921]"
+                isActive ? "text-[var(--accent)] font-bold" : "text-[var(--muted)] hover:text-[var(--text)]"
               }`}
             >
               <Icon size={20} aria-hidden="true" />
@@ -461,96 +496,6 @@ function Workspace({
           );
         })}
       </nav>
-
-      {/* Mobile Slide-over Sidebar Drawer */}
-      {mobileSidebarOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex lg:hidden"
-        >
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
-            onClick={() => setMobileSidebarOpen(false)}
-          />
-          <div
-            className="relative z-10 flex w-72 max-w-[85vw] flex-col bg-white text-slate-900 shadow-2xl animate-in slide-in-from-left duration-200 border-r border-slate-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex min-h-[64px] items-center justify-between border-b border-slate-100 px-4">
-              <div className="flex items-center gap-2.5">
-                <LogoMark size={26} />
-                <span className="font-bold text-sm tracking-tight text-slate-900 truncate">
-                  {academyName}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setMobileSidebarOpen(false)}
-                className="flex min-h-[40px] min-w-[40px] items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"
-                aria-label="Close navigation menu"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4" aria-label="Mobile side navigation">
-              {items.map(({ id, label, icon: Icon }) => {
-                const isActive = tab === id && !showMentorship;
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => {
-                      navigate(id);
-                      setMobileSidebarOpen(false);
-                    }}
-                    className={`flex min-h-[44px] w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition ${
-                      isActive
-                        ? "bg-[#681C35] text-white shadow-sm font-bold !text-white"
-                        : "text-slate-700 hover:bg-slate-100"
-                    }`}
-                  >
-                    <Icon size={18} className={isActive ? "!text-white" : "text-slate-500"} />
-                    <span>{label}</span>
-                  </button>
-                );
-              })}
-
-              {enrolled && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTab("more");
-                    setShowMentorship(true);
-                    setMobileSidebarOpen(false);
-                  }}
-                  className={`flex min-h-[44px] w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition ${
-                    showMentorship
-                      ? "bg-[#681C35] text-white shadow-sm font-bold !text-white"
-                      : "text-slate-700 hover:bg-slate-100"
-                  }`}
-                >
-                  <Users size={18} className={showMentorship ? "!text-white" : "text-slate-500"} />
-                  <span>Mentorship & attendance</span>
-                </button>
-              )}
-            </nav>
-
-            <div className="border-t border-slate-100 p-4 bg-slate-50">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-slate-900 truncate">{session.name}</div>
-                  <div className="text-[10px] font-semibold text-[#681C35] capitalize">{session.mode} account</div>
-                </div>
-                <span className="rounded-full border border-[#DFE5EC] bg-white px-2.5 py-1 text-[10px] font-bold text-[#681C35]">
-                  {enrolled ? "Enrolled" : "Prospect"}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }

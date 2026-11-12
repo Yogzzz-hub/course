@@ -49,9 +49,9 @@
 .ss-public .logo .logo-subtitle,
 .logo .logo-subtitle {
   font-family: var(--font-body, inherit) !important;
-  font-size: 9px !important;
+  font-size: 8.5px !important;
   font-weight: 500 !important;
-  letter-spacing: 0.14em !important;
+  letter-spacing: 0.28em !important;
   text-transform: uppercase !important;
   color: var(--muted) !important;
   line-height: 1 !important;

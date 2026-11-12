@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   initialManagerStats,
@@ -15,19 +15,24 @@ import {
   type Announcement,
 } from "../data/managerMock";
 import {
+  readScheduledClasses,
+  writeScheduledClasses,
+  type ScheduledClassItem,
+} from "../utils/classScheduleStore";
+import {
   ManagerSidebar,
   ManagerHeader,
   DashboardView,
   LeadsView,
   AdmissionsView,
   CohortsView,
+  ScheduleClassesView,
   AttendanceAlertsView,
   FeesView,
   CounsellorsView,
   AnnouncementsView,
   ReportsView,
   ToastContainer,
-  ManagerBottomNav,
   type ManagerNavTab,
   type ToastMessage,
 } from "../components/manager-portal";
@@ -46,6 +51,14 @@ export default function ManagerPanel() {
   const [payments, setPayments] = useState(initialFeePayments);
   const [counsellors, setCounsellors] = useState(initialCounsellors);
   const [announcements, setAnnouncements] = useState<Announcement[]>(initialAnnouncements);
+  const [scheduledClasses, setScheduledClasses] = useState<ScheduledClassItem[]>(() =>
+    readScheduledClasses()
+  );
+  const [selectedScheduleBatch, setSelectedScheduleBatch] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    setScheduledClasses(readScheduledClasses());
+  }, []);
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
@@ -86,6 +99,24 @@ export default function ManagerPanel() {
 
   const handlePublishAnnouncement = (newAnn: Announcement) => {
     setAnnouncements((prev) => [newAnn, ...prev]);
+  };
+
+  const handleSaveScheduledClass = (item: ScheduledClassItem, isEdit: boolean) => {
+    setScheduledClasses((prev) => {
+      const next = isEdit
+        ? prev.map((existing) => (existing.id === item.id ? item : existing))
+        : [item, ...prev];
+      writeScheduledClasses(next);
+      return next;
+    });
+  };
+
+  const handleDeleteScheduledClass = (id: string) => {
+    setScheduledClasses((prev) => {
+      const next = prev.filter((item) => item.id !== id);
+      writeScheduledClasses(next);
+      return next;
+    });
   };
 
   return (
@@ -141,6 +172,7 @@ export default function ManagerPanel() {
         <ManagerHeader
           activeTab={activeTab}
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+          onLogout={handleLogout}
           onQuickAction={(action) => {
             if (action === "create_lead") {
               addToast({
@@ -148,6 +180,9 @@ export default function ManagerPanel() {
                 title: "Create Lead",
                 message: "Fill in candidate enquiry details to register new lead.",
               });
+            } else if (action === "create_class") {
+              setSelectedScheduleBatch(undefined);
+              setActiveTab("schedule");
             } else if (action === "export_csv") {
               addToast({
                 type: "success",
@@ -158,7 +193,7 @@ export default function ManagerPanel() {
           }}
         />
 
-        <main className="manager-main p-3 sm:p-5 md:p-6 pb-20 md:pb-6 flex-1 w-full space-y-4">
+        <main className="manager-main p-3 sm:p-5 md:p-6 pb-6 flex-1 w-full space-y-4">
           {activeTab === "dashboard" && (
             <DashboardView
               stats={stats}
@@ -187,7 +222,26 @@ export default function ManagerPanel() {
             />
           )}
 
-          {activeTab === "cohorts" && <CohortsView cohorts={cohorts} />}
+          {activeTab === "cohorts" && (
+            <CohortsView
+              cohorts={cohorts}
+              onScheduleBatch={(batchCode) => {
+                setSelectedScheduleBatch(batchCode);
+                setActiveTab("schedule");
+              }}
+            />
+          )}
+
+          {activeTab === "schedule" && (
+            <ScheduleClassesView
+              cohorts={cohorts}
+              classes={scheduledClasses}
+              initialBatchCode={selectedScheduleBatch}
+              onSaveClass={handleSaveScheduledClass}
+              onDeleteClass={handleDeleteScheduledClass}
+              onAddToast={addToast}
+            />
+          )}
 
           {activeTab === "attendance" && (
             <AttendanceAlertsView
@@ -216,14 +270,6 @@ export default function ManagerPanel() {
           {activeTab === "reports" && <ReportsView onAddToast={addToast} />}
         </main>
       </div>
-
-      {/* Mobile Bottom Navigation Bar matching reference UI */}
-      <ManagerBottomNav
-        activeTab={activeTab}
-        onSelectTab={setActiveTab}
-        onOpenMore={() => setMobileSidebarOpen(true)}
-        approvalsBadgeCount={5}
-      />
 
       {/* Global Interactive Toast Notification Host */}
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
