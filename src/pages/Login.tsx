@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { canonicalizeDemoUser, writeCrmSession } from "../utils/authSession";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { canonicalizeDemoUser, writeCrmSession, type CrmSession } from "../utils/authSession";
 import {
   KeyRound,
   GraduationCap,
@@ -16,8 +16,30 @@ import {
   Lock,
 } from "lucide-react";
 
+function getSafeReturnUrl(params: URLSearchParams): string | null {
+  const raw = params.get("returnUrl") || params.get("returnTo");
+  if (!raw || !/^\/(?!\/)/.test(raw) || raw.includes("\\")) return null;
+  return raw;
+}
+
+function defaultPathForRole(role: CrmSession["role"]): string {
+  switch (role) {
+    case "TRAINER":
+      return "/trainer";
+    case "MANAGER":
+      return "/manager";
+    case "FINANCIER":
+      return "/financier";
+    case "STUDENT":
+      return "/student-panel";
+    default:
+      return "/admin-panel";
+  }
+}
+
 export default function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<"STAFF" | "STUDENT">("STAFF");
 
   // Staff State
@@ -68,32 +90,65 @@ export default function LoginPage() {
     setStudentError("");
   };
 
-  const handleStaffLogin = (e: React.FormEvent) => {
+  const handleStaffLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setStaffLoading(true);
     setStaffError("");
 
-    setTimeout(() => {
-      setStaffLoading(false);
-      const session = canonicalizeDemoUser(staffEmail);
-      const targetPath =
-        session.role === "TRAINER"
-          ? "/trainer"
-          : session.role === "MANAGER"
-            ? "/manager"
-            : session.role === "FINANCIER"
-              ? "/financier"
-              : session.role === "STUDENT"
-                ? "/student-panel"
-                : "/admin-panel";
+    const resolveTarget = (role: CrmSession["role"]) => {
+      const returnUrl = getSafeReturnUrl(searchParams);
+      const fallback = defaultPathForRole(role);
+      if (!returnUrl) return fallback;
+      if (role === "ADMIN" || returnUrl.startsWith(fallback) || returnUrl.startsWith("/student")) {
+        return returnUrl;
+      }
+      return fallback;
+    };
 
-      writeCrmSession(session);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ identifier: staffEmail, password: staffPassword }),
+      });
 
-      navigate(targetPath);
-    }, 400);
+      const isJson = (res.headers.get("content-type") || "").includes("application/json");
+      if (isJson && res.status !== 404 && res.status < 500) {
+        const data = (await res.json()) as {
+          error?: string;
+          user?: { id: string; name: string; email: string; role: CrmSession["role"] };
+        };
+        setStaffLoading(false);
+        if (!res.ok || !data.user) {
+          setStaffError(data.error || "Invalid credentials.");
+          return;
+        }
+        const verifiedSession: CrmSession = {
+          userId: data.user.id,
+          name: data.user.name,
+          email: data.user.email,
+          role: data.user.role,
+          authenticated: true,
+        };
+        writeCrmSession(verifiedSession);
+        navigate(resolveTarget(verifiedSession.role));
+        return;
+      }
+    } catch {
+      // Fall through to local preview fallback when CRM API is unavailable (e.g., vite preview)
+    }
+
+    setStaffLoading(false);
+    const session = canonicalizeDemoUser(staffEmail);
+    writeCrmSession(session);
+    navigate(resolveTarget(session.role));
   };
 
-  const handleRequestOtp = (e: React.FormEvent) => {
+  const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!studentId) {
       setStudentError("Please enter your registered student email.");
@@ -102,26 +157,96 @@ export default function LoginPage() {
     setStudentLoading(true);
     setStudentError("");
 
-    setTimeout(() => {
-      setStudentLoading(false);
-      setOtpSent(true);
-      setOtpCode("123456");
-      setStudentMessage("A 6-digit verification code was sent to your email.");
-    }, 400);
+    try {
+      const res = await fetch("/api/auth/student/otp-request", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ identifier: studentId }),
+      });
+
+      const isJson = (res.headers.get("content-type") || "").includes("application/json");
+      if (isJson && res.status !== 404 && res.status < 500) {
+        const data = (await res.json()) as {
+          error?: string;
+          message?: string;
+          devOtp?: string;
+        };
+        setStudentLoading(false);
+        if (!res.ok) {
+          setStudentError(data.error || "Could not dispatch OTP.");
+          return;
+        }
+        setOtpSent(true);
+        if (data.devOtp) setOtpCode(data.devOtp);
+        setStudentMessage(data.message || "A 6-digit verification code was sent to your email.");
+        return;
+      }
+    } catch {
+      // Fall through to local preview fallback when CRM API is unavailable
+    }
+
+    setStudentLoading(false);
+    setOtpSent(true);
+    setOtpCode("123456");
+    setStudentMessage("A 6-digit verification code was sent to your email.");
   };
 
-  const handleVerifyOtp = (e: React.FormEvent) => {
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setStudentLoading(true);
     setStudentError("");
 
-    setTimeout(() => {
-      setStudentLoading(false);
-      const session = canonicalizeDemoUser(studentId || "student@apexacademy.edu", "STUDENT");
-      writeCrmSession(session);
+    const resolveStudentTarget = () => {
+      const returnUrl = getSafeReturnUrl(searchParams);
+      if (returnUrl && returnUrl.startsWith("/student")) return returnUrl;
+      return "/student-panel";
+    };
 
-      navigate("/student-panel");
-    }, 400);
+    try {
+      const res = await fetch("/api/auth/student/otp-verify", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ identifier: studentId, code: otpCode }),
+      });
+
+      const isJson = (res.headers.get("content-type") || "").includes("application/json");
+      if (isJson && res.status !== 404 && res.status < 500) {
+        const data = (await res.json()) as {
+          error?: string;
+          user?: { userId?: string; id?: string; name: string; email: string; role: CrmSession["role"] };
+        };
+        setStudentLoading(false);
+        if (!res.ok || !data.user) {
+          setStudentError(data.error || "Verification failed. Please check your code.");
+          return;
+        }
+        const verifiedSession: CrmSession = {
+          userId: data.user.userId || data.user.id || "std-001",
+          name: data.user.name,
+          email: data.user.email,
+          role: data.user.role,
+          authenticated: true,
+        };
+        writeCrmSession(verifiedSession);
+        navigate(resolveStudentTarget());
+        return;
+      }
+    } catch {
+      // Fall through to local preview fallback when CRM API is unavailable
+    }
+
+    setStudentLoading(false);
+    const session = canonicalizeDemoUser(studentId || "student@apexacademy.edu", "STUDENT");
+    writeCrmSession(session);
+    navigate(resolveStudentTarget());
   };
 
   return (
