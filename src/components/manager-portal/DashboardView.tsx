@@ -230,7 +230,7 @@ export function DashboardView({
                 <button
                   type="button"
                   onClick={() => onSelectLead(lead)}
-                  className="px-2 py-1 rounded border text-[11px] font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                  className="px-2.5 py-1.5 rounded border text-[11px] font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer shrink-0 min-h-[44px] md:min-h-0 inline-flex items-center justify-center"
                   style={{
                     borderColor: "var(--border)",
                     color: "var(--text)",

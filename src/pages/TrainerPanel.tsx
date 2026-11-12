@@ -117,15 +117,15 @@ export default function TrainerPanel() {
 
   return (
     <div
-      className="manager-workspace min-h-screen flex transition-colors duration-200"
+      className="trainer-workspace manager-workspace min-h-screen flex flex-col md:flex-row transition-colors duration-200"
       style={{
         backgroundColor: "var(--bg)",
         color: "var(--text)",
         fontFamily: "var(--font-body, system-ui, sans-serif)",
       }}
     >
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
+      {/* Desktop Sidebar: rendered on left above 768px */}
+      <div className="hidden md:block shrink-0">
         <TrainerSidebar
           activeTab={activeTab}
           onSelectTab={setActiveTab}
@@ -133,15 +133,22 @@ export default function TrainerPanel() {
         />
       </div>
 
-      {/* Mobile Drawer Sidebar */}
+      {/* Mobile Side Drawer Navigation */}
       {mobileSidebarOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex">
+        <div
+          className="fixed inset-0 z-50 md:hidden flex"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Navigation Menu"
+        >
+          {/* Backdrop blur */}
           <div
-            className="fixed inset-0 bg-black/40 backdrop-blur-xs"
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity duration-300"
             onClick={() => setMobileSidebarOpen(false)}
             aria-hidden="true"
           />
-          <div className="relative z-10 w-60 h-full shadow-2xl flex">
+          {/* Side Drawer Panel */}
+          <div className="relative z-10 w-64 max-w-[80vw] h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-300">
             <TrainerSidebar
               activeTab={activeTab}
               onSelectTab={(tab) => {
@@ -149,6 +156,8 @@ export default function TrainerPanel() {
                 setMobileSidebarOpen(false);
               }}
               onLogout={handleLogout}
+              onClose={() => setMobileSidebarOpen(false)}
+              isMobileDrawer={true}
             />
           </div>
         </div>
@@ -161,7 +170,7 @@ export default function TrainerPanel() {
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
         />
 
-        <main className="p-5 sm:p-6 flex-1 w-full space-y-4">
+        <main className="manager-main p-3 sm:p-5 md:p-6 flex-1 w-full space-y-4">
           {activeTab === "dashboard" && (
             <DashboardView
               stats={stats}

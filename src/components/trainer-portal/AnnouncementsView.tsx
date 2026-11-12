@@ -54,7 +54,7 @@ export function AnnouncementsView({
                 placeholder="e.g. Lab environment setup instructions..."
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full p-2 rounded-lg border outline-none text-xs"
+                className="w-full p-2 rounded-lg border outline-none text-xs min-h-[44px]"
                 style={{
                   backgroundColor: "var(--bg-secondary)",
                   borderColor: "var(--border)",
@@ -70,7 +70,7 @@ export function AnnouncementsView({
               <select
                 value={batchCode}
                 onChange={(e) => setBatchCode(e.target.value)}
-                className="w-full p-2 rounded-lg border outline-none text-xs cursor-pointer"
+                className="w-full p-2 rounded-lg border outline-none text-xs cursor-pointer min-h-[44px]"
                 style={{
                   backgroundColor: "var(--bg-secondary)",
                   borderColor: "var(--border)",
@@ -95,7 +95,7 @@ export function AnnouncementsView({
               placeholder="Write announcement details..."
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              className="w-full p-2 rounded-lg border outline-none resize-none text-xs"
+              className="w-full p-2.5 rounded-lg border outline-none resize-none text-xs min-h-[44px]"
               style={{
                 backgroundColor: "var(--bg-secondary)",
                 borderColor: "var(--border)",
@@ -108,7 +108,7 @@ export function AnnouncementsView({
             <button
               type="submit"
               disabled={!title.trim() || !body.trim()}
-              className="px-3.5 py-1.5 rounded-lg font-semibold text-xs shadow-2xs hover:opacity-90 disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+              className="px-3.5 py-2 rounded-lg font-semibold text-xs shadow-2xs hover:opacity-90 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5 min-h-[44px] w-full sm:w-auto"
               style={{
                 backgroundColor: "var(--accent)",
                 color: "var(--accent-contrast)",

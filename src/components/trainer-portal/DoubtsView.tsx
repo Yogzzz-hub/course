@@ -1,6 +1,7 @@
 import React from "react";
 import { HelpCircle, Video, CheckCircle2, Clock } from "lucide-react";
 import type { DoubtSession } from "../../data/trainerMock";
+import { ResponsiveTable } from "../manager-portal/ResponsiveTable";
 
 export function DoubtsView({
   doubts,
@@ -20,7 +21,7 @@ export function DoubtsView({
         }}
       >
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          <ResponsiveTable className="w-full text-left border-collapse text-xs">
             <thead>
               <tr
                 className="border-b"
@@ -73,7 +74,7 @@ export function DoubtsView({
                       <button
                         type="button"
                         onClick={() => onAcceptDoubt(d.id)}
-                        className="px-2.5 py-1 rounded-lg font-semibold text-[11px] shadow-2xs hover:opacity-90 cursor-pointer"
+                        className="px-3 py-1.5 rounded-lg font-semibold text-[11px] shadow-2xs hover:opacity-90 cursor-pointer min-h-[44px] md:min-h-0 inline-flex items-center justify-center"
                         style={{
                           backgroundColor: "var(--accent)",
                           color: "var(--accent-contrast)",
@@ -86,7 +87,7 @@ export function DoubtsView({
                         href="https://meet.aintrix.edu/doubt-room"
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-emerald-600 text-white hover:bg-emerald-700 shadow-2xs"
+                        className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-emerald-600 text-white hover:bg-emerald-700 shadow-2xs min-h-[44px] md:min-h-0"
                       >
                         <Video size={11} />
                         <span>Join Call</span>
@@ -103,7 +104,7 @@ export function DoubtsView({
                 </tr>
               )}
             </tbody>
-          </table>
+          </ResponsiveTable>
         </div>
       </div>
     </div>

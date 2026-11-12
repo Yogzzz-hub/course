@@ -62,12 +62,12 @@ export function DashboardView({
           </div>
         </div>
 
-        <div className="shrink-0">
+        <div className="shrink-0 w-full sm:w-auto">
           <a
             href="https://meet.aintrix.edu/room-py-a"
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all hover:opacity-90 shadow-xs"
+            className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all hover:opacity-90 shadow-xs min-h-[44px] w-full sm:w-auto"
             style={{
               backgroundColor: "#E8C8D4",
               color: "#3A1424",
@@ -267,11 +267,11 @@ export function DashboardView({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 shrink-0">
                   <button
                     type="button"
                     onClick={() => onSelectBatch(batch)}
-                    className="px-2 py-1 rounded border text-[11px] font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                    className="px-2.5 py-1.5 rounded border text-[11px] font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer min-h-[44px] md:min-h-0 inline-flex items-center justify-center"
                     style={{
                       borderColor: "var(--border)",
                       color: "var(--text)",
@@ -282,7 +282,7 @@ export function DashboardView({
                   <button
                     type="button"
                     onClick={() => onNavigateTab("attendance")}
-                    className="px-2 py-1 rounded font-semibold text-[11px] shadow-2xs hover:opacity-90 cursor-pointer"
+                    className="px-2.5 py-1.5 rounded font-semibold text-[11px] shadow-2xs hover:opacity-90 cursor-pointer min-h-[44px] md:min-h-0 inline-flex items-center justify-center"
                     style={{
                       backgroundColor: "var(--accent)",
                       color: "var(--accent-contrast)",

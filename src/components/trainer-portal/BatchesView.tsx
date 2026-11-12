@@ -73,11 +73,11 @@ export function BatchesView({
               </div>
             </div>
 
-            <div className="pt-2 border-t flex items-center justify-between" style={{ borderColor: "var(--border)" }}>
+            <div className="pt-2 border-t flex flex-wrap sm:flex-nowrap items-center justify-between gap-2" style={{ borderColor: "var(--border)" }}>
               <button
                 type="button"
                 onClick={() => setSelectedBatch(batch)}
-                className="px-2.5 py-1 rounded border text-[11px] font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                className="px-3 py-1.5 rounded border text-[11px] font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer min-h-[44px] md:min-h-0 flex-1 sm:flex-initial inline-flex items-center justify-center whitespace-nowrap"
                 style={{
                   borderColor: "var(--border)",
                   color: "var(--text)",
@@ -88,7 +88,7 @@ export function BatchesView({
               <button
                 type="button"
                 onClick={() => onTakeAttendance(batch)}
-                className="px-2.5 py-1 rounded font-semibold text-[11px] shadow-2xs hover:opacity-90 cursor-pointer"
+                className="px-3 py-1.5 rounded font-semibold text-[11px] shadow-2xs hover:opacity-90 cursor-pointer min-h-[44px] md:min-h-0 flex-1 sm:flex-initial inline-flex items-center justify-center whitespace-nowrap"
                 style={{
                   backgroundColor: "var(--accent)",
                   color: "var(--accent-contrast)",

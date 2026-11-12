@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { CheckCircle2, AlertCircle, ShieldCheck } from "lucide-react";
 import type { Admission } from "../../data/managerMock";
 import { Drawer } from "./Drawer";
+import { ResponsiveTable } from "./ResponsiveTable";
 
 export function AdmissionsView({
   admissions,
@@ -44,7 +45,7 @@ export function AdmissionsView({
     <div className="space-y-3">
       {/* Top action toolbar - NO headings or subheadings */}
       <div
-        className="p-3 rounded-xl border flex items-center justify-between gap-3 text-xs"
+        className="p-3 rounded-xl border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-xs"
         style={{
           backgroundColor: "var(--surface)",
           borderColor: "var(--border)",
@@ -56,7 +57,7 @@ export function AdmissionsView({
         <button
           type="button"
           onClick={handleCreateEnrolment}
-          className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity shadow-2xs hover:opacity-90 cursor-pointer"
+          className="px-3 py-2 rounded-lg text-xs font-semibold transition-opacity shadow-2xs hover:opacity-90 cursor-pointer min-h-[44px] flex items-center justify-center"
           style={{
             backgroundColor: "var(--accent)",
             color: "var(--accent-contrast)",
@@ -75,7 +76,7 @@ export function AdmissionsView({
         }}
       >
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          <ResponsiveTable className="w-full text-left border-collapse text-xs">
             <thead>
               <tr
                 className="border-b"
@@ -177,7 +178,7 @@ export function AdmissionsView({
                     <button
                       type="button"
                       onClick={() => setSelectedAdmission(adm)}
-                      className="px-2 py-1 rounded border text-[11px] font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                      className="px-2.5 py-1.5 rounded border text-[11px] font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer min-h-[44px] md:min-h-0 inline-flex items-center justify-center"
                       style={{
                         borderColor: "var(--border)",
                         color: "var(--text)",
@@ -189,7 +190,7 @@ export function AdmissionsView({
                       <button
                         type="button"
                         onClick={() => handleApprove(adm)}
-                        className="px-2 py-1 rounded font-semibold text-[11px] transition-opacity shadow-2xs hover:opacity-90 cursor-pointer"
+                        className="px-2.5 py-1.5 rounded font-semibold text-[11px] transition-opacity shadow-2xs hover:opacity-90 cursor-pointer min-h-[44px] md:min-h-0 inline-flex items-center justify-center"
                         style={{
                           backgroundColor: "var(--accent)",
                           color: "var(--accent-contrast)",
@@ -202,7 +203,7 @@ export function AdmissionsView({
                 </tr>
               ))}
             </tbody>
-          </table>
+          </ResponsiveTable>
         </div>
       </div>
 

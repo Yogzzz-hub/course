@@ -1,6 +1,7 @@
 import React from "react";
 import { Video, Calendar, Clock } from "lucide-react";
 import type { TrainerScheduleItem } from "../../data/trainerMock";
+import { ResponsiveTable } from "../manager-portal/ResponsiveTable";
 
 export function ScheduleView({ schedule }: { schedule: TrainerScheduleItem[] }) {
   return (
@@ -14,7 +15,7 @@ export function ScheduleView({ schedule }: { schedule: TrainerScheduleItem[] }) 
         }}
       >
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          <ResponsiveTable className="w-full text-left border-collapse text-xs">
             <thead>
               <tr
                 className="border-b"
@@ -62,7 +63,7 @@ export function ScheduleView({ schedule }: { schedule: TrainerScheduleItem[] }) 
                       href={item.roomLink}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-opacity shadow-2xs hover:opacity-90"
+                      className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-opacity shadow-2xs hover:opacity-90 min-h-[44px] md:min-h-0"
                       style={{
                         backgroundColor: "var(--accent)",
                         color: "var(--accent-contrast)",
@@ -75,7 +76,7 @@ export function ScheduleView({ schedule }: { schedule: TrainerScheduleItem[] }) 
                 </tr>
               ))}
             </tbody>
-          </table>
+          </ResponsiveTable>
         </div>
       </div>
     </div>

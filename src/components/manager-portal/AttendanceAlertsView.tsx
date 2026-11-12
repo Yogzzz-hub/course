@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { AlertCircle, CheckCircle2, Send, Filter } from "lucide-react";
 import type { AttendanceAlert } from "../../data/managerMock";
+import { ResponsiveTable } from "./ResponsiveTable";
 
 export function AttendanceAlertsView({
   alerts,
@@ -35,7 +36,7 @@ export function AttendanceAlertsView({
     <div className="space-y-3">
       {/* Top filter toolbar - NO headings or subheadings */}
       <div
-        className="p-3 rounded-xl border flex items-center justify-between gap-3 text-xs"
+        className="p-3 rounded-xl border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-xs"
         style={{
           backgroundColor: "var(--surface)",
           borderColor: "var(--border)",
@@ -45,12 +46,12 @@ export function AttendanceAlertsView({
           {filteredAlerts.length} students currently below 75% attendance threshold
         </span>
 
-        <div className="flex items-center gap-2">
-          <Filter size={13} style={{ color: "var(--muted)" }} />
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Filter size={13} style={{ color: "var(--muted)" }} className="shrink-0" />
           <select
             value={batchFilter}
             onChange={(e) => setBatchFilter(e.target.value)}
-            className="p-1.5 rounded-lg border text-xs outline-none cursor-pointer"
+            className="p-2 rounded-lg border text-xs outline-none cursor-pointer min-h-[44px] flex-1 sm:flex-initial"
             style={{
               backgroundColor: "var(--surface)",
               borderColor: "var(--border)",
@@ -74,7 +75,7 @@ export function AttendanceAlertsView({
         }}
       >
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          <ResponsiveTable className="w-full text-left border-collapse text-xs">
             <thead>
               <tr
                 className="border-b"
@@ -158,7 +159,7 @@ export function AttendanceAlertsView({
                     <button
                       type="button"
                       onClick={() => handleSendWarning(alert)}
-                      className="px-2.5 py-1 rounded-lg font-semibold text-[11px] transition-opacity shadow-2xs hover:opacity-90 cursor-pointer inline-flex items-center gap-1.5"
+                      className="px-3 py-1.5 rounded-lg font-semibold text-[11px] transition-opacity shadow-2xs hover:opacity-90 cursor-pointer inline-flex items-center justify-center gap-1.5 min-h-[44px] md:min-h-0"
                       style={{
                         backgroundColor: alert.warningSent ? "var(--bg-secondary)" : "var(--accent)",
                         color: alert.warningSent ? "var(--muted)" : "var(--accent-contrast)",
@@ -178,7 +179,7 @@ export function AttendanceAlertsView({
                 </tr>
               )}
             </tbody>
-          </table>
+          </ResponsiveTable>
         </div>
       </div>
     </div>

@@ -120,4 +120,272 @@
   line-height: 1.55 !important;
 }
 
+/* =========================================================================
+   Manager Portal - Mobile Responsive Styles (max-width: 768px)
+   Keeps desktop (min-width: 769px) layout completely untouched.
+   ========================================================================= */
+
+@media (max-width: 768px) {
+  /* Layout container */
+  .manager-workspace {
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Sidebar: horizontal scrollable strip for manager portal */
+  .manager-workspace:not(.trainer-workspace) aside:not(.side-drawer-aside) {
+    width: 100% !important;
+    min-height: 0 !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid var(--border) !important;
+    position: static !important;
+    background-color: var(--surface) !important;
+  }
+
+  .manager-workspace:not(.trainer-workspace) aside:not(.side-drawer-aside) nav {
+    display: flex !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    gap: 4px !important;
+    padding: 8px !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .manager-workspace:not(.trainer-workspace) aside:not(.side-drawer-aside) nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .manager-workspace:not(.trainer-workspace) aside:not(.side-drawer-aside) nav > * {
+    flex: 0 0 auto !important;
+  }
+
+  .manager-workspace:not(.trainer-workspace) aside:not(.side-drawer-aside) button,
+  .manager-workspace:not(.trainer-workspace) aside:not(.side-drawer-aside) a,
+  .manager-workspace:not(.trainer-workspace) .manager-nav-item {
+    min-height: 44px !important;
+    padding: 0 12px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+  }
+
+  /* Side drawer navigation on mobile (Manager & Trainer) */
+  .manager-workspace .side-drawer-aside {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 100% !important;
+    position: relative !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    background-color: var(--surface) !important;
+    border-right: 1px solid var(--border) !important;
+    border-bottom: 0 !important;
+  }
+
+  .manager-workspace .side-drawer-aside nav {
+    display: flex !important;
+    flex-direction: column !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    white-space: normal !important;
+    gap: 4px !important;
+    padding: 8px !important;
+  }
+
+  .manager-workspace .side-drawer-aside nav > * {
+    flex: 0 0 auto !important;
+    width: 100% !important;
+  }
+
+  .manager-workspace .side-drawer-aside button {
+    min-height: 44px !important;
+    padding: 0 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  /* Mobile Bottom Navigation Bar (Manager) */
+  .manager-bottom-nav {
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  }
+  .manager-bottom-nav button {
+    min-height: 48px !important;
+  }
+
+  /* Header: let it wrap, remove fixed height, smaller title text, sticky top 0 */
+  .manager-workspace header {
+    height: auto !important;
+    min-height: 48px !important;
+    flex-wrap: wrap !important;
+    padding: 10px 14px !important;
+    gap: 8px !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 20 !important;
+  }
+
+  .manager-workspace header .text-base,
+  .manager-workspace header .text-lg {
+    font-size: 0.9375rem !important;
+    line-height: 1.25 !important;
+  }
+
+  /* Main content: full width, reduced padding (12px), no horizontal overflow */
+  .manager-workspace main,
+  .manager-workspace .manager-main {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 12px !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Tables: Stacked card view */
+  .manager-workspace table thead {
+    position: absolute !important;
+    left: -9999px !important;
+    top: -9999px !important;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden !important;
+  }
+
+  .manager-workspace table,
+  .manager-workspace table tbody,
+  .manager-workspace table tr,
+  .manager-workspace table td {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  /* Table outer container: transparent background/border on mobile so rows act as cards */
+  .manager-workspace .overflow-x-auto:has(table) {
+    overflow: visible !important;
+  }
+  .manager-workspace div:has(> .overflow-x-auto > table) {
+    background-color: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  .manager-workspace table tbody tr {
+    border: 1px solid var(--border) !important;
+    border-radius: 12px !important;
+    padding: 10px 12px !important;
+    margin-bottom: 10px !important;
+    background: var(--surface) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  }
+
+  .manager-workspace table td {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 12px !important;
+    text-align: right !important;
+    border: 0 !important;
+    padding: 6px 0 !important;
+    word-break: break-word !important;
+    font-size: 12px !important;
+  }
+
+  .manager-workspace table td::before {
+    content: attr(data-label);
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    opacity: 0.65 !important;
+    text-align: left !important;
+    flex: 0 0 40% !important;
+    color: var(--muted) !important;
+  }
+
+  .manager-workspace table td:first-child {
+    display: block !important;
+    text-align: left !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 4px !important;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent) !important;
+  }
+
+  .manager-workspace table td:first-child::before {
+    content: none !important;
+    display: none !important;
+  }
+
+  .manager-workspace table td:not([data-label])::before,
+  .manager-workspace table td[data-label=""]::before {
+    content: none !important;
+    display: none !important;
+  }
+
+  /* Buttons, inputs and selects across the portal: at least 44px tall on mobile */
+  .manager-workspace button,
+  .manager-workspace input,
+  .manager-workspace select,
+  .manager-workspace textarea {
+    min-height: 44px !important;
+    box-sizing: border-box !important;
+  }
+
+  .manager-workspace input,
+  .manager-workspace select {
+    font-size: 13px !important;
+  }
+
+  /* Toolbars and filters: wrap onto multiple lines, full width */
+  .manager-workspace .p-3.rounded-xl.border {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .manager-workspace .p-3.rounded-xl.border > div {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  .manager-workspace .p-3.rounded-xl.border select,
+  .manager-workspace .p-3.rounded-xl.border button {
+    width: 100% !important;
+  }
+
+  /* Filter pills horizontal scroll */
+  .manager-workspace .p-3.rounded-xl.border .overflow-x-auto {
+    width: 100% !important;
+    display: flex !important;
+    gap: 6px !important;
+  }
+
+  .manager-workspace .p-3.rounded-xl.border .overflow-x-auto button {
+    width: auto !important;
+    min-height: 44px !important;
+    padding: 0 12px !important;
+    flex: 0 0 auto !important;
+  }
+
+  /* Modals, drawers and detail views: full-screen or near full-screen below 768px and scrollable */
+  .manager-workspace [role="dialog"],
+  .manager-drawer {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    border-radius: 0 !important;
+    border-left: 0 !important;
+  }
+
+  /* Toasts on mobile: positioned nicely at bottom */
+  .manager-workspace .fixed.bottom-6.right-6 {
+    left: 12px !important;
+    right: 12px !important;
+    bottom: 12px !important;
+    max-width: calc(100vw - 24px) !important;
+  }
+}
+
+
 

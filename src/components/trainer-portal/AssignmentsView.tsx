@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { CheckCircle2, FileText, ExternalLink, Award } from "lucide-react";
 import type { TrainerAssignmentSubmission } from "../../data/trainerMock";
 import { Drawer } from "../manager-portal/Drawer";
+import { ResponsiveTable } from "../manager-portal/ResponsiveTable";
 
 export function AssignmentsView({
   submissions,
@@ -35,11 +36,11 @@ export function AssignmentsView({
   return (
     <div className="space-y-3">
       {/* Two tabs: To review vs Graded - NO headings or subheadings */}
-      <div className="flex items-center gap-1.5 border-b pb-2" style={{ borderColor: "var(--border)" }}>
+      <div className="flex items-center gap-1.5 border-b pb-2 overflow-x-auto" style={{ borderColor: "var(--border)" }}>
         <button
           type="button"
           onClick={() => setActiveTab("TO_REVIEW")}
-          className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 cursor-pointer transition-colors min-h-[44px]"
           style={{
             backgroundColor: activeTab === "TO_REVIEW" ? "var(--accent)" : "transparent",
             color: activeTab === "TO_REVIEW" ? "var(--accent-contrast)" : "var(--muted)",
@@ -59,7 +60,7 @@ export function AssignmentsView({
         <button
           type="button"
           onClick={() => setActiveTab("GRADED")}
-          className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 cursor-pointer transition-colors min-h-[44px]"
           style={{
             backgroundColor: activeTab === "GRADED" ? "var(--accent)" : "transparent",
             color: activeTab === "GRADED" ? "var(--accent-contrast)" : "var(--muted)",
@@ -86,7 +87,7 @@ export function AssignmentsView({
         }}
       >
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          <ResponsiveTable className="w-full text-left border-collapse text-xs">
             <thead>
               <tr
                 className="border-b"
@@ -136,7 +137,7 @@ export function AssignmentsView({
                     <button
                       type="button"
                       onClick={() => handleOpenReview(sub)}
-                      className="px-2.5 py-1 rounded border text-[11px] font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                      className="px-2.5 py-1.5 rounded border text-[11px] font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer min-h-[44px] md:min-h-0 inline-flex items-center justify-center"
                       style={{
                         borderColor: "var(--border)",
                         color: "var(--text)",
@@ -155,7 +156,7 @@ export function AssignmentsView({
                 </tr>
               )}
             </tbody>
-          </table>
+          </ResponsiveTable>
         </div>
       </div>
 
