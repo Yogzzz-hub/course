@@ -1,10 +1,10 @@
-import { formatPaise } from "./money";
+import { formatPaise } from "./money.ts";
 import type {
   InvoiceRecord,
   PaymentRecord,
   PayrollRunRecord,
   TrainerPayoutRecord,
-} from "./types";
+} from "./types.ts";
 
 function escapePdfText(text: string): string {
   return text

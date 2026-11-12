@@ -12,6 +12,9 @@ playwright-report/
 test-results-learning/
 .local/
 .next/
+next-env.d.ts
 *.tsbuildinfo
 backups/*.db
 backups/*.json
+crm/db/*.db
+crm/db/*.db-*

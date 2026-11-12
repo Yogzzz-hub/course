@@ -1,0 +1,167 @@
+/* Unlayered legacy element styles must not override Tailwind in this standalone view. */
+.ss-public :where(h1, h2, h3, h4, p, fieldset, legend, table, th, td, button, input, select:not(.animated-select-native-sync), textarea, a, svg) {
+  all: revert-layer;
+}
+
+/* Enforce parallel (side-by-side) alignment for brand logo */
+.ss-public .logo,
+.logo {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  gap: 10px !important;
+  text-decoration: none !important;
+  color: var(--text) !important;
+  flex-shrink: 0 !important;
+}
+
+.ss-public .logo svg,
+.logo svg {
+  flex-shrink: 0 !important;
+  color: var(--accent) !important;
+  display: block !important;
+}
+
+.ss-public .logo .logo-wordmark,
+.logo .logo-wordmark {
+  display: inline-flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 2px !important;
+  line-height: 1.15 !important;
+  white-space: nowrap !important;
+  text-align: left !important;
+}
+
+.ss-public .logo .logo-name,
+.logo .logo-name {
+  font-family: var(--font-display, inherit) !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.04em !important;
+  color: var(--text) !important;
+  line-height: 1.15 !important;
+  white-space: nowrap !important;
+  text-align: left !important;
+}
+
+.ss-public .logo .logo-subtitle,
+.logo .logo-subtitle {
+  font-family: var(--font-body, inherit) !important;
+  font-size: 9px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+  color: var(--muted) !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  text-align: left !important;
+}
+
+.ss-public {
+  font-family: 'Manrope Variable', ui-sans-serif, system-ui, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  overflow-wrap: anywhere;
+}
+.ss-public h1, .ss-public h2, .ss-public h3 {
+  font-family: 'Space Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
+}
+.ss-public [id] { scroll-margin-top: 80px; }
+.ss-public .ss-kicker { color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: .14em; }
+.ss-public .ss-comparison th, .ss-public .ss-comparison td { padding: 16px 14px; border-bottom: 1px solid var(--border); text-align: left; }
+.ss-public .ss-comparison tbody tr:last-child th, .ss-public .ss-comparison tbody tr:last-child td { border-bottom: 0; }
+.ss-public :focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.ss-public [tabindex='-1']:focus { outline: none; }
+.ss-public .ss-skip-link { position: fixed; z-index: 100; top: -100px; left: 20px; padding: 12px 20px; background: var(--surface); color: var(--accent); border-radius: 8px; }
+.ss-public .ss-skip-link:focus { top: 12px; }
+.ss-public .ss-input[aria-invalid='true'] { border-color: #b91c1c; }
+.ss-public .ss-text-button:disabled { cursor: not-allowed; }
+
+/* Pointer and Interactive Hover System */
+.ss-public button,
+.ss-public a {
+  cursor: pointer;
+}
+
+/* "Book a call" header button */
+.ss-public .ss-header-cta {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, box-shadow;
+}
+
+.ss-public .ss-header-cta svg {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ss-public .ss-header-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px -2px rgba(104, 28, 53, 0.45), 0 3px 8px -1px rgba(0, 0, 0, 0.25);
+  filter: brightness(1.1);
+}
+
+.ss-public .ss-header-cta:hover svg:last-child {
+  transform: translate(2px, -2px);
+}
+
+.ss-public .ss-header-cta:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.25);
+}
+
+/* "Book counselling" hero button */
+.ss-public .ss-hero-cta {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              color 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, box-shadow;
+}
+
+.ss-public .ss-hero-cta:hover {
+  transform: translateY(-2px);
+  background-color: rgba(255, 255, 255, 0.14) !important;
+  border-color: rgba(255, 255, 255, 0.88) !important;
+  color: #ffffff;
+  box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.55), 0 0 18px rgba(255, 255, 255, 0.15);
+}
+
+.ss-public .ss-hero-cta:active {
+  transform: translateY(0) scale(0.98);
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.4);
+}
+
+/* "Explore programmes" hero link */
+.ss-public .ss-hero-explore {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, box-shadow;
+}
+
+.ss-public .ss-hero-explore svg {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ss-public .ss-hero-explore:hover {
+  transform: translateY(-2px);
+  background-color: #f8fafc;
+  box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.35);
+}
+
+.ss-public .ss-hero-explore:hover svg {
+  transform: translate(2px, -2px);
+}
+
+.ss-public .ss-hero-explore:active {
+  transform: translateY(0) scale(0.98);
+}
+
+@media (max-width: 359px) { .ss-public .ss-header-cta { font-size: 11px; padding-inline: 10px; } }
+@media (prefers-reduced-motion: reduce) { .ss-public *, .ss-public *::before, .ss-public *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }

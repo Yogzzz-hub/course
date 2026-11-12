@@ -1,6 +1,7 @@
 import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
 import { render, routes, academy, isPrivatePath } from '../.build/server/entry-server.js';
 let template=await readFile('dist/index.html','utf8');
+await writeFile('.build/server/spa-index.html',template.replace('<!--app-head-->','').replace('<!--app-html-->',''));
 // This compact presentation site inlines its compressed stylesheet to remove a rendering round trip.
 for (const match of template.matchAll(/<link rel="stylesheet"[^>]*href="([^"]+)"[^>]*>/g)) {
  template=template.replace(match[0],`<style>${await readFile(`dist${match[1]}`,'utf8')}</style>`);

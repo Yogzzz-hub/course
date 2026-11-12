@@ -1,4 +1,4 @@
-import type { AuditLogRecord, FinanceRole } from "./types";
+import type { AuditLogRecord, FinanceRole } from "./types.ts";
 
 export class AuditWriteError extends Error {
   constructor(message: string) {

@@ -1,7 +1,7 @@
-import { computeCollectionsAgeingReport, generateSafeCsv } from "./ageing";
-import { verifyTrialBalance } from "./ledger";
-import { addPaise, formatPaiseToInputRupees, subtractPaise, sumPaise } from "./money";
-import type { FinancierDatabaseState, LedgerAccountCode } from "./types";
+import { computeCollectionsAgeingReport, generateSafeCsv } from "./ageing.ts";
+import { verifyTrialBalance } from "./ledger.ts";
+import { addPaise, formatPaiseToInputRupees, subtractPaise, sumPaise } from "./money.ts";
+import type { FinancierDatabaseState, LedgerAccountCode } from "./types.ts";
 
 export interface DashboardMetrics {
   asOfIso: string;

@@ -3,8 +3,10 @@ services:
     name: academy-management-crm
     env: node
     plan: standard
-    buildCommand: npm install && npx prisma generate && npm run build
+    rootDir: crm
+    buildCommand: npm install && npm run build
     startCommand: npm run start
+    healthCheckPath: /api/health
     autoDeploy: true
     envVars:
       - key: NODE_ENV

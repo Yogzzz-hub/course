@@ -1,5 +1,5 @@
-import { addPaise, subtractPaise, sumPaise } from "./money";
-import type { FinancierDatabaseState } from "./types";
+import { addPaise, subtractPaise, sumPaise } from "./money.ts";
+import type { FinancierDatabaseState } from "./types.ts";
 
 export interface AgeingBucketRow {
   bucket: "0-30" | "31-60" | "61-90" | "90+";

@@ -3,7 +3,7 @@ import {
   createFinancierStore,
   DuplicateReferenceError,
   type FinancierStore,
-} from "./store";
+} from "./store.ts";
 import type {
   ActorIdentity,
   AuditLogRecord,
@@ -27,7 +27,7 @@ import type {
   TrackRecord,
   TrainerPayoutRecord,
   TrainerProfileMock,
-} from "./types";
+} from "./types.ts";
 import { seedFinancierDb } from "../../../scripts/seed-financier-db.ts";
 
 let pgPoolInstance: pg.Pool | null = null;

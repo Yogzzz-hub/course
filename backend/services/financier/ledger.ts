@@ -2,7 +2,7 @@ import {
   assertPositivePaise,
   sumPaise,
   subtractPaise,
-} from "./money";
+} from "./money.ts";
 import type {
   BalancedJournalEntry,
   JournalEntryLine,
@@ -10,18 +10,23 @@ import type {
   JournalTransactionType,
   LedgerAccountCode,
   LedgerAccountType,
-} from "./types";
+} from "./types.ts";
 
 export class UnbalancedJournalError extends Error {
+  readonly debitsPaise: number;
+  readonly creditsPaise: number;
+
   constructor(
-    public readonly debitsPaise: number,
-    public readonly creditsPaise: number,
+    debitsPaise: number,
+    creditsPaise: number,
     message?: string
   ) {
     super(
       message ||
         `Unbalanced journal entry rejected: debits (${debitsPaise} paise) !== credits (${creditsPaise} paise).`
     );
+    this.debitsPaise = debitsPaise;
+    this.creditsPaise = creditsPaise;
     this.name = "UnbalancedJournalError";
   }
 }

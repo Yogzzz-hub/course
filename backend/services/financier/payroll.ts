@@ -5,7 +5,7 @@ import {
   multiplyPaise,
   subtractPaise,
   sumPaise,
-} from "./money";
+} from "./money.ts";
 import type {
   AdjustmentType,
   CompensationPolicyType,
@@ -13,7 +13,7 @@ import type {
   PayrollAdjustmentRecord,
   PayrollRunStatus,
   TrainerBatchBreakdownRecord,
-} from "./types";
+} from "./types.ts";
 
 export class PayrollInvariantError extends Error {
   constructor(message: string) {

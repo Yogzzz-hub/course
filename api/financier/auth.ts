@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { ActorIdentity, FinanceRole } from "../../backend/services/financier/types";
+import type { ActorIdentity, FinanceRole } from "../../backend/services/financier/types.ts";
 
 const crmSessionSchema = z.object({
   userId: z.string().min(1).optional(),

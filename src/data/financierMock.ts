@@ -3,9 +3,9 @@
 // In production with PostgreSQL + Prisma connected, these records come from database tables;
 // when Prisma/DB is unavailable in local Vite/preview mode, this state backs /api/financier/*.
 
-import { createBalancedJournalEntry } from "../../backend/services/financier/ledger";
-import { allocatePaymentPaiseOldestFirst, subtractPaise, sumPaise } from "../../backend/services/financier/money";
-import { calculateTrainerBatchPayrollPaise } from "../../backend/services/financier/payroll";
+import { createBalancedJournalEntry } from "../../backend/services/financier/ledger.ts";
+import { allocatePaymentPaiseOldestFirst, subtractPaise, sumPaise } from "../../backend/services/financier/money.ts";
+import { calculateTrainerBatchPayrollPaise } from "../../backend/services/financier/payroll.ts";
 import type {
   ActorIdentity,
   AuditLogRecord,
@@ -27,7 +27,7 @@ import type {
   TrackRecord,
   TrainerPayoutRecord,
   TrainerProfileMock,
-} from "../../backend/services/financier/types";
+} from "../../backend/services/financier/types.ts";
 
 function isoDaysOffset(baseIso: string, deltaDays: number, hourUtc = 10): string {
   const base = new Date(baseIso);

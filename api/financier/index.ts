@@ -1,30 +1,30 @@
 import { z } from "zod";
-import { computeCollectionsAgeingReport } from "../../backend/services/financier/ageing";
-import { formatPaise } from "../../backend/services/financier/money";
+import { computeCollectionsAgeingReport } from "../../backend/services/financier/ageing.ts";
+import { formatPaise } from "../../backend/services/financier/money.ts";
 import {
   generateInvoicePdfBytes,
   generatePayslipPdfBytes,
   generateReceiptPdfBytes,
-} from "../../backend/services/financier/pdf";
+} from "../../backend/services/financier/pdf.ts";
 import {
   createFinancierStore,
   FinancierDomainError,
   type FinancierStore,
-} from "../../backend/services/financier/store";
+} from "../../backend/services/financier/store.ts";
 import {
   ImmutableLedgerError,
   LEDGER_ACCOUNT_META,
   UnbalancedJournalError,
-} from "../../backend/services/financier/ledger";
-import { MoneyInvariantError } from "../../backend/services/financier/money";
-import { PayrollInvariantError } from "../../backend/services/financier/payroll";
-import { AuditWriteError } from "../../backend/services/financier/audit";
-import type { LedgerAccountCode } from "../../backend/services/financier/types";
-import { sendFeeReminderEmail, sendInvoiceEmail } from "../../backend/services/brevo-mail";
-import { enforceFinancierRateLimit } from "../../backend/services/rate-limit";
-import { createInitialFinancierState } from "../../src/data/financierMock";
-import { getPostgresFinancierStore, resetPostgresFinancierStore } from "../../backend/services/financier/pgStore";
-import { authenticateFinancierRequest } from "./auth";
+} from "../../backend/services/financier/ledger.ts";
+import { MoneyInvariantError } from "../../backend/services/financier/money.ts";
+import { PayrollInvariantError } from "../../backend/services/financier/payroll.ts";
+import { AuditWriteError } from "../../backend/services/financier/audit.ts";
+import type { LedgerAccountCode } from "../../backend/services/financier/types.ts";
+import { sendFeeReminderEmail, sendInvoiceEmail } from "../../backend/services/brevo-mail.ts";
+import { enforceFinancierRateLimit } from "../../backend/services/rate-limit.ts";
+import { createInitialFinancierState } from "../../src/data/financierMock.ts";
+import { getPostgresFinancierStore, resetPostgresFinancierStore } from "../../backend/services/financier/pgStore.ts";
+import { authenticateFinancierRequest } from "./auth.ts";
 
 let sharedStore: FinancierStore | null = null;
 let storeInitPromise: Promise<FinancierStore> | null = null;

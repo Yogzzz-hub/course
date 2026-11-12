@@ -1,5 +1,5 @@
-import { runWithAtomicAudit, type AtomicAuditInput } from "./audit";
-import { computeCollectionsAgeingReport } from "./ageing";
+import { runWithAtomicAudit, type AtomicAuditInput } from "./audit.ts";
+import { computeCollectionsAgeingReport } from "./ageing.ts";
 import {
   buildCounterEntryReversal,
   computeAccountBalances,
@@ -7,7 +7,7 @@ import {
   LEDGER_ACCOUNT_META,
   paymentMethodToAccountCode,
   verifyTrialBalance,
-} from "./ledger";
+} from "./ledger.ts";
 import {
   addPaise,
   allocatePaymentPaiseOldestFirst,
@@ -15,19 +15,19 @@ import {
   assertPositivePaise,
   subtractPaise,
   sumPaise,
-} from "./money";
+} from "./money.ts";
 import {
   assertValidPayrollTransition,
   calculateTrainerBatchPayrollPaise,
   validatePayrollAdjustmentInput,
-} from "./payroll";
+} from "./payroll.ts";
 import {
   computeDashboardMetrics,
   computeReportsSummary,
   generateAgeingCsv,
   generateLedgerCsv,
   generatePayrollVsRevenueCsv,
-} from "./reports";
+} from "./reports.ts";
 import type {
   ActorIdentity,
   AdjustmentType,
@@ -49,15 +49,20 @@ import type {
   PayrollRunStatus,
   RefundRecord,
   StudentFeeAccountRecord,
-} from "./types";
+} from "./types.ts";
 
 export class FinancierDomainError extends Error {
+  readonly statusCode: number;
+  readonly code: string;
+
   constructor(
     message: string,
-    public readonly statusCode: number,
-    public readonly code: string
+    statusCode: number,
+    code: string
   ) {
     super(message);
+    this.statusCode = statusCode;
+    this.code = code;
     this.name = "FinancierDomainError";
   }
 }

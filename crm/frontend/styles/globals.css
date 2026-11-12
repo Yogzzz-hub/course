@@ -1,0 +1,137 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+:root {
+  /* Brand Core Tokens (Dictionary of Color Combinations / Apex Global Academy) */
+  --color-primary: #6D1A2B;         /* Heritage Burgundy */
+  --color-primary-hover: #4E0F1E;   /* Deep Burgundy */
+  --color-accent-gold: #C9A24B;     /* Champagne Gold */
+  --color-accent-teal: #315F70;     /* Muted Petrol Teal */
+  --color-bg-ivory: #FBF9F5;        /* Warm Ivory */
+  --color-bg-parchment: #F5F0E8;    /* Soft Parchment */
+  --color-surface: #FFFFFF;         /* Pure White */
+  --color-text-ink: #251923;        /* Deep Ink primary text */
+  --color-text-charcoal: #6B6268;   /* Muted Charcoal secondary text */
+  --color-border-warm: #E9E0D8;     /* Warm Grey */
+  --color-forest-green: #19674B;    /* Forest Green success */
+  --color-restrained-red: #B42318;  /* Restrained Red error */
+
+  --background: var(--color-bg-ivory);
+  --surface: var(--color-surface);
+  --primary: var(--color-primary);
+  --primary-hover: var(--color-primary-hover);
+  --gold: var(--color-accent-gold);
+  --gold-tint: #F6EBCF;
+  --text-main: var(--color-text-ink);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbar - Refined Warm Aesthetic */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F5F0E8;
+}
+::-webkit-scrollbar-thumb {
+  background: #D9CEC3;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #C9A24B;
+}
+
+/* Accessible focus visible outlines with brand offset */
+:focus-visible {
+  outline: 2px solid #6D1A2B;
+  outline-offset: 2px;
+}
+
+/* WCAG 2.2 AA Reduced Motion Preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Shimmer Loading Skeleton Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(233, 224, 216, 0.45) 25%,
+    rgba(251, 249, 245, 0.9) 50%,
+    rgba(233, 224, 216, 0.45) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite ease-in-out;
+}
+
+/* Interactive Feedback Transitions */
+.brand-transition {
+  transition: all 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.brand-button-press:active {
+  transform: scale(0.98);
+}
+
+.brand-card-hover {
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.brand-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -4px rgba(109, 26, 43, 0.08), 0 2px 6px -1px rgba(37, 25, 35, 0.04);
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Enhanced Form Selects & Inputs */
+select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236D1A2B' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1.2em 1.2em;
+  padding-right: 2.5rem !important;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+select:focus, input:focus, textarea:focus {
+  outline: none;
+  border-color: #6D1A2B !important;
+  box-shadow: 0 0 0 3px rgba(109, 26, 43, 0.12) !important;
+}
