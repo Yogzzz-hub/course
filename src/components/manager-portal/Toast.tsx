@@ -19,13 +19,13 @@ export function ToastContainer({
       {toasts.map((toast) => {
         const icon =
           toast.type === "success" ? (
-            <CheckCircle2 size={18} className="shrink-0 text-emerald-600" />
+            <CheckCircle2 size={18} className="shrink-0" style={{ color: "var(--accent)" }} />
           ) : toast.type === "warning" ? (
-            <AlertTriangle size={18} className="shrink-0 text-amber-600" />
+            <AlertTriangle size={18} className="shrink-0" style={{ color: "var(--accent)" }} />
           ) : toast.type === "danger" ? (
-            <AlertCircle size={18} className="shrink-0 text-rose-600" />
+            <AlertCircle size={18} className="shrink-0" style={{ color: "var(--accent)" }} />
           ) : (
-            <Info size={18} className="shrink-0 text-indigo-600" />
+            <Info size={18} className="shrink-0" style={{ color: "var(--accent)" }} />
           );
 
         return (

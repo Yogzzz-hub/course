@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Check, X, CheckCircle2, Save } from "lucide-react";
 import type { AttendanceStudent } from "../../data/trainerMock";
+import { ResponsiveTable } from "../manager-portal/ResponsiveTable";
 
 export function AttendanceView({
   rosterMap,
@@ -44,12 +45,12 @@ export function AttendanceView({
           borderColor: "var(--border)",
         }}
       >
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
           <span className="font-semibold text-stone-500">Select Cohort:</span>
           <select
             value={selectedBatchCode}
             onChange={(e) => onChangeBatch(e.target.value)}
-            className="p-2 rounded-lg border text-sm outline-none cursor-pointer"
+            className="p-2 rounded-lg border text-sm outline-none cursor-pointer min-h-[44px] flex-1 sm:flex-initial"
             style={{
               backgroundColor: "var(--surface)",
               borderColor: "var(--border)",
@@ -70,7 +71,7 @@ export function AttendanceView({
         <button
           type="button"
           onClick={handleSave}
-          className="px-3.5 py-2 rounded-lg text-sm font-semibold transition-opacity shadow-2xs hover:opacity-90 flex items-center justify-center gap-1.5 cursor-pointer"
+          className="px-3.5 py-2 rounded-lg text-sm font-semibold transition-opacity shadow-2xs hover:opacity-90 flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] w-full sm:w-auto"
           style={{
             backgroundColor: "var(--accent)",
             color: "var(--accent-contrast)",
@@ -90,7 +91,7 @@ export function AttendanceView({
         }}
       >
         <div className="overflow-x-auto w-full">
-          <table className="w-full text-left border-collapse text-sm">
+          <ResponsiveTable className="w-full text-left border-collapse text-sm">
             <thead>
               <tr
                 className="border-b"
@@ -126,10 +127,10 @@ export function AttendanceView({
                         <button
                           type="button"
                           onClick={() => toggleStatus(student.studentId, "PRESENT")}
-                          className="px-3 py-1 rounded-md text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer"
+                          className="px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center justify-center gap-1 cursor-pointer min-h-[44px] md:min-h-0"
                           style={{
-                            backgroundColor: isPresent ? "#059669" : "transparent",
-                            color: isPresent ? "#FFFFFF" : "var(--muted)",
+                            backgroundColor: isPresent ? "var(--accent)" : "transparent",
+                            color: isPresent ? "var(--accent-contrast)" : "var(--muted)",
                           }}
                         >
                           <Check size={13} />
@@ -138,10 +139,10 @@ export function AttendanceView({
                         <button
                           type="button"
                           onClick={() => toggleStatus(student.studentId, "ABSENT")}
-                          className="px-3 py-1 rounded-md text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer"
+                          className="px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center justify-center gap-1 cursor-pointer min-h-[44px] md:min-h-0"
                           style={{
-                            backgroundColor: !isPresent ? "#DC2626" : "transparent",
-                            color: !isPresent ? "#FFFFFF" : "var(--muted)",
+                            backgroundColor: !isPresent ? "color-mix(in srgb, var(--accent) 15%, transparent)" : "transparent",
+                            color: !isPresent ? "var(--accent)" : "var(--muted)",
                           }}
                         >
                           <X size={13} />
@@ -153,7 +154,7 @@ export function AttendanceView({
                 );
               })}
             </tbody>
-          </table>
+          </ResponsiveTable>
         </div>
       </div>
     </div>

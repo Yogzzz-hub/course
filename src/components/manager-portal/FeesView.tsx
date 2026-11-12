@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Download, Search, CheckCircle2, AlertCircle } from "lucide-react";
 import type { FeePayment } from "../../data/managerMock";
+import { ResponsiveTable } from "./ResponsiveTable";
 
 export function FeesView({
   payments,
@@ -46,13 +47,13 @@ export function FeesView({
     <div className="space-y-3">
       {/* Filter and search toolbar - NO headings or subheadings */}
       <div
-        className="p-3.5 rounded-xl border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-sm"
+        className="p-3.5 rounded-xl border flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 text-sm w-full"
         style={{
           backgroundColor: "var(--surface)",
           borderColor: "var(--border)",
         }}
       >
-        <div className="relative flex-1 max-w-md">
+        <div className="relative flex-1 w-full max-w-md">
           <Search
             size={16}
             className="absolute left-3.5 top-1/2 -translate-y-1/2"
@@ -63,7 +64,7 @@ export function FeesView({
             placeholder="Search invoice, student, or course..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-3.5 py-2 rounded-lg border outline-none text-sm"
+            className="w-full pl-10 pr-3.5 py-2 rounded-lg border outline-none text-sm min-h-[44px]"
             style={{
               backgroundColor: "var(--bg-secondary)",
               borderColor: "var(--border)",
@@ -72,11 +73,11 @@ export function FeesView({
           />
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 w-full md:w-auto">
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="p-2 rounded-lg border text-sm outline-none cursor-pointer"
+            className="p-2 rounded-lg border text-sm outline-none cursor-pointer min-h-[44px] flex-1 sm:flex-initial"
             style={{
               backgroundColor: "var(--surface)",
               borderColor: "var(--border)",
@@ -92,7 +93,7 @@ export function FeesView({
           <button
             type="button"
             onClick={handleExportCSV}
-            className="px-3.5 py-2 rounded-lg border text-sm font-medium flex items-center gap-1.5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+            className="px-3.5 py-2 rounded-lg border text-sm font-medium flex items-center justify-center gap-1.5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer min-h-[44px] flex-1 sm:flex-initial whitespace-nowrap"
             style={{
               borderColor: "var(--border)",
               color: "var(--text)",
@@ -113,7 +114,7 @@ export function FeesView({
         }}
       >
         <div className="overflow-x-auto w-full">
-          <table className="w-full text-left border-collapse text-sm">
+          <ResponsiveTable className="w-full text-left border-collapse text-sm">
             <thead>
               <tr
                 className="border-b"
@@ -165,16 +166,12 @@ export function FeesView({
                       style={{
                         backgroundColor:
                           p.status === "PAID"
-                            ? "#D1FAE5"
-                            : p.status === "PENDING"
-                            ? "#FEF3C7"
-                            : "#FEE2E2",
+                            ? "color-mix(in srgb, var(--accent) 12%, transparent)"
+                            : "var(--bg-secondary)",
                         color:
                           p.status === "PAID"
-                            ? "#047857"
-                            : p.status === "PENDING"
-                            ? "#B45309"
-                            : "#B91C1C",
+                            ? "var(--accent)"
+                            : "var(--muted)",
                       }}
                     >
                       {p.status}
@@ -190,7 +187,7 @@ export function FeesView({
                 </tr>
               )}
             </tbody>
-          </table>
+          </ResponsiveTable>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { AlertCircle, CheckCircle2, Send, Filter } from "lucide-react";
 import type { AttendanceAlert } from "../../data/managerMock";
+import { ResponsiveTable } from "./ResponsiveTable";
 
 export function AttendanceAlertsView({
   alerts,
@@ -35,7 +36,7 @@ export function AttendanceAlertsView({
     <div className="space-y-3">
       {/* Top filter toolbar - NO headings or subheadings */}
       <div
-        className="p-3 rounded-xl border flex items-center justify-between gap-3 text-xs"
+        className="p-3 rounded-xl border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-xs"
         style={{
           backgroundColor: "var(--surface)",
           borderColor: "var(--border)",
@@ -45,12 +46,12 @@ export function AttendanceAlertsView({
           {filteredAlerts.length} students currently below 75% attendance threshold
         </span>
 
-        <div className="flex items-center gap-2">
-          <Filter size={13} style={{ color: "var(--muted)" }} />
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Filter size={13} style={{ color: "var(--muted)" }} className="shrink-0" />
           <select
             value={batchFilter}
             onChange={(e) => setBatchFilter(e.target.value)}
-            className="p-1.5 rounded-lg border text-xs outline-none cursor-pointer"
+            className="p-2 rounded-lg border text-xs outline-none cursor-pointer min-h-[44px] flex-1 sm:flex-initial"
             style={{
               backgroundColor: "var(--surface)",
               borderColor: "var(--border)",
@@ -74,7 +75,7 @@ export function AttendanceAlertsView({
         }}
       >
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          <ResponsiveTable className="w-full text-left border-collapse text-xs">
             <thead>
               <tr
                 className="border-b"
@@ -115,7 +116,7 @@ export function AttendanceAlertsView({
                     </span>
                     <p className="text-[10px] text-stone-500">{alert.batchName}</p>
                   </td>
-                  <td className="py-2.5 px-3.5 font-bold text-xs text-rose-600">
+                  <td className="py-2.5 px-3.5 font-bold text-xs" style={{ color: "var(--accent)" }}>
                     {alert.attendancePercentage}%
                   </td>
                   <td className="py-2.5 px-3.5 font-medium" style={{ color: "var(--text)" }}>
@@ -125,18 +126,8 @@ export function AttendanceAlertsView({
                     <span
                       className="text-[9px] font-semibold px-2 py-0.5 rounded-full uppercase"
                       style={{
-                        backgroundColor:
-                          alert.riskLevel === "CRITICAL"
-                            ? "#FEE2E2"
-                            : alert.riskLevel === "HIGH"
-                            ? "#FEF3C7"
-                            : "var(--bg-secondary)",
-                        color:
-                          alert.riskLevel === "CRITICAL"
-                            ? "#B91C1C"
-                            : alert.riskLevel === "HIGH"
-                            ? "#B45309"
-                            : "var(--muted)",
+                        backgroundColor: "color-mix(in srgb, var(--accent) 12%, transparent)",
+                        color: "var(--accent)",
                       }}
                     >
                       {alert.riskLevel}
@@ -144,12 +135,12 @@ export function AttendanceAlertsView({
                   </td>
                   <td className="py-2.5 px-3.5">
                     {alert.warningSent ? (
-                      <span className="text-[11px] font-medium text-emerald-600 flex items-center gap-1">
+                      <span className="text-[11px] font-medium flex items-center gap-1" style={{ color: "var(--accent)" }}>
                         <CheckCircle2 size={12} />
                         Dispatched
                       </span>
                     ) : (
-                      <span className="text-[11px] font-medium text-amber-600">
+                      <span className="text-[11px] font-medium" style={{ color: "var(--muted)" }}>
                         Pending
                       </span>
                     )}
@@ -158,7 +149,7 @@ export function AttendanceAlertsView({
                     <button
                       type="button"
                       onClick={() => handleSendWarning(alert)}
-                      className="px-2.5 py-1 rounded-lg font-semibold text-[11px] transition-opacity shadow-2xs hover:opacity-90 cursor-pointer inline-flex items-center gap-1.5"
+                      className="px-3 py-1.5 rounded-lg font-semibold text-[11px] transition-opacity shadow-2xs hover:opacity-90 cursor-pointer inline-flex items-center justify-center gap-1.5 min-h-[44px] md:min-h-0"
                       style={{
                         backgroundColor: alert.warningSent ? "var(--bg-secondary)" : "var(--accent)",
                         color: alert.warningSent ? "var(--muted)" : "var(--accent-contrast)",
@@ -178,7 +169,7 @@ export function AttendanceAlertsView({
                 </tr>
               )}
             </tbody>
-          </table>
+          </ResponsiveTable>
         </div>
       </div>
     </div>

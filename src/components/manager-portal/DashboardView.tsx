@@ -77,8 +77,8 @@ export function DashboardView({
             <div
               className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
               style={{
-                backgroundColor: "#FEF3C7",
-                color: "#B45309",
+                backgroundColor: "color-mix(in srgb, var(--accent) 12%, transparent)",
+                color: "var(--accent)",
               }}
             >
               <Clock size={15} />
@@ -109,8 +109,8 @@ export function DashboardView({
             <div
               className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
               style={{
-                backgroundColor: "#D1FAE5",
-                color: "#047857",
+                backgroundColor: "color-mix(in srgb, var(--accent) 12%, transparent)",
+                color: "var(--accent)",
               }}
             >
               <UserCheck size={15} />
@@ -202,20 +202,12 @@ export function DashboardView({
                       className="text-[9px] font-medium px-1.5 py-0.2 rounded"
                       style={{
                         backgroundColor:
-                          lead.status === "New Lead"
-                            ? "color-mix(in srgb, var(--accent) 10%, transparent)"
-                            : lead.status === "Admitted"
-                            ? "#D1FAE5"
-                            : lead.status === "Offer Extended"
-                            ? "#FEF3C7"
+                          lead.status === "New Lead" || lead.status === "Admitted"
+                            ? "color-mix(in srgb, var(--accent) 12%, transparent)"
                             : "var(--bg-secondary)",
                         color:
-                          lead.status === "New Lead"
+                          lead.status === "New Lead" || lead.status === "Admitted"
                             ? "var(--accent)"
-                            : lead.status === "Admitted"
-                            ? "#047857"
-                            : lead.status === "Offer Extended"
-                            ? "#B45309"
                             : "var(--muted)",
                       }}
                     >
@@ -230,7 +222,7 @@ export function DashboardView({
                 <button
                   type="button"
                   onClick={() => onSelectLead(lead)}
-                  className="px-2 py-1 rounded border text-[11px] font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                  className="px-2.5 py-1.5 rounded border text-[11px] font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer shrink-0 min-h-[44px] md:min-h-0 inline-flex items-center justify-center"
                   style={{
                     borderColor: "var(--border)",
                     color: "var(--text)",
@@ -255,7 +247,7 @@ export function DashboardView({
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold flex items-center gap-1.5" style={{ color: "var(--text)" }}>
-                <AlertCircle size={14} className="text-rose-600" />
+                <AlertCircle size={14} style={{ color: "var(--accent)" }} />
                 <span>Attendance Threshold Alerts</span>
               </span>
               <button
@@ -272,20 +264,26 @@ export function DashboardView({
               <div
                 className="p-3 rounded-lg border text-xs space-y-1.5"
                 style={{
-                  backgroundColor: "#FFF1F2",
-                  borderColor: "#FECDD3",
-                  color: "#9F1239",
+                  backgroundColor: "color-mix(in srgb, var(--accent) 8%, var(--surface))",
+                  borderColor: "color-mix(in srgb, var(--accent) 30%, var(--border))",
+                  color: "var(--text)",
                 }}
               >
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-xs">
                     {alerts.length} Students Below 75%
                   </span>
-                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-rose-200 text-rose-900">
+                  <span
+                    className="text-[9px] font-bold px-1.5 py-0.2 rounded"
+                    style={{
+                      backgroundColor: "var(--accent)",
+                      color: "var(--accent-contrast)",
+                    }}
+                  >
                     Action Required
                   </span>
                 </div>
-                <p className="text-[11px] leading-normal">
+                <p className="text-[11px] leading-normal" style={{ color: "var(--muted)" }}>
                   Academic counseling needed before batch test deadlines.
                 </p>
                 <div>
@@ -293,6 +291,7 @@ export function DashboardView({
                     type="button"
                     onClick={() => onNavigateTab("attendance")}
                     className="text-[11px] font-bold underline cursor-pointer"
+                    style={{ color: "var(--accent)" }}
                   >
                     Open Attendance Management &rarr;
                   </button>
@@ -302,12 +301,12 @@ export function DashboardView({
               <div
                 className="p-3 rounded-lg border text-xs flex items-center gap-2"
                 style={{
-                  backgroundColor: "#ECFDF5",
-                  borderColor: "#A7F3D0",
-                  color: "#065F46",
+                  backgroundColor: "var(--bg-secondary)",
+                  borderColor: "var(--border)",
+                  color: "var(--text)",
                 }}
               >
-                <CheckCircle2 size={14} className="shrink-0 text-emerald-600" />
+                <CheckCircle2 size={14} className="shrink-0" style={{ color: "var(--accent)" }} />
                 <span className="text-[11px]">All students maintain attendance above 75%.</span>
               </div>
             )}
@@ -356,8 +355,8 @@ export function DashboardView({
                   <span
                     className="text-[9px] font-semibold px-2 py-0.5 rounded-full"
                     style={{
-                      backgroundColor: adm.status === "APPROVED" ? "#D1FAE5" : "#FEF3C7",
-                      color: adm.status === "APPROVED" ? "#047857" : "#B45309",
+                      backgroundColor: adm.status === "APPROVED" ? "color-mix(in srgb, var(--accent) 12%, transparent)" : "var(--bg-secondary)",
+                      color: adm.status === "APPROVED" ? "var(--accent)" : "var(--muted)",
                     }}
                   >
                     {adm.status === "APPROVED" ? "Approved" : "Review"}

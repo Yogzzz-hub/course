@@ -12,4 +12,6 @@ export * from "./FeesView";
 export * from "./CounsellorsView";
 export * from "./AnnouncementsView";
 export * from "./ReportsView";
+export * from "./ResponsiveTable";
+export * from "./ManagerBottomNav";
 

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { CheckCircle2, AlertCircle, ShieldCheck } from "lucide-react";
 import type { Admission } from "../../data/managerMock";
 import { Drawer } from "./Drawer";
+import { ResponsiveTable } from "./ResponsiveTable";
 
 export function AdmissionsView({
   admissions,
@@ -44,7 +45,7 @@ export function AdmissionsView({
     <div className="space-y-3">
       {/* Top action toolbar - NO headings or subheadings */}
       <div
-        className="p-3 rounded-xl border flex items-center justify-between gap-3 text-xs"
+        className="p-3 rounded-xl border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-xs"
         style={{
           backgroundColor: "var(--surface)",
           borderColor: "var(--border)",
@@ -56,7 +57,7 @@ export function AdmissionsView({
         <button
           type="button"
           onClick={handleCreateEnrolment}
-          className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity shadow-2xs hover:opacity-90 cursor-pointer"
+          className="px-3 py-2 rounded-lg text-xs font-semibold transition-opacity shadow-2xs hover:opacity-90 cursor-pointer min-h-[44px] flex items-center justify-center"
           style={{
             backgroundColor: "var(--accent)",
             color: "var(--accent-contrast)",
@@ -75,7 +76,7 @@ export function AdmissionsView({
         }}
       >
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          <ResponsiveTable className="w-full text-left border-collapse text-xs">
             <thead>
               <tr
                 className="border-b"
@@ -124,16 +125,12 @@ export function AdmissionsView({
                       style={{
                         backgroundColor:
                           adm.feeStatus === "Full Payment Verified"
-                            ? "#D1FAE5"
-                            : adm.feeStatus === "1st Installment Paid"
-                            ? "#FEF3C7"
-                            : "#FEE2E2",
+                            ? "color-mix(in srgb, var(--accent) 12%, transparent)"
+                            : "var(--bg-secondary)",
                         color:
                           adm.feeStatus === "Full Payment Verified"
-                            ? "#047857"
-                            : adm.feeStatus === "1st Installment Paid"
-                            ? "#B45309"
-                            : "#B91C1C",
+                            ? "var(--accent)"
+                            : "var(--muted)",
                       }}
                     >
                       {adm.feeStatus}
@@ -141,12 +138,12 @@ export function AdmissionsView({
                   </td>
                   <td className="py-2.5 px-3.5">
                     {adm.agreementSigned ? (
-                      <span className="text-[11px] font-medium text-emerald-600 flex items-center gap-1">
+                      <span className="text-[11px] font-medium flex items-center gap-1" style={{ color: "var(--accent)" }}>
                         <CheckCircle2 size={12} />
                         Signed
                       </span>
                     ) : (
-                      <span className="text-[11px] font-medium text-amber-600 flex items-center gap-1">
+                      <span className="text-[11px] font-medium flex items-center gap-1" style={{ color: "var(--muted)" }}>
                         <AlertCircle size={12} />
                         Pending
                       </span>
@@ -158,15 +155,11 @@ export function AdmissionsView({
                       style={{
                         backgroundColor:
                           adm.status === "APPROVED"
-                            ? "#D1FAE5"
-                            : adm.status === "PENDING_VERIFICATION"
-                            ? "#FEF3C7"
+                            ? "color-mix(in srgb, var(--accent) 12%, transparent)"
                             : "var(--bg-secondary)",
                         color:
                           adm.status === "APPROVED"
-                            ? "#047857"
-                            : adm.status === "PENDING_VERIFICATION"
-                            ? "#B45309"
+                            ? "var(--accent)"
                             : "var(--muted)",
                       }}
                     >
@@ -177,7 +170,7 @@ export function AdmissionsView({
                     <button
                       type="button"
                       onClick={() => setSelectedAdmission(adm)}
-                      className="px-2 py-1 rounded border text-[11px] font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                      className="px-2.5 py-1.5 rounded border text-[11px] font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer min-h-[44px] md:min-h-0 inline-flex items-center justify-center"
                       style={{
                         borderColor: "var(--border)",
                         color: "var(--text)",
@@ -189,7 +182,7 @@ export function AdmissionsView({
                       <button
                         type="button"
                         onClick={() => handleApprove(adm)}
-                        className="px-2 py-1 rounded font-semibold text-[11px] transition-opacity shadow-2xs hover:opacity-90 cursor-pointer"
+                        className="px-2.5 py-1.5 rounded font-semibold text-[11px] transition-opacity shadow-2xs hover:opacity-90 cursor-pointer min-h-[44px] md:min-h-0 inline-flex items-center justify-center"
                         style={{
                           backgroundColor: "var(--accent)",
                           color: "var(--accent-contrast)",
@@ -202,7 +195,7 @@ export function AdmissionsView({
                 </tr>
               ))}
             </tbody>
-          </table>
+          </ResponsiveTable>
         </div>
       </div>
 
@@ -264,8 +257,15 @@ export function AdmissionsView({
                 <span>Confirm & Finalize Admission</span>
               </button>
             ) : (
-              <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center gap-2">
-                <CheckCircle2 size={14} className="text-emerald-600" />
+              <div
+                className="p-2.5 rounded-lg border flex items-center gap-2"
+                style={{
+                  backgroundColor: "color-mix(in srgb, var(--accent) 8%, var(--surface))",
+                  borderColor: "color-mix(in srgb, var(--accent) 30%, var(--border))",
+                  color: "var(--accent)",
+                }}
+              >
+                <CheckCircle2 size={14} style={{ color: "var(--accent)" }} />
                 <span className="font-medium text-[11px]">This admission is approved and enrolled.</span>
               </div>
             )}

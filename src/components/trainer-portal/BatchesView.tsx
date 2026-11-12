@@ -35,7 +35,13 @@ export function BatchesView({
                   </span>
                   <p className="text-[11px] mt-0.5 text-stone-500">{batch.track}</p>
                 </div>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
+                <span
+                  className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                  style={{
+                    backgroundColor: "color-mix(in srgb, var(--accent) 12%, transparent)",
+                    color: "var(--accent)",
+                  }}
+                >
                   Active
                 </span>
               </div>
@@ -73,11 +79,11 @@ export function BatchesView({
               </div>
             </div>
 
-            <div className="pt-2 border-t flex items-center justify-between" style={{ borderColor: "var(--border)" }}>
+            <div className="pt-2 border-t flex flex-wrap sm:flex-nowrap items-center justify-between gap-2" style={{ borderColor: "var(--border)" }}>
               <button
                 type="button"
                 onClick={() => setSelectedBatch(batch)}
-                className="px-2.5 py-1 rounded border text-[11px] font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                className="px-3 py-1.5 rounded border text-[11px] font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer min-h-[44px] md:min-h-0 flex-1 sm:flex-initial inline-flex items-center justify-center whitespace-nowrap"
                 style={{
                   borderColor: "var(--border)",
                   color: "var(--text)",
@@ -88,7 +94,7 @@ export function BatchesView({
               <button
                 type="button"
                 onClick={() => onTakeAttendance(batch)}
-                className="px-2.5 py-1 rounded font-semibold text-[11px] shadow-2xs hover:opacity-90 cursor-pointer"
+                className="px-3 py-1.5 rounded font-semibold text-[11px] shadow-2xs hover:opacity-90 cursor-pointer min-h-[44px] md:min-h-0 flex-1 sm:flex-initial inline-flex items-center justify-center whitespace-nowrap"
                 style={{
                   backgroundColor: "var(--accent)",
                   color: "var(--accent-contrast)",
@@ -149,8 +155,8 @@ export function BatchesView({
                     <span
                       className="text-[10px] font-semibold px-2 py-0.5 rounded"
                       style={{
-                        backgroundColor: student.attendanceRate >= 75 ? "#D1FAE5" : "#FEE2E2",
-                        color: student.attendanceRate >= 75 ? "#047857" : "#B91C1C",
+                        backgroundColor: "color-mix(in srgb, var(--accent) 12%, transparent)",
+                        color: "var(--accent)",
                       }}
                     >
                       {student.attendanceRate}% Attendance

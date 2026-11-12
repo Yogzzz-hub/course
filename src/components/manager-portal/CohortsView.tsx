@@ -38,18 +38,8 @@ export function CohortsView({ cohorts }: { cohorts: CohortSeat[] }) {
                   <span
                     className="text-[9px] font-semibold px-2 py-0.5 rounded-full uppercase"
                     style={{
-                      backgroundColor:
-                        cohort.status === "ACTIVE"
-                          ? "#D1FAE5"
-                          : cohort.status === "UPCOMING"
-                          ? "#FEF3C7"
-                          : "var(--bg-secondary)",
-                      color:
-                        cohort.status === "ACTIVE"
-                          ? "#047857"
-                          : cohort.status === "UPCOMING"
-                          ? "#B45309"
-                          : "var(--muted)",
+                      backgroundColor: "color-mix(in srgb, var(--accent) 12%, transparent)",
+                      color: "var(--accent)",
                     }}
                   >
                     {cohort.status}
@@ -60,7 +50,7 @@ export function CohortsView({ cohorts }: { cohorts: CohortSeat[] }) {
                 <div className="mt-3 p-2.5 rounded-lg border space-y-1" style={{ backgroundColor: "var(--bg-secondary)", borderColor: "var(--border)" }}>
                   <div className="flex items-center justify-between text-[11px]">
                     <span style={{ color: "var(--muted)" }}>Capacity Fill</span>
-                    <span className="font-semibold" style={{ color: isFull ? "#DC2626" : "var(--text)" }}>
+                    <span className="font-semibold" style={{ color: "var(--text)" }}>
                       {cohort.enrolledCount} / {cohort.maxSeats} seats ({seatPercentage}%)
                     </span>
                   </div>
@@ -69,7 +59,7 @@ export function CohortsView({ cohorts }: { cohorts: CohortSeat[] }) {
                       className="h-full rounded-full transition-all duration-300"
                       style={{
                         width: `${Math.min(seatPercentage, 100)}%`,
-                        backgroundColor: isFull ? "#DC2626" : "var(--accent)",
+                        backgroundColor: "var(--accent)",
                       }}
                     />
                   </div>
@@ -145,7 +135,7 @@ export function CohortsView({ cohorts }: { cohorts: CohortSeat[] }) {
               </div>
               <div className="flex justify-between">
                 <span className="font-medium text-stone-500">Attendance Avg</span>
-                <span className="font-semibold text-emerald-600">
+                <span className="font-semibold" style={{ color: "var(--accent)" }}>
                   {selectedCohort.attendanceAverage}%
                 </span>
               </div>

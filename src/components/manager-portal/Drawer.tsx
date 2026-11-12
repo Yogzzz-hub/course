@@ -44,7 +44,7 @@ export function Drawer({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative z-10 w-full max-w-lg h-full flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-right duration-300"
+        className="relative z-10 w-full md:max-w-lg h-full flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-right duration-300 manager-drawer"
         style={{
           backgroundColor: "var(--surface)",
           borderLeft: "1px solid var(--border)",
@@ -53,11 +53,11 @@ export function Drawer({
       >
         {/* Header */}
         <div
-          className="flex items-center justify-between p-5 border-b shrink-0"
+          className="flex items-center justify-between p-4 sm:p-5 border-b shrink-0"
           style={{ borderColor: "var(--border)" }}
         >
           <div>
-            <h2 className="text-lg font-bold tracking-tight">{title}</h2>
+            <h2 className="text-base sm:text-lg font-bold tracking-tight">{title}</h2>
             {subtitle && (
               <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
                 {subtitle}
@@ -67,7 +67,7 @@ export function Drawer({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+            className="p-2 sm:p-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center"
             style={{ color: "var(--muted)" }}
             aria-label="Close drawer"
           >
@@ -76,7 +76,7 @@ export function Drawer({
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto flex-1 space-y-5">{children}</div>
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-5">{children}</div>
       </div>
     </div>
   );

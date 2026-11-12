@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Search, Calendar, MessageSquare } from "lucide-react";
 import type { Lead, Counsellor } from "../../data/managerMock";
 import { Drawer } from "./Drawer";
+import { ResponsiveTable } from "./ResponsiveTable";
 
 export function LeadsView({
   leads,
@@ -96,7 +97,7 @@ export function LeadsView({
           borderColor: "var(--border)",
         }}
       >
-        <div className="relative flex-1 max-w-sm">
+        <div className="relative flex-1 w-full md:max-w-sm">
           <Search
             size={14}
             className="absolute left-3 top-1/2 -translate-y-1/2"
@@ -107,7 +108,7 @@ export function LeadsView({
             placeholder="Search leads by name, track, or ID..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 rounded-lg text-xs border outline-none"
+            className="w-full pl-9 pr-3 py-2 rounded-lg text-xs border outline-none min-h-[44px]"
             style={{
               backgroundColor: "var(--bg-secondary)",
               borderColor: "var(--border)",
@@ -117,7 +118,7 @@ export function LeadsView({
         </div>
 
         {/* Filter Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 w-full md:w-auto">
           {["ALL", "New Lead", "Counselling Scheduled", "Offer Extended", "Admitted", "Lost"].map(
             (status) => {
               const isSelected = statusFilter === status;
@@ -126,7 +127,7 @@ export function LeadsView({
                   key={status}
                   type="button"
                   onClick={() => setStatusFilter(status)}
-                  className="px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors border cursor-pointer"
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors border cursor-pointer min-h-[44px] flex items-center shrink-0"
                   style={{
                     backgroundColor: isSelected ? "var(--accent)" : "transparent",
                     borderColor: isSelected ? "var(--accent)" : "var(--border)",
@@ -150,7 +151,7 @@ export function LeadsView({
         }}
       >
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          <ResponsiveTable className="w-full text-left border-collapse text-xs">
             <thead>
               <tr
                 className="border-b"
@@ -198,12 +199,7 @@ export function LeadsView({
                           className="h-full rounded-full"
                           style={{
                             width: `${lead.score}%`,
-                            backgroundColor:
-                              lead.score >= 80
-                                ? "#059669"
-                                : lead.score >= 60
-                                ? "#D97706"
-                                : "#DC2626",
+                            backgroundColor: "var(--accent)",
                           }}
                         />
                       </div>
@@ -218,25 +214,13 @@ export function LeadsView({
                       className="text-[9px] font-medium px-2 py-0.5 rounded"
                       style={{
                         backgroundColor:
-                          lead.status === "New Lead"
-                            ? "color-mix(in srgb, var(--accent) 10%, transparent)"
-                            : lead.status === "Admitted"
-                            ? "#D1FAE5"
-                            : lead.status === "Offer Extended"
-                            ? "#FEF3C7"
-                            : lead.status === "Counselling Scheduled"
-                            ? "#EDE9FE"
-                            : "#FEE2E2",
+                          lead.status === "New Lead" || lead.status === "Admitted"
+                            ? "color-mix(in srgb, var(--accent) 12%, transparent)"
+                            : "var(--bg-secondary)",
                         color:
-                          lead.status === "New Lead"
+                          lead.status === "New Lead" || lead.status === "Admitted"
                             ? "var(--accent)"
-                            : lead.status === "Admitted"
-                            ? "#047857"
-                            : lead.status === "Offer Extended"
-                            ? "#B45309"
-                            : lead.status === "Counselling Scheduled"
-                            ? "#6D28D9"
-                            : "#B91C1C",
+                            : "var(--muted)",
                       }}
                     >
                       {lead.status}
@@ -249,7 +233,7 @@ export function LeadsView({
                     <button
                       type="button"
                       onClick={() => setSelectedLead(lead)}
-                      className="px-2 py-1 rounded border text-[11px] font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                      className="px-3 py-1.5 rounded border text-[11px] font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer min-h-[44px] md:min-h-0 flex items-center justify-center"
                       style={{
                         borderColor: "var(--border)",
                         color: "var(--text)",
@@ -268,7 +252,7 @@ export function LeadsView({
                 </tr>
               )}
             </tbody>
-          </table>
+          </ResponsiveTable>
         </div>
       </div>
 
