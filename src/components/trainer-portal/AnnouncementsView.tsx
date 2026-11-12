@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Send } from "lucide-react";
-import type { TrainerAnnouncement, TrainerBatch } from "../../data/trainerMock";
+import type { TrainerAnnouncement, TrainerBatch } from "./types";
 
 export function AnnouncementsView({
   announcements,

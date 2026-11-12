@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import type { TrainerBatch } from "../../data/trainerMock";
+import type { TrainerBatch } from "./types";
 import { Drawer } from "../manager-portal/Drawer";
 
 export function BatchesView({

@@ -15,7 +15,7 @@ import type {
   TrainerBatch,
   TrainerScheduleItem,
   DoubtSession,
-} from "../../data/trainerMock";
+} from "./types";
 import type { TrainerNavTab } from "./types";
 
 export function DashboardView({

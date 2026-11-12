@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { CheckCircle2, AlertCircle, ShieldCheck } from "lucide-react";
-import type { Admission } from "../../data/managerMock";
+import type { Admission } from "./types";
 import { Drawer } from "./Drawer";
 import { ResponsiveTable } from "./ResponsiveTable";
 

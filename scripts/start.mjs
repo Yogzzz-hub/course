@@ -21,6 +21,10 @@ const [
   { handleRequest: handleNotify },
   { default: learningAdapter },
   { dispatchNodeFinancierRequest },
+  { dispatchNodeManagerRequest },
+  { dispatchNodeTrainerRequest },
+  { dispatchNodeStudentRequest },
+  { dispatchNodeAdminRequest },
   { pool },
 ] = await Promise.all([
   import('../api/booking.ts'),
@@ -28,6 +32,10 @@ const [
   import('../api/notify.ts'),
   import('../api/learning.ts'),
   import('../api/financier/index.ts'),
+  import('../api/manager/index.ts'),
+  import('../api/trainer/index.ts'),
+  import('../api/student/index.ts'),
+  import('../api/admin/index.ts'),
   import('../server/db.ts'),
 ]);
 
@@ -265,6 +273,22 @@ async function handleApiRequest(req, res, pathname, rawUrl, method) {
 
   if (pathname === '/api/financier' || pathname.startsWith('/api/financier/')) {
     return dispatchNodeFinancierRequest(req, res);
+  }
+
+  if (pathname === '/api/manager' || pathname.startsWith('/api/manager/')) {
+    return dispatchNodeManagerRequest(req, res);
+  }
+
+  if (pathname === '/api/trainer' || pathname.startsWith('/api/trainer/')) {
+    return dispatchNodeTrainerRequest(req, res);
+  }
+
+  if (pathname === '/api/student' || pathname.startsWith('/api/student/')) {
+    return dispatchNodeStudentRequest(req, res);
+  }
+
+  if (pathname === '/api/admin' || pathname.startsWith('/api/admin/')) {
+    return dispatchNodeAdminRequest(req, res);
   }
 
   if (pathname === '/api/booking' || pathname.startsWith('/api/booking/')) {

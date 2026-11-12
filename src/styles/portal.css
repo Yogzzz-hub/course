@@ -145,7 +145,7 @@
    Keeps desktop (min-width: 769px) layout completely untouched.
    ========================================================================= */
 
-@media (max-width: 768px) {
+@media (max-width: 767.98px) {
   /* Layout container */
   .manager-workspace {
     flex-direction: column !important;

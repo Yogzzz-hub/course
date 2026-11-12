@@ -36,13 +36,11 @@ import {
   PanelLeftClose,
 } from "lucide-react";
 import {
-  initialAccounts,
-  initialBankLedger,
-  initialFinancierStudents,
   type LedgerLine,
   type FinancierAccount,
   type FinancierStudentDebt,
-} from "../data/financierMock";
+} from "../data/financierSeedData";
+import { loadFinancierLiveData } from "../data/financierLiveData";
 
 export type FinancierTab = "ledger" | "students" | "reconciliation" | "accounts";
 
@@ -79,9 +77,34 @@ export default function FinancierPanel() {
   const selectedAccountCode = searchParams.get("account") || "BANK";
   const studentDetailId = searchParams.get("studentId");
 
-  const [accounts, setAccounts] = useState<FinancierAccount[]>(initialAccounts);
-  const [ledgerLines, setLedgerLines] = useState<LedgerLine[]>(initialBankLedger);
-  const [students, setStudents] = useState<FinancierStudentDebt[]>(initialFinancierStudents);
+  const [accounts, setAccounts] = useState<FinancierAccount[]>([]);
+  const [ledgerLines, setLedgerLines] = useState<LedgerLine[]>([]);
+  const [students, setStudents] = useState<FinancierStudentDebt[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [dataError, setDataError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setDataLoading(true);
+    setDataError(null);
+    loadFinancierLiveData()
+      .then((data) => {
+        if (cancelled) return;
+        setAccounts(data.accounts);
+        setLedgerLines(data.ledgerLines);
+        setStudents(data.students);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setDataError(err instanceof Error ? err.message : "Could not load financier data from the database.");
+      })
+      .finally(() => {
+        if (!cancelled) setDataLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState("");
@@ -224,13 +247,13 @@ export default function FinancierPanel() {
 
           {/* Sidebar Nav Items + Live Operating Accounts Quick-Jump */}
           <nav className="flex-1 flex flex-col justify-between gap-2 p-3 overflow-y-auto overflow-x-hidden" aria-label="Financier sections">
-            <div className="flex-1 flex flex-col justify-between gap-1.5">
+            <div className="flex flex-col gap-1.5">
               <button
                 type="button"
                 title={sidebarCollapsed ? "Operating Ledger" : undefined}
                 onClick={() => setTab("ledger", "BANK")}
                 aria-current={activeTab === "ledger" ? "page" : undefined}
-                className={`group flex flex-1 min-h-[44px] max-h-[64px] w-full items-center rounded-xl py-2 text-left text-xs transition ${
+                className={`group flex min-h-[44px] w-full items-center rounded-xl py-2 text-left text-xs transition ${
                   sidebarCollapsed ? "justify-center px-2" : "justify-between px-3"
                 } ${
                   activeTab === "ledger"
@@ -256,7 +279,7 @@ export default function FinancierPanel() {
                 title={sidebarCollapsed ? "Student Balances" : undefined}
                 onClick={() => setTab("students")}
                 aria-current={activeTab === "students" ? "page" : undefined}
-                className={`relative group flex flex-1 min-h-[44px] max-h-[64px] w-full items-center rounded-xl py-2 text-left text-xs transition ${
+                className={`relative group flex min-h-[44px] w-full items-center rounded-xl py-2 text-left text-xs transition ${
                   sidebarCollapsed ? "justify-center px-2" : "justify-between px-3"
                 } ${
                   activeTab === "students"
@@ -299,7 +322,7 @@ export default function FinancierPanel() {
                 title={sidebarCollapsed ? "Treasury Accounts" : undefined}
                 onClick={() => setTab("accounts")}
                 aria-current={activeTab === "accounts" ? "page" : undefined}
-                className={`group flex flex-1 min-h-[44px] max-h-[64px] w-full items-center rounded-xl py-2 text-left text-xs transition ${
+                className={`group flex min-h-[44px] w-full items-center rounded-xl py-2 text-left text-xs transition ${
                   sidebarCollapsed ? "justify-center px-2" : "justify-between px-3"
                 } ${
                   activeTab === "accounts"
@@ -440,8 +463,18 @@ export default function FinancierPanel() {
 
         {/* Main Workspace Body */}
         <main className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-28 md:pb-12">
+        {dataLoading && (
+          <div className="mb-4 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--muted)]">
+            Loading ledger and account data from the database...
+          </div>
+        )}
+        {dataError && (
+          <div className="mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {dataError}
+          </div>
+        )}
         {/* SUBVIEW 1: OPERATING BANK ACCOUNT LEDGER */}
-        {activeTab === "ledger" && (
+        {activeTab === "ledger" && currentAccount && (
           <div className="space-y-6">
             {/* Header / Account Switcher Card */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

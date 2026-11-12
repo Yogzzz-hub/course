@@ -8,7 +8,7 @@ import {
   AlertCircle,
   CheckCircle2,
 } from "lucide-react";
-import type { Lead, ManagerStats, Admission, AttendanceAlert } from "../../data/managerMock";
+import type { Lead, ManagerStats, Admission, AttendanceAlert } from "./types";
 import type { ManagerNavTab } from "./types";
 
 export function DashboardView({

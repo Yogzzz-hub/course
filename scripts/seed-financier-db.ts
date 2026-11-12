@@ -1,9 +1,9 @@
 import pg from 'pg';
-import { createInitialFinancierState } from '../src/data/financierMock.ts';
+import { createInitialFinancierState } from '../src/data/financierSeedData.ts';
 
-const pool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:mkccsql@127.0.0.1:5432/academy',
-});
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) throw new Error('DATABASE_URL is required to connect to PostgreSQL.');
+const pool = new pg.Pool({ connectionString });
 
 export async function seedFinancierDb(force = false) {
   const client = await pool.connect();

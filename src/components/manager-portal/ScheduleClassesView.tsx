@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Calendar, Clock, Plus, Search, Trash2, Video, Edit3, AlertCircle } from "lucide-react";
-import type { CohortSeat } from "../../data/managerMock";
+import type { CohortSeat } from "./types";
 import {
   computeDurationLabel,
   formatDateLabel,

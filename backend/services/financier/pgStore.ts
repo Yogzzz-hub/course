@@ -34,9 +34,8 @@ let pgPoolInstance: pg.Pool | null = null;
 
 export function getPgPool(): pg.Pool {
   if (!pgPoolInstance) {
-    const connStr =
-      process.env.DATABASE_URL ||
-      "postgresql://postgres:mkccsql@127.0.0.1:5432/academy";
+    const connStr = process.env.DATABASE_URL;
+    if (!connStr) throw new Error("DATABASE_URL is required to connect to PostgreSQL.");
     pgPoolInstance = new pg.Pool({
       connectionString: connStr,
       max: 10,
