@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   QueryClient,
   QueryClientProvider,
@@ -8,16 +8,23 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import {
+  AlertTriangle,
   Bell,
   BookOpen,
   ChartNoAxesCombined,
+  ChevronRight,
   ClipboardCheck,
-  FileClock,
+  Download,
+  GraduationCap,
   LayoutDashboard,
   LogOut,
   Menu,
+  MoreHorizontal,
   Search,
+  Settings,
   ShieldCheck,
+  User,
+  Users,
   Wallet,
   X,
   type LucideIcon,
@@ -29,28 +36,17 @@ import {
   type AdminApi,
   type AdminSession,
   type AdminSection,
+  type Permission,
 } from "./contracts";
 import {
   AdminAuthority,
   adminKeys,
-  PermissionGate,
   useAdminAction,
   useAdminAuthority,
   useAdminResource,
   useAdminSession,
 } from "./hooks";
-import {
-  hasPermission,
-  resourcePermissions,
-  sectionPermissions,
-} from "./permissions";
-import { ActionFeedback, OperationRecovery } from "./ActionFeedback";
-import { Leads } from "./Leads";
-import { Offers } from "./Offers";
-import { Finance } from "./Finance";
-import { Programmes } from "./Programmes";
-import { Reports } from "./Reports";
-import { Audit } from "./Audit";
+import { hasPermission } from "./permissions";
 import {
   AdminErrorBoundary,
   Button,
@@ -59,11 +55,17 @@ import {
   inputClass,
   Label,
   Notice,
-  QueryView,
   SecureLink,
   Skeleton,
 } from "./ui";
-import { dateTime } from "./utils";
+import { OverviewSection } from "./OverviewSection";
+import { LeadsSection } from "./LeadsSection";
+import { ApprovalsSection } from "./ApprovalsSection";
+import { PaymentsSection } from "./PaymentsSection";
+import { ProgrammesSection } from "./ProgrammesSection";
+import { StudentsSection } from "./StudentsSection";
+import { ReportsSection } from "./ReportsSection";
+import { SettingsSection } from "./SettingsSection";
 import "./admin-panel.css";
 import { PaletteMenu, WorkspaceAppearance } from "../PaletteMenu";
 
@@ -72,54 +74,82 @@ export interface AdminPanelProps {
   signInUrl?: string;
   academyName?: string;
 }
-const items: {
-  id: AdminSection;
+
+export type DashboardSection =
+  | "overview"
+  | "leads"
+  | "approvals"
+  | "payments"
+  | "programmes"
+  | "students"
+  | "reports"
+  | "settings";
+
+interface NavItemConfig {
+  id: DashboardSection;
   label: string;
-  description: string;
+  subtitle: string;
   icon: LucideIcon;
-}[] = [
+  requiredPermission?: Permission;
+}
+
+const NAV_ITEMS: NavItemConfig[] = [
   {
-    id: "leads",
-    label: "Leads pipeline",
-    description:
-      "Keep every enquiry moving with clear ownership and follow-ups.",
+    id: "overview",
+    label: "Overview",
+    subtitle: "Academy-wide metrics, active enquiries and critical operational alerts",
     icon: LayoutDashboard,
   },
   {
-    id: "offers",
-    label: "Offers & approvals",
-    description: "Review discount requests and record an independent decision.",
-    icon: ClipboardCheck,
+    id: "leads",
+    label: "Leads",
+    subtitle: "Admissions pipeline, enquiry tracking and counsellor stage ownership",
+    icon: Users,
+    requiredPermission: "leads.read",
   },
   {
-    id: "finance",
-    label: "Payments & ledger",
-    description:
-      "Reconcile payments, verify evidence and manage refund approvals.",
+    id: "approvals",
+    label: "Approvals",
+    subtitle: "Secondary sign-off on fee discounts, scholarships and bank transfer slips",
+    icon: ClipboardCheck,
+    requiredPermission: "offers.read",
+  },
+  {
+    id: "payments",
+    label: "Payments",
+    subtitle: "Real-time fee ledger, instalment schedules and payment reconciliation",
     icon: Wallet,
+    requiredPermission: "ledger.read",
   },
   {
     id: "programmes",
-    label: "Programmes & pricing",
-    description:
-      "Manage versioned packages, transparent fees and website builds.",
+    label: "Programmes",
+    subtitle: "Course cohorts, batch schedules, seat fill-rates and transparent pricing",
     icon: BookOpen,
+    requiredPermission: "cms.read",
+  },
+  {
+    id: "students",
+    label: "Students",
+    subtitle: "Enrolled student rosters, class attendance tracking and LMS progress",
+    icon: GraduationCap,
+    requiredPermission: "leads.read",
   },
   {
     id: "reports",
-    label: "Reports & analytics",
-    description:
-      "Measure conversions, counsellor performance and confirmed revenue.",
+    label: "Reports",
+    subtitle: "Lead-to-enrolment conversion funnel, counsellor performance and exports",
     icon: ChartNoAxesCombined,
+    requiredPermission: "reports.read",
   },
   {
-    id: "audit",
-    label: "Audit trail",
-    description:
-      "Review the server record of changes, decisions and request identifiers.",
-    icon: FileClock,
+    id: "settings",
+    label: "Settings",
+    subtitle: "Admin session security, two-factor authentication and notification schedules",
+    icon: Settings,
   },
 ];
+
 function TwoFactor({
   api,
   challenge,
@@ -152,15 +182,14 @@ function TwoFactor({
     },
     retry: false,
   });
+
   return (
-    <Card>
-      <ShieldCheck
-        size={32}
-        className="mb-4 text-indigo-700"
-        aria-hidden="true"
-      />
-      <h1 className="text-2xl font-semibold">Verify your admin access</h1>
-      <p className="my-4 text-sm leading-7 text-slate-600">
+    <Card className="max-w-md mx-auto my-12">
+      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#E8F6ED] text-[#10754A] mb-4">
+        <ShieldCheck size={28} />
+      </div>
+      <h1 className="text-2xl font-bold text-[#241921]">Verify admin access</h1>
+      <p className="my-3 text-sm leading-6 text-[#645A62]">
         Enter the six-digit verification code sent to {challenge.maskedEmail}.
       </p>
       <form
@@ -174,7 +203,7 @@ function TwoFactor({
           <Label id="admin-otp">Two-factor verification code</Label>
           <input
             id="admin-otp"
-            className={`${inputClass} tracking-[0.4em]`}
+            className={`${inputClass} tracking-[0.4em] text-center font-mono text-lg`}
             type="text"
             inputMode="numeric"
             autoComplete="one-time-code"
@@ -191,12 +220,12 @@ function TwoFactor({
         )}
         {expired && (
           <Notice error>
-            Your verification challenge expired. Refresh your session to
-            continue.
+            Your verification challenge expired. Refresh your session to continue.
           </Notice>
         )}
         <Button
           type="submit"
+          className="w-full"
           busy={mutation.isPending}
           disabled={expired || !/^\d{6}$/.test(code)}
         >
@@ -206,201 +235,66 @@ function TwoFactor({
     </Card>
   );
 }
-function SearchBox({
-  navigate,
-}: {
-  navigate: (section: AdminSection) => void;
-}) {
-  const { can } = useAdminAuthority();
-  const [value, setValue] = useState("");
-  const [term, setTerm] = useState("");
-  useEffect(() => {
-    const timer = setTimeout(() => setTerm(value.trim()), 300);
-    return () => clearTimeout(timer);
-  }, [value]);
-  const query = useAdminResource("search", { q: term }, term.length >= 2);
-  if (!can("search.read")) return null;
-  const visible = value.trim().length >= 2 && term === value.trim();
-  return (
-    <div className="relative min-w-0 w-full order-last sm:order-none sm:w-auto sm:flex-1">
-      <label htmlFor="admin-search" className="sr-only">
-        Search admin workspace
-      </label>
-      <div className="relative">
-        <Search
-          size={16}
-          aria-hidden="true"
-          className="absolute top-3.5 left-3 text-slate-400"
-        />
-        <input
-          id="admin-search"
-          placeholder="Search leads, payments, programmes…"
-          maxLength={200}
-          className={`${inputClass} pl-9`}
-          value={value}
-          onChange={(event) => setValue(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Escape") setValue("");
-          }}
-        />
-      </div>
-      {visible && (
-        <div
-          className="absolute top-full right-0 left-0 z-40 mt-2 max-h-80 overflow-y-auto rounded-xl border border-slate-200 bg-white p-3 shadow-lg"
-          role="region"
-          aria-label="Search results"
-        >
-          <QueryView query={query}>
-            {(data) => {
-              const results = data.results.filter((item) =>
-                can(sectionPermissions[item.section]),
-              );
-              return !results.length ? (
-                <Empty>No accessible results.</Empty>
-              ) : (
-                results.map((item) => (
-                  <button
-                    key={`${item.section}:${item.id}`}
-                    type="button"
-                    className="block w-full rounded-lg p-3 text-left hover:bg-slate-50"
-                    onClick={() => {
-                      navigate(item.section);
-                      setValue("");
-                    }}
-                  >
-                    <span className="block text-sm font-semibold">
-                      {item.label}
-                    </span>
-                    <span className="mt-1 block text-xs text-slate-600">
-                      {item.description}
-                    </span>
-                  </button>
-                ))
-              );
-            }}
-          </QueryView>
-        </div>
-      )}
-    </div>
-  );
-}
-function NotificationItem({
-  item,
-  navigate,
-}: {
-  item: import("./contracts").ResourceMap["notifications"]["notifications"][number];
-  navigate: (section: AdminSection) => void;
-}) {
-  const { can } = useAdminAuthority();
-  const action = useAdminAction();
-  if (!can("notifications.read") || !can(sectionPermissions[item.section]))
-    return null;
-  return (
-    <li className="space-y-2 border-b border-slate-100 py-3">
-      <button
-        type="button"
-        className="text-left text-sm font-semibold text-indigo-700"
-        onClick={() => navigate(item.section)}
-      >
-        {!item.read && (
-          <span className="mr-1" aria-label="Unread">
-            •
-          </span>
-        )}
-        {item.title}
-      </button>
-      <p className="text-xs text-slate-500">{dateTime(item.at)}</p>
-      {!item.read && can("notifications.write") && (
-        <Button
-          secondary
-          busy={action.busy}
-          onClick={() =>
-            void action.run({
-              type: "notification.read",
-              notificationId: item.id,
-            })
-          }
-        >
-          Mark as read
-        </Button>
-      )}
-      <ActionFeedback action={action} />
-    </li>
-  );
-}
-function Notifications({
-  navigate,
-}: {
-  navigate: (section: AdminSection) => void;
-}) {
-  const { can } = useAdminAuthority();
-  const [open, setOpen] = useState(false);
-  const query = useAdminResource("notifications", {}, open);
-  if (!can("notifications.read")) return null;
-  return (
-    <div className="relative">
-      <Button
-        secondary
-        aria-label="Notification center"
-        aria-expanded={open}
-        aria-controls="admin-notifications"
-        onClick={() => setOpen((value) => !value)}
-      >
-        <Bell size={18} />
-      </Button>
-      {open && (
-        <div
-          id="admin-notifications"
-          role="region"
-          aria-label="Notifications"
-          className="absolute top-full right-0 z-40 mt-2 max-h-96 w-[min(20rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 shadow-lg"
-        >
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-semibold">Notifications</h2>
-            <button
-              type="button"
-              className="inline-flex min-h-11 min-w-11 items-center justify-center"
-              aria-label="Close notifications"
-              onClick={() => setOpen(false)}
-            >
-              <X size={16} />
-            </button>
-          </div>
-          <QueryView query={query}>
-            {(data) => {
-              const visible = data.notifications.filter((item) =>
-                can(sectionPermissions[item.section]),
-              );
-              return !visible.length ? (
-                <Empty>No notifications.</Empty>
-              ) : (
-                <ul>
-                  {visible.map((item) => (
-                    <NotificationItem
-                      key={item.id}
-                      item={item}
-                      navigate={(section) => {
-                        navigate(section);
-                        setOpen(false);
-                      }}
-                    />
-                  ))}
-                </ul>
-              );
-            }}
-          </QueryView>
-        </div>
-      )}
-    </div>
-  );
-}
-function Workspace({ academyName }: { academyName: string }) {
+
+function AdminWorkspace({ academyName }: { academyName: string }) {
   const { can, session, api } = useAdminAuthority();
   const client = useQueryClient();
-  const [selected, setSelected] = useState<AdminSection>("leads");
-  const [collapsed, setCollapsed] = useState(false);
-  const allowed = items.filter((item) => can(sectionPermissions[item.id]));
-  const active = allowed.find((item) => item.id === selected) || allowed[0];
+
+  // Route section by URL hash so refresh retains current section
+  const [activeSection, setActiveSection] = useState<DashboardSection>(() => {
+    if (typeof window !== "undefined" && window.location.hash) {
+      const hash = window.location.hash.replace(/^#/, "").toLowerCase();
+      if (NAV_ITEMS.some((item) => item.id === hash)) {
+        return hash as DashboardSection;
+      }
+    }
+    return "overview";
+  });
+
+  // Global search input in header
+  const [globalSearch, setGlobalSearch] = useState("");
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  // Sync hash changes
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace(/^#/, "").toLowerCase();
+      if (NAV_ITEMS.some((item) => item.id === hash)) {
+        setActiveSection(hash as DashboardSection);
+      }
+    };
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
+
+  const selectSection = (section: DashboardSection) => {
+    setActiveSection(section);
+    if (typeof window !== "undefined") {
+      window.location.hash = `#${section}`;
+    }
+    setMobileMoreOpen(false);
+    setMobileSidebarOpen(false);
+  };
+
+  // Queries for live counts (e.g. pending approvals badge)
+  const offersQuery = useAdminResource("offers", {});
+  const financeQuery = useAdminResource("finance", {});
+  const pendingOffersCount =
+    offersQuery.data?.offers.filter((o) => o.status === "pending").length || 0;
+  const pendingProofsCount =
+    financeQuery.data?.proofs.filter((p) => p.status === "pending_review").length || 0;
+  const totalApprovalsCount = pendingOffersCount + pendingProofsCount;
+
+  // Filter allowed items based on session permissions
+  const allowedItems = NAV_ITEMS.filter((item) => {
+    if (!item.requiredPermission) return true;
+    return can(item.requiredPermission);
+  });
+
+  const activeItemConfig =
+    allowedItems.find((item) => item.id === activeSection) || allowedItems[0];
+
   const logout = useMutation({
     mutationFn: () =>
       api.logout({
@@ -417,156 +311,528 @@ function Workspace({ academyName }: { academyName: string }) {
       });
     },
   });
-  const content =
-    active?.id === "leads" ? (
-      <Leads />
-    ) : active?.id === "offers" ? (
-      <Offers />
-    ) : active?.id === "finance" ? (
-      <Finance />
-    ) : active?.id === "programmes" ? (
-      <Programmes />
-    ) : active?.id === "reports" ? (
-      <Reports />
-    ) : (
-      <Audit />
-    );
+
+  const refreshSession = async () => {
+    await client.invalidateQueries({ queryKey: adminKeys.session });
+  };
+
+  const handleGlobalSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (globalSearch.trim()) {
+      selectSection("leads");
+    }
+  };
+
+  // Render the selected section component
+  const renderSection = () => {
+    switch (activeItemConfig?.id) {
+      case "overview":
+        return <OverviewSection onNavigate={(sec) => selectSection(sec as DashboardSection)} />;
+      case "leads":
+        return <LeadsSection initialSearch={globalSearch} />;
+      case "approvals":
+        return <ApprovalsSection />;
+      case "payments":
+        return <PaymentsSection />;
+      case "programmes":
+        return <ProgrammesSection />;
+      case "students":
+        return <StudentsSection />;
+      case "reports":
+        return <ReportsSection />;
+      case "settings":
+        return <SettingsSection onRefreshSession={refreshSession} />;
+      default:
+        return <OverviewSection onNavigate={(sec) => selectSection(sec as DashboardSection)} />;
+    }
+  };
+
   return (
-    <>
+    <div className="min-h-screen bg-[#F7F9FB] text-[#241921] flex flex-col">
       <a href="#admin-main" className="admin-skip">
-        Skip to admin workspace
+        Skip to main content
       </a>
+
+      {/* ======================================================== */}
+      {/* DESKTOP FIXED SIDEBAR (>900px, about 240px wide)        */}
+      {/* ======================================================== */}
       <aside
-        className={`fixed inset-y-0 left-0 z-30 hidden flex-col overflow-y-auto border-r border-slate-200 bg-white lg:flex ${collapsed ? "w-20" : "w-64"}`}
+        className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col overflow-y-auto border-r border-[#4F1A2C] bg-[#3A1020] text-[#F7F9FB] lg:flex"
+        aria-label="Admin sidebar navigation"
       >
-        <div className="flex min-h-20 shrink-0 items-center gap-3 border-b border-slate-100 p-5">
-          <a href="/" className="logo flex flex-row items-center flex-nowrap gap-2.5 shrink-0" aria-label={`${academyName} home`}>
-            <LogoMark size={32} className="shrink-0" />
-            {!collapsed && (
-              <span className="logo-wordmark flex flex-col justify-center leading-tight">
-                <span className="logo-name whitespace-nowrap">{academyName.replace(/\s+(Technical\s+)?Academy$/i, "")}</span>
-                <span className="logo-subtitle whitespace-nowrap">Academy</span>
+        {/* Sidebar Brand Header */}
+        <div className="flex min-h-[72px] shrink-0 items-center gap-3 border-b border-[#4F1A2C] px-5">
+          <a
+            href="/"
+            className="flex items-center gap-2.5 hover:opacity-90 transition"
+            aria-label={`${academyName} Home`}
+          >
+            <LogoMark size={28} className="shrink-0 text-[#A9C9DC]" />
+            <div className="flex flex-col">
+              <span className="font-bold text-sm tracking-tight text-white leading-tight">
+                {academyName.replace(/\s+(Technical\s+)?Academy$/i, "")}
               </span>
-            )}
+              <span className="text-[11px] font-semibold text-[#A9C9DC] tracking-wider uppercase">
+                Admin Portal
+              </span>
+            </div>
           </a>
         </div>
-        <nav aria-label="Admin navigation" className="space-y-2 px-3 py-6">
-          {allowed.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              aria-current={active?.id === item.id ? "page" : undefined}
-              title={collapsed ? item.label : undefined}
-              aria-label={item.label}
-              onClick={() => setSelected(item.id)}
-              className={`flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-semibold ${active?.id === item.id ? "bg-indigo-50 text-indigo-800" : "text-slate-600 hover:bg-slate-100"}`}
-            >
-              <item.icon size={20} className="shrink-0" />
-              {!collapsed && item.label}
-            </button>
-          ))}
-        </nav>
-        <div className="mt-auto space-y-3 p-3">
-          <Button
-            secondary
-            className="w-full"
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            onClick={() => setCollapsed((value) => !value)}
-          >
-            <Menu size={18} />
-            {!collapsed && "Collapse sidebar"}
-          </Button>
-          <p className="flex justify-center gap-1 text-xs text-emerald-700">
-            <ShieldCheck size={14} />
-            {!collapsed && "Two-factor verified"}
-          </p>
-        </div>
-      </aside>
-      <div className={collapsed ? "lg:pl-20" : "lg:pl-64"}>
-        <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
-          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:justify-start sm:px-7">
-            <div className="flex items-center gap-2 lg:hidden">
-              <a href="/" className="logo shrink-0" aria-label={`${academyName} home`}>
-                <LogoMark size={26} />
-              </a>
-              <span className="text-sm font-bold truncate">
-                {academyName} Admin
-              </span>
-            </div>
-            <div className="flex items-center gap-2 ml-auto sm:ml-0 sm:order-last">
-              <PaletteMenu />
-              <Notifications navigate={setSelected} />
-              <Button
-                secondary
-                busy={logout.isPending}
-                aria-label="Sign out of admin workspace"
-                onClick={() => logout.mutate()}
-              >
-                <LogOut size={16} />
-                <span className="hidden sm:inline">Sign out</span>
-              </Button>
-            </div>
-            <SearchBox navigate={setSelected} />
-          </div>
-          <nav
-            aria-label="Mobile admin navigation"
-            className="flex gap-2 overflow-x-auto px-4 pb-3 lg:hidden"
-          >
-            {allowed.map((item) => (
+
+        {/* Sidebar Navigation Items */}
+        <nav className="flex-1 space-y-1 px-3 py-5" aria-label="Sections">
+          {allowedItems.map((item) => {
+            const isActive = activeItemConfig?.id === item.id;
+            const Icon = item.icon;
+            const badgeCount = item.id === "approvals" ? totalApprovalsCount : 0;
+
+            return (
               <button
                 key={item.id}
                 type="button"
-                className={`min-h-11 shrink-0 rounded-lg px-3 text-xs font-semibold ${active?.id === item.id ? "bg-indigo-50 text-indigo-800" : "text-slate-600"}`}
-                aria-current={active?.id === item.id ? "page" : undefined}
-                onClick={() => setSelected(item.id)}
+                aria-current={isActive ? "page" : undefined}
+                onClick={() => selectSection(item.id)}
+                className={`group flex min-h-[44px] w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-left text-xs font-semibold transition ${
+                  isActive
+                    ? "bg-[#681C35] text-white shadow-sm font-bold"
+                    : "text-[#F7F9FB]/80 hover:bg-[#4F1A2C] hover:text-white"
+                }`}
               >
-                {item.label}
+                <div className="flex items-center gap-3">
+                  <Icon
+                    size={18}
+                    className={`shrink-0 ${
+                      isActive ? "text-[#A9C9DC]" : "text-[#F7F9FB]/70 group-hover:text-white"
+                    }`}
+                  />
+                  <span>{item.label}</span>
+                </div>
+
+                {badgeCount > 0 && (
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                      isActive
+                        ? "bg-white text-[#681C35]"
+                        : "bg-[#681C35] text-white"
+                    }`}
+                  >
+                    {badgeCount}
+                  </span>
+                )}
               </button>
-            ))}
-          </nav>
+            );
+          })}
+        </nav>
+
+        {/* Sidebar Admin Footer */}
+        <div className="mt-auto border-t border-[#4F1A2C] p-4 bg-[#320D1B]">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#681C35] text-xs font-bold text-white border border-[#A9C9DC]/30">
+                {session.name
+                  .split(" ")
+                  .map((w) => w[0])
+                  .join("")
+                  .toUpperCase()
+                  .slice(0, 2) || "AD"}
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-white truncate">
+                  {session.name}
+                </div>
+                <div className="flex items-center gap-1 text-[10px] text-[#A9C9DC]">
+                  <ShieldCheck size={12} className="text-emerald-400 shrink-0" />
+                  <span className="truncate">2FA Verified</span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => logout.mutate()}
+              title="Sign out of admin"
+              className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg text-[#F7F9FB]/70 hover:bg-[#4F1A2C] hover:text-white transition"
+              aria-label="Sign out"
+            >
+              <LogOut size={16} />
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* ======================================================== */}
+      {/* MAIN CONTENT AREA WITH STICKY HEADER                     */}
+      {/* ======================================================== */}
+      <div className="lg:pl-60 flex-1 flex flex-col min-w-0">
+        {/* Sticky Desktop & Mobile Header */}
+        <header className="sticky top-0 z-20 border-b border-[#DFE5EC] bg-white/95 backdrop-blur px-4 py-3 sm:px-8">
+          <div className="flex items-center justify-between gap-3">
+            {/* Mobile Menu Button & Brand */}
+            <div className="flex items-center gap-2 lg:hidden">
+              <button
+                type="button"
+                onClick={() => setMobileSidebarOpen(true)}
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-[#681C35] hover:bg-[#F3F7FA] transition"
+                aria-label="Open side navigation menu"
+              >
+                <Menu size={22} />
+              </button>
+              <a href="/" className="shrink-0 flex items-center gap-2" aria-label={`${academyName} Home`}>
+                <LogoMark size={28} className="text-[#681C35]" />
+                <span className="text-sm font-bold text-[#241921] truncate">
+                  {academyName} Admin
+                </span>
+              </a>
+            </div>
+
+            {/* Global Search Box (filters leads) */}
+            <form
+              onSubmit={handleGlobalSearchSubmit}
+              className="relative hidden sm:block flex-1 max-w-md"
+            >
+              <Search
+                size={16}
+                aria-hidden="true"
+                className="absolute left-3.5 top-3.5 text-[#645A62]"
+              />
+              <input
+                type="search"
+                placeholder="Search leads, students, payments (Press Enter)..."
+                value={globalSearch}
+                onChange={(e) => {
+                  setGlobalSearch(e.target.value);
+                  if (activeSection === "leads") {
+                    // update automatically if already on leads
+                  }
+                }}
+                className={`${inputClass} pl-10`}
+              />
+            </form>
+
+            {/* Header Right Actions */}
+            <div className="flex items-center gap-2.5 ml-auto">
+              <PaletteMenu />
+
+              <Button
+                secondary
+                className="hidden md:inline-flex min-h-[40px] px-3.5"
+                onClick={() => selectSection("reports")}
+              >
+                <Download size={15} />
+                <span>Export</span>
+              </Button>
+
+              {/* Admin Avatar */}
+              <div
+                title={`Signed in as ${session.name}`}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#681C35] text-xs font-bold text-white shadow-sm"
+              >
+                {session.name
+                  .split(" ")
+                  .map((w) => w[0])
+                  .join("")
+                  .toUpperCase()
+                  .slice(0, 2) || "AD"}
+              </div>
+            </div>
+          </div>
         </header>
+
+        {/* Main Section Content Area */}
         <main
           id="admin-main"
-          className="mx-auto min-w-0 max-w-[1600px] space-y-6 p-4 sm:p-7"
+          className="mx-auto w-full min-w-0 max-w-[1600px] flex-1 p-4 sm:p-8 pb-28 lg:pb-8"
         >
-          <div>
-            <p className="text-xs font-semibold tracking-widest text-indigo-700 uppercase">
-              Administration · {session.name}
-            </p>
-            <h1
-              tabIndex={-1}
-              className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl"
-            >
-              {active?.label || "Your admin workspace"}
-            </h1>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              {active?.description ||
-                "Ask your administrator to assign access to the required sections."}
-            </p>
-          </div>
-          {logout.isError && <Notice error>{adminError(logout.error)}</Notice>}
-          <OperationRecovery />
-          {active ? (
-            <PermissionGate permissions={[sectionPermissions[active.id]]}>
-              <AdminErrorBoundary
-                key={active.id}
-                reset={() => {
-                  void client.invalidateQueries({
-                    queryKey: adminKeys.scope(session),
-                  });
-                }}
-              >
-                {content}
-              </AdminErrorBoundary>
-            </PermissionGate>
-          ) : (
-            <Empty>No administration permissions have been assigned.</Empty>
-          )}
+          <AdminErrorBoundary
+            key={activeItemConfig?.id || "admin"}
+            reset={() => {
+              void client.invalidateQueries();
+            }}
+          >
+            {renderSection()}
+          </AdminErrorBoundary>
         </main>
       </div>
-    </>
+
+      {/* ======================================================== */}
+      {/* MOBILE FIXED BOTTOM TAB BAR (<=900px)                    */}
+      {/* Overview, Leads, Approvals, Payments, More               */}
+      {/* ======================================================== */}
+      <nav
+        aria-label="Mobile Bottom Navigation"
+        className="fixed bottom-0 left-0 right-0 z-40 flex lg:hidden items-center justify-around border-t border-[#DFE5EC] bg-white/95 px-2 py-1 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] backdrop-blur pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+      >
+        <button
+          type="button"
+          onClick={() => selectSection("overview")}
+          className={`flex min-h-[48px] min-w-[48px] flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 transition ${
+            activeSection === "overview"
+              ? "text-[#681C35] font-bold"
+              : "text-[#645A62] hover:text-[#241921]"
+          }`}
+        >
+          <LayoutDashboard size={20} />
+          <span className="text-[10px] tracking-tight whitespace-nowrap">Overview</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => selectSection("leads")}
+          className={`flex min-h-[48px] min-w-[48px] flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 transition ${
+            activeSection === "leads"
+              ? "text-[#681C35] font-bold"
+              : "text-[#645A62] hover:text-[#241921]"
+          }`}
+        >
+          <Users size={20} />
+          <span className="text-[10px] tracking-tight whitespace-nowrap">Leads</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => selectSection("approvals")}
+          className={`relative flex min-h-[48px] min-w-[48px] flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 transition ${
+            activeSection === "approvals"
+              ? "text-[#681C35] font-bold"
+              : "text-[#645A62] hover:text-[#241921]"
+          }`}
+        >
+          <div className="relative">
+            <ClipboardCheck size={20} />
+            {totalApprovalsCount > 0 && (
+              <span className="absolute -top-1 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-[#681C35] text-[9px] font-bold text-white">
+                {totalApprovalsCount}
+              </span>
+            )}
+          </div>
+          <span className="text-[10px] tracking-tight whitespace-nowrap">Approvals</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => selectSection("payments")}
+          className={`flex min-h-[48px] min-w-[48px] flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 transition ${
+            activeSection === "payments"
+              ? "text-[#681C35] font-bold"
+              : "text-[#645A62] hover:text-[#241921]"
+          }`}
+        >
+          <Wallet size={20} />
+          <span className="text-[10px] tracking-tight whitespace-nowrap">Payments</span>
+        </button>
+
+        <button
+          type="button"
+          aria-expanded={mobileMoreOpen}
+          onClick={() => setMobileMoreOpen((open) => !open)}
+          className={`flex min-h-[48px] min-w-[48px] flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 transition ${
+            ["programmes", "students", "reports", "settings"].includes(activeSection)
+              ? "text-[#681C35] font-bold"
+              : "text-[#645A62] hover:text-[#241921]"
+          }`}
+        >
+          <MoreHorizontal size={20} />
+          <span className="text-[10px] tracking-tight whitespace-nowrap">More</span>
+        </button>
+      </nav>
+
+      {/* ======================================================== */}
+      {/* "MORE" MOBILE BOTTOM SHEET DRAWER                       */}
+      {/* ======================================================== */}
+      {mobileMoreOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex flex-col justify-end bg-black/50 lg:hidden backdrop-blur-sm"
+          onClick={() => setMobileMoreOpen(false)}
+        >
+          <div
+            className="w-full rounded-t-3xl border-t border-[#DFE5EC] bg-white p-6 shadow-2xl animate-in slide-in-from-bottom duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-4 border-b border-[#DFE5EC]">
+              <span className="text-sm font-bold text-[#241921]">
+                Additional Operations
+              </span>
+              <button
+                type="button"
+                onClick={() => setMobileMoreOpen(false)}
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-[#645A62] hover:bg-[#F3F7FA]"
+                aria-label="Close sheet"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 py-4">
+              <button
+                type="button"
+                onClick={() => selectSection("programmes")}
+                className={`flex min-h-[48px] items-center gap-3 rounded-2xl border p-3.5 text-left text-sm font-semibold transition ${
+                  activeSection === "programmes"
+                    ? "border-[#681C35] bg-[#681C35] text-white"
+                    : "border-[#DFE5EC] bg-white text-[#241921] hover:bg-[#F3F7FA]"
+                }`}
+              >
+                <BookOpen size={20} />
+                <span>Programmes</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => selectSection("students")}
+                className={`flex min-h-[48px] items-center gap-3 rounded-2xl border p-3.5 text-left text-sm font-semibold transition ${
+                  activeSection === "students"
+                    ? "border-[#681C35] bg-[#681C35] text-white"
+                    : "border-[#DFE5EC] bg-white text-[#241921] hover:bg-[#F3F7FA]"
+                }`}
+              >
+                <GraduationCap size={20} />
+                <span>Students</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => selectSection("reports")}
+                className={`flex min-h-[48px] items-center gap-3 rounded-2xl border p-3.5 text-left text-sm font-semibold transition ${
+                  activeSection === "reports"
+                    ? "border-[#681C35] bg-[#681C35] text-white"
+                    : "border-[#DFE5EC] bg-white text-[#241921] hover:bg-[#F3F7FA]"
+                }`}
+              >
+                <ChartNoAxesCombined size={20} />
+                <span>Reports</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => selectSection("settings")}
+                className={`flex min-h-[48px] items-center gap-3 rounded-2xl border p-3.5 text-left text-sm font-semibold transition ${
+                  activeSection === "settings"
+                    ? "border-[#681C35] bg-[#681C35] text-white"
+                    : "border-[#DFE5EC] bg-white text-[#241921] hover:bg-[#F3F7FA]"
+                }`}
+              >
+                <Settings size={20} />
+                <span>Settings</span>
+              </button>
+            </div>
+
+            <div className="pt-2 border-t border-[#DFE5EC] flex items-center justify-between">
+              <span className="text-xs text-[#645A62]">
+                Admin: {session.name}
+              </span>
+              <button
+                type="button"
+                onClick={() => logout.mutate()}
+                className="inline-flex min-h-[44px] items-center gap-2 text-xs font-bold text-red-700 hover:underline"
+              >
+                <LogOut size={16} /> Sign out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MOBILE SLIDE-OVER SIDEBAR DRAWER (<=900px)               */}
+      {/* ======================================================== */}
+      {mobileSidebarOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex lg:hidden"
+        >
+          {/* Backdrop overlay */}
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+            onClick={() => setMobileSidebarOpen(false)}
+          />
+
+          {/* Sidebar Drawer container sliding from left */}
+          <div
+            className="relative z-10 flex w-72 max-w-[85vw] flex-col bg-[#3A1020] text-[#F7F9FB] shadow-2xl animate-in slide-in-from-left duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Drawer Header */}
+            <div className="flex min-h-[64px] items-center justify-between border-b border-[#4F1A2C] px-4">
+              <div className="flex items-center gap-2.5">
+                <LogoMark size={26} className="text-[#A9C9DC]" />
+                <span className="font-bold text-sm tracking-tight text-white truncate">
+                  {academyName} Admin
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileSidebarOpen(false)}
+                className="flex min-h-[40px] min-w-[40px] items-center justify-center rounded-xl text-[#A9C9DC] hover:bg-[#4F1A2C] hover:text-white transition"
+                aria-label="Close navigation menu"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Navigation Items List */}
+            <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4" aria-label="Mobile side sections">
+              {allowedItems.map((item) => {
+                const isActive = activeItemConfig?.id === item.id;
+                const Icon = item.icon;
+                const badgeCount = item.id === "approvals" ? totalApprovalsCount : 0;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => selectSection(item.id)}
+                    className={`flex min-h-[44px] w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-semibold transition ${
+                      isActive
+                        ? "bg-[#681C35] text-white shadow-sm font-bold"
+                        : "text-[#F7F9FB]/80 hover:bg-[#4F1A2C] hover:text-white"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Icon size={18} className={isActive ? "text-[#A9C9DC]" : "text-[#A9C9DC]/80"} />
+                      <span>{item.label}</span>
+                    </div>
+                    {badgeCount > 0 && (
+                      <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#681C35] px-1.5 text-[10px] font-bold text-white border border-[#A9C9DC]/30">
+                        {badgeCount}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+
+            {/* Drawer User Footer */}
+            <div className="border-t border-[#4F1A2C] p-4 bg-[#320D1B]">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#681C35] text-xs font-bold text-white border border-[#A9C9DC]/30">
+                    {session.name.slice(0, 2) || "AD"}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-white truncate">{session.name}</div>
+                    <div className="text-[10px] text-[#A9C9DC]">2FA Active</div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => logout.mutate()}
+                  className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg text-[#F7F9FB]/70 hover:bg-[#4F1A2C] hover:text-white transition"
+                  title="Sign out"
+                  aria-label="Sign out"
+                >
+                  <LogOut size={16} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
+
 function SessionGate({
   api,
   signInUrl,
@@ -575,45 +841,26 @@ function SessionGate({
   unblock,
 }: Required<AdminPanelProps> & { blocked: boolean; unblock: () => void }) {
   const query = useAdminSession(api);
-  const client = useQueryClient();
   const [now, setNow] = useState(Date.now);
   const session = query.data;
+
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
-  useEffect(() => {
-    client.removeQueries({
-      predicate: (item) => {
-        if (item.queryKey[0] !== "admin" || item.queryKey[1] === "session")
-          return false;
-        if (
-          session?.state !== "authenticated" ||
-          item.queryKey[1] !== session.cacheKey
-        )
-          return true;
-        const resource = item.queryKey[2];
-        return (
-          typeof resource === "string" &&
-          resource in resourcePermissions &&
-          !resourcePermissions[
-            resource as keyof typeof resourcePermissions
-          ].every((permission) => hasPermission(session, permission, now))
-        );
-      },
-    });
-  }, [session, client, now]);
+
   const refresh = async () => {
     const result = await query.refetch();
     if (result.isSuccess) unblock();
   };
+
   if (
     !blocked &&
     query.isSuccess &&
     session?.state === "authenticated" &&
     Date.parse(session.expiresAt) > Math.max(now, Date.now()) &&
     Date.parse(session.twoFactorExpiresAt) > Math.max(now, Date.now())
-  )
+  ) {
     return (
       <AdminAuthority
         key={session.cacheKey}
@@ -621,82 +868,89 @@ function SessionGate({
         session={session}
         now={now}
       >
-        <Workspace academyName={academyName} />
+        <AdminWorkspace academyName={academyName} />
       </AdminAuthority>
     );
+  }
+
   return (
-    <><WorkspaceAppearance/>
-    <main
-      id="admin-main"
-      className="mx-auto flex min-h-screen max-w-lg flex-col justify-center gap-4 p-5"
-    >
-      {query.isPending ? (
-        <Skeleton />
-      ) : blocked || query.isError ? (
-        <Card>
-          <h1 className="mb-4 text-2xl font-semibold">
-            Admin access needs confirmation
-          </h1>
-          <Notice error>
-            {query.isError
-              ? adminError(query.error)
-              : "Your permissions or verification have changed. Refresh your session to continue."}
-          </Notice>
-          <Button
-            className="mt-4"
-            busy={query.isFetching}
-            onClick={() => void refresh()}
-          >
-            Refresh admin session
-          </Button>
-          <div className="mt-3">
-            <SecureLink href={signInUrl}>Sign in securely</SecureLink>
-          </div>
-        </Card>
-      ) : session?.state === "two_factor_required" ? (
-        <>
-          <TwoFactor
-            key={session.challengeId}
-            api={api}
-            challenge={session}
-            now={now}
-          />
-          <Button
-            secondary
-            busy={query.isFetching}
-            onClick={() => void refresh()}
-          >
-            Refresh verification session
-          </Button>
-        </>
-      ) : (
-        <Card>
-          <ShieldCheck size={32} className="mb-4 text-indigo-700" />
-          <h1 className="text-2xl font-semibold">
-            {session?.state === "authenticated"
-              ? "Your verification has expired"
-              : "Sign in to administration"}
-          </h1>
-          <p className="my-4 text-sm leading-7 text-slate-600">
-            Sign in and complete two-factor verification to access academy
-            operations.
-          </p>
-          <SecureLink href={signInUrl}>Sign in securely</SecureLink>
-          <div className="mt-3">
+    <>
+      <WorkspaceAppearance />
+      <main
+        id="admin-main"
+        className="mx-auto flex min-h-screen max-w-lg flex-col justify-center gap-4 p-5"
+      >
+        {query.isPending ? (
+          <Skeleton />
+        ) : blocked || query.isError ? (
+          <Card>
+            <h1 className="mb-4 text-2xl font-bold text-[#241921]">
+              Admin access needs confirmation
+            </h1>
+            <Notice error>
+              {query.isError
+                ? adminError(query.error)
+                : "Your permissions or verification have changed. Refresh your session to continue."}
+            </Notice>
             <Button
-              secondary
+              className="mt-4 w-full"
               busy={query.isFetching}
               onClick={() => void refresh()}
             >
               Refresh admin session
             </Button>
-          </div>
-        </Card>
-      )}
-    </main>
+            <div className="mt-3 text-center">
+              <SecureLink href={signInUrl}>Sign in securely</SecureLink>
+            </div>
+          </Card>
+        ) : session?.state === "two_factor_required" ? (
+          <>
+            <TwoFactor
+              key={session.challengeId}
+              api={api}
+              challenge={session}
+              now={now}
+            />
+            <Button
+              secondary
+              className="w-full"
+              busy={query.isFetching}
+              onClick={() => void refresh()}
+            >
+              Refresh verification session
+            </Button>
+          </>
+        ) : (
+          <Card>
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F3F7FA] text-[#681C35] mb-4">
+              <ShieldCheck size={28} />
+            </div>
+            <h1 className="text-2xl font-bold text-[#241921]">
+              {session?.state === "authenticated"
+                ? "Your verification has expired"
+                : "Sign in to administration"}
+            </h1>
+            <p className="my-4 text-sm leading-6 text-[#645A62]">
+              Sign in and complete two-factor verification to access academy operations.
+            </p>
+            <SecureLink href={signInUrl}>Sign in securely</SecureLink>
+            <div className="mt-3">
+              <Button
+                secondary
+                className="w-full"
+                busy={query.isFetching}
+                onClick={() => void refresh()}
+              >
+                Refresh admin session
+              </Button>
+            </div>
+          </Card>
+        )}
+      </main>
     </>
   );
 }
+
 export function AdminPanel({
   api,
   signInUrl = "/auth/admin/sign-in?returnTo=%2Fadmin-panel",
@@ -720,9 +974,11 @@ export function AdminPanel({
       },
     });
   });
+
   const url = secureLink.safeParse(signInUrl);
+
   return (
-    <div className="ss-admin min-h-screen bg-slate-50 text-slate-900">
+    <div className="ss-admin min-h-screen bg-[#F7F9FB] text-[#241921]">
       <QueryClientProvider client={client}>
         <AdminErrorBoundary
           reset={() =>

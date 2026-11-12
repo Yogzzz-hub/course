@@ -72,7 +72,7 @@ function Onboarding({
               {!item.completed && (
                 <Button
                   secondary
-                  className="mt-2"
+                  className="mt-2 w-full sm:w-auto"
                   busy={onboarding.isPending}
                   onClick={async () => {
                     try {
@@ -135,7 +135,7 @@ export function InstalmentAlert({
     .sort((a, b) => Date.parse(a.dueAt) - Date.parse(b.dueAt))[0];
   if (!next) return null;
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
       <p className="text-sm leading-relaxed text-amber-950">
         <span className="font-semibold">
           {Date.parse(next.dueAt) < Date.now()
@@ -146,7 +146,7 @@ export function InstalmentAlert({
         <br />
         {next.label} · Due {dateTime(next.dueAt)}
       </p>
-      <Button secondary onClick={() => navigate("payments")}>
+      <Button secondary onClick={() => navigate("payments")} className="w-full sm:w-auto">
         View payments
       </Button>
     </div>
@@ -172,7 +172,7 @@ export function EnrolledHome({
               <Eyebrow>
                 <span className="text-indigo-200">Keep your momentum</span>
               </Eyebrow>
-              <h2 className="text-2xl font-semibold">
+              <h2 className="text-xl md:text-2xl font-semibold">
                 {data.nextClass?.title || "Your next class is being planned."}
               </h2>
               {data.nextClass ? (
@@ -184,7 +184,7 @@ export function EnrolledHome({
                   {data.nextClass.joinUrl ? (
                     <SecureLink
                       href={data.nextClass.joinUrl}
-                      className="mt-5 rounded-xl bg-white px-4 text-indigo-950"
+                      className="mt-5 inline-flex w-full sm:w-auto justify-center rounded-xl bg-white px-4 text-indigo-950"
                     >
                       Join live class
                     </SecureLink>
@@ -240,7 +240,7 @@ export function EnrolledHome({
                 )}
                 <Button
                   secondary
-                  className="mt-5"
+                  className="mt-5 w-full sm:w-auto"
                   onClick={() => navigate("work")}
                 >
                   Open assignments

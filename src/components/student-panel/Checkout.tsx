@@ -232,6 +232,7 @@ function CheckoutForm({
           )}
           <Button
             type="submit"
+            className="w-full sm:w-auto"
             busy={checkout.isPending}
             disabled={expired && !lockedInput}
           >

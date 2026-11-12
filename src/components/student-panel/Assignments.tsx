@@ -186,7 +186,7 @@ function AssignmentDetail({
                   " Your submission result is uncertain. Retry the same work to recover the attempt."}
               </Notice>
             )}
-            <Button type="submit" busy={submit.isPending}>
+            <Button type="submit" busy={submit.isPending} className="w-full sm:w-auto">
               {frozen && submit.isError
                 ? "Retry submission safely"
                 : "Submit for review"}

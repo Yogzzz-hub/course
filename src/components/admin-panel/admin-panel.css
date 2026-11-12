@@ -1,93 +1,95 @@
 .ss-admin {
   font-family: "Manrope Variable", ui-sans-serif, system-ui, sans-serif;
   line-height: 1.5;
-  overflow-wrap: anywhere;
+  color: #241921;
+  background-color: #F7F9FB;
+  -webkit-font-smoothing: antialiased;
 }
-.ss-admin
-  :where(
-    h1,
-    h2,
-    h3,
-    p,
-    button,
-    input,
-    select,
-    textarea,
-    a,
-    svg,
-    table,
-    thead,
-    tbody,
-    tr,
-    th,
-    td,
-    fieldset,
-    legend,
-    label,
-    ol,
-    ul,
-    li,
-    dl,
-    dt,
-    dd,
-    nav,
-    header,
-    main,
-    aside,
-    section,
-    article
-  ) {
-  all: revert-layer;
-}
+
 .ss-admin *,
 .ss-admin *::before,
 .ss-admin *::after {
   box-sizing: border-box;
 }
+
 .ss-admin :where(button, input, select, textarea) {
   font-family: inherit;
 }
+
 .ss-admin :where(button, select, input[type="checkbox"]) {
   cursor: pointer;
 }
-.ss-admin
-  :where(button:disabled, input:disabled, select:disabled, textarea:disabled) {
+
+/* Ensure crisp white text and icons on primary maroon buttons */
+.ss-admin button[class*="bg-[#681C35]"],
+.ss-admin a[class*="bg-[#681C35]"],
+.ss-admin button[class*="bg-[#681C35]"] *,
+.ss-admin a[class*="bg-[#681C35]"] * {
+  color: #ffffff !important;
+}
+
+.ss-admin button[class*="bg-[#681C35]"] svg,
+.ss-admin a[class*="bg-[#681C35]"] svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+.ss-admin :where(button:disabled, input:disabled, select:disabled, textarea:disabled) {
   cursor: not-allowed;
 }
+
 .ss-admin :where(h1, h2, h3) {
-  font-family: "Space Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
+  font-family: "Space Grotesk Variable", "Manrope Variable", ui-sans-serif, system-ui, sans-serif;
 }
+
 .ss-admin :where(svg) {
   display: inline-block;
   vertical-align: middle;
 }
+
 .ss-admin :where(table) {
   border-collapse: collapse;
-  overflow-wrap: normal;
 }
+
 .ss-admin :where(fieldset) {
   min-width: 0;
   margin: 0;
   padding: 0;
   border: 0;
 }
+
 .ss-admin :where(:focus-visible) {
-  outline: 3px solid var(--accent);
-  outline-offset: 3px;
+  outline: 2px solid #681C35;
+  outline-offset: 2px;
 }
+
 .ss-admin .admin-skip {
   position: fixed;
   top: -5rem;
   left: 1rem;
   z-index: 100;
-  background: var(--accent);
+  background: #681C35;
   color: white;
   padding: 0.75rem 1rem;
   border-radius: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: top 0.2s;
 }
+
 .ss-admin .admin-skip:focus {
   top: 1rem;
 }
+
+/* Card shadows */
+.ss-admin .card-shadow {
+  box-shadow: 0 4px 20px rgba(36, 25, 33, 0.05), 0 1px 3px rgba(36, 25, 33, 0.03);
+}
+
+.ss-admin .card-shadow:hover {
+  box-shadow: 0 12px 30px rgba(104, 28, 53, 0.09);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ss-admin *,
   .ss-admin *::before,
