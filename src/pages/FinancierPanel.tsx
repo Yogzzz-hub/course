@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
+  clearCrmSession,
   getRedirectPathForSession,
   isFinancierAuthorized,
   readCrmSession,
@@ -65,9 +66,11 @@ export default function FinancierPanel() {
   }, [navigate]);
 
   const handleLogout = () => {
-    try {
-      localStorage.removeItem("crm_session");
-    } catch {}
+    clearCrmSession();
+    fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "include",
+    }).catch(() => {});
     navigate("/login");
   };
 
@@ -79,6 +82,280 @@ export default function FinancierPanel() {
   const [accounts, setAccounts] = useState<FinancierAccount[]>(initialAccounts);
   const [ledgerLines, setLedgerLines] = useState<LedgerLine[]>(initialBankLedger);
   const [students, setStudents] = useState<FinancierStudentDebt[]>(initialFinancierStudents);
+  const [syncStatus, setSyncStatus] = useState<
+    "syncing" | "live" | "offline_preview" | "auth_required" | "error"
+  >("syncing");
+  const [syncMessage, setSyncMessage] = useState<string>("");
+  const [syncNonce, setSyncNonce] = useState(0);
+  const [operatorName, setOperatorName] = useState<string>("Lead Financier");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchWithWakeup = async (url: string): Promise<Response> => {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const controller = new AbortController();
+        const timer = window.setTimeout(() => controller.abort(), 50000);
+        try {
+          const res = await fetch(url, {
+            credentials: "include",
+            cache: "no-store",
+            signal: controller.signal,
+            headers: { Accept: "application/json" },
+          });
+          window.clearTimeout(timer);
+          if ((res.status === 502 || res.status === 503 || res.status === 504) && attempt === 0) {
+            await new Promise((r) => window.setTimeout(r, 1500));
+            continue;
+          }
+          return res;
+        } catch (err) {
+          window.clearTimeout(timer);
+          if (attempt === 0) {
+            await new Promise((r) => window.setTimeout(r, 1500));
+            continue;
+          }
+          throw err;
+        }
+      }
+      throw new Error("CRM backend unreachable");
+    };
+
+    const loadLiveFinancier = async () => {
+      setSyncStatus("syncing");
+      setSyncMessage("");
+      try {
+        const summaryRes = await fetchWithWakeup("/api/financier/summary");
+        if (cancelled) return;
+        const ct = summaryRes.headers.get("content-type") || "";
+        const isJson = ct.includes("application/json");
+
+        if (summaryRes.status === 404 && !isJson) {
+          setSyncStatus("offline_preview");
+          return;
+        }
+        if (summaryRes.status === 401 || summaryRes.status === 403) {
+          setSyncStatus("auth_required");
+          setSyncMessage(
+            "Sign in with a Financier or Admin account to load live CRM treasury data."
+          );
+          return;
+        }
+        if (!summaryRes.ok || !isJson) {
+          setSyncStatus("error");
+          setSyncMessage(
+            `Unable to load live finance summary (HTTP ${summaryRes.status}). The backend may still be starting up.`
+          );
+          return;
+        }
+
+        const summaryData = (await summaryRes.json()) as {
+          metrics?: {
+            grossCollections?: number;
+            totalRefunds?: number;
+            netCollections?: number;
+            pendingPaymentsCount?: number;
+            totalApprovedExpenses?: number;
+            totalTrainerPayouts?: number;
+            netPosition?: number;
+            discrepancyCount?: number;
+          };
+        };
+
+        const [paymentsRes, installmentsRes] = await Promise.all([
+          fetchWithWakeup("/api/financier/payments").catch(() => null),
+          fetchWithWakeup("/api/financier/installments").catch(() => null),
+        ]);
+        if (cancelled) return;
+
+        const m = summaryData.metrics || {};
+        const inflowMinor = Math.round(Number(m.grossCollections || 0) * 100);
+        const outflowMinor = Math.round(
+          (Number(m.totalRefunds || 0) +
+            Number(m.totalApprovedExpenses || 0) +
+            Number(m.totalTrainerPayouts || 0)) *
+            100
+        );
+        const netMinor = inflowMinor - outflowMinor;
+        const pendingCount =
+          Number(m.pendingPaymentsCount || 0) + Number(m.discrepancyCount || 0);
+
+        setAccounts((prev) =>
+          prev.map((acc) =>
+            acc.code === "BANK"
+              ? {
+                  ...acc,
+                  totalInflowMinor: inflowMinor,
+                  totalOutflowMinor: outflowMinor,
+                  netBalanceMinor: netMinor,
+                  pendingReconciliationCount: pendingCount,
+                  lastReconciledAt: new Date().toLocaleTimeString("en-IN", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }),
+                }
+              : acc
+          )
+        );
+
+        if (paymentsRes && paymentsRes.ok) {
+          const pData = (await paymentsRes.json()) as {
+            payments?: Array<{
+              id: string;
+              transactionNumber: string;
+              amount: number;
+              paymentMethod: string;
+              paymentDate: string;
+              externalReference?: string | null;
+              verificationStatus: string;
+              studentProfile?: { user?: { name?: string } };
+              feeAgreement?: { admission?: { course?: { title?: string } } };
+            }>;
+          };
+          const livePayments = Array.isArray(pData.payments) ? pData.payments : [];
+          let runningMinor = 0;
+          setLedgerLines(
+            livePayments.map((p) => {
+              const creditMinor = Math.round(Number(p.amount || 0) * 100);
+              runningMinor += creditMinor;
+              const status: LedgerLine["status"] =
+                p.verificationStatus === "CONFIRMED"
+                  ? "Verified"
+                  : p.verificationStatus === "REVERSED" || p.verificationStatus === "FAILED"
+                    ? "Pending Reconciliation"
+                    : "Pending Reconciliation";
+              return {
+                id: p.id,
+                date: new Date(p.paymentDate).toLocaleDateString("en-IN", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                }),
+                transactionNumber: p.transactionNumber,
+                description:
+                  p.feeAgreement?.admission?.course?.title
+                    ? `Tuition collection — ${p.feeAgreement.admission.course.title}`
+                    : "Student fee collection",
+                category: "Tuition Collection",
+                debitMinor: 0,
+                creditMinor,
+                balanceMinor: runningMinor,
+                studentName: p.studentProfile?.user?.name || "Student",
+                paymentMethod: p.paymentMethod,
+                reference: p.externalReference || undefined,
+                status,
+              };
+            })
+          );
+        }
+
+        if (installmentsRes && installmentsRes.ok) {
+          const iData = (await installmentsRes.json()) as {
+            installments?: Array<{
+              id: string;
+              studentProfileId: string;
+              installmentNumber?: number;
+              dueDate: string;
+              amountDue: number;
+              amountPaid: number;
+              remainingBalance: number;
+              status: string;
+              studentProfile?: {
+                registrationNumber?: string;
+                user?: { name?: string; email?: string; phone?: string | null };
+              };
+              feeAgreement?: {
+                totalAgreedFee?: number;
+                admission?: {
+                  course?: { title?: string };
+                  targetBatch?: { code?: string };
+                };
+              };
+            }>;
+          };
+          const rows = Array.isArray(iData.installments) ? iData.installments : [];
+          const byStudent = new Map<string, FinancierStudentDebt>();
+          const now = new Date();
+          for (const inst of rows) {
+            const key = inst.studentProfileId || inst.id;
+            const existing = byStudent.get(key);
+            const amountDueMinor = Math.round(Number(inst.amountDue || 0) * 100);
+            const paidMinor = Math.round(Number(inst.amountPaid || 0) * 100);
+            const balanceMinor = Math.round(Number(inst.remainingBalance || 0) * 100);
+            const totalMinor = Math.round(
+              Number(inst.feeAgreement?.totalAgreedFee || inst.amountDue || 0) * 100
+            );
+            const overdue = balanceMinor > 0 && new Date(inst.dueDate) < now;
+            const instStatus: "PAID" | "DUE" | "OVERDUE" =
+              balanceMinor <= 0 ? "PAID" : overdue ? "OVERDUE" : "DUE";
+            const instItem = {
+              number: inst.installmentNumber || (existing?.installments.length || 0) + 1,
+              amountMinor: amountDueMinor,
+              dueDate: new Date(inst.dueDate).toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              }),
+              status: instStatus,
+            };
+            if (!existing) {
+              byStudent.set(key, {
+                id: key,
+                name: inst.studentProfile?.user?.name || "Enrolled Student",
+                registrationNumber:
+                  inst.studentProfile?.registrationNumber || key.slice(0, 8),
+                email: inst.studentProfile?.user?.email || "",
+                phone: inst.studentProfile?.user?.phone || "",
+                courseTitle:
+                  inst.feeAgreement?.admission?.course?.title || "Academy Cohort",
+                batchCode:
+                  inst.feeAgreement?.admission?.targetBatch?.code || "ACTIVE",
+                contractedFeeMinor: totalMinor,
+                paidAmountMinor: paidMinor,
+                remainingDueMinor: balanceMinor,
+                overdueMinor: overdue ? balanceMinor : 0,
+                nextDueDate: instItem.dueDate,
+                status:
+                  balanceMinor <= 0 ? "PAID_IN_FULL" : overdue ? "OVERDUE" : "CURRENT",
+                installments: [instItem],
+              });
+            } else {
+              existing.paidAmountMinor += paidMinor;
+              existing.remainingDueMinor += balanceMinor;
+              if (overdue) existing.overdueMinor += balanceMinor;
+              existing.installments.push(instItem);
+              existing.status =
+                existing.remainingDueMinor <= 0
+                  ? "PAID_IN_FULL"
+                  : existing.overdueMinor > 0
+                    ? "OVERDUE"
+                    : "CURRENT";
+            }
+          }
+          if (byStudent.size > 0) {
+            setStudents(Array.from(byStudent.values()));
+          } else {
+            setStudents([]);
+          }
+        }
+
+        const sessionInfo = readCrmSession();
+        if (sessionInfo?.name) setOperatorName(sessionInfo.name);
+        setSyncStatus("live");
+      } catch {
+        if (cancelled) return;
+        setSyncStatus("error");
+        setSyncMessage(
+          "Could not connect to Academy CRM finance service. Click Retry Connection once the server is awake."
+        );
+      }
+    };
+
+    void loadLiveFinancier();
+    return () => {
+      cancelled = true;
+    };
+  }, [syncNonce]);
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState("");
@@ -236,8 +513,18 @@ export default function FinancierPanel() {
         </nav>
 
         <div className="flex items-center gap-2">
+          {syncStatus === "live" && (
+            <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 border border-emerald-200">
+              Live CRM
+            </span>
+          )}
+          {syncStatus === "syncing" && (
+            <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+              Syncing...
+            </span>
+          )}
           <span className="hidden lg:inline text-xs text-[var(--muted,#5f5f6b)]">
-            Logged in as <strong className="text-[#1d1d24]">Lead Financier</strong>
+            Logged in as <strong className="text-[#1d1d24]">{operatorName}</strong>
           </span>
           <button
             onClick={handleLogout}
@@ -251,6 +538,39 @@ export default function FinancierPanel() {
 
       {/* Main Workspace Body */}
       <main className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-28 md:pb-12">
+        {(syncStatus === "error" || syncStatus === "auth_required") && (
+          <div
+            role="alert"
+            className={`mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-xs ${
+              syncStatus === "auth_required"
+                ? "border-amber-200 bg-amber-50 text-amber-900"
+                : "border-rose-200 bg-rose-50 text-rose-900"
+            }`}
+          >
+            <div className="flex items-center gap-2 font-medium">
+              <AlertCircle size={16} className="shrink-0" />
+              <span>{syncMessage}</span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {syncStatus === "auth_required" ? (
+                <Link
+                  to="/login?returnUrl=/financier"
+                  className="inline-flex items-center justify-center rounded-xl bg-[#6D1A2B] px-3 py-2 font-semibold text-white hover:bg-[#521320]"
+                >
+                  Sign In to CRM
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setSyncNonce((n) => n + 1)}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-rose-700 px-3 py-2 font-semibold text-white hover:bg-rose-800"
+                >
+                  <RotateCcw size={13} /> Retry Connection
+                </button>
+              )}
+            </div>
+          </div>
+        )}
         {/* SUBVIEW 1: OPERATING BANK ACCOUNT LEDGER */}
         {activeTab === "ledger" && (
           <div className="space-y-6">

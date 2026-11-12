@@ -48,13 +48,84 @@ export default function LoginPage() {
   const [staffLoading, setStaffLoading] = useState(false);
   const [staffError, setStaffError] = useState("");
 
-  // Student OTP State
+  // Student State (supports Password or 6-Digit Email OTP)
+  const [studentAuthMode, setStudentAuthMode] = useState<"PASSWORD" | "OTP">("PASSWORD");
   const [studentId, setStudentId] = useState("");
+  const [studentPassword, setStudentPassword] = useState("");
   const [otpCode, setOtpCode] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [studentLoading, setStudentLoading] = useState(false);
   const [studentError, setStudentError] = useState("");
   const [studentMessage, setStudentMessage] = useState("");
+
+  const postAuthWithRetry = async (
+    url: string,
+    payload: unknown
+  ): Promise<
+    | { kind: "json"; status: number; ok: boolean; data: Record<string, unknown> }
+    | { kind: "offline_preview" }
+    | { kind: "unavailable"; message: string }
+  > => {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => controller.abort(), 50000);
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          credentials: "include",
+          signal: controller.signal,
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+        window.clearTimeout(timer);
+        const contentType = res.headers.get("content-type") || "";
+        const isJson = contentType.includes("application/json");
+        if (res.status === 404 && !isJson) {
+          return { kind: "offline_preview" };
+        }
+        if ((res.status === 502 || res.status === 503 || res.status === 504) && attempt === 0) {
+          await new Promise((r) => window.setTimeout(r, 1500));
+          continue;
+        }
+        if (isJson && res.status < 500) {
+          const data = (await res.json()) as Record<string, unknown>;
+          return { kind: "json", status: res.status, ok: res.ok, data };
+        }
+        if (isJson) {
+          const data = (await res.json()) as { error?: string };
+          return {
+            kind: "unavailable",
+            message:
+              data.error ||
+              "Academy CRM server is starting up or temporarily unavailable. Please try again in a few seconds.",
+          };
+        }
+        return {
+          kind: "unavailable",
+          message:
+            "Academy CRM server is starting up or temporarily unavailable. Please try again in a few seconds.",
+        };
+      } catch {
+        window.clearTimeout(timer);
+        if (attempt === 0) {
+          await new Promise((r) => window.setTimeout(r, 1500));
+          continue;
+        }
+        return {
+          kind: "unavailable",
+          message:
+            "Could not reach Academy CRM server (it may still be waking up). Please wait a few seconds and try again.",
+        };
+      }
+    }
+    return {
+      kind: "unavailable",
+      message: "Academy CRM server is temporarily unavailable. Please try again.",
+    };
+  };
 
   // Quick filler for testing accounts
   const fillCredentials = (role: string) => {
@@ -62,6 +133,7 @@ export default function LoginPage() {
       case "STUDENT":
         setActiveTab("STUDENT");
         setStudentId("student@apexacademy.edu");
+        setStudentPassword("Student@123456");
         setOtpSent(false);
         setOtpCode("");
         break;
@@ -88,6 +160,7 @@ export default function LoginPage() {
     }
     setStaffError("");
     setStudentError("");
+    setStudentMessage("");
   };
 
   const handleStaffLogin = async (e: React.FormEvent) => {
@@ -105,47 +178,98 @@ export default function LoginPage() {
       return fallback;
     };
 
-    try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({ identifier: staffEmail, password: staffPassword }),
-      });
+    const result = await postAuthWithRetry("/api/auth/login", {
+      identifier: staffEmail,
+      password: staffPassword,
+    });
 
-      const isJson = (res.headers.get("content-type") || "").includes("application/json");
-      if (isJson && res.status !== 404 && res.status < 500) {
-        const data = (await res.json()) as {
-          error?: string;
-          user?: { id: string; name: string; email: string; role: CrmSession["role"] };
-        };
-        setStaffLoading(false);
-        if (!res.ok || !data.user) {
-          setStaffError(data.error || "Invalid credentials.");
-          return;
-        }
-        const verifiedSession: CrmSession = {
-          userId: data.user.id,
-          name: data.user.name,
-          email: data.user.email,
-          role: data.user.role,
-          authenticated: true,
-        };
-        writeCrmSession(verifiedSession);
-        navigate(resolveTarget(verifiedSession.role));
+    if (result.kind === "json") {
+      const data = result.data as {
+        error?: string;
+        user?: { id: string; name: string; email: string; role: CrmSession["role"] };
+      };
+      setStaffLoading(false);
+      if (!result.ok || !data.user) {
+        setStaffError(data.error || "Invalid credentials.");
         return;
       }
-    } catch {
-      // Fall through to local preview fallback when CRM API is unavailable (e.g., vite preview)
+      const verifiedSession: CrmSession = {
+        userId: data.user.id,
+        name: data.user.name,
+        email: data.user.email,
+        role: data.user.role,
+        authenticated: true,
+      };
+      writeCrmSession(verifiedSession);
+      navigate(resolveTarget(verifiedSession.role));
+      return;
+    }
+
+    if (result.kind === "unavailable" && !import.meta.env.DEV) {
+      setStaffLoading(false);
+      setStaffError(result.message);
+      return;
     }
 
     setStaffLoading(false);
     const session = canonicalizeDemoUser(staffEmail);
     writeCrmSession(session);
     navigate(resolveTarget(session.role));
+  };
+
+  const resolveStudentTarget = () => {
+    const returnUrl = getSafeReturnUrl(searchParams);
+    if (returnUrl && returnUrl.startsWith("/student")) return returnUrl;
+    return "/student-panel";
+  };
+
+  const handleStudentPasswordLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStudentLoading(true);
+    setStudentError("");
+    setStudentMessage("");
+
+    const result = await postAuthWithRetry("/api/auth/login", {
+      identifier: studentId,
+      password: studentPassword,
+    });
+
+    if (result.kind === "json") {
+      const data = result.data as {
+        error?: string;
+        user?: { id: string; name: string; email: string; role: CrmSession["role"] };
+      };
+      setStudentLoading(false);
+      if (!result.ok || !data.user) {
+        setStudentError(data.error || "Invalid student credentials.");
+        return;
+      }
+      const verifiedSession: CrmSession = {
+        userId: data.user.id,
+        name: data.user.name,
+        email: data.user.email,
+        role: data.user.role,
+        authenticated: true,
+      };
+      writeCrmSession(verifiedSession);
+      navigate(
+        verifiedSession.role === "STUDENT"
+          ? resolveStudentTarget()
+          : defaultPathForRole(verifiedSession.role)
+      );
+      return;
+    }
+
+    if (result.kind === "unavailable" && !import.meta.env.DEV) {
+      setStudentLoading(false);
+      setStudentError(result.message);
+      return;
+    }
+
+    setStudentLoading(false);
+    const session = canonicalizeDemoUser(studentId || "student@apexacademy.edu", "STUDENT");
+    writeCrmSession(session);
+    navigate(resolveStudentTarget());
   };
 
   const handleRequestOtp = async (e: React.FormEvent) => {
@@ -157,36 +281,31 @@ export default function LoginPage() {
     setStudentLoading(true);
     setStudentError("");
 
-    try {
-      const res = await fetch("/api/auth/student/otp-request", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({ identifier: studentId }),
-      });
+    const result = await postAuthWithRetry("/api/auth/student/otp-request", {
+      identifier: studentId,
+    });
 
-      const isJson = (res.headers.get("content-type") || "").includes("application/json");
-      if (isJson && res.status !== 404 && res.status < 500) {
-        const data = (await res.json()) as {
-          error?: string;
-          message?: string;
-          devOtp?: string;
-        };
-        setStudentLoading(false);
-        if (!res.ok) {
-          setStudentError(data.error || "Could not dispatch OTP.");
-          return;
-        }
-        setOtpSent(true);
-        if (data.devOtp) setOtpCode(data.devOtp);
-        setStudentMessage(data.message || "A 6-digit verification code was sent to your email.");
+    if (result.kind === "json") {
+      const data = result.data as {
+        error?: string;
+        message?: string;
+        devOtp?: string;
+      };
+      setStudentLoading(false);
+      if (!result.ok) {
+        setStudentError(data.error || "Could not dispatch OTP.");
         return;
       }
-    } catch {
-      // Fall through to local preview fallback when CRM API is unavailable
+      setOtpSent(true);
+      if (data.devOtp) setOtpCode(data.devOtp);
+      setStudentMessage(data.message || "A 6-digit verification code was sent to your email.");
+      return;
+    }
+
+    if (result.kind === "unavailable" && !import.meta.env.DEV) {
+      setStudentLoading(false);
+      setStudentError(result.message);
+      return;
     }
 
     setStudentLoading(false);
@@ -200,47 +319,37 @@ export default function LoginPage() {
     setStudentLoading(true);
     setStudentError("");
 
-    const resolveStudentTarget = () => {
-      const returnUrl = getSafeReturnUrl(searchParams);
-      if (returnUrl && returnUrl.startsWith("/student")) return returnUrl;
-      return "/student-panel";
-    };
+    const result = await postAuthWithRetry("/api/auth/student/otp-verify", {
+      identifier: studentId,
+      code: otpCode,
+    });
 
-    try {
-      const res = await fetch("/api/auth/student/otp-verify", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({ identifier: studentId, code: otpCode }),
-      });
-
-      const isJson = (res.headers.get("content-type") || "").includes("application/json");
-      if (isJson && res.status !== 404 && res.status < 500) {
-        const data = (await res.json()) as {
-          error?: string;
-          user?: { userId?: string; id?: string; name: string; email: string; role: CrmSession["role"] };
-        };
-        setStudentLoading(false);
-        if (!res.ok || !data.user) {
-          setStudentError(data.error || "Verification failed. Please check your code.");
-          return;
-        }
-        const verifiedSession: CrmSession = {
-          userId: data.user.userId || data.user.id || "std-001",
-          name: data.user.name,
-          email: data.user.email,
-          role: data.user.role,
-          authenticated: true,
-        };
-        writeCrmSession(verifiedSession);
-        navigate(resolveStudentTarget());
+    if (result.kind === "json") {
+      const data = result.data as {
+        error?: string;
+        user?: { userId?: string; id?: string; name: string; email: string; role: CrmSession["role"] };
+      };
+      setStudentLoading(false);
+      if (!result.ok || !data.user) {
+        setStudentError(data.error || "Verification failed. Please check your code.");
         return;
       }
-    } catch {
-      // Fall through to local preview fallback when CRM API is unavailable
+      const verifiedSession: CrmSession = {
+        userId: data.user.userId || data.user.id || "std-001",
+        name: data.user.name,
+        email: data.user.email,
+        role: data.user.role,
+        authenticated: true,
+      };
+      writeCrmSession(verifiedSession);
+      navigate(resolveStudentTarget());
+      return;
+    }
+
+    if (result.kind === "unavailable" && !import.meta.env.DEV) {
+      setStudentLoading(false);
+      setStudentError(result.message);
+      return;
     }
 
     setStudentLoading(false);
@@ -329,7 +438,7 @@ export default function LoginPage() {
                   color: activeTab === "STUDENT" ? "#0B0E14" : "var(--muted, #94A3B8)"
                 }}
               >
-                <GraduationCap size={16} /> Student OTP
+                <GraduationCap size={16} /> Student Portal
               </button>
             </div>
 
@@ -421,8 +530,54 @@ export default function LoginPage() {
                 </button>
               </form>
             ) : (
-              /* Student OTP Form */
-              <form onSubmit={otpSent ? handleVerifyOtp : handleRequestOtp} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+              /* Student Form (Password or 6-Digit Email OTP) */
+              <form
+                onSubmit={
+                  studentAuthMode === "PASSWORD"
+                    ? handleStudentPasswordLogin
+                    : otpSent
+                      ? handleVerifyOtp
+                      : handleRequestOtp
+                }
+                style={{ display: "flex", flexDirection: "column", gap: "18px" }}
+              >
+                <div style={{ display: "flex", gap: "8px", borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: "10px" }}>
+                  <button
+                    type="button"
+                    onClick={() => { setStudentAuthMode("PASSWORD"); setStudentError(""); setStudentMessage(""); }}
+                    style={{
+                      flex: 1,
+                      padding: "7px 10px",
+                      borderRadius: "6px",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      border: studentAuthMode === "PASSWORD" ? "1px solid var(--accent, #1CE798)" : "1px solid rgba(255,255,255,0.1)",
+                      background: studentAuthMode === "PASSWORD" ? "rgba(28, 231, 152, 0.14)" : "transparent",
+                      color: studentAuthMode === "PASSWORD" ? "#1CE798" : "var(--muted, #94A3B8)",
+                    }}
+                  >
+                    Password Sign-In
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setStudentAuthMode("OTP"); setStudentError(""); setStudentMessage(""); }}
+                    style={{
+                      flex: 1,
+                      padding: "7px 10px",
+                      borderRadius: "6px",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      border: studentAuthMode === "OTP" ? "1px solid var(--accent, #1CE798)" : "1px solid rgba(255,255,255,0.1)",
+                      background: studentAuthMode === "OTP" ? "rgba(28, 231, 152, 0.14)" : "transparent",
+                      color: studentAuthMode === "OTP" ? "#1CE798" : "var(--muted, #94A3B8)",
+                    }}
+                  >
+                    6-Digit OTP
+                  </button>
+                </div>
+
                 {studentError && (
                   <div style={{ padding: "12px", borderRadius: "8px", background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.2)", display: "flex", alignItems: "center", gap: "10px", color: "#F87171", fontSize: "13px" }}>
                     <AlertCircle size={16} />
@@ -448,7 +603,7 @@ export default function LoginPage() {
                       placeholder="student@apexacademy.edu"
                       value={studentId}
                       onChange={(e) => setStudentId(e.target.value)}
-                      disabled={otpSent}
+                      disabled={studentAuthMode === "OTP" && otpSent}
                       style={{
                         width: "100%",
                         padding: "12px 14px 12px 40px",
@@ -464,7 +619,34 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                {otpSent && (
+                {studentAuthMode === "PASSWORD" ? (
+                  <div>
+                    <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "var(--muted, #94A3B8)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                      Password
+                    </label>
+                    <div style={{ position: "relative" }}>
+                      <Lock size={16} style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "var(--muted, #64748B)" }} />
+                      <input
+                        type="password"
+                        required
+                        placeholder="••••••••••••"
+                        value={studentPassword}
+                        onChange={(e) => setStudentPassword(e.target.value)}
+                        style={{
+                          width: "100%",
+                          padding: "12px 14px 12px 40px",
+                          borderRadius: "8px",
+                          border: "1px solid var(--border, rgba(255,255,255,0.15))",
+                          background: "rgba(0,0,0,0.25)",
+                          color: "var(--text, #FFF)",
+                          fontSize: "14px",
+                          outline: "none",
+                          boxSizing: "border-box"
+                        }}
+                      />
+                    </div>
+                  </div>
+                ) : otpSent && (
                   <div>
                     <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "var(--muted, #94A3B8)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                       Verification Code (OTP)
@@ -514,7 +696,13 @@ export default function LoginPage() {
                     gap: "8px"
                   }}
                 >
-                  {studentLoading ? "Processing..." : otpSent ? "Verify & Enter Workspace" : "Send Login Code"} <ArrowRight size={16} />
+                  {studentLoading
+                    ? "Signing In..."
+                    : studentAuthMode === "PASSWORD"
+                      ? "Sign In to Student Portal"
+                      : otpSent
+                        ? "Verify & Enter Workspace"
+                        : "Send Login Code"} <ArrowRight size={16} />
                 </button>
               </form>
             )}

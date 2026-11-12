@@ -55,7 +55,7 @@ export interface HttpStudentApiOptions {
 export function createHttpStudentApi({
   baseUrl = "/api/student",
   fetcher = fetch,
-  timeoutMs = 20000,
+  timeoutMs = 55000,
 }: HttpStudentApiOptions = {}): StudentApi {
   const base = baseUrl.replace(/\/$/, "");
   const parsed = new URL(base, "https://student-api.invalid");

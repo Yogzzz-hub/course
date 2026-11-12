@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logAuditEvent } from "@/lib/audit";
+import { getAdminNotificationsPayload } from "@/lib/admin-panel";
 import { z } from "zod";
 
 const UpdateTemplateSchema = z.object({
@@ -17,44 +18,8 @@ const UpdateTemplateSchema = z.object({
 
 export async function GET() {
   try {
-    await requireAuth(["ADMIN", "MANAGER"]);
-
-    const [templates, deliveryLogs] = await Promise.all([
-      prisma.notificationTemplate.findMany({
-        orderBy: { code: "asc" },
-      }),
-      prisma.notificationDeliveryLog.findMany({
-        take: 50,
-        orderBy: { createdAt: "desc" },
-      }),
-    ]);
-
-    return NextResponse.json({
-      templates: templates.map((t) => ({
-        id: t.id,
-        name: t.code,
-        code: t.code,
-        channel: t.channel,
-        subject: t.subject,
-        body: t.bodyTemplate,
-        variables: "",
-        isActive: t.isActive,
-      })),
-      deliveryLogs: deliveryLogs.map((log) => ({
-        id: log.id,
-        channel: log.channel,
-        status: log.status,
-        provider: log.provider,
-        providerMessageId: log.providerMessageId,
-        errorReason: log.errorMessage,
-        attemptedAt: log.createdAt,
-        recipientName: log.recipientContact,
-        recipientRole: "RECIPIENT",
-        eventType: log.eventType,
-        subject: log.renderedSubject || "—",
-      })),
-      rules: [],
-    });
+    const session = await requireAuth(["ADMIN", "MANAGER"]);
+    return NextResponse.json(await getAdminNotificationsPayload(session.userId));
   } catch (error: any) {
     if (error.message === "UNAUTHORIZED" || error.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
