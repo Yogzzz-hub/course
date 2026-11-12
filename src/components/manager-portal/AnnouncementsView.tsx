@@ -120,7 +120,7 @@ export function AnnouncementsView({
                 onChange={(e) => setPriority(e.target.checked ? "URGENT" : "NORMAL")}
                 className="rounded"
               />
-              <span style={{ color: priority === "URGENT" ? "#DC2626" : "var(--muted)" }}>
+              <span style={{ color: priority === "URGENT" ? "var(--accent)" : "var(--muted)" }}>
                 Flag as Urgent
               </span>
             </label>
@@ -159,7 +159,13 @@ export function AnnouncementsView({
                     {ann.title}
                   </span>
                   {ann.priority === "URGENT" && (
-                    <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-rose-100 text-rose-800">
+                    <span
+                      className="text-[9px] font-bold px-1.5 py-0.2 rounded"
+                      style={{
+                        backgroundColor: "var(--accent)",
+                        color: "var(--accent-contrast)",
+                      }}
+                    >
                       Urgent
                     </span>
                   )}

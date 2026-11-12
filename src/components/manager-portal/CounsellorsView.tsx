@@ -46,8 +46,8 @@ export function CounsellorsView({
                   <span
                     className="text-[9px] font-semibold px-2 py-0.5 rounded-full uppercase"
                     style={{
-                      backgroundColor: c.status === "ACTIVE" ? "#D1FAE5" : "#FEF3C7",
-                      color: c.status === "ACTIVE" ? "#047857" : "#B45309",
+                      backgroundColor: "color-mix(in srgb, var(--accent) 12%, transparent)",
+                      color: "var(--accent)",
                     }}
                   >
                     {c.status}
@@ -63,7 +63,7 @@ export function CounsellorsView({
                   </div>
                   <div className="p-2 rounded-lg border" style={{ backgroundColor: "var(--bg-secondary)", borderColor: "var(--border)" }}>
                     <span className="text-[10px] text-stone-500 block">Conversion</span>
-                    <span className="font-bold text-sm text-emerald-600">
+                    <span className="font-bold text-sm" style={{ color: "var(--accent)" }}>
                       {c.conversionRate}%
                     </span>
                   </div>

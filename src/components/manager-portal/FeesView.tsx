@@ -166,16 +166,12 @@ export function FeesView({
                       style={{
                         backgroundColor:
                           p.status === "PAID"
-                            ? "#D1FAE5"
-                            : p.status === "PENDING"
-                            ? "#FEF3C7"
-                            : "#FEE2E2",
+                            ? "color-mix(in srgb, var(--accent) 12%, transparent)"
+                            : "var(--bg-secondary)",
                         color:
                           p.status === "PAID"
-                            ? "#047857"
-                            : p.status === "PENDING"
-                            ? "#B45309"
-                            : "#B91C1C",
+                            ? "var(--accent)"
+                            : "var(--muted)",
                       }}
                     >
                       {p.status}

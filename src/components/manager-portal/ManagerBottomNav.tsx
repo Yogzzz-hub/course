@@ -94,7 +94,7 @@ export function ManagerBottomNav({
             <span
               className="absolute -top-1.5 -right-2.5 min-w-[17px] h-[17px] px-1 rounded-full flex items-center justify-center text-[10px] font-bold leading-none text-white shadow-xs"
               style={{
-                backgroundColor: "#831843", // deep burgundy badge as in reference image
+                backgroundColor: "var(--accent)",
               }}
             >
               {approvalsBadgeCount}

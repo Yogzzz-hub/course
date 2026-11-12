@@ -35,7 +35,13 @@ export function BatchesView({
                   </span>
                   <p className="text-[11px] mt-0.5 text-stone-500">{batch.track}</p>
                 </div>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
+                <span
+                  className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                  style={{
+                    backgroundColor: "color-mix(in srgb, var(--accent) 12%, transparent)",
+                    color: "var(--accent)",
+                  }}
+                >
                   Active
                 </span>
               </div>
@@ -149,8 +155,8 @@ export function BatchesView({
                     <span
                       className="text-[10px] font-semibold px-2 py-0.5 rounded"
                       style={{
-                        backgroundColor: student.attendanceRate >= 75 ? "#D1FAE5" : "#FEE2E2",
-                        color: student.attendanceRate >= 75 ? "#047857" : "#B91C1C",
+                        backgroundColor: "color-mix(in srgb, var(--accent) 12%, transparent)",
+                        color: "var(--accent)",
                       }}
                     >
                       {student.attendanceRate}% Attendance

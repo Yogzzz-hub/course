@@ -116,7 +116,7 @@ export function AttendanceAlertsView({
                     </span>
                     <p className="text-[10px] text-stone-500">{alert.batchName}</p>
                   </td>
-                  <td className="py-2.5 px-3.5 font-bold text-xs text-rose-600">
+                  <td className="py-2.5 px-3.5 font-bold text-xs" style={{ color: "var(--accent)" }}>
                     {alert.attendancePercentage}%
                   </td>
                   <td className="py-2.5 px-3.5 font-medium" style={{ color: "var(--text)" }}>
@@ -126,18 +126,8 @@ export function AttendanceAlertsView({
                     <span
                       className="text-[9px] font-semibold px-2 py-0.5 rounded-full uppercase"
                       style={{
-                        backgroundColor:
-                          alert.riskLevel === "CRITICAL"
-                            ? "#FEE2E2"
-                            : alert.riskLevel === "HIGH"
-                            ? "#FEF3C7"
-                            : "var(--bg-secondary)",
-                        color:
-                          alert.riskLevel === "CRITICAL"
-                            ? "#B91C1C"
-                            : alert.riskLevel === "HIGH"
-                            ? "#B45309"
-                            : "var(--muted)",
+                        backgroundColor: "color-mix(in srgb, var(--accent) 12%, transparent)",
+                        color: "var(--accent)",
                       }}
                     >
                       {alert.riskLevel}
@@ -145,12 +135,12 @@ export function AttendanceAlertsView({
                   </td>
                   <td className="py-2.5 px-3.5">
                     {alert.warningSent ? (
-                      <span className="text-[11px] font-medium text-emerald-600 flex items-center gap-1">
+                      <span className="text-[11px] font-medium flex items-center gap-1" style={{ color: "var(--accent)" }}>
                         <CheckCircle2 size={12} />
                         Dispatched
                       </span>
                     ) : (
-                      <span className="text-[11px] font-medium text-amber-600">
+                      <span className="text-[11px] font-medium" style={{ color: "var(--muted)" }}>
                         Pending
                       </span>
                     )}

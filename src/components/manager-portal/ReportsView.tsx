@@ -65,7 +65,7 @@ export function ReportsView({
             <span className="font-semibold text-xs" style={{ color: "var(--text)" }}>
               Curriculum Revenue Distribution
             </span>
-            <span className="text-[11px] font-semibold text-emerald-600">
+            <span className="text-[11px] font-semibold" style={{ color: "var(--accent)" }}>
               ₹ 48,50,000 Total
             </span>
           </div>

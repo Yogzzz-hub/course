@@ -129,7 +129,7 @@ export function AssignmentsView({
                     {sub.submittedAt}
                   </td>
                   {activeTab === "GRADED" && (
-                    <td className="py-2.5 px-3.5 font-semibold text-emerald-600">
+                    <td className="py-2.5 px-3.5 font-semibold" style={{ color: "var(--accent)" }}>
                       {sub.score} / {sub.maxScore}
                     </td>
                   )}

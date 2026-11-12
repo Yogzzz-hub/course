@@ -129,8 +129,8 @@ export function AttendanceView({
                           onClick={() => toggleStatus(student.studentId, "PRESENT")}
                           className="px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center justify-center gap-1 cursor-pointer min-h-[44px] md:min-h-0"
                           style={{
-                            backgroundColor: isPresent ? "#059669" : "transparent",
-                            color: isPresent ? "#FFFFFF" : "var(--muted)",
+                            backgroundColor: isPresent ? "var(--accent)" : "transparent",
+                            color: isPresent ? "var(--accent-contrast)" : "var(--muted)",
                           }}
                         >
                           <Check size={13} />
@@ -141,8 +141,8 @@ export function AttendanceView({
                           onClick={() => toggleStatus(student.studentId, "ABSENT")}
                           className="px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center justify-center gap-1 cursor-pointer min-h-[44px] md:min-h-0"
                           style={{
-                            backgroundColor: !isPresent ? "#DC2626" : "transparent",
-                            color: !isPresent ? "#FFFFFF" : "var(--muted)",
+                            backgroundColor: !isPresent ? "color-mix(in srgb, var(--accent) 15%, transparent)" : "transparent",
+                            color: !isPresent ? "var(--accent)" : "var(--muted)",
                           }}
                         >
                           <X size={13} />

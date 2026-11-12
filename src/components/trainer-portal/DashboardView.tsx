@@ -33,11 +33,11 @@ export function DashboardView({
 }) {
   return (
     <div className="space-y-4">
-      {/* Dark Burgundy Next Class Hero Banner */}
+      {/* Burgundy Next Class Hero Banner */}
       <div
         className="rounded-xl p-4 sm:p-5 text-white relative overflow-hidden shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4"
         style={{
-          background: "linear-gradient(135deg, #3A1424 0%, #200913 100%)",
+          background: "linear-gradient(135deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 70%, black) 100%)",
         }}
       >
         <div className="space-y-1 max-w-xl">
@@ -45,8 +45,8 @@ export function DashboardView({
             <span
               className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded"
               style={{
-                backgroundColor: "rgba(232, 200, 212, 0.2)",
-                color: "#E8C8D4",
+                backgroundColor: "color-mix(in srgb, var(--accent-contrast) 20%, transparent)",
+                color: "var(--accent-contrast)",
               }}
             >
               NEXT CLASS · {stats.nextClassTime}
@@ -55,7 +55,7 @@ export function DashboardView({
           <div className="text-base sm:text-lg font-bold tracking-tight text-white pt-0.5">
             {stats.nextClassTitle}
           </div>
-          <div className="text-xs flex items-center gap-3 pt-0.5" style={{ color: "#E8C8D4" }}>
+          <div className="text-xs flex items-center gap-3 pt-0.5" style={{ color: "color-mix(in srgb, var(--accent-contrast) 85%, transparent)" }}>
             <span>Cohort: <strong className="text-white">{stats.nextClassBatch}</strong></span>
             <span>•</span>
             <span>{stats.nextClassStudents} Students Enrolled</span>
@@ -69,8 +69,8 @@ export function DashboardView({
             rel="noreferrer"
             className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all hover:opacity-90 shadow-xs min-h-[44px] w-full sm:w-auto"
             style={{
-              backgroundColor: "#E8C8D4",
-              color: "#3A1424",
+              backgroundColor: "var(--surface)",
+              color: "var(--accent)",
             }}
           >
             <Video size={14} />
@@ -96,7 +96,7 @@ export function DashboardView({
             <div
               className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
               style={{
-                backgroundColor: "color-mix(in srgb, var(--accent) 10%, transparent)",
+                backgroundColor: "color-mix(in srgb, var(--accent) 12%, transparent)",
                 color: "var(--accent)",
               }}
             >
@@ -128,8 +128,8 @@ export function DashboardView({
             <div
               className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
               style={{
-                backgroundColor: "#D1FAE5",
-                color: "#047857",
+                backgroundColor: "color-mix(in srgb, var(--accent) 12%, transparent)",
+                color: "var(--accent)",
               }}
             >
               <Users size={15} />
@@ -160,8 +160,8 @@ export function DashboardView({
             <div
               className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
               style={{
-                backgroundColor: "#FEF3C7",
-                color: "#B45309",
+                backgroundColor: "color-mix(in srgb, var(--accent) 12%, transparent)",
+                color: "var(--accent)",
               }}
             >
               <FileCheck size={15} />
@@ -192,8 +192,8 @@ export function DashboardView({
             <div
               className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
               style={{
-                backgroundColor: "#EDE9FE",
-                color: "#6D28D9",
+                backgroundColor: "color-mix(in srgb, var(--accent) 12%, transparent)",
+                color: "var(--accent)",
               }}
             >
               <HelpCircle size={15} />
@@ -242,21 +242,21 @@ export function DashboardView({
             {batches.map((batch) => (
               <div
                 key={batch.id}
-                className="py-2.5 flex items-center justify-between gap-3 text-xs"
+                className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
               >
-                <div>
-                  <div className="flex items-center gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-semibold text-xs" style={{ color: "var(--text)" }}>
                       {batch.name}
                     </span>
-                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-black/5">
+                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-black/5 dark:bg-white/5">
                       {batch.code}
                     </span>
                   </div>
-                  <div className="text-[11px] text-stone-500 mt-0.5">
+                  <div className="text-[11px] text-stone-500 mt-0.5" style={{ color: "var(--muted)" }}>
                     {batch.module} • {batch.studentsCount} students
                   </div>
-                  <div className="w-36 h-1.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden mt-1.5">
+                  <div className="w-36 max-w-full h-1.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden mt-1.5">
                     <div
                       className="h-full rounded-full"
                       style={{
@@ -267,7 +267,7 @@ export function DashboardView({
                   </div>
                 </div>
 
-                <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 shrink-0">
+                <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap pt-1 sm:pt-0">
                   <button
                     type="button"
                     onClick={() => onSelectBatch(batch)}
@@ -307,7 +307,7 @@ export function DashboardView({
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold flex items-center gap-1.5" style={{ color: "var(--text)" }}>
-                <HelpCircle size={14} className="text-purple-600" />
+                <HelpCircle size={14} style={{ color: "var(--accent)" }} />
                 <span>Pending Doubt Sessions</span>
               </span>
               <button
@@ -337,14 +337,14 @@ export function DashboardView({
                     <span
                       className="text-[9px] font-bold px-1.5 py-0.2 rounded"
                       style={{
-                        backgroundColor: doubt.urgency === "HIGH" ? "#FEE2E2" : "#FEF3C7",
-                        color: doubt.urgency === "HIGH" ? "#B91C1C" : "#B45309",
+                        backgroundColor: "color-mix(in srgb, var(--accent) 12%, transparent)",
+                        color: "var(--accent)",
                       }}
                     >
                       {doubt.urgency}
                     </span>
                   </div>
-                  <p className="text-[11px] text-stone-600 line-clamp-1">{doubt.topic}</p>
+                  <p className="text-[11px] text-stone-600 line-clamp-1" style={{ color: "var(--muted)" }}>{doubt.topic}</p>
                 </div>
               ))}
             </div>
@@ -367,9 +367,9 @@ export function DashboardView({
                 className="p-2.5 rounded-lg border text-left hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
                 style={{ borderColor: "var(--border)" }}
               >
-                <FileCheck size={14} className="mb-1 text-amber-600" />
+                <FileCheck size={14} className="mb-1" style={{ color: "var(--accent)" }} />
                 <div className="font-medium">Grade Submissions</div>
-                <div className="text-[10px] text-stone-500">{stats.pendingReviews} waiting</div>
+                <div className="text-[10px] text-stone-500" style={{ color: "var(--muted)" }}>{stats.pendingReviews} waiting</div>
               </button>
               <button
                 type="button"
@@ -377,9 +377,9 @@ export function DashboardView({
                 className="p-2.5 rounded-lg border text-left hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
                 style={{ borderColor: "var(--border)" }}
               >
-                <Calendar size={14} className="mb-1 text-emerald-600" />
+                <Calendar size={14} className="mb-1" style={{ color: "var(--accent)" }} />
                 <div className="font-medium">Post Notice</div>
-                <div className="text-[10px] text-stone-500">To cohort feed</div>
+                <div className="text-[10px] text-stone-500" style={{ color: "var(--muted)" }}>To cohort feed</div>
               </button>
             </div>
           </div>

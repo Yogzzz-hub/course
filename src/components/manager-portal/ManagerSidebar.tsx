@@ -184,8 +184,12 @@ export function ManagerSidebar({
         <button
           type="button"
           onClick={onLogout}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-rose-600 transition-colors border hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer min-h-[44px]"
-          style={{ borderColor: "var(--border)" }}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors border hover:opacity-80 cursor-pointer min-h-[44px]"
+          style={{
+            borderColor: "var(--border)",
+            backgroundColor: "var(--surface)",
+            color: "var(--accent)",
+          }}
         >
           <LogOut size={16} />
           <span>Sign Out</span>

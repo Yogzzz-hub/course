@@ -199,12 +199,7 @@ export function LeadsView({
                           className="h-full rounded-full"
                           style={{
                             width: `${lead.score}%`,
-                            backgroundColor:
-                              lead.score >= 80
-                                ? "#059669"
-                                : lead.score >= 60
-                                ? "#D97706"
-                                : "#DC2626",
+                            backgroundColor: "var(--accent)",
                           }}
                         />
                       </div>
@@ -219,25 +214,13 @@ export function LeadsView({
                       className="text-[9px] font-medium px-2 py-0.5 rounded"
                       style={{
                         backgroundColor:
-                          lead.status === "New Lead"
-                            ? "color-mix(in srgb, var(--accent) 10%, transparent)"
-                            : lead.status === "Admitted"
-                            ? "#D1FAE5"
-                            : lead.status === "Offer Extended"
-                            ? "#FEF3C7"
-                            : lead.status === "Counselling Scheduled"
-                            ? "#EDE9FE"
-                            : "#FEE2E2",
+                          lead.status === "New Lead" || lead.status === "Admitted"
+                            ? "color-mix(in srgb, var(--accent) 12%, transparent)"
+                            : "var(--bg-secondary)",
                         color:
-                          lead.status === "New Lead"
+                          lead.status === "New Lead" || lead.status === "Admitted"
                             ? "var(--accent)"
-                            : lead.status === "Admitted"
-                            ? "#047857"
-                            : lead.status === "Offer Extended"
-                            ? "#B45309"
-                            : lead.status === "Counselling Scheduled"
-                            ? "#6D28D9"
-                            : "#B91C1C",
+                            : "var(--muted)",
                       }}
                     >
                       {lead.status}

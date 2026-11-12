@@ -125,16 +125,12 @@ export function AdmissionsView({
                       style={{
                         backgroundColor:
                           adm.feeStatus === "Full Payment Verified"
-                            ? "#D1FAE5"
-                            : adm.feeStatus === "1st Installment Paid"
-                            ? "#FEF3C7"
-                            : "#FEE2E2",
+                            ? "color-mix(in srgb, var(--accent) 12%, transparent)"
+                            : "var(--bg-secondary)",
                         color:
                           adm.feeStatus === "Full Payment Verified"
-                            ? "#047857"
-                            : adm.feeStatus === "1st Installment Paid"
-                            ? "#B45309"
-                            : "#B91C1C",
+                            ? "var(--accent)"
+                            : "var(--muted)",
                       }}
                     >
                       {adm.feeStatus}
@@ -142,12 +138,12 @@ export function AdmissionsView({
                   </td>
                   <td className="py-2.5 px-3.5">
                     {adm.agreementSigned ? (
-                      <span className="text-[11px] font-medium text-emerald-600 flex items-center gap-1">
+                      <span className="text-[11px] font-medium flex items-center gap-1" style={{ color: "var(--accent)" }}>
                         <CheckCircle2 size={12} />
                         Signed
                       </span>
                     ) : (
-                      <span className="text-[11px] font-medium text-amber-600 flex items-center gap-1">
+                      <span className="text-[11px] font-medium flex items-center gap-1" style={{ color: "var(--muted)" }}>
                         <AlertCircle size={12} />
                         Pending
                       </span>
@@ -159,15 +155,11 @@ export function AdmissionsView({
                       style={{
                         backgroundColor:
                           adm.status === "APPROVED"
-                            ? "#D1FAE5"
-                            : adm.status === "PENDING_VERIFICATION"
-                            ? "#FEF3C7"
+                            ? "color-mix(in srgb, var(--accent) 12%, transparent)"
                             : "var(--bg-secondary)",
                         color:
                           adm.status === "APPROVED"
-                            ? "#047857"
-                            : adm.status === "PENDING_VERIFICATION"
-                            ? "#B45309"
+                            ? "var(--accent)"
                             : "var(--muted)",
                       }}
                     >
@@ -265,8 +257,15 @@ export function AdmissionsView({
                 <span>Confirm & Finalize Admission</span>
               </button>
             ) : (
-              <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center gap-2">
-                <CheckCircle2 size={14} className="text-emerald-600" />
+              <div
+                className="p-2.5 rounded-lg border flex items-center gap-2"
+                style={{
+                  backgroundColor: "color-mix(in srgb, var(--accent) 8%, var(--surface))",
+                  borderColor: "color-mix(in srgb, var(--accent) 30%, var(--border))",
+                  color: "var(--accent)",
+                }}
+              >
+                <CheckCircle2 size={14} style={{ color: "var(--accent)" }} />
                 <span className="font-medium text-[11px]">This admission is approved and enrolled.</span>
               </div>
             )}
