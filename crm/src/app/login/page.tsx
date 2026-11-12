@@ -130,7 +130,11 @@ export default function LoginPage() {
 
       // Resolve redirect destination based on role and returnUrl
       const searchParams = new URLSearchParams(window.location.search);
-      const returnUrl = searchParams.get("returnUrl");
+      const rawReturnUrl = searchParams.get("returnUrl") || searchParams.get("returnTo");
+      const safeReturnUrl =
+        rawReturnUrl && /^\/(?!\/)/.test(rawReturnUrl) && !rawReturnUrl.includes("\\")
+          ? rawReturnUrl
+          : null;
       let defaultDashboard = "/student";
 
       switch (data.user.role) {
@@ -152,9 +156,9 @@ export default function LoginPage() {
       }
 
       const destination =
-        returnUrl &&
-        (data.user.role === "ADMIN" || returnUrl.startsWith(defaultDashboard))
-          ? returnUrl
+        safeReturnUrl &&
+        (data.user.role === "ADMIN" || safeReturnUrl.startsWith(defaultDashboard))
+          ? safeReturnUrl
           : defaultDashboard;
 
       // Full document navigation ensures session cookies are bound cleanly
@@ -329,8 +333,13 @@ export default function LoginPage() {
       }
 
       const searchParams = new URLSearchParams(window.location.search);
-      const returnUrl = searchParams.get("returnUrl");
-      window.location.href = returnUrl || "/student";
+      const rawReturnUrl = searchParams.get("returnUrl") || searchParams.get("returnTo");
+      const safeReturnUrl =
+        rawReturnUrl && /^\/(?!\/)/.test(rawReturnUrl) && !rawReturnUrl.includes("\\")
+          ? rawReturnUrl
+          : null;
+      window.location.href =
+        safeReturnUrl && safeReturnUrl.startsWith("/student") ? safeReturnUrl : "/student";
     } catch {
       setOtpError("Network communication error. Please try again.");
       setOtpLoading(false);

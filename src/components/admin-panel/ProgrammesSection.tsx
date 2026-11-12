@@ -104,10 +104,10 @@ export function ProgrammesSection() {
             <Card key={batch.id} className="space-y-4">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <span className="text-xs font-mono font-bold text-[#681C35] uppercase">
+                  <span className="text-xs font-mono font-bold text-[var(--accent)] uppercase">
                     {batch.batchCode}
                   </span>
-                  <h3 className="text-lg font-bold text-[#241921] mt-0.5">
+                  <h3 className="text-lg font-bold text-[var(--text)] mt-0.5">
                     {batch.programmeName}
                   </h3>
                 </div>
@@ -124,13 +124,13 @@ export function ProgrammesSection() {
               </div>
 
               {/* Schedule and Timing */}
-              <div className="flex flex-col gap-1.5 text-xs text-[#645A62] bg-[#F7F9FB] rounded-xl p-3 border border-[#DFE5EC]">
+              <div className="flex flex-col gap-1.5 text-xs text-[var(--muted)] bg-[var(--surface-alt)] rounded-xl p-3 border border-[var(--border)]">
                 <div className="flex items-center gap-2">
-                  <Calendar size={14} className="text-[#681C35]" />
+                  <Calendar size={14} className="text-[var(--accent)]" />
                   <span>Starts: {batch.startDate}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Clock size={14} className="text-[#681C35]" />
+                  <Clock size={14} className="text-[var(--accent)]" />
                   <span>{batch.timing}</span>
                 </div>
               </div>
@@ -138,32 +138,32 @@ export function ProgrammesSection() {
               {/* Fill-rate progress bar */}
               <div className="space-y-1.5">
                 <div className="flex justify-between text-xs">
-                  <span className="font-semibold text-[#241921]">
+                  <span className="font-semibold text-[var(--text)]">
                     Seat Fill Rate
                   </span>
-                  <span className="font-bold text-[#681C35]">
+                  <span className="font-bold text-[var(--accent)]">
                     {batch.enrolled} / {batch.totalSeats} seats ({fillPercentage}%)
                   </span>
                 </div>
-                <div className="h-2.5 w-full rounded-full bg-[#EEF3F7] overflow-hidden">
+                <div className="h-2.5 w-full rounded-full bg-[var(--accent-tint)] overflow-hidden">
                   <div
                     style={{ width: `${fillPercentage}%` }}
                     className={`h-full rounded-full transition-all duration-500 ${
                       fillPercentage >= 95
                         ? "bg-red-700"
                         : fillPercentage >= 80
-                          ? "bg-[#681C35]"
-                          : "bg-[#2C6E91]"
+                          ? "bg-[var(--btn-primary-bg)]"
+                          : "bg-[var(--accent)]"
                     }`}
                   />
                 </div>
               </div>
 
               {/* Pricing and Actions */}
-              <div className="flex items-center justify-between pt-3 border-t border-[#DFE5EC]">
+              <div className="flex items-center justify-between pt-3 border-t border-[var(--border)]">
                 <div>
-                  <span className="text-[11px] text-[#645A62] block">Package Fee</span>
-                  <span className="text-base font-bold text-[#241921]">
+                  <span className="text-[11px] text-[var(--muted)] block">Package Fee</span>
+                  <span className="text-base font-bold text-[var(--text)]">
                     {money(batch.priceMinor, batch.currency)}
                   </span>
                 </div>
@@ -171,13 +171,13 @@ export function ProgrammesSection() {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-[#DFE5EC] px-3.5 text-xs font-semibold text-[#241921] hover:bg-[#F3F7FA]"
+                    className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-[var(--border)] px-3.5 text-xs font-semibold text-[var(--text)] hover:bg-[var(--accent-tint)]"
                   >
                     Edit Batch
                   </button>
                   <button
                     type="button"
-                    className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-[#681C35] px-4 text-xs font-semibold text-white shadow-sm hover:bg-[#52152A]"
+                    className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-[var(--btn-primary-bg)] px-4 text-xs font-semibold text-white shadow-sm hover:bg-[var(--btn-primary-hover)]"
                   >
                     View Roster
                   </button>

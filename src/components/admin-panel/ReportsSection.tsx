@@ -92,8 +92,8 @@ export function ReportsSection() {
       {/* Date Range Selector */}
       <Card className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-2">
-          <Calendar size={18} className="text-[#681C35]" />
-          <span className="text-sm font-semibold text-[#241921]">
+          <Calendar size={18} className="text-[var(--accent)]" />
+          <span className="text-sm font-semibold text-[var(--text)]">
             Report Period:
           </span>
         </div>
@@ -102,14 +102,14 @@ export function ReportsSection() {
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            className="rounded-xl border border-[#DFE5EC] px-3 py-2 text-sm text-[#241921] min-h-[44px]"
+            className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] min-h-[44px]"
           />
-          <span className="text-xs text-[#645A62]">to</span>
+          <span className="text-xs text-[var(--muted)]">to</span>
           <input
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            className="rounded-xl border border-[#DFE5EC] px-3 py-2 text-sm text-[#241921] min-h-[44px]"
+            className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] min-h-[44px]"
           />
           <Button
             secondary
@@ -123,10 +123,10 @@ export function ReportsSection() {
       {/* Conversion Funnel */}
       <Card>
         <div className="mb-6">
-          <h2 className="text-lg font-bold text-[#241921]">
+          <h2 className="text-lg font-bold text-[var(--text)]">
             Lead-to-Enrolment Conversion Funnel
           </h2>
-          <p className="text-xs text-[#645A62]">
+          <p className="text-xs text-[var(--muted)]">
             Progression from initial enquiry verification to fee-paid enrolment
           </p>
         </div>
@@ -142,23 +142,23 @@ export function ReportsSection() {
             return (
               <div key={stage.label} className="space-y-1.5">
                 <div className="flex flex-wrap items-center justify-between text-xs sm:text-sm">
-                  <span className="font-semibold text-[#241921]">
+                  <span className="font-semibold text-[var(--text)]">
                     {idx + 1}. {stage.label}
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-[#681C35]">
+                    <span className="font-bold text-[var(--accent)]">
                       {stage.count} leads
                     </span>
-                    <span className="text-xs text-[#645A62]">
+                    <span className="text-xs text-[var(--muted)]">
                       ({pctOfInitial}% total · {conversionFromPrev}% step-through)
                     </span>
                   </div>
                 </div>
 
-                <div className="h-4 w-full rounded-full bg-[#EEF3F7] overflow-hidden p-0.5">
+                <div className="h-4 w-full rounded-full bg-[var(--accent-tint)] overflow-hidden p-0.5">
                   <div
                     style={{ width: `${pctOfInitial}%` }}
-                    className="h-full rounded-full bg-[#681C35] transition-all duration-500"
+                    className="h-full rounded-full bg-[var(--btn-primary-bg)] transition-all duration-500"
                   />
                 </div>
               </div>
@@ -166,7 +166,7 @@ export function ReportsSection() {
           })}
         </div>
 
-        <div className="mt-6 rounded-xl bg-[#F7F9FB] border border-[#DFE5EC] p-4 flex flex-wrap items-center justify-between gap-3 text-xs text-[#645A62]">
+        <div className="mt-6 rounded-xl bg-[var(--surface-alt)] border border-[var(--border)] p-4 flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--muted)]">
           <span>Overall Conversion Rate: <strong>22.5%</strong></span>
           <span>Average Enquiry to Enrolment Cycle: <strong>6.4 Days</strong></span>
         </div>
@@ -174,18 +174,18 @@ export function ReportsSection() {
 
       {/* Counsellor Performance Table */}
       <Card className="p-0 overflow-hidden">
-        <div className="p-5 border-b border-[#DFE5EC]">
-          <h2 className="text-lg font-bold text-[#241921]">
+        <div className="p-5 border-b border-[var(--border)]">
+          <h2 className="text-lg font-bold text-[var(--text)]">
             Counsellor Performance Breakdown
           </h2>
-          <p className="text-xs text-[#645A62]">
+          <p className="text-xs text-[var(--muted)]">
             Enquiries assigned, completed sessions, and confirmed enrolled revenue
           </p>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-[#241921]">
-            <thead className="bg-[#F3F7FA] border-b border-[#DFE5EC] text-xs font-semibold text-[#645A62] uppercase tracking-wider">
+          <table className="w-full text-left text-sm text-[var(--text)]">
+            <thead className="bg-[var(--accent-tint)] border-b border-[var(--border)] text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">
               <tr>
                 <th scope="col" className="px-6 py-3.5">
                   Counsellor
@@ -204,19 +204,19 @@ export function ReportsSection() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#DFE5EC]">
+            <tbody className="divide-y divide-[var(--border)]">
               {counsellors.map((c) => (
-                <tr key={c.id} className="hover:bg-[#F7F9FB] transition">
-                  <td className="px-6 py-4 font-semibold text-[#241921]">
+                <tr key={c.id} className="hover:bg-[var(--surface-alt)] transition">
+                  <td className="px-6 py-4 font-semibold text-[var(--text)]">
                     {c.name}
                   </td>
-                  <td className="px-6 py-4 text-[#645A62]">{c.leads}</td>
-                  <td className="px-6 py-4 text-[#645A62]">{c.sessions}</td>
-                  <td className="px-6 py-4 font-bold text-[#681C35]">
+                  <td className="px-6 py-4 text-[var(--muted)]">{c.leads}</td>
+                  <td className="px-6 py-4 text-[var(--muted)]">{c.sessions}</td>
+                  <td className="px-6 py-4 font-bold text-[var(--accent)]">
                     {c.enrolments} (
                     {Math.round((c.enrolments / (c.leads || 1)) * 100)}%)
                   </td>
-                  <td className="px-6 py-4 text-right font-bold text-[#241921]">
+                  <td className="px-6 py-4 text-right font-bold text-[var(--text)]">
                     {money(c.revenueMinor, "INR")}
                   </td>
                 </tr>

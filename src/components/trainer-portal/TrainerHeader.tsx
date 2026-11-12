@@ -1,5 +1,7 @@
 import React from "react";
 import { Bell, Menu } from "lucide-react";
+import { PaletteMenu } from "../PaletteMenu";
+import { ProfileMenu } from "../ProfileMenu";
 import type { TrainerNavTab } from "./types";
 
 const tabDisplayTitles: Record<TrainerNavTab, string> = {
@@ -15,9 +17,11 @@ const tabDisplayTitles: Record<TrainerNavTab, string> = {
 export function TrainerHeader({
   activeTab,
   onOpenMobileSidebar,
+  onLogout,
 }: {
   activeTab: TrainerNavTab;
   onOpenMobileSidebar: () => void;
+  onLogout?: () => void;
 }) {
   const title = tabDisplayTitles[activeTab] || "Dashboard";
 
@@ -51,6 +55,7 @@ export function TrainerHeader({
       </div>
 
       <div className="flex items-center gap-2">
+        <PaletteMenu />
         <div
           className="w-9 h-9 sm:w-8 sm:h-8 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-lg border flex items-center justify-center relative cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
           style={{
@@ -66,6 +71,15 @@ export function TrainerHeader({
             style={{ backgroundColor: "var(--accent)" }}
           />
         </div>
+
+        {onLogout && (
+          <ProfileMenu
+            initials="VJ"
+            name="Dr. Vikram Joshi"
+            subtitle="Lead Faculty Instructor"
+            onLogout={onLogout}
+          />
+        )}
       </div>
     </header>
   );

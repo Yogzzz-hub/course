@@ -11,7 +11,6 @@ import {
   AssignmentsView,
   DoubtsView,
   AnnouncementsView,
-  TrainerBottomNav,
   type TrainerNavTab,
   type TrainerBatch,
   type TrainerScheduleItem,
@@ -22,6 +21,7 @@ import {
   type TrainerStats,
 } from "../components/trainer-portal";
 import { ToastContainer } from "../components/manager-portal/Toast";
+import { readScheduledClasses, subscribeScheduledClasses } from "../utils/classScheduleStore";
 import type { ToastMessage } from "../components/manager-portal/types";
 
 const EMPTY_STATS: TrainerStats = {
@@ -46,6 +46,10 @@ export default function TrainerPanel() {
   const [stats, setStats] = useState<TrainerStats>(EMPTY_STATS);
   const [batches, setBatches] = useState<TrainerBatch[]>([]);
   const [schedule, setSchedule] = useState<TrainerScheduleItem[]>([]);
+  // Classes scheduled by managers (Schedule Classes tab), shown alongside DB sessions.
+  const [managerClasses, setManagerClasses] = useState<TrainerScheduleItem[]>(() => readScheduledClasses());
+  useEffect(() => subscribeScheduledClasses((items) => setManagerClasses(items)), []);
+  const combinedSchedule = [...managerClasses, ...schedule];
   const [rosterMap, setRosterMap] = useState<Record<string, AttendanceStudent[]>>({});
   const [selectedBatchForAttendance, setSelectedBatchForAttendance] = useState("");
   const [assignments, setAssignments] = useState<TrainerAssignmentSubmission[]>([]);
@@ -227,9 +231,10 @@ export default function TrainerPanel() {
         <TrainerHeader
           activeTab={activeTab}
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+          onLogout={handleLogout}
         />
 
-        <main className="manager-main p-3 sm:p-5 md:p-6 pb-20 md:pb-6 flex-1 w-full space-y-4">
+        <main className="manager-main p-3 sm:p-5 md:p-6 pb-6 flex-1 w-full space-y-4">
           {loadError && (
             <div
               className="p-3 rounded-lg border text-xs flex items-center justify-between gap-3"
@@ -275,7 +280,7 @@ export default function TrainerPanel() {
                 />
               )}
 
-              {activeTab === "schedule" && <ScheduleView schedule={schedule} />}
+              {activeTab === "schedule" && <ScheduleView schedule={combinedSchedule} />}
 
               {activeTab === "attendance" && (
                 <AttendanceView
@@ -308,14 +313,6 @@ export default function TrainerPanel() {
           )}
         </main>
       </div>
-
-      {/* Mobile Bottom Navigation Bar matching Manager UI */}
-      <TrainerBottomNav
-        activeTab={activeTab}
-        onSelectTab={setActiveTab}
-        onOpenMore={() => setMobileSidebarOpen(true)}
-        assignmentsBadgeCount={stats.pendingReviews}
-      />
 
       {/* Global Interactive Toast Notification Host */}
       <ToastContainer toasts={toasts} onDismiss={removeToast} />

@@ -8,6 +8,7 @@ import {
   LeadsView,
   AdmissionsView,
   CohortsView,
+  ScheduleClassesView,
   AttendanceAlertsView,
   FeesView,
   CounsellorsView,
@@ -27,6 +28,11 @@ import {
   type ManagerStats,
   type ManagerReportsData,
 } from "../components/manager-portal";
+import {
+  readScheduledClasses,
+  writeScheduledClasses,
+  type ScheduledClassItem,
+} from "../utils/classScheduleStore";
 
 const EMPTY_STATS: ManagerStats = {
   newEnquiries: 0,
@@ -57,6 +63,8 @@ export default function ManagerPanel() {
   const [counsellors, setCounsellors] = useState<Counsellor[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [reports, setReports] = useState<ManagerReportsData>(EMPTY_REPORTS);
+  const [scheduledClasses, setScheduledClasses] = useState<ScheduledClassItem[]>(() => readScheduledClasses());
+  const [selectedScheduleBatch, setSelectedScheduleBatch] = useState<string | undefined>(undefined);
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
@@ -100,6 +108,22 @@ export default function ManagerPanel() {
   useEffect(() => {
     void loadSnapshot();
   }, []);
+
+  const handleSaveScheduledClass = (item: ScheduledClassItem, isEdit: boolean) => {
+    setScheduledClasses((prev) => {
+      const next = isEdit ? prev.map((existing) => (existing.id === item.id ? item : existing)) : [item, ...prev];
+      writeScheduledClasses(next);
+      return next;
+    });
+  };
+
+  const handleDeleteScheduledClass = (id: string) => {
+    setScheduledClasses((prev) => {
+      const next = prev.filter((item) => item.id !== id);
+      writeScheduledClasses(next);
+      return next;
+    });
+  };
 
   const handleLogout = () => {
     try {
@@ -198,6 +222,9 @@ export default function ManagerPanel() {
                 title: "Create Lead",
                 message: "Fill in candidate enquiry details to register new lead.",
               });
+            } else if (action === "create_class") {
+              setSelectedScheduleBatch(undefined);
+              setActiveTab("schedule");
             } else if (action === "export_csv") {
               addToast({
                 type: "success",
@@ -259,7 +286,26 @@ export default function ManagerPanel() {
                 />
               )}
 
-              {activeTab === "cohorts" && <CohortsView cohorts={cohorts} />}
+              {activeTab === "cohorts" && (
+                <CohortsView
+                  cohorts={cohorts}
+                  onScheduleBatch={(batchCode) => {
+                    setSelectedScheduleBatch(batchCode);
+                    setActiveTab("schedule");
+                  }}
+                />
+              )}
+
+              {activeTab === "schedule" && (
+                <ScheduleClassesView
+                  cohorts={cohorts}
+                  classes={scheduledClasses}
+                  initialBatchCode={selectedScheduleBatch}
+                  onSaveClass={handleSaveScheduledClass}
+                  onDeleteClass={handleDeleteScheduledClass}
+                  onAddToast={addToast}
+                />
+              )}
 
               {activeTab === "attendance" && (
                 <AttendanceAlertsView

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import {
   QueryClient,
   QueryClientProvider,
@@ -19,7 +19,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  MoreHorizontal,
+  PanelLeftClose,
   Search,
   Settings,
   ShieldCheck,
@@ -68,11 +68,13 @@ import { ReportsSection } from "./ReportsSection";
 import { SettingsSection } from "./SettingsSection";
 import "./admin-panel.css";
 import { PaletteMenu, WorkspaceAppearance } from "../PaletteMenu";
+import { ProfileMenu } from "../ProfileMenu";
 
 export interface AdminPanelProps {
   api: AdminApi;
   signInUrl?: string;
   academyName?: string;
+  onLogout?: () => void;
 }
 
 export type DashboardSection =
@@ -188,8 +190,8 @@ function TwoFactor({
       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#E8F6ED] text-[#10754A] mb-4">
         <ShieldCheck size={28} />
       </div>
-      <h1 className="text-2xl font-bold text-[#241921]">Verify admin access</h1>
-      <p className="my-3 text-sm leading-6 text-[#645A62]">
+      <h1 className="text-2xl font-bold text-[var(--text)]">Verify admin access</h1>
+      <p className="my-3 text-sm leading-6 text-[var(--muted)]">
         Enter the six-digit verification code sent to {challenge.maskedEmail}.
       </p>
       <form
@@ -236,7 +238,15 @@ function TwoFactor({
   );
 }
 
-function AdminWorkspace({ academyName }: { academyName: string }) {
+function AdminWorkspace({
+  academyName,
+  onLogoutStart,
+  onLoggedOut,
+}: {
+  academyName: string;
+  onLogoutStart: () => void;
+  onLoggedOut: () => void;
+}) {
   const { can, session, api } = useAdminAuthority();
   const client = useQueryClient();
 
@@ -253,8 +263,10 @@ function AdminWorkspace({ academyName }: { academyName: string }) {
 
   // Global search input in header
   const [globalSearch, setGlobalSearch] = useState("");
-  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarLogoutOpen, setSidebarLogoutOpen] = useState(false);
+  const [drawerLogoutOpen, setDrawerLogoutOpen] = useState(false);
 
   // Sync hash changes
   useEffect(() => {
@@ -273,7 +285,6 @@ function AdminWorkspace({ academyName }: { academyName: string }) {
     if (typeof window !== "undefined") {
       window.location.hash = `#${section}`;
     }
-    setMobileMoreOpen(false);
     setMobileSidebarOpen(false);
   };
 
@@ -296,6 +307,12 @@ function AdminWorkspace({ academyName }: { academyName: string }) {
     allowedItems.find((item) => item.id === activeSection) || allowedItems[0];
 
   const logout = useMutation({
+    onMutate: () => {
+      onLogoutStart();
+      try {
+        localStorage.removeItem("crm_session");
+      } catch {}
+    },
     mutationFn: () =>
       api.logout({
         csrfToken: session.csrfToken,
@@ -303,12 +320,13 @@ function AdminWorkspace({ academyName }: { academyName: string }) {
         requestId: crypto.randomUUID(),
       }),
     retry: false,
-    onSuccess: () => {
+    onSettled: () => {
       client.setQueryData(adminKeys.session, { state: "anonymous" });
       client.removeQueries({
         predicate: (query) =>
           query.queryKey[0] === "admin" && query.queryKey[1] !== "session",
       });
+      onLoggedOut();
     },
   });
 
@@ -348,7 +366,7 @@ function AdminWorkspace({ academyName }: { academyName: string }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#F7F9FB] text-[#241921] flex flex-col">
+    <div className="min-h-screen bg-[var(--bg)] text-[var(--text)] flex flex-col">
       <a href="#admin-main" className="admin-skip">
         Skip to main content
       </a>
@@ -357,30 +375,49 @@ function AdminWorkspace({ academyName }: { academyName: string }) {
       {/* DESKTOP FIXED SIDEBAR (>900px, about 240px wide)        */}
       {/* ======================================================== */}
       <aside
-        className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col overflow-y-auto border-r border-[#4F1A2C] bg-[#3A1020] text-[#F7F9FB] lg:flex"
+        className={`fixed inset-y-0 left-0 z-30 hidden h-dvh flex-col overflow-y-auto overflow-x-hidden border-r border-[var(--sidebar-border)] bg-[var(--sidebar-bg)] text-[var(--sidebar-text)] transition-[width] duration-200 lg:flex ${
+          sidebarCollapsed ? "w-20" : "w-60"
+        }`}
         aria-label="Admin sidebar navigation"
       >
-        {/* Sidebar Brand Header */}
-        <div className="flex min-h-[72px] shrink-0 items-center gap-3 border-b border-[#4F1A2C] px-5">
+        {/* Sidebar Brand Header + Quick Collapse */}
+        <div
+          className={`flex min-h-[64px] shrink-0 items-center border-b border-[var(--sidebar-border)] ${
+            sidebarCollapsed ? "justify-center px-2" : "justify-between gap-2 px-4"
+          }`}
+        >
           <a
             href="/"
-            className="flex items-center gap-2.5 hover:opacity-90 transition"
+            className="flex items-center gap-2.5 min-w-0 hover:opacity-90 transition"
             aria-label={`${academyName} Home`}
           >
-            <LogoMark size={28} className="shrink-0 text-[#A9C9DC]" />
-            <div className="flex flex-col">
-              <span className="font-bold text-sm tracking-tight text-white leading-tight">
-                {academyName.replace(/\s+(Technical\s+)?Academy$/i, "")}
-              </span>
-              <span className="text-[11px] font-semibold text-[#A9C9DC] tracking-wider uppercase">
-                Admin Portal
-              </span>
-            </div>
+            <LogoMark size={28} surface="dark" className="shrink-0" />
+            {!sidebarCollapsed && (
+              <div className="flex flex-col min-w-0">
+                <span className="font-bold text-[15px] tracking-tight text-white leading-tight truncate">
+                  {academyName.replace(/\s+(Technical\s+)?Academy$/i, "")}
+                </span>
+                <span className="text-[9px] font-medium text-[var(--accent-soft)] tracking-[0.22em] uppercase mt-0.5 truncate">
+                  Academy · Admin
+                </span>
+              </div>
+            )}
           </a>
+          {!sidebarCollapsed && (
+            <button
+              type="button"
+              onClick={() => setSidebarCollapsed(true)}
+              aria-label="Collapse sidebar"
+              title="Collapse sidebar"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--sidebar-text)]/70 hover:bg-[var(--sidebar-hover)] hover:text-white transition cursor-pointer"
+            >
+              <PanelLeftClose size={16} aria-hidden="true" />
+            </button>
+          )}
         </div>
 
         {/* Sidebar Navigation Items */}
-        <nav className="flex-1 space-y-1 px-3 py-5" aria-label="Sections">
+        <nav className="flex-1 flex flex-col justify-between gap-1 px-3 py-3 overflow-y-auto overflow-x-hidden" aria-label="Sections">
           {allowedItems.map((item) => {
             const isActive = activeItemConfig?.id === item.id;
             const Icon = item.icon;
@@ -390,34 +427,43 @@ function AdminWorkspace({ academyName }: { academyName: string }) {
               <button
                 key={item.id}
                 type="button"
+                title={sidebarCollapsed ? item.label : undefined}
                 aria-current={isActive ? "page" : undefined}
                 onClick={() => selectSection(item.id)}
-                className={`group flex min-h-[44px] w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-left text-xs font-semibold transition ${
+                className={`relative group flex flex-1 min-h-[42px] max-h-[64px] w-full items-center rounded-xl py-2 text-left text-xs font-semibold transition ${
+                  sidebarCollapsed ? "justify-center px-2" : "justify-between px-3.5"
+                } ${
                   isActive
-                    ? "bg-[#681C35] text-white shadow-sm font-bold"
-                    : "text-[#F7F9FB]/80 hover:bg-[#4F1A2C] hover:text-white"
+                    ? "bg-[var(--btn-primary-bg)] text-white shadow-sm font-bold"
+                    : "text-[var(--sidebar-text)]/80 hover:bg-[var(--sidebar-hover)] hover:text-white"
                 }`}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0">
                   <Icon
                     size={18}
                     className={`shrink-0 ${
-                      isActive ? "text-[#A9C9DC]" : "text-[#F7F9FB]/70 group-hover:text-white"
+                      isActive ? "text-[var(--accent-soft)]" : "text-[var(--sidebar-text)]/70 group-hover:text-white"
                     }`}
                   />
-                  <span>{item.label}</span>
+                  <span className={sidebarCollapsed ? "sr-only" : "truncate"}>{item.label}</span>
                 </div>
 
-                {badgeCount > 0 && (
+                {!sidebarCollapsed && badgeCount > 0 && (
                   <span
-                    className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                    className={`rounded-full px-2 py-0.5 text-[11px] font-bold shrink-0 ${
                       isActive
-                        ? "bg-white text-[#681C35]"
-                        : "bg-[#681C35] text-white"
+                        ? "sidebar-badge bg-white text-[var(--accent)]"
+                        : "bg-[var(--btn-primary-bg)] text-white"
                     }`}
                   >
                     {badgeCount}
                   </span>
+                )}
+                {sidebarCollapsed && badgeCount > 0 && (
+                  <span
+                    className="absolute right-2.5 top-2 size-2 rounded-full bg-[var(--accent-soft)]"
+                    aria-hidden="true"
+                  />
                 )}
               </button>
             );
@@ -425,61 +471,87 @@ function AdminWorkspace({ academyName }: { academyName: string }) {
         </nav>
 
         {/* Sidebar Admin Footer */}
-        <div className="mt-auto border-t border-[#4F1A2C] p-4 bg-[#320D1B]">
-          <div className="flex items-center justify-between gap-2 mb-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#681C35] text-xs font-bold text-white border border-[#A9C9DC]/30">
-                {session.name
-                  .split(" ")
-                  .map((w) => w[0])
-                  .join("")
-                  .toUpperCase()
-                  .slice(0, 2) || "AD"}
-              </div>
-              <div className="min-w-0">
+        <div className="shrink-0 border-t border-[var(--sidebar-border)] p-3 bg-[var(--sidebar-surface)] space-y-1.5">
+          <button
+            type="button"
+            title={sidebarCollapsed ? session.name : undefined}
+            onClick={() => setSidebarLogoutOpen((v) => !v)}
+            aria-expanded={sidebarLogoutOpen}
+            className={`flex w-full items-center gap-2.5 min-w-0 rounded-xl p-1.5 text-left hover:bg-[var(--sidebar-hover)] transition cursor-pointer ${
+              sidebarCollapsed ? "justify-center" : ""
+            }`}
+          >
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--btn-primary-bg)] text-xs font-bold text-white border border-[var(--accent-soft)]/30">
+              {session.name
+                .split(" ")
+                .map((w) => w[0])
+                .join("")
+                .toUpperCase()
+                .slice(0, 2) || "AD"}
+            </div>
+            {!sidebarCollapsed && (
+              <div className="min-w-0 flex-1">
                 <div className="text-xs font-bold text-white truncate">
                   {session.name}
                 </div>
-                <div className="flex items-center gap-1 text-[10px] text-[#A9C9DC]">
+                <div className="flex items-center gap-1 text-[10px] text-[var(--accent-soft)]">
                   <ShieldCheck size={12} className="text-emerald-400 shrink-0" />
                   <span className="truncate">2FA Verified</span>
                 </div>
               </div>
-            </div>
-
+            )}
+          </button>
+          {sidebarLogoutOpen && (
             <button
               type="button"
+              title={sidebarCollapsed ? "Log out" : undefined}
               onClick={() => logout.mutate()}
-              title="Sign out of admin"
-              className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg text-[#F7F9FB]/70 hover:bg-[#4F1A2C] hover:text-white transition"
-              aria-label="Sign out"
+              className="flex min-h-[40px] w-full items-center justify-center gap-2 rounded-xl bg-[var(--btn-primary-bg)] px-3 py-2 text-xs font-semibold text-white hover:bg-[var(--btn-primary-hover)] transition cursor-pointer"
             >
-              <LogOut size={16} />
+              <LogOut size={15} />
+              {!sidebarCollapsed && <span>Log out</span>}
             </button>
-          </div>
+          )}
+          <button
+            type="button"
+            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!sidebarCollapsed}
+            title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            onClick={() => setSidebarCollapsed((v) => !v)}
+            className="flex min-h-[40px] w-full items-center justify-center gap-2 rounded-xl text-xs font-semibold text-[var(--sidebar-text)]/80 hover:bg-[var(--sidebar-hover)] hover:text-white transition cursor-pointer"
+          >
+            {sidebarCollapsed ? (
+              <ChevronRight size={17} aria-hidden="true" />
+            ) : (
+              <>
+                <PanelLeftClose size={17} aria-hidden="true" />
+                <span>Collapse sidebar</span>
+              </>
+            )}
+          </button>
         </div>
       </aside>
 
       {/* ======================================================== */}
       {/* MAIN CONTENT AREA WITH STICKY HEADER                     */}
       {/* ======================================================== */}
-      <div className="lg:pl-60 flex-1 flex flex-col min-w-0">
+      <div className={`flex-1 flex flex-col min-w-0 transition-[padding] duration-200 ${sidebarCollapsed ? "lg:pl-20" : "lg:pl-60"}`}>
         {/* Sticky Desktop & Mobile Header */}
-        <header className="sticky top-0 z-20 border-b border-[#DFE5EC] bg-white/95 backdrop-blur px-4 py-3 sm:px-8">
+        <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur px-4 py-3 sm:px-8">
           <div className="flex items-center justify-between gap-3">
             {/* Mobile Menu Button & Brand */}
             <div className="flex items-center gap-2 lg:hidden">
               <button
                 type="button"
                 onClick={() => setMobileSidebarOpen(true)}
-                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-[#681C35] hover:bg-[#F3F7FA] transition"
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-[var(--accent)] hover:bg-[var(--accent-tint)] transition"
                 aria-label="Open side navigation menu"
               >
                 <Menu size={22} />
               </button>
               <a href="/" className="shrink-0 flex items-center gap-2" aria-label={`${academyName} Home`}>
-                <LogoMark size={28} className="text-[#681C35]" />
-                <span className="text-sm font-bold text-[#241921] truncate">
+                <LogoMark size={28} surface="light" />
+                <span className="text-sm font-bold text-[var(--text)] truncate">
                   {academyName} Admin
                 </span>
               </a>
@@ -493,7 +565,7 @@ function AdminWorkspace({ academyName }: { academyName: string }) {
               <Search
                 size={16}
                 aria-hidden="true"
-                className="absolute left-3.5 top-3.5 text-[#645A62]"
+                className="absolute left-3.5 top-3.5 text-[var(--muted)]"
               />
               <input
                 type="search"
@@ -522,18 +594,21 @@ function AdminWorkspace({ academyName }: { academyName: string }) {
                 <span>Export</span>
               </Button>
 
-              {/* Admin Avatar */}
-              <div
-                title={`Signed in as ${session.name}`}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#681C35] text-xs font-bold text-white shadow-sm"
-              >
-                {session.name
-                  .split(" ")
-                  .map((w) => w[0])
-                  .join("")
-                  .toUpperCase()
-                  .slice(0, 2) || "AD"}
-              </div>
+              {/* Admin Profile Menu */}
+              <ProfileMenu
+                initials={
+                  session.name
+                    .split(" ")
+                    .map((w) => w[0])
+                    .join("")
+                    .toUpperCase()
+                    .slice(0, 2) || "AD"
+                }
+                name={session.name}
+                subtitle="Verified Session"
+                onLogout={() => logout.mutate()}
+                busy={logout.isPending}
+              />
             </div>
           </div>
         </header>
@@ -541,7 +616,7 @@ function AdminWorkspace({ academyName }: { academyName: string }) {
         {/* Main Section Content Area */}
         <main
           id="admin-main"
-          className="mx-auto w-full min-w-0 max-w-[1600px] flex-1 p-4 sm:p-8 pb-28 lg:pb-8"
+          className="mx-auto w-full min-w-0 max-w-[1600px] flex-1 p-4 sm:p-8 pb-8"
         >
           <AdminErrorBoundary
             key={activeItemConfig?.id || "admin"}
@@ -553,186 +628,6 @@ function AdminWorkspace({ academyName }: { academyName: string }) {
           </AdminErrorBoundary>
         </main>
       </div>
-
-      {/* ======================================================== */}
-      {/* MOBILE FIXED BOTTOM TAB BAR (<=900px)                    */}
-      {/* Overview, Leads, Approvals, Payments, More               */}
-      {/* ======================================================== */}
-      <nav
-        aria-label="Mobile Bottom Navigation"
-        className="fixed bottom-0 left-0 right-0 z-40 flex lg:hidden items-center justify-around border-t border-[#DFE5EC] bg-white/95 px-2 py-1 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] backdrop-blur pb-[max(0.5rem,env(safe-area-inset-bottom))]"
-      >
-        <button
-          type="button"
-          onClick={() => selectSection("overview")}
-          className={`flex min-h-[48px] min-w-[48px] flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 transition ${
-            activeSection === "overview"
-              ? "text-[#681C35] font-bold"
-              : "text-[#645A62] hover:text-[#241921]"
-          }`}
-        >
-          <LayoutDashboard size={20} />
-          <span className="text-[10px] tracking-tight whitespace-nowrap">Overview</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => selectSection("leads")}
-          className={`flex min-h-[48px] min-w-[48px] flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 transition ${
-            activeSection === "leads"
-              ? "text-[#681C35] font-bold"
-              : "text-[#645A62] hover:text-[#241921]"
-          }`}
-        >
-          <Users size={20} />
-          <span className="text-[10px] tracking-tight whitespace-nowrap">Leads</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => selectSection("approvals")}
-          className={`relative flex min-h-[48px] min-w-[48px] flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 transition ${
-            activeSection === "approvals"
-              ? "text-[#681C35] font-bold"
-              : "text-[#645A62] hover:text-[#241921]"
-          }`}
-        >
-          <div className="relative">
-            <ClipboardCheck size={20} />
-            {totalApprovalsCount > 0 && (
-              <span className="absolute -top-1 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-[#681C35] text-[9px] font-bold text-white">
-                {totalApprovalsCount}
-              </span>
-            )}
-          </div>
-          <span className="text-[10px] tracking-tight whitespace-nowrap">Approvals</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => selectSection("payments")}
-          className={`flex min-h-[48px] min-w-[48px] flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 transition ${
-            activeSection === "payments"
-              ? "text-[#681C35] font-bold"
-              : "text-[#645A62] hover:text-[#241921]"
-          }`}
-        >
-          <Wallet size={20} />
-          <span className="text-[10px] tracking-tight whitespace-nowrap">Payments</span>
-        </button>
-
-        <button
-          type="button"
-          aria-expanded={mobileMoreOpen}
-          onClick={() => setMobileMoreOpen((open) => !open)}
-          className={`flex min-h-[48px] min-w-[48px] flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 transition ${
-            ["programmes", "students", "reports", "settings"].includes(activeSection)
-              ? "text-[#681C35] font-bold"
-              : "text-[#645A62] hover:text-[#241921]"
-          }`}
-        >
-          <MoreHorizontal size={20} />
-          <span className="text-[10px] tracking-tight whitespace-nowrap">More</span>
-        </button>
-      </nav>
-
-      {/* ======================================================== */}
-      {/* "MORE" MOBILE BOTTOM SHEET DRAWER                       */}
-      {/* ======================================================== */}
-      {mobileMoreOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex flex-col justify-end bg-black/50 lg:hidden backdrop-blur-sm"
-          onClick={() => setMobileMoreOpen(false)}
-        >
-          <div
-            className="w-full rounded-t-3xl border-t border-[#DFE5EC] bg-white p-6 shadow-2xl animate-in slide-in-from-bottom duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between pb-4 border-b border-[#DFE5EC]">
-              <span className="text-sm font-bold text-[#241921]">
-                Additional Operations
-              </span>
-              <button
-                type="button"
-                onClick={() => setMobileMoreOpen(false)}
-                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-[#645A62] hover:bg-[#F3F7FA]"
-                aria-label="Close sheet"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 py-4">
-              <button
-                type="button"
-                onClick={() => selectSection("programmes")}
-                className={`flex min-h-[48px] items-center gap-3 rounded-2xl border p-3.5 text-left text-sm font-semibold transition ${
-                  activeSection === "programmes"
-                    ? "border-[#681C35] bg-[#681C35] text-white"
-                    : "border-[#DFE5EC] bg-white text-[#241921] hover:bg-[#F3F7FA]"
-                }`}
-              >
-                <BookOpen size={20} />
-                <span>Programmes</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => selectSection("students")}
-                className={`flex min-h-[48px] items-center gap-3 rounded-2xl border p-3.5 text-left text-sm font-semibold transition ${
-                  activeSection === "students"
-                    ? "border-[#681C35] bg-[#681C35] text-white"
-                    : "border-[#DFE5EC] bg-white text-[#241921] hover:bg-[#F3F7FA]"
-                }`}
-              >
-                <GraduationCap size={20} />
-                <span>Students</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => selectSection("reports")}
-                className={`flex min-h-[48px] items-center gap-3 rounded-2xl border p-3.5 text-left text-sm font-semibold transition ${
-                  activeSection === "reports"
-                    ? "border-[#681C35] bg-[#681C35] text-white"
-                    : "border-[#DFE5EC] bg-white text-[#241921] hover:bg-[#F3F7FA]"
-                }`}
-              >
-                <ChartNoAxesCombined size={20} />
-                <span>Reports</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => selectSection("settings")}
-                className={`flex min-h-[48px] items-center gap-3 rounded-2xl border p-3.5 text-left text-sm font-semibold transition ${
-                  activeSection === "settings"
-                    ? "border-[#681C35] bg-[#681C35] text-white"
-                    : "border-[#DFE5EC] bg-white text-[#241921] hover:bg-[#F3F7FA]"
-                }`}
-              >
-                <Settings size={20} />
-                <span>Settings</span>
-              </button>
-            </div>
-
-            <div className="pt-2 border-t border-[#DFE5EC] flex items-center justify-between">
-              <span className="text-xs text-[#645A62]">
-                Admin: {session.name}
-              </span>
-              <button
-                type="button"
-                onClick={() => logout.mutate()}
-                className="inline-flex min-h-[44px] items-center gap-2 text-xs font-bold text-red-700 hover:underline"
-              >
-                <LogOut size={16} /> Sign out
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ======================================================== */}
       {/* MOBILE SLIDE-OVER SIDEBAR DRAWER (<=900px)               */}
@@ -751,13 +646,13 @@ function AdminWorkspace({ academyName }: { academyName: string }) {
 
           {/* Sidebar Drawer container sliding from left */}
           <div
-            className="relative z-10 flex w-72 max-w-[85vw] flex-col bg-[#3A1020] text-[#F7F9FB] shadow-2xl animate-in slide-in-from-left duration-200"
+            className="relative z-10 flex w-72 max-w-[85vw] flex-col bg-[var(--sidebar-bg)] text-[var(--sidebar-text)] shadow-2xl animate-in slide-in-from-left duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Drawer Header */}
-            <div className="flex min-h-[64px] items-center justify-between border-b border-[#4F1A2C] px-4">
+            <div className="flex min-h-[64px] items-center justify-between border-b border-[var(--sidebar-border)] px-4">
               <div className="flex items-center gap-2.5">
-                <LogoMark size={26} className="text-[#A9C9DC]" />
+                <LogoMark size={28} surface="dark" />
                 <span className="font-bold text-sm tracking-tight text-white truncate">
                   {academyName} Admin
                 </span>
@@ -765,7 +660,7 @@ function AdminWorkspace({ academyName }: { academyName: string }) {
               <button
                 type="button"
                 onClick={() => setMobileSidebarOpen(false)}
-                className="flex min-h-[40px] min-w-[40px] items-center justify-center rounded-xl text-[#A9C9DC] hover:bg-[#4F1A2C] hover:text-white transition"
+                className="flex min-h-[40px] min-w-[40px] items-center justify-center rounded-xl text-[var(--accent-soft)] hover:bg-[var(--sidebar-hover)] hover:text-white transition"
                 aria-label="Close navigation menu"
               >
                 <X size={20} />
@@ -785,16 +680,16 @@ function AdminWorkspace({ academyName }: { academyName: string }) {
                     onClick={() => selectSection(item.id)}
                     className={`flex min-h-[44px] w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-semibold transition ${
                       isActive
-                        ? "bg-[#681C35] text-white shadow-sm font-bold"
-                        : "text-[#F7F9FB]/80 hover:bg-[#4F1A2C] hover:text-white"
+                        ? "bg-[var(--btn-primary-bg)] text-white shadow-sm font-bold"
+                        : "text-[var(--sidebar-text)]/80 hover:bg-[var(--sidebar-hover)] hover:text-white"
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <Icon size={18} className={isActive ? "text-[#A9C9DC]" : "text-[#A9C9DC]/80"} />
+                      <Icon size={18} className={isActive ? "text-[var(--accent-soft)]" : "text-[var(--accent-soft)]/80"} />
                       <span>{item.label}</span>
                     </div>
                     {badgeCount > 0 && (
-                      <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#681C35] px-1.5 text-[10px] font-bold text-white border border-[#A9C9DC]/30">
+                      <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--btn-primary-bg)] px-1.5 text-[10px] font-bold text-white border border-[var(--accent-soft)]/30">
                         {badgeCount}
                       </span>
                     )}
@@ -804,27 +699,31 @@ function AdminWorkspace({ academyName }: { academyName: string }) {
             </nav>
 
             {/* Drawer User Footer */}
-            <div className="border-t border-[#4F1A2C] p-4 bg-[#320D1B]">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#681C35] text-xs font-bold text-white border border-[#A9C9DC]/30">
-                    {session.name.slice(0, 2) || "AD"}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold text-white truncate">{session.name}</div>
-                    <div className="text-[10px] text-[#A9C9DC]">2FA Active</div>
-                  </div>
+            <div className="border-t border-[var(--sidebar-border)] p-4 bg-[var(--sidebar-surface)]">
+              <button
+                type="button"
+                onClick={() => setDrawerLogoutOpen((v) => !v)}
+                aria-expanded={drawerLogoutOpen}
+                className="flex w-full items-center gap-2.5 min-w-0 rounded-xl p-1.5 text-left hover:bg-[var(--sidebar-hover)] transition cursor-pointer"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--btn-primary-bg)] text-xs font-bold text-white border border-[var(--accent-soft)]/30">
+                  {session.name.slice(0, 2) || "AD"}
                 </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-bold text-white truncate">{session.name}</div>
+                  <div className="text-[10px] text-[var(--accent-soft)]">2FA Active</div>
+                </div>
+              </button>
+              {drawerLogoutOpen && (
                 <button
                   type="button"
                   onClick={() => logout.mutate()}
-                  className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg text-[#F7F9FB]/70 hover:bg-[#4F1A2C] hover:text-white transition"
-                  title="Sign out"
-                  aria-label="Sign out"
+                  className="mt-2 flex min-h-[40px] w-full items-center justify-center gap-2 rounded-xl bg-[var(--btn-primary-bg)] px-3 py-2 text-xs font-semibold text-white hover:bg-[var(--btn-primary-hover)] transition cursor-pointer"
                 >
-                  <LogOut size={16} />
+                  <LogOut size={15} />
+                  <span>Log out</span>
                 </button>
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -839,7 +738,19 @@ function SessionGate({
   academyName,
   blocked,
   unblock,
-}: Required<AdminPanelProps> & { blocked: boolean; unblock: () => void }) {
+  loggingOut,
+  onLogoutStart,
+  onLoggedOut,
+}: {
+  api: AdminApi;
+  signInUrl: string;
+  academyName: string;
+  blocked: boolean;
+  unblock: () => void;
+  loggingOut: boolean;
+  onLogoutStart: () => void;
+  onLoggedOut: () => void;
+}) {
   const query = useAdminSession(api);
   const [now, setNow] = useState(Date.now);
   const session = query.data;
@@ -853,6 +764,10 @@ function SessionGate({
     const result = await query.refetch();
     if (result.isSuccess) unblock();
   };
+
+  if (loggingOut) {
+    return null;
+  }
 
   if (
     !blocked &&
@@ -868,7 +783,11 @@ function SessionGate({
         session={session}
         now={now}
       >
-        <AdminWorkspace academyName={academyName} />
+        <AdminWorkspace
+          academyName={academyName}
+          onLogoutStart={onLogoutStart}
+          onLoggedOut={onLoggedOut}
+        />
       </AdminAuthority>
     );
   }
@@ -884,7 +803,7 @@ function SessionGate({
           <Skeleton />
         ) : blocked || query.isError ? (
           <Card>
-            <h1 className="mb-4 text-2xl font-bold text-[#241921]">
+            <h1 className="mb-4 text-2xl font-bold text-[var(--text)]">
               Admin access needs confirmation
             </h1>
             <Notice error>
@@ -922,15 +841,15 @@ function SessionGate({
           </>
         ) : (
           <Card>
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F3F7FA] text-[#681C35] mb-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-tint)] text-[var(--accent)] mb-4">
               <ShieldCheck size={28} />
             </div>
-            <h1 className="text-2xl font-bold text-[#241921]">
+            <h1 className="text-2xl font-bold text-[var(--text)]">
               {session?.state === "authenticated"
                 ? "Your verification has expired"
                 : "Sign in to administration"}
             </h1>
-            <p className="my-4 text-sm leading-6 text-[#645A62]">
+            <p className="my-4 text-sm leading-6 text-[var(--muted)]">
               Sign in and complete two-factor verification to access academy operations.
             </p>
             <SecureLink href={signInUrl}>Sign in securely</SecureLink>
@@ -953,14 +872,22 @@ function SessionGate({
 
 export function AdminPanel({
   api,
-  signInUrl = "/auth/admin/sign-in?returnTo=%2Fadmin-panel",
+  signInUrl = "/login",
   academyName = "Aintrix Academy",
+  onLogout,
 }: AdminPanelProps) {
   const [blocked, setBlocked] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const loggingOutRef = useRef(false);
   const [client] = useState(() => {
     const onError = (error: Error) => {
-      if (error instanceof AdminApiError && [401, 403].includes(error.status))
+      if (
+        !loggingOutRef.current &&
+        error instanceof AdminApiError &&
+        [401, 403].includes(error.status)
+      ) {
         setBlocked(true);
+      }
     };
     return new QueryClient({
       queryCache: new QueryCache({ onError }),
@@ -976,9 +903,26 @@ export function AdminPanel({
   });
 
   const url = secureLink.safeParse(signInUrl);
+  const resolvedSignInUrl = url.success ? url.data : "/login";
+
+  const handleLogoutStart = () => {
+    loggingOutRef.current = true;
+    setLoggingOut(true);
+    setBlocked(false);
+  };
+
+  const handleLoggedOut = () => {
+    if (onLogout) {
+      onLogout();
+      return;
+    }
+    if (typeof window !== "undefined") {
+      window.location.assign(resolvedSignInUrl);
+    }
+  };
 
   return (
-    <div className="ss-admin min-h-screen bg-[#F7F9FB] text-[#241921]">
+    <div className="ss-admin min-h-screen bg-[var(--bg)] text-[var(--text)]">
       <QueryClientProvider client={client}>
         <AdminErrorBoundary
           reset={() =>
@@ -992,6 +936,9 @@ export function AdminPanel({
               academyName={academyName}
               blocked={blocked}
               unblock={() => setBlocked(false)}
+              loggingOut={loggingOut}
+              onLogoutStart={handleLogoutStart}
+              onLoggedOut={handleLoggedOut}
             />
           ) : (
             <main className="mx-auto max-w-lg p-6">

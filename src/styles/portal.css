@@ -1,11 +1,11 @@
-/* Portal layer: the student and admin workspaces share the public site's depth language.
-   Scoped to .ss-student / .ss-admin so panel logic and Tailwind structure stay untouched. */
-.ss-student, .ss-admin {
+/* Portal layer: all CRM workspaces share the public site's theme tokens & depth language. */
+.ss-student, .ss-admin, .manager-workspace, .fin-portal {
   --portal-stage: linear-gradient(150deg, color-mix(in srgb, var(--ink) 86%, var(--accent)), color-mix(in srgb, var(--ink) 95%, var(--accent)));
   background:
-    radial-gradient(900px 500px at 100% -10%, color-mix(in srgb, var(--accent-soft) 28%, transparent), transparent 60%),
-    radial-gradient(700px 500px at -10% 40%, color-mix(in srgb, var(--accent) 7%, transparent), transparent 60%),
+    radial-gradient(900px 500px at 100% -10%, color-mix(in srgb, var(--accent-soft) 32%, transparent), transparent 60%),
+    radial-gradient(700px 500px at -10% 40%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 60%),
     var(--bg) !important;
+  color: var(--text);
 }
 .workspace-appearance { position: sticky; top: 0; z-index: 30; margin: 10px; border-radius: 999px; padding: 10px 12px 10px 22px; background: color-mix(in srgb, var(--surface) 75%, transparent); border: 1px solid var(--border); backdrop-filter: blur(16px) saturate(1.5); -webkit-backdrop-filter: blur(16px) saturate(1.5); box-shadow: 0 14px 40px -26px color-mix(in srgb, var(--accent) 50%, transparent); }
 .workspace-appearance .workspace-home { font-family: var(--font-display); font-size: 16px; letter-spacing: -.03em; }
@@ -42,15 +42,22 @@
 }
 [data-motion="active"] :is(.ss-student, .ss-admin) :is([class*="bg-slate-950"], [class*="bg-indigo-950"]):not(button, a, span)::after { animation: portal-orbit 14s ease-in-out infinite alternate; }
 @keyframes portal-orbit { to { transform: translate(-40px, -30px) scale(1.15); } }
+@keyframes login-orbit-slow { to { transform: rotate(360deg); } }
+@keyframes login-orbit-rev { to { transform: rotate(-360deg); } }
+.login-orbit-cw { animation: login-orbit-slow 56s linear infinite; transform-origin: center; }
+.login-orbit-ccw { animation: login-orbit-rev 42s linear infinite; transform-origin: center; }
+@media (prefers-reduced-motion: reduce) { .login-orbit-cw, .login-orbit-ccw { animation: none !important; } }
 
 /* Actions */
-:is(.ss-student, .ss-admin) :is(button, a)[class*="bg-[#681C35]"],
-:is(.ss-student, .ss-admin) :is(button, a)[class*="bg-[#681C35]"] * {
-  color: #ffffff !important;
+:is(.ss-student, .ss-admin, .manager-workspace, .fin-portal) :is(button, a):is([class*="bg-[#681C35]"], [class*="bg-[var(--btn-primary-bg)]"], [class*="bg-[var(--accent)]"]):not([class*="bg-[var(--accent)]/"]) {
+  color: var(--btn-primary-text, #ffffff) !important;
 }
-:is(.ss-student, .ss-admin) :is(button, a)[class*="bg-[#681C35]"] svg {
-  color: #ffffff !important;
-  stroke: #ffffff !important;
+:is(.ss-student, .ss-admin, .manager-workspace, .fin-portal) :is(button, a):is([class*="bg-[#681C35]"], [class*="bg-[var(--btn-primary-bg)]"], [class*="bg-[var(--accent)]"]):not([class*="bg-[var(--accent)]/"]) *:not(.sidebar-badge) {
+  color: var(--btn-primary-text, #ffffff) !important;
+}
+:is(.ss-student, .ss-admin, .manager-workspace, .fin-portal) :is(button, a):is([class*="bg-[#681C35]"], [class*="bg-[var(--btn-primary-bg)]"], [class*="bg-[var(--accent)]"]):not([class*="bg-[var(--accent)]/"]) svg {
+  color: var(--btn-primary-text, #ffffff) !important;
+  stroke: var(--btn-primary-text, #ffffff) !important;
 }
 :is(.ss-student, .ss-admin) :is(button, a)[class*="bg-indigo-700"], :is(.ss-student, .ss-admin) :is(button, a)[class*="bg-indigo-600"] {
   border-radius: 999px;
@@ -70,8 +77,7 @@
 
 /* Navigation */
 :is(.ss-student, .ss-admin) nav :is(a, button)[aria-current="page"] { position: relative; }
-:is(.ss-student, .ss-admin) aside nav :is(a, button) { border-radius: 14px; transition: background .25s, color .25s, transform .35s cubic-bezier(.22,1,.36,1); }
-:is(.ss-student, .ss-admin) aside nav :is(a, button):hover { transform: translateX(4px); }
+:is(.ss-student, .ss-admin) aside nav :is(a, button) { border-radius: 14px; transition: background .25s, color .25s; }
 
 /* Tables */
 .ss-admin table thead { background: color-mix(in srgb, var(--accent-soft) 14%, var(--surface)); }
@@ -91,6 +97,10 @@
 .ss-student > .mx-auto.flex.min-h-screen, .ss-admin [class*="min-h-screen"][class*="items-center"] { position: relative; }
 @media (prefers-reduced-motion: reduce) { :is(.ss-student, .ss-admin) * { animation: none !important; } }
 
+/* Student desktop dark sidebar logo */
+.ss-student aside .logo .logo-name { color: #FFFFFF !important; }
+.ss-student aside .logo .logo-subtitle { color: var(--accent-soft) !important; }
+
 /* Manager & Trainer Portals scoped typography & screen-fit layout */
 .manager-workspace {
   font-family: var(--font-body) !important;
@@ -99,26 +109,29 @@
   width: 100%;
   min-height: 100vh;
 }
+.manager-workspace :where(button, input, select, textarea) {
+  font-family: inherit;
+}
 .manager-workspace h1,
 .manager-workspace h2,
 .manager-workspace h3,
 .manager-workspace h4 {
-  font-family: var(--font-body) !important;
+  font-family: var(--font-display) !important;
   letter-spacing: -0.01em !important;
   margin: 0;
 }
 .manager-workspace h1 {
-  font-size: 1.15rem !important;
+  font-size: 1.0625rem !important;
   line-height: 1.35 !important;
   font-weight: 700 !important;
 }
 .manager-workspace h2 {
-  font-size: 1.05rem !important;
+  font-size: 0.95rem !important;
   line-height: 1.35 !important;
   font-weight: 600 !important;
 }
 .manager-workspace h3 {
-  font-size: 0.925rem !important;
+  font-size: 0.875rem !important;
   line-height: 1.35 !important;
   font-weight: 600 !important;
 }
@@ -142,13 +155,14 @@
   }
 
   /* Sidebar: horizontal scrollable strip for manager portal */
-  .manager-workspace:not(.trainer-workspace) aside:not(.side-drawer-aside) {
+  .manager-workspace:not(.trainer-workspace):not(.fin-portal) aside:not(.side-drawer-aside) {
     width: 100% !important;
     min-height: 0 !important;
     border-right: 0 !important;
-    border-bottom: 1px solid var(--border) !important;
+    border-bottom: 1px solid var(--sidebar-border) !important;
     position: static !important;
-    background-color: var(--surface) !important;
+    background-color: var(--sidebar-bg) !important;
+    color: var(--sidebar-text) !important;
   }
 
   .manager-workspace:not(.trainer-workspace) aside:not(.side-drawer-aside) nav {
@@ -188,8 +202,9 @@
     display: flex !important;
     flex-direction: column !important;
     justify-content: space-between !important;
-    background-color: var(--surface) !important;
-    border-right: 1px solid var(--border) !important;
+    background-color: var(--sidebar-bg) !important;
+    color: var(--sidebar-text) !important;
+    border-right: 1px solid var(--sidebar-border) !important;
     border-bottom: 0 !important;
   }
 
@@ -208,7 +223,7 @@
     width: 100% !important;
   }
 
-  .manager-workspace .side-drawer-aside button {
+  .manager-workspace .side-drawer-aside nav button {
     min-height: 44px !important;
     padding: 0 12px !important;
     display: flex !important;

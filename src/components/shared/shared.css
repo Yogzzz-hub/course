@@ -5,20 +5,20 @@
  */
 
 .fin-portal {
-  --fin-bg: #FBF9F5;
-  --fin-surface: #FFFFFF;
-  --fin-parchment: #F5F0E8;
-  --fin-primary: #6D1A2B;
-  --fin-primary-hover: #4E0F1E;
-  --fin-primary-tint: #FDF5F6;
-  --fin-primary-contrast: #FFFFFF;
-  --fin-gold: #C9A24B;
-  --fin-gold-tint: #F6EBCF;
+  --fin-bg: var(--bg, #FBF9F5);
+  --fin-surface: var(--surface, #FFFFFF);
+  --fin-parchment: var(--surface-alt, #F5F0E8);
+  --fin-primary: var(--accent, #6D1A2B);
+  --fin-primary-hover: var(--btn-primary-hover, #4E0F1E);
+  --fin-primary-tint: var(--accent-tint, #FDF5F6);
+  --fin-primary-contrast: var(--btn-primary-text, #FFFFFF);
+  --fin-gold: var(--accent-soft, #C9A24B);
+  --fin-gold-tint: var(--accent-tint-strong, #F6EBCF);
   --fin-warning-ink: #6D4B09;
-  --fin-ink: #251923;
-  --fin-muted: #6B6268;
-  --fin-border: #E9E0D8;
-  --fin-border-strong: #C9BDB3;
+  --fin-ink: var(--text, #251923);
+  --fin-muted: var(--muted, #6B6268);
+  --fin-border: var(--border, #E9E0D8);
+  --fin-border-strong: var(--border-strong, #C9BDB3);
   --fin-success: #19674B;
   --fin-success-bg: #E7F3EE;
   --fin-danger: #B42318;

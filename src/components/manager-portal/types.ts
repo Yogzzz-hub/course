@@ -1,14 +1,3 @@
-export type ManagerNavTab =
-  | "dashboard"
-  | "leads"
-  | "admissions"
-  | "cohorts"
-  | "attendance"
-  | "fees"
-  | "counsellors"
-  | "announcements"
-  | "reports";
-
 export interface ToastMessage {
   id: string;
   type: "success" | "info" | "warning" | "danger";
@@ -16,6 +5,17 @@ export interface ToastMessage {
   message: string;
 }
 
+export type ManagerNavTab =
+  | "dashboard"
+  | "leads"
+  | "admissions"
+  | "cohorts"
+  | "schedule"
+  | "attendance"
+  | "fees"
+  | "counsellors"
+  | "announcements"
+  | "reports";
 
 export interface Lead {
   id: string;
@@ -122,4 +122,31 @@ export interface ManagerStats {
 export interface ManagerReportsData {
   monthlyAdmissions: { month: string; leads: number; admissions: number }[];
   trackBreakdown: { track: string; share: number; revenue: string }[];
+}
+
+export interface CohortSeat {
+  id: string;
+  name: string;
+  code: string;
+  courseTitle: string;
+  facultyName: string;
+  enrolledCount: number;
+  maxSeats: number;
+  startDate: string;
+  endDate: string;
+  status: "ACTIVE" | "UPCOMING" | "COMPLETED";
+  attendanceAverage: number;
+  progress: number;
+}
+
+export interface TrainerScheduleItem {
+  id: string;
+  batchCode: string;
+  batchName: string;
+  topic: string;
+  date: string;
+  time: string;
+  duration: string;
+  roomLink: string;
+  status: "UPCOMING" | "LIVE" | "COMPLETED";
 }

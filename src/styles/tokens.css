@@ -42,8 +42,8 @@
   --code-bg: #F0F4F8;
   --code-color: #241921;
 
-  --font-body: 'Manrope Variable', sans-serif;
-  --font-display: 'Space Grotesk Variable', sans-serif;
+  --font-body: "Manrope Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk Variable", "Manrope Variable", ui-sans-serif, system-ui, sans-serif;
   font-family: var(--font-body);
   color: var(--text);
   background: var(--bg);
@@ -190,11 +190,17 @@
   --accent-border: color-mix(in srgb, var(--accent-soft) 65%, var(--surface));
   --muted-soft: color-mix(in srgb, var(--muted) 80%, var(--surface));
   --text-soft: color-mix(in srgb, var(--text) 75%, var(--surface));
+  --sidebar-bg: color-mix(in srgb, var(--accent) 52%, color-mix(in srgb, var(--accent-soft-dark) 8%, #110409));
+  --sidebar-surface: color-mix(in srgb, var(--accent) 44%, color-mix(in srgb, var(--accent-soft-dark) 8%, #0E0307));
+  --sidebar-border: color-mix(in srgb, var(--accent) 72%, color-mix(in srgb, var(--accent-soft-dark) 10%, #1E0710));
+  --sidebar-hover: color-mix(in srgb, var(--accent) 76%, color-mix(in srgb, var(--accent-soft-dark) 12%, #1E0710));
+  --sidebar-text: var(--bg);
 }
 
 /* Tailwind consumers share the same semantic tokens as the legacy pages.
    Status colours (red, amber, green) deliberately retain their meaning. */
 @theme inline {
+  --font-sans: var(--font-body);
   --color-indigo-50: var(--accent-tint);
   --color-indigo-100: var(--accent-tint-strong);
   --color-indigo-200: var(--accent-border);

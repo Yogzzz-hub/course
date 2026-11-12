@@ -48,7 +48,14 @@ export default {
       pathname === '/admin/login' ||
       pathname === '/student/login'
     ) {
-      return Response.redirect(new URL('/login', request.url), 302);
+      const loginTarget = new URL('/login', request.url);
+      const rawReturn = url.searchParams.get('returnUrl') || url.searchParams.get('returnTo');
+      if (rawReturn && /^\/(?!\/)/.test(rawReturn) && !rawReturn.includes('\\')) {
+        loginTarget.searchParams.set('returnUrl', rawReturn);
+      } else if (pathname === '/auth/admin/sign-in' || pathname === '/admin/login') {
+        loginTarget.searchParams.set('returnUrl', '/admin-panel');
+      }
+      return Response.redirect(loginTarget, 302);
     }
 
     // 1. CRM Single Domain Proxy Routes (Login, Portals, Auth & Internal Assets)
@@ -111,6 +118,9 @@ export default {
         return response;
       } catch (err) {
         console.error('CRM Proxy fetch error:', err);
+        if (pathname.startsWith('/api/')) {
+          return jsonResponse({ error: 'Backend service unavailable' }, 503);
+        }
       }
     }
 

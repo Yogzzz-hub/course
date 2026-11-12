@@ -106,8 +106,8 @@ export function PaymentsSection() {
               onClick={() => setStatusFilter(status)}
               className={`inline-flex min-h-[44px] items-center rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold capitalize transition ${
                 statusFilter === status
-                  ? "bg-[#681C35] text-white shadow-sm"
-                  : "border border-[#DFE5EC] bg-white text-[#241921] hover:bg-[#F3F7FA]"
+                  ? "bg-[var(--btn-primary-bg)] text-white shadow-sm"
+                  : "border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] hover:bg-[var(--accent-tint)]"
               }`}
             >
               {status === "captured" ? "Paid / Captured" : status}
@@ -119,7 +119,7 @@ export function PaymentsSection() {
           <Search
             size={16}
             aria-hidden="true"
-            className="absolute left-3.5 top-3.5 text-[#645A62]"
+            className="absolute left-3.5 top-3.5 text-[var(--muted)]"
           />
           <input
             type="search"
@@ -144,8 +144,8 @@ export function PaymentsSection() {
           <>
             {/* Desktop Table View */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left text-sm text-[#241921]">
-                <thead className="bg-[#F3F7FA] border-b border-[#DFE5EC] text-xs font-semibold text-[#645A62] uppercase tracking-wider">
+              <table className="w-full text-left text-sm text-[var(--text)]">
+                <thead className="bg-[var(--accent-tint)] border-b border-[var(--border)] text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">
                   <tr>
                     <th scope="col" className="px-6 py-3.5">
                       Student
@@ -167,18 +167,18 @@ export function PaymentsSection() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#DFE5EC]">
+                <tbody className="divide-y divide-[var(--border)]">
                   {filteredEntries.map((item) => (
-                    <tr key={item.id} className="hover:bg-[#F7F9FB] transition">
-                      <td className="px-6 py-4 font-semibold text-[#241921]">
+                    <tr key={item.id} className="hover:bg-[var(--surface-alt)] transition">
+                      <td className="px-6 py-4 font-semibold text-[var(--text)]">
                         {item.student}
                       </td>
-                      <td className="px-6 py-4 text-xs sm:text-sm text-[#645A62]">
+                      <td className="px-6 py-4 text-xs sm:text-sm text-[var(--muted)]">
                         {item.description}
                       </td>
-                      <td className="px-6 py-4 text-xs text-[#645A62]">
+                      <td className="px-6 py-4 text-xs text-[var(--muted)]">
                         {item.providerReference ? (
-                          <span className="font-mono bg-[#F3F7FA] px-2 py-1 rounded border border-[#DFE5EC]">
+                          <span className="font-mono bg-[var(--accent-tint)] px-2 py-1 rounded border border-[var(--border)]">
                             {item.providerReference}
                           </span>
                         ) : item.dueAt ? (
@@ -187,7 +187,7 @@ export function PaymentsSection() {
                           <span>—</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 font-bold text-[#241921]">
+                      <td className="px-6 py-4 font-bold text-[var(--text)]">
                         {money(item.amountMinor, item.currency)}
                       </td>
                       <td className="px-6 py-4">
@@ -196,7 +196,7 @@ export function PaymentsSection() {
                       <td className="px-6 py-4 text-right">
                         <button
                           type="button"
-                          className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-[#DFE5EC] px-3 text-xs font-semibold text-[#681C35] hover:bg-[#F3F7FA] hover:border-[#681C35] transition"
+                          className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-[var(--border)] px-3 text-xs font-semibold text-[var(--accent)] hover:bg-[var(--accent-tint)] hover:border-[var(--accent)] transition"
                         >
                           <Receipt size={14} /> Receipt
                         </button>
@@ -208,32 +208,32 @@ export function PaymentsSection() {
             </div>
 
             {/* Mobile Stacked Card View */}
-            <div className="divide-y divide-[#DFE5EC] md:hidden">
+            <div className="divide-y divide-[var(--border)] md:hidden">
               {filteredEntries.map((item) => (
                 <article key={item.id} className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h3 className="font-bold text-base text-[#241921]">
+                      <h3 className="font-bold text-base text-[var(--text)]">
                         {item.student}
                       </h3>
-                      <p className="text-xs text-[#645A62] mt-0.5">
+                      <p className="text-xs text-[var(--muted)] mt-0.5">
                         {item.description}
                       </p>
                     </div>
                     <StatusPill status={item.status} />
                   </div>
 
-                  <div className="flex items-center justify-between pt-2 border-t border-[#DFE5EC]">
+                  <div className="flex items-center justify-between pt-2 border-t border-[var(--border)]">
                     <div>
-                      <span className="text-xs text-[#645A62] block">Amount</span>
-                      <span className="text-lg font-bold text-[#241921]">
+                      <span className="text-xs text-[var(--muted)] block">Amount</span>
+                      <span className="text-lg font-bold text-[var(--text)]">
                         {money(item.amountMinor, item.currency)}
                       </span>
                     </div>
 
                     <button
                       type="button"
-                      className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-[#DFE5EC] px-3.5 text-xs font-bold text-[#681C35] hover:bg-[#F3F7FA]"
+                      className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-[var(--border)] px-3.5 text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent-tint)]"
                     >
                       <Receipt size={15} /> Download Receipt
                     </button>

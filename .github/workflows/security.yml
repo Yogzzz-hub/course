@@ -13,11 +13,31 @@ jobs:
   security-audit:
     name: Security & Vulnerability Audit
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: mkccsql
+          POSTGRES_DB: academy
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d academy"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Initialize Test PostgreSQL Schema
+        run: |
+          PGPASSWORD=mkccsql psql -h 127.0.0.1 -U postgres -d academy -v ON_ERROR_STOP=1 -f db/unified_production_schema.sql
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -45,4 +65,6 @@ jobs:
         continue-on-error: true
 
       - name: Run Test Suite
+        env:
+          DATABASE_URL: postgresql://postgres:mkccsql@127.0.0.1:5432/academy
         run: npm test

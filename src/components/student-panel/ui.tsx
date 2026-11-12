@@ -204,7 +204,7 @@ export function ScreenTitle({
       <h1
         ref={ref}
         tabIndex={-1}
-        className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl"
+        className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl"
       >
         {title}
       </h1>

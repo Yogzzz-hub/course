@@ -58,12 +58,12 @@ export function SettingsSection({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-[#241921]">
+                <h3 className="text-base font-bold text-[var(--text)]">
                   Two-Factor Authentication (2FA)
                 </h3>
                 <StatusPill status="Verified & Active" variant="paid" />
               </div>
-              <p className="text-xs text-[#645A62] mt-0.5">
+              <p className="text-xs text-[var(--muted)] mt-0.5">
                 Hardware token / TOTP challenge verification is actively enforced.
               </p>
             </div>
@@ -78,20 +78,20 @@ export function SettingsSection({
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-[#DFE5EC] text-xs">
-          <div className="bg-[#F7F9FB] p-3 rounded-xl border border-[#DFE5EC]">
-            <span className="text-[#645A62] block">Signed-in Administrator</span>
-            <span className="font-bold text-[#241921] text-sm">{session.name}</span>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-[var(--border)] text-xs">
+          <div className="bg-[var(--surface-alt)] p-3 rounded-xl border border-[var(--border)]">
+            <span className="text-[var(--muted)] block">Signed-in Administrator</span>
+            <span className="font-bold text-[var(--text)] text-sm">{session.name}</span>
           </div>
-          <div className="bg-[#F7F9FB] p-3 rounded-xl border border-[#DFE5EC]">
-            <span className="text-[#645A62] block">2FA Verified Until</span>
-            <span className="font-bold text-[#241921] text-sm">
+          <div className="bg-[var(--surface-alt)] p-3 rounded-xl border border-[var(--border)]">
+            <span className="text-[var(--muted)] block">2FA Verified Until</span>
+            <span className="font-bold text-[var(--text)] text-sm">
               {dateTime(session.twoFactorExpiresAt)}
             </span>
           </div>
-          <div className="bg-[#F7F9FB] p-3 rounded-xl border border-[#DFE5EC]">
-            <span className="text-[#645A62] block">Session Security Scope</span>
-            <span className="font-mono text-[#681C35] text-xs font-bold truncate block">
+          <div className="bg-[var(--surface-alt)] p-3 rounded-xl border border-[var(--border)]">
+            <span className="text-[var(--muted)] block">Session Security Scope</span>
+            <span className="font-mono text-[var(--accent)] text-xs font-bold truncate block">
               {session.userId} · {session.permissions.length} privileges
             </span>
           </div>
@@ -101,26 +101,26 @@ export function SettingsSection({
       {/* Notification Schedule Card */}
       <Card className="space-y-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#F3F7FA] text-[#681C35]">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-tint)] text-[var(--accent)]">
             <Bell size={22} />
           </div>
           <div>
-            <h3 className="text-base font-bold text-[#241921]">
+            <h3 className="text-base font-bold text-[var(--text)]">
               Notification Schedules & Alerts
             </h3>
-            <p className="text-xs text-[#645A62]">
+            <p className="text-xs text-[var(--muted)]">
               Configure delivery cadence for admissions SLAs, financial approvals, and daily digests.
             </p>
           </div>
         </div>
 
-        <div className="space-y-3 pt-3 border-t border-[#DFE5EC]">
-          <label className="flex items-center justify-between p-3 rounded-xl border border-[#DFE5EC] hover:bg-[#F7F9FB] cursor-pointer">
+        <div className="space-y-3 pt-3 border-t border-[var(--border)]">
+          <label className="flex items-center justify-between p-3 rounded-xl border border-[var(--border)] hover:bg-[var(--surface-alt)] cursor-pointer">
             <div>
-              <div className="text-sm font-semibold text-[#241921]">
+              <div className="text-sm font-semibold text-[var(--text)]">
                 Urgent Admissions SLA Breach Alerts
               </div>
-              <div className="text-xs text-[#645A62]">
+              <div className="text-xs text-[var(--muted)]">
                 Instant email notification when an enquiry follow-up exceeds 60 minutes
               </div>
             </div>
@@ -128,16 +128,16 @@ export function SettingsSection({
               type="checkbox"
               checked={notifySlaBreaches}
               onChange={(e) => setNotifySlaBreaches(e.target.checked)}
-              className="h-5 w-5 accent-[#681C35] rounded"
+              className="h-5 w-5 accent-[var(--accent)] rounded"
             />
           </label>
 
-          <label className="flex items-center justify-between p-3 rounded-xl border border-[#DFE5EC] hover:bg-[#F7F9FB] cursor-pointer">
+          <label className="flex items-center justify-between p-3 rounded-xl border border-[var(--border)] hover:bg-[var(--surface-alt)] cursor-pointer">
             <div>
-              <div className="text-sm font-semibold text-[#241921]">
+              <div className="text-sm font-semibold text-[var(--text)]">
                 Transactional Approval Requests
               </div>
-              <div className="text-xs text-[#645A62]">
+              <div className="text-xs text-[var(--muted)]">
                 Notify when counsellors submit scholarship discounts or bank proofs
               </div>
             </div>
@@ -145,23 +145,23 @@ export function SettingsSection({
               type="checkbox"
               checked={notifyEmail}
               onChange={(e) => setNotifyEmail(e.target.checked)}
-              className="h-5 w-5 accent-[#681C35] rounded"
+              className="h-5 w-5 accent-[var(--accent)] rounded"
             />
           </label>
 
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 rounded-xl border border-[#DFE5EC] gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 rounded-xl border border-[var(--border)] gap-2">
             <div>
-              <div className="text-sm font-semibold text-[#241921]">
+              <div className="text-sm font-semibold text-[var(--text)]">
                 Daily Admissions & Revenue Digest
               </div>
-              <div className="text-xs text-[#645A62]">
+              <div className="text-xs text-[var(--muted)]">
                 Summary of previous day's collections and pipeline status
               </div>
             </div>
             <select
               value={dailyDigest}
               onChange={(e) => setDailyDigest(e.target.value)}
-              className="rounded-xl border border-[#DFE5EC] px-3 py-2 text-sm text-[#241921] min-h-[44px]"
+              className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] min-h-[44px]"
             >
               <option value="08:00 AM">08:00 AM IST</option>
               <option value="09:00 AM">09:00 AM IST</option>

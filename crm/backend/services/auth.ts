@@ -110,28 +110,56 @@ export async function requireAuth(allowedRoles?: Role[]): Promise<SessionPayload
 export async function setSessionCookie(payload: SessionPayload) {
   const token = await createSessionToken(payload);
   const cookieStore = await cookies();
+  const isProd = process.env.NODE_ENV === "production";
   const cookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isProd,
     sameSite: "lax" as const,
     path: "/",
     maxAge: 60 * 60 * 24 * 7, // 7 days
   };
   cookieStore.set(SESSION_COOKIE_NAME, token, cookieOptions);
   cookieStore.set("auth_token", token, cookieOptions);
+  // Keep lightweight client UI identity cookie synchronized for Vite staff/student panels;
+  // server endpoints ALWAYS verify the HttpOnly HMAC JWT (`academy_session`), never `crm_session`.
+  cookieStore.set(
+    "crm_session",
+    JSON.stringify({
+      userId: payload.userId,
+      name: payload.name,
+      email: payload.email,
+      role: payload.role,
+      authenticated: true,
+    }),
+    {
+      httpOnly: false,
+      secure: isProd,
+      sameSite: "lax" as const,
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+    }
+  );
 }
 
 export async function clearSessionCookie() {
   const cookieStore = await cookies();
+  const isProd = process.env.NODE_ENV === "production";
   const clearOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isProd,
     sameSite: "lax" as const,
     path: "/",
     maxAge: 0,
   };
   cookieStore.set(SESSION_COOKIE_NAME, "", clearOptions);
   cookieStore.set("auth_token", "", clearOptions);
+  cookieStore.set("crm_session", "", {
+    httpOnly: false,
+    secure: isProd,
+    sameSite: "lax" as const,
+    path: "/",
+    maxAge: 0,
+  });
 }
 
 import { sendStudentOtpEmail, sendPasswordResetOtpEmail } from "./smtp";
