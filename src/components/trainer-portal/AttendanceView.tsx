@@ -28,6 +28,10 @@ export function AttendanceView({
     );
   };
 
+  const markAll = (status: "PRESENT" | "ABSENT") => {
+    setLocalRoster((prev) => prev.map((s) => ({ ...s, status })));
+  };
+
   const handleSave = () => {
     // TODO: Connect to backend API: POST /api/trainer/session-entry to persist daily attendance & topic
     onSaveAttendance(selectedBatchCode, localRoster);
@@ -66,6 +70,25 @@ export function AttendanceView({
           <span className="text-xs text-stone-500 hidden sm:inline">
             ({presentCount}/{localRoster.length} present)
           </span>
+
+          <div className="flex items-center gap-1.5 ml-0 sm:ml-2">
+            <button
+              type="button"
+              onClick={() => markAll("PRESENT")}
+              className="px-2.5 py-1.5 rounded-lg border text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition cursor-pointer min-h-[36px]"
+              style={{ borderColor: "var(--border)", color: "var(--text)" }}
+            >
+              All Present
+            </button>
+            <button
+              type="button"
+              onClick={() => markAll("ABSENT")}
+              className="px-2.5 py-1.5 rounded-lg border text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition cursor-pointer min-h-[36px]"
+              style={{ borderColor: "var(--border)", color: "var(--text)" }}
+            >
+              All Absent
+            </button>
+          </div>
         </div>
 
         <button

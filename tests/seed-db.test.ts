@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import pg from 'pg';
 import { seedFinancierDb } from '../scripts/seed-financier-db.ts';
 
-describe('Seed PostgreSQL Database', () => {
+describe.skipIf(!process.env.DATABASE_URL)('Seed PostgreSQL Database', () => {
   it('seeds academy and financier tables in PostgreSQL cleanly', async () => {
     const pool = new pg.Pool({
       connectionString: process.env.DATABASE_URL || 'postgresql://postgres:mkccsql@127.0.0.1:5432/academy',

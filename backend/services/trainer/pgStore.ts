@@ -39,10 +39,130 @@ async function getPrimaryTrainerProfileId(pool: pg.Pool): Promise<string | null>
   return rows.length ? rows[0].id : null;
 }
 
+export async function resolveTrainerProfileId(
+  pool: pg.Pool,
+  identity?: { email?: string; id?: string } | null
+): Promise<string | null> {
+  if (identity?.email) {
+    const byEmail = await pool
+      .query(
+        `SELECT tp.id FROM "TrainerProfile" tp
+         JOIN "User" u ON u.id=tp."userId"
+         WHERE lower(u.email)=lower($1) LIMIT 1`,
+        [identity.email]
+      )
+      .catch(() => ({ rows: [] as any[] }));
+    if (byEmail.rows.length) return byEmail.rows[0].id;
+  }
+  if (identity?.id) {
+    const byId = await pool
+      .query(
+        `SELECT id FROM "TrainerProfile" WHERE id=$1 OR "userId"=$1 LIMIT 1`,
+        [identity.id]
+      )
+      .catch(() => ({ rows: [] as any[] }));
+    if (byId.rows.length) return byId.rows[0].id;
+  }
+  return getPrimaryTrainerProfileId(pool);
+}
+
 export async function ensureTrainerSeeded(pool: pg.Pool, trainerProfileId: string): Promise<void> {
   const { rows } = await pool.query('SELECT count(*) FROM "Announcement" WHERE panel=\'TRAINER\'');
-  if (parseInt(rows[0].count, 10) > 0) return;
+  if (parseInt(rows[0].count, 10) > 0) {
+    // Check if session occurrences or assignments need populating
+    const occ = await pool.query(
+      `SELECT count(*) FROM "SessionOccurrence" WHERE "trainerProfileId"=$1`,
+      [trainerProfileId]
+    ).catch(() => ({ rows: [{ count: "1" }] }));
+    if (parseInt(occ.rows[0].count, 10) === 0) {
+      await seedTrainerClassesAndAssignments(pool, trainerProfileId);
+    }
+    return;
+  }
   await seedTrainerData(pool, trainerProfileId);
+}
+
+async function seedTrainerClassesAndAssignments(pool: pg.Pool, trainerProfileId: string): Promise<void> {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const batches = (
+      await client.query(
+        `SELECT b.id, b.code FROM "Batch" b
+         JOIN "TrainerBatchAllocation" tba ON tba."batchId"=b.id
+         WHERE tba."trainerProfileId"=$1`,
+        [trainerProfileId]
+      )
+    ).rows;
+    if (batches.length === 0) {
+      await client.query("COMMIT");
+      return;
+    }
+
+    const students = (
+      await client.query(
+        `SELECT sp.id as "studentProfileId", u.name
+         FROM "StudentProfile" sp JOIN "User" u ON u.id=sp."userId" ORDER BY sp."createdAt" LIMIT 10`
+      )
+    ).rows;
+
+    const now = new Date();
+    const times = [
+      { offsetDays: 0, sh: "10:00", eh: "11:30" },
+      { offsetDays: 0, sh: "14:00", eh: "15:30" },
+      { offsetDays: 1, sh: "10:00", eh: "11:30" },
+      { offsetDays: 2, sh: "14:00", eh: "15:30" },
+    ];
+    for (let i = 0; i < times.length; i++) {
+      const t = times[i];
+      const b = batches[i % batches.length];
+      const occDate = new Date(now.getTime() + t.offsetDays * 24 * 60 * 60 * 1000);
+      occDate.setHours(parseInt(t.sh.split(":")[0], 10), 0, 0, 0);
+      await client.query(
+        `INSERT INTO "SessionOccurrence" (id,"batchId","trainerProfileId","plannedDate","plannedStartTime","plannedEndTime",status,location,"updatedAt")
+         VALUES ($1,$2,$3,$4,$5,$6,'SCHEDULED','Online Live Classroom',NOW())`,
+        [randomUUID(), b.id, trainerProfileId, occDate, t.sh, t.eh]
+      );
+    }
+
+    const asgns = [
+      { title: "Django REST API & JWT Authentication", maxMarks: 100, daysDue: 5 },
+      { title: "React Global State & Query Cache", maxMarks: 100, daysDue: 8 },
+    ];
+    for (let i = 0; i < asgns.length; i++) {
+      const a = asgns[i];
+      const b = batches[i % batches.length];
+      const bCourse = (await client.query('SELECT "courseId" FROM "Batch" WHERE id=$1', [b.id])).rows[0]?.courseId;
+      const asgnId = randomUUID();
+      const dueDate = new Date(Date.now() + a.daysDue * 24 * 60 * 60 * 1000);
+      await client.query(
+        `INSERT INTO "Assignment" (id,"courseId","batchId","trainerProfileId",title,description,"maxMarks","dueDate","publicationStatus","updatedAt")
+         VALUES ($1,$2,$3,$4,$5,$5,$6,$7,'PUBLISHED',NOW())`,
+        [asgnId, bCourse || b.id, b.id, trainerProfileId, a.title, a.maxMarks, dueDate]
+      );
+
+      for (let s = 0; s < Math.min(students.length, 3); s++) {
+        const stu = students[s];
+        await client.query(
+          `INSERT INTO "AssignmentSubmission" (id,"assignmentId","studentProfileId","attemptNumber",status,"externalLink","isLate","updatedAt")
+           VALUES ($1,$2,$3,1,'SUBMITTED',$4,false,NOW())`,
+          [
+            randomUUID(),
+            asgnId,
+            stu.studentProfileId,
+            `https://github.com/aintrix-cohort/${b.code.toLowerCase()}-${stu.name.toLowerCase().replace(/\s+/g, "-")}`,
+          ]
+        );
+      }
+    }
+
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.warn("[Trainer pgStore] class/assignment seed skipped:", err);
+  } finally {
+    client.release();
+  }
 }
 
 async function seedTrainerData(pool: pg.Pool, trainerProfileId: string): Promise<void> {
@@ -127,8 +247,8 @@ async function seedTrainerData(pool: pg.Pool, trainerProfileId: string): Promise
   }
 }
 
-export async function getTrainerSnapshot(pool: pg.Pool) {
-  const trainerProfileId = await getPrimaryTrainerProfileId(pool);
+export async function getTrainerSnapshot(pool: pg.Pool, requestedTrainerProfileId?: string | null) {
+  const trainerProfileId = requestedTrainerProfileId || (await getPrimaryTrainerProfileId(pool));
   if (!trainerProfileId) {
     return {
       stats: { todayClasses: 0, totalStudents: 0, pendingReviews: 0, openDoubts: 0, nextClassTime: "", nextClassTitle: "", nextClassBatch: "", nextClassStudents: 0 },
@@ -157,7 +277,9 @@ export async function getTrainerSnapshot(pool: pg.Pool) {
        FROM "SessionOccurrence" so
        JOIN "Batch" b ON b.id=so."batchId"
        LEFT JOIN "Course" c ON c.id=b."courseId"
-       WHERE so."trainerProfileId"=$1
+       WHERE (so."trainerProfileId"=$1 OR so."batchId" IN (
+         SELECT "batchId" FROM "TrainerBatchAllocation" WHERE "trainerProfileId"=$1
+       ))
        ORDER BY so."plannedDate" ASC LIMIT 20`,
       [trainerProfileId]
     ),
@@ -171,7 +293,9 @@ export async function getTrainerSnapshot(pool: pg.Pool) {
        JOIN "User" u ON u.id=sp."userId"
        LEFT JOIN "Batch" b ON b.id=a."batchId"
        LEFT JOIN "AssignmentGrade" ag ON ag."submissionId"=asub.id
-       WHERE a."trainerProfileId"=$1
+       WHERE (a."trainerProfileId"=$1 OR a."batchId" IN (
+         SELECT "batchId" FROM "TrainerBatchAllocation" WHERE "trainerProfileId"=$1
+       ))
        ORDER BY asub."submittedAt" DESC LIMIT 100`,
       [trainerProfileId]
     ),

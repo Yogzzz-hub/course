@@ -562,7 +562,7 @@ function SessionGate(
   );
 }
 export function StudentPanel({
-  signInUrl = "/auth/sign-in?returnTo=%2Fstudent-panel",
+  signInUrl = "/login?returnTo=%2Fstudent-panel",
   supportUrl = "/contact",
   academyName = "Aintrix Academy",
   ...props

@@ -2,7 +2,7 @@ import { describe, it, expect, afterAll } from "vitest";
 import { getPostgresFinancierStore, getPgPool, closePgPool } from "../backend/services/financier/pgStore";
 import type { ActorIdentity } from "../backend/services/financier/types";
 
-describe("PostgreSQL Financier Store Integration", () => {
+describe.skipIf(!process.env.DATABASE_URL)("PostgreSQL Financier Store Integration", () => {
   afterAll(async () => {
     await closePgPool();
   });

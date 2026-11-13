@@ -1,11 +1,18 @@
 import pg from 'pg';
 import { createInitialFinancierState } from '../src/data/financierSeedData.ts';
 
-const connectionString = process.env.DATABASE_URL;
-if (!connectionString) throw new Error('DATABASE_URL is required to connect to PostgreSQL.');
-const pool = new pg.Pool({ connectionString });
+let poolInstance: pg.Pool | null = null;
+function getSeedPool(): pg.Pool {
+  if (!poolInstance) {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) throw new Error('DATABASE_URL is required to connect to PostgreSQL.');
+    poolInstance = new pg.Pool({ connectionString });
+  }
+  return poolInstance;
+}
 
 export async function seedFinancierDb(force = false) {
+  const pool = getSeedPool();
   const client = await pool.connect();
   try {
     const existing = await client.query('SELECT count(*) FROM "Course"');
@@ -471,9 +478,9 @@ export async function seedFinancierDb(force = false) {
 
 if (process.argv[1]?.endsWith('seed-financier-db.mjs')) {
   seedFinancierDb(process.argv.includes('--force'))
-    .then(() => pool.end())
+    .then(() => poolInstance?.end())
     .catch(() => {
-      pool.end();
+      poolInstance?.end();
       process.exit(1);
     });
 }

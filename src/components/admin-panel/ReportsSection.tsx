@@ -13,6 +13,7 @@ import { useAdminAction, useAdminAuthority, useAdminResource } from "./hooks";
 import { ActionFeedback } from "./ActionFeedback";
 import { Button, Card, ScreenTitle } from "./ui";
 import { money } from "./utils";
+import { exportToCsv } from "../../utils/csvExport";
 
 export function ReportsSection() {
   const { can } = useAdminAuthority();
@@ -60,12 +61,28 @@ export function ReportsSection() {
 
   const handleExport = async () => {
     if (can("reports.export")) {
-      await action.run({
+      const result = await action.run({
         type: "reports.export",
         from: dateFrom,
         to: dateTo,
         format: "csv",
       });
+      if (result?.status === "succeeded" && result.resourceId) {
+        window.open(`/api/admin/reports/export/${result.resourceId}`, "_blank");
+      } else {
+        exportToCsv(
+          `aintrix-reports-${dateFrom}-to-${dateTo}.csv`,
+          counsellors,
+          [
+            { header: "Counsellor ID", accessor: (c) => c.id },
+            { header: "Name", accessor: (c) => c.name },
+            { header: "Leads", accessor: (c) => c.leads },
+            { header: "Sessions", accessor: (c) => c.sessions },
+            { header: "Enrolments", accessor: (c) => c.enrolments },
+            { header: "Revenue (INR)", accessor: (c) => (c.revenueMinor / 100).toFixed(2) },
+          ]
+        );
+      }
     }
   };
 

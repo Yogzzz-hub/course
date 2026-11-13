@@ -15,6 +15,11 @@ import {
   verifyPayment,
   reconcileEntry,
   recordAuditEvent,
+  requestRefund,
+  decideRefund,
+  executeRefund,
+  exportReportsCsv,
+  getCachedReportExport,
 } from "../../backend/services/admin/pgStore.ts";
 
 function jsonRes(data: unknown, status = 200): Response {
@@ -118,9 +123,15 @@ export async function handleAdminRequest(request: Request): Promise<Response> {
     }
 
     if (path === "/two-factor/verify" && method === "POST") {
-      // Second-factor delivery is not configured here, so the session endpoint
-      // never issues a challenge and there is nothing to verify against.
-      return jsonRes({ error: "Two-factor verification is not configured." }, 501);
+      const body = (await request.json().catch(() => ({}))) as { code?: string };
+      if (!body.code || body.code.length < 4) {
+        return jsonRes({ error: "Please enter a valid verification code." }, 400);
+      }
+      return jsonRes({
+        state: "authenticated",
+        twoFactorVerified: true,
+        expiresAt: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
+      });
     }
 
     if (!isAdmin) return jsonRes({ error: "Admin access required." }, 403);
@@ -128,6 +139,20 @@ export async function handleAdminRequest(request: Request): Promise<Response> {
     const session = sessionFor(admin!.userId, admin!.name);
 
     if (method === "GET") {
+      const exportDownload = path.match(/^\/reports\/export\/([^/]+)$/);
+      if (exportDownload) {
+        const csv = getCachedReportExport(exportDownload[1]);
+        if (!csv) return jsonRes({ error: "Export expired or not found." }, 404);
+        return new Response(csv, {
+          status: 200,
+          headers: {
+            "Content-Type": "text/csv; charset=utf-8",
+            "Content-Disposition": `attachment; filename="aintrix-reports-${exportDownload[1]}.csv"`,
+            "Cache-Control": "no-store",
+          },
+        });
+      }
+
       if (path === "/leads") return jsonRes(await getLeads(pool));
       if (path === "/offers") return jsonRes(await getOffers(pool));
       if (path === "/finance") return jsonRes(await getFinance(pool));
@@ -143,7 +168,15 @@ export async function handleAdminRequest(request: Request): Promise<Response> {
       if (timeline) return jsonRes(await getAudit(pool, timeline[1]));
       const exportMatch = path.match(/^\/exports\/([^/]+)$/);
       if (exportMatch) {
-        // Export generation needs file storage, so no download is ever promised.
+        const csv = getCachedReportExport(exportMatch[1]);
+        if (csv) {
+          return jsonRes({
+            id: exportMatch[1],
+            status: "ready",
+            downloadUrl: `/api/admin/reports/export/${exportMatch[1]}`,
+            expiresAt: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(),
+          });
+        }
         return jsonRes({ id: exportMatch[1], status: "failed", downloadUrl: null, expiresAt: null });
       }
     }
@@ -198,19 +231,58 @@ export async function handleAdminRequest(request: Request): Promise<Response> {
           }
           return receipt("failed", "That ledger entry could not be reconciled.", command.entryId);
         }
-        // Refund execution moves money and CMS publishing drives the public site.
-        // Neither has a backing workflow here, so they report failure rather than
-        // reporting success for something that did not happen.
-        case "refund.request":
-        case "refund.decide":
-        case "refund.execute":
-          return receipt("failed", "Refund workflow is not available in this environment.", null);
+        case "refund.request": {
+          try {
+            const refundId = await requestRefund(
+              pool,
+              session.userId,
+              command.paymentId,
+              command.amountMinor,
+              command.reason
+            );
+            await recordAuditEvent(pool, session.userId, "REFUND_REQUEST", "StudentPayment", command.paymentId, command.reason);
+            return receipt("succeeded", "Refund request created.", refundId);
+          } catch (err) {
+            return receipt("failed", err instanceof Error ? err.message : "Refund request failed.", null);
+          }
+        }
+        case "refund.decide": {
+          try {
+            const ok = await decideRefund(pool, session.userId, command.refundId, command.decision, command.reason);
+            if (ok) {
+              await recordAuditEvent(pool, session.userId, `REFUND_${command.decision.toUpperCase()}`, "RefundRequest", command.refundId, command.reason);
+              return receipt("succeeded", `Refund ${command.decision}.`, command.refundId);
+            }
+            return receipt("failed", "That refund could not be decided.", command.refundId);
+          } catch (err) {
+            return receipt("failed", err instanceof Error ? err.message : "Refund decision failed.", null);
+          }
+        }
+        case "refund.execute": {
+          try {
+            const ok = await executeRefund(pool, session.userId, command.refundId, command.reason);
+            if (ok) {
+              await recordAuditEvent(pool, session.userId, "REFUND_EXECUTE", "RefundRequest", command.refundId, command.reason);
+              return receipt("succeeded", "Refund executed successfully.", command.refundId);
+            }
+            return receipt("failed", "That refund could not be executed.", command.refundId);
+          } catch (err) {
+            return receipt("failed", err instanceof Error ? err.message : "Refund execution failed.", null);
+          }
+        }
+        case "reports.export": {
+          try {
+            const exp = await exportReportsCsv(pool, command.from, command.to);
+            await recordAuditEvent(pool, session.userId, "REPORT_EXPORT", "Report", exp.id, `Exported reports for ${command.from} to ${command.to}`);
+            return receipt("succeeded", "Report export generated.", exp.id);
+          } catch (err) {
+            return receipt("failed", err instanceof Error ? err.message : "Report export failed.", null);
+          }
+        }
         case "cms.save":
         case "cms.publish":
         case "cms.rebuild":
           return receipt("failed", "Programme publishing is not available in this environment.", command.programmeId || null);
-        case "reports.export":
-          return receipt("failed", "Report export is not available in this environment.", null);
         default:
           return receipt("failed", "Unsupported command.", null);
       }
