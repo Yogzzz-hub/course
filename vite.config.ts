@@ -71,6 +71,81 @@ export default defineConfig(({ mode }) => {
             });
           return;
         }
+        if (request.url === '/api/enquiry' || request.url?.startsWith('/api/enquiry?')) {
+          if (request.method === 'GET') {
+            response.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+            response.end(JSON.stringify({ available: true, siteKey: env.VITE_TURNSTILE_SITE_KEY || '' }));
+            return;
+          }
+          if (request.method === 'POST') {
+            let body = '';
+            request.on('data', (chunk) => { body += chunk; });
+            request.on('end', async () => {
+              try {
+                const payload = JSON.parse(body || '{}');
+                if (process.env.DATABASE_URL) {
+                  const pg = (await import('pg')).default;
+                  const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+                  const crypto = await import('node:crypto');
+                  await pool.query(
+                    `INSERT INTO "Lead" (id, name, email, phone, status, source, "createdAt", "updatedAt")
+                     VALUES ($1, $2, $3, $4, 'NEW', 'Website Enquiry', NOW(), NOW())
+                     ON CONFLICT DO NOTHING`,
+                    [crypto.randomUUID(), payload.name || 'Anonymous', payload.email || '', payload.phone || null]
+                  ).catch(() => {});
+                  await pool.end().catch(() => {});
+                }
+                response.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+                response.end(JSON.stringify({ success: true, message: 'Your enquiry has been received.' }));
+              } catch {
+                response.writeHead(400, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+                response.end(JSON.stringify({ success: false, message: 'Invalid enquiry payload.' }));
+              }
+            });
+            return;
+          }
+        }
+        if (request.url?.startsWith('/api/booking/sessions')) {
+          if (request.method === 'GET') {
+            response.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+            response.end(JSON.stringify({
+              available: true,
+              sessions: [
+                { id: 'sess_1', slot: '10:00 AM - 11:00 AM', status: 'available' },
+                { id: 'sess_2', slot: '02:00 PM - 03:00 PM', status: 'available' },
+                { id: 'sess_3', slot: '04:30 PM - 05:30 PM', status: 'available' },
+              ],
+            }));
+            return;
+          }
+          if (request.method === 'POST') {
+            let body = '';
+            request.on('data', (chunk) => { body += chunk; });
+            request.on('end', async () => {
+              try {
+                const payload = JSON.parse(body || '{}');
+                if (process.env.DATABASE_URL) {
+                  const pg = (await import('pg')).default;
+                  const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+                  const crypto = await import('node:crypto');
+                  await pool.query(
+                    `INSERT INTO "Lead" (id, name, email, phone, status, source, "createdAt", "updatedAt")
+                     VALUES ($1, $2, $3, $4, 'COUNSELLING_SCHEDULED', 'Counselling Booking', NOW(), NOW())
+                     ON CONFLICT DO NOTHING`,
+                    [crypto.randomUUID(), payload.name || 'Student', payload.email || '', payload.phone || null]
+                  ).catch(() => {});
+                  await pool.end().catch(() => {});
+                }
+                response.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+                response.end(JSON.stringify({ success: true, bookingId: 'bk_' + Date.now(), message: 'Counselling session confirmed.' }));
+              } catch {
+                response.writeHead(400, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+                response.end(JSON.stringify({ success: false, message: 'Booking failed.' }));
+              }
+            });
+            return;
+          }
+        }
         if (request.url?.startsWith('/api/booking/programmes')) {
           response.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
           response.end(JSON.stringify({ programmes: allBookingProgrammes }));

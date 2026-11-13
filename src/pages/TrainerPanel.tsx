@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { readCrmSession } from "../utils/authSession";
 import {
   trainerApi,
   TrainerSidebar,
@@ -37,6 +38,14 @@ const EMPTY_STATS: TrainerStats = {
 
 export default function TrainerPanel() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const session = readCrmSession();
+    if (!session || (session.role !== "TRAINER" && session.role !== "ADMIN")) {
+      navigate("/login?returnUrl=/trainer", { replace: true });
+    }
+  }, [navigate]);
+
   const [activeTab, setActiveTab] = useState<TrainerNavTab>("dashboard");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 

@@ -65,28 +65,28 @@ export default function LoginPage() {
     switch (role) {
       case "STUDENT":
         setActiveTab("STUDENT");
-        setStudentId("student@apexacademy.edu");
+        setStudentId("student@aintrixacademy.edu");
         setOtpSent(false);
         setOtpCode("");
         break;
       case "TRAINER":
         setActiveTab("STAFF");
-        setStaffEmail("trainer@apexacademy.edu");
+        setStaffEmail("trainer@aintrixacademy.edu");
         setStaffPassword("Trainer@123456");
         break;
       case "ADMIN":
         setActiveTab("STAFF");
-        setStaffEmail("admin@apexacademy.edu");
+        setStaffEmail("admin@aintrixacademy.edu");
         setStaffPassword("Admin@123456");
         break;
       case "MANAGER":
         setActiveTab("STAFF");
-        setStaffEmail("manager@apexacademy.edu");
+        setStaffEmail("manager@aintrixacademy.edu");
         setStaffPassword("Manager@123456");
         break;
       case "FINANCIER":
         setActiveTab("STAFF");
-        setStaffEmail("financier@apexacademy.edu");
+        setStaffEmail("financier@aintrixacademy.edu");
         setStaffPassword("Financier@123456");
         break;
     }
@@ -99,7 +99,7 @@ export default function LoginPage() {
     const emailInput = activeTab === "STUDENT" ? studentId : staffEmail;
     const session =
       verifiedStudentSession ??
-      canonicalizeDemoUser(emailInput || "student@apexacademy.edu", "STUDENT");
+      canonicalizeDemoUser(emailInput || "student@aintrixacademy.edu", "STUDENT");
     writeCrmSession(session);
     navigate(`/student-panel?mode=${mode}`);
   };
@@ -274,7 +274,7 @@ export default function LoginPage() {
     }
 
     setStudentLoading(false);
-    const session = canonicalizeDemoUser(studentId || "student@apexacademy.edu", "STUDENT");
+    const session = canonicalizeDemoUser(studentId || "student@aintrixacademy.edu", "STUDENT");
     writeCrmSession(session);
     const returnTarget = resolveStudentTarget();
     if (returnTarget) {
@@ -611,7 +611,7 @@ export default function LoginPage() {
                     <input
                       type="email"
                       required
-                      placeholder="trainer@apexacademy.edu"
+                      placeholder="trainer@aintrixacademy.edu"
                       value={staffEmail}
                       onChange={(e) => setStaffEmail(e.target.value)}
                       style={{
@@ -704,7 +704,7 @@ export default function LoginPage() {
                     <input
                       type="email"
                       required
-                      placeholder="student@apexacademy.edu"
+                      placeholder="student@aintrixacademy.edu"
                       value={studentId}
                       onChange={(e) => setStudentId(e.target.value)}
                       disabled={otpSent}

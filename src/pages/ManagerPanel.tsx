@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { readCrmSession } from "../utils/authSession";
 import {
   managerApi,
   ManagerSidebar,
@@ -48,6 +49,14 @@ const EMPTY_REPORTS: ManagerReportsData = { monthlyAdmissions: [], trackBreakdow
 
 export default function ManagerPanel() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const session = readCrmSession();
+    if (!session || (session.role !== "MANAGER" && session.role !== "ADMIN")) {
+      navigate("/login?returnUrl=/manager", { replace: true });
+    }
+  }, [navigate]);
+
   const [activeTab, setActiveTab] = useState<ManagerNavTab>("dashboard");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 

@@ -33,7 +33,7 @@ export function EnquiryForm() {
     const validation = validateEnquiry(data); setErrors(validation);
     if (Object.keys(validation).length) { document.getElementById(`enquiry-${Object.keys(validation)[0]}`)?.focus(); return; }
     if (!service?.available) { setMessage('Enquiries are not available yet. Your details have not been sent.'); setStatus('error'); return; }
-    if (!token) { setMessage('Please complete the spam verification before sending.'); setStatus('error'); return; }
+    if (service.siteKey && !token) { setMessage('Please complete the spam verification before sending.'); setStatus('error'); return; }
     pending.current = true; setStatus('sending'); setMessage('');
     requestId.current ||= crypto.randomUUID();
     try {
