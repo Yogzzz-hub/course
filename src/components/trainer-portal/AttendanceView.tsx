@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Check, X, CheckCircle2, Save } from "lucide-react";
-import type { AttendanceStudent } from "../../data/trainerMock";
+import type { AttendanceStudent } from "./types";
 import { ResponsiveTable } from "../manager-portal/ResponsiveTable";
 
 export function AttendanceView({

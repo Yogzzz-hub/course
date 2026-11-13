@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { AlertCircle, CheckCircle2, Send, Filter } from "lucide-react";
-import type { AttendanceAlert } from "../../data/managerMock";
+import type { AttendanceAlert } from "./types";
 import { ResponsiveTable } from "./ResponsiveTable";
 
 export function AttendanceAlertsView({

@@ -1,7 +1,7 @@
-// MOCK_DATA: Typed baseline financier seed dataset whose every rupee/paise figure is
-// generated and strictly reconciled with double-entry journal postings (no invented values).
-// In production with PostgreSQL + Prisma connected, these records come from database tables;
-// when Prisma/DB is unavailable in local Vite/preview mode, this state backs /api/financier/*.
+// src/data/financierSeedData.ts
+// Seed dataset used to populate PostgreSQL on first run (scripts/seed-financier-db.ts)
+// and by the finance unit tests. This is NOT read by the running panel: the
+// Financier UI serves every figure from PostgreSQL through /api/financier.
 
 import { createBalancedJournalEntry } from "../../backend/services/financier/ledger.ts";
 import { allocatePaymentPaiseOldestFirst, subtractPaise, sumPaise } from "../../backend/services/financier/money.ts";

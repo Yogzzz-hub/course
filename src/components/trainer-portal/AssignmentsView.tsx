@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { CheckCircle2, FileText, ExternalLink, Award } from "lucide-react";
-import type { TrainerAssignmentSubmission } from "../../data/trainerMock";
+import type { TrainerAssignmentSubmission } from "./types";
 import { Drawer } from "../manager-portal/Drawer";
 import { ResponsiveTable } from "../manager-portal/ResponsiveTable";
 

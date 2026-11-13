@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Search, Calendar, MessageSquare } from "lucide-react";
-import type { Lead, Counsellor } from "../../data/managerMock";
+import type { Lead, Counsellor } from "./types";
 import { Drawer } from "./Drawer";
 import { ResponsiveTable } from "./ResponsiveTable";
 

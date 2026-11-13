@@ -1,4 +1,4 @@
-import { initialTrainerSchedule, type TrainerScheduleItem } from "../data/trainerMock";
+import type { TrainerScheduleItem } from "../components/manager-portal/types";
 
 export interface ScheduledClassItem extends TrainerScheduleItem {
   dateIso?: string;
@@ -10,18 +10,8 @@ export interface ScheduledClassItem extends TrainerScheduleItem {
 const STORAGE_KEY = "crm_scheduled_classes";
 const SCHEDULE_EVENT = "crm-schedule-updated";
 
-export const initialScheduledClasses: ScheduledClassItem[] = initialTrainerSchedule.map((item, idx) => {
-  const presets = [
-    { dateIso: "2026-11-11", startTime: "10:00", endTime: "12:00", facultyName: "Dr. Vikram Joshi" },
-    { dateIso: "2026-11-12", startTime: "14:00", endTime: "16:00", facultyName: "Neha Kulkarni" },
-    { dateIso: "2026-11-13", startTime: "18:00", endTime: "20:30", facultyName: "Arjun Reddy" },
-  ];
-  const preset = presets[idx] || {};
-  return {
-    ...item,
-    ...preset,
-  };
-});
+// Schedule starts empty; entries come from the user, not from seed/mock data.
+export const initialScheduledClasses: ScheduledClassItem[] = [];
 
 export function formatTime12h(time24: string): string {
   const [hStr, mStr] = time24.split(":");

@@ -1,25 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  initialManagerStats,
-  initialLeads,
-  initialAdmissions,
-  initialCohorts,
-  initialAttendanceAlerts,
-  initialFeePayments,
-  initialCounsellors,
-  initialAnnouncements,
-  type Lead,
-  type Admission,
-  type AttendanceAlert,
-  type Announcement,
-} from "../data/managerMock";
-import {
-  readScheduledClasses,
-  writeScheduledClasses,
-  type ScheduledClassItem,
-} from "../utils/classScheduleStore";
-import {
+  managerApi,
   ManagerSidebar,
   ManagerHeader,
   DashboardView,
@@ -33,32 +15,56 @@ import {
   AnnouncementsView,
   ReportsView,
   ToastContainer,
+  ManagerBottomNav,
   type ManagerNavTab,
   type ToastMessage,
+  type Lead,
+  type Admission,
+  type CohortSeat,
+  type AttendanceAlert,
+  type FeePayment,
+  type Counsellor,
+  type Announcement,
+  type ManagerStats,
+  type ManagerReportsData,
 } from "../components/manager-portal";
+import {
+  readScheduledClasses,
+  writeScheduledClasses,
+  type ScheduledClassItem,
+} from "../utils/classScheduleStore";
+
+const EMPTY_STATS: ManagerStats = {
+  newEnquiries: 0,
+  pendingFollowUps: 0,
+  activeStudents: 0,
+  runningBatches: 0,
+  attendanceAlertsCount: 0,
+  pendingAdmissionsCount: 0,
+  totalRevenue: "₹ 0",
+};
+
+const EMPTY_REPORTS: ManagerReportsData = { monthlyAdmissions: [], trackBreakdown: [] };
 
 export default function ManagerPanel() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<ManagerNavTab>("dashboard");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  // Live state connected to mocks (with backend sync capability)
-  const [stats, setStats] = useState(initialManagerStats);
-  const [leads, setLeads] = useState<Lead[]>(initialLeads);
-  const [admissions, setAdmissions] = useState<Admission[]>(initialAdmissions);
-  const [cohorts, setCohorts] = useState(initialCohorts);
-  const [alerts, setAlerts] = useState<AttendanceAlert[]>(initialAttendanceAlerts);
-  const [payments, setPayments] = useState(initialFeePayments);
-  const [counsellors, setCounsellors] = useState(initialCounsellors);
-  const [announcements, setAnnouncements] = useState<Announcement[]>(initialAnnouncements);
-  const [scheduledClasses, setScheduledClasses] = useState<ScheduledClassItem[]>(() =>
-    readScheduledClasses()
-  );
-  const [selectedScheduleBatch, setSelectedScheduleBatch] = useState<string | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  useEffect(() => {
-    setScheduledClasses(readScheduledClasses());
-  }, []);
+  const [stats, setStats] = useState<ManagerStats>(EMPTY_STATS);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [admissions, setAdmissions] = useState<Admission[]>([]);
+  const [cohorts, setCohorts] = useState<CohortSeat[]>([]);
+  const [alerts, setAlerts] = useState<AttendanceAlert[]>([]);
+  const [payments, setPayments] = useState<FeePayment[]>([]);
+  const [counsellors, setCounsellors] = useState<Counsellor[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [reports, setReports] = useState<ManagerReportsData>(EMPTY_REPORTS);
+  const [scheduledClasses, setScheduledClasses] = useState<ScheduledClassItem[]>(() => readScheduledClasses());
+  const [selectedScheduleBatch, setSelectedScheduleBatch] = useState<string | undefined>(undefined);
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
@@ -78,34 +84,34 @@ export default function ManagerPanel() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  const handleLogout = () => {
+  const loadSnapshot = async () => {
+    setLoading(true);
+    setLoadError(null);
     try {
-      localStorage.removeItem("crm_session");
-    } catch {}
-    navigate("/login");
+      const snapshot = await managerApi.getSnapshot();
+      setStats(snapshot.stats);
+      setLeads(snapshot.leads);
+      setAdmissions(snapshot.admissions);
+      setCohorts(snapshot.cohorts);
+      setAlerts(snapshot.alerts);
+      setPayments(snapshot.payments);
+      setCounsellors(snapshot.counsellors);
+      setAnnouncements(snapshot.announcements);
+      setReports(snapshot.reports);
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : "Could not load manager data from the database.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleUpdateLead = (updated: Lead) => {
-    setLeads((prev) => prev.map((l) => (l.id === updated.id ? updated : l)));
-  };
-
-  const handleUpdateAdmission = (updated: Admission) => {
-    setAdmissions((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
-  };
-
-  const handleUpdateAlert = (updated: AttendanceAlert) => {
-    setAlerts((prev) => prev.map((al) => (al.id === updated.id ? updated : al)));
-  };
-
-  const handlePublishAnnouncement = (newAnn: Announcement) => {
-    setAnnouncements((prev) => [newAnn, ...prev]);
-  };
+  useEffect(() => {
+    void loadSnapshot();
+  }, []);
 
   const handleSaveScheduledClass = (item: ScheduledClassItem, isEdit: boolean) => {
     setScheduledClasses((prev) => {
-      const next = isEdit
-        ? prev.map((existing) => (existing.id === item.id ? item : existing))
-        : [item, ...prev];
+      const next = isEdit ? prev.map((existing) => (existing.id === item.id ? item : existing)) : [item, ...prev];
       writeScheduledClasses(next);
       return next;
     });
@@ -117,6 +123,43 @@ export default function ManagerPanel() {
       writeScheduledClasses(next);
       return next;
     });
+  };
+
+  const handleLogout = () => {
+    try {
+      localStorage.removeItem("crm_session");
+    } catch {}
+    navigate("/login");
+  };
+
+  const handleUpdateLead = (updated: Lead) => {
+    setLeads((prev) => prev.map((l) => (l.id === updated.id ? updated : l)));
+    managerApi.updateLead(updated.id, { status: updated.status }).catch((err) => {
+      addToast({ type: "danger", title: "Sync Failed", message: err instanceof Error ? err.message : "Could not save lead update." });
+    });
+  };
+
+  const handleUpdateAdmission = (updated: Admission) => {
+    setAdmissions((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+    managerApi.updateAdmission(updated.id, updated.status).catch((err) => {
+      addToast({ type: "danger", title: "Sync Failed", message: err instanceof Error ? err.message : "Could not save admission update." });
+    });
+  };
+
+  const handleUpdateAlert = (updated: AttendanceAlert) => {
+    setAlerts((prev) => prev.map((al) => (al.id === updated.id ? updated : al)));
+    managerApi.updateAlert(updated.id, { warningSent: updated.warningSent }).catch((err) => {
+      addToast({ type: "danger", title: "Sync Failed", message: err instanceof Error ? err.message : "Could not save alert update." });
+    });
+  };
+
+  const handlePublishAnnouncement = (newAnn: Announcement) => {
+    setAnnouncements((prev) => [newAnn, ...prev]);
+    managerApi
+      .publishAnnouncement({ title: newAnn.title, body: newAnn.body, author: newAnn.author, audience: newAnn.audience, priority: newAnn.priority })
+      .catch((err) => {
+        addToast({ type: "danger", title: "Sync Failed", message: err instanceof Error ? err.message : "Could not save announcement." });
+      });
   };
 
   return (
@@ -172,7 +215,6 @@ export default function ManagerPanel() {
         <ManagerHeader
           activeTab={activeTab}
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
-          onLogout={handleLogout}
           onQuickAction={(action) => {
             if (action === "create_lead") {
               addToast({
@@ -193,83 +235,115 @@ export default function ManagerPanel() {
           }}
         />
 
-        <main className="manager-main p-3 sm:p-5 md:p-6 pb-6 flex-1 w-full space-y-4">
-          {activeTab === "dashboard" && (
-            <DashboardView
-              stats={stats}
-              leads={leads}
-              admissions={admissions}
-              alerts={alerts}
-              onNavigateTab={setActiveTab}
-              onSelectLead={() => setActiveTab("leads")}
-            />
+        <main className="manager-main p-3 sm:p-5 md:p-6 pb-20 md:pb-6 flex-1 w-full space-y-4">
+          {loadError && (
+            <div
+              className="p-3 rounded-lg border text-xs flex items-center justify-between gap-3"
+              style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)", color: "var(--text)" }}
+            >
+              <span>Could not load live data from the database: {loadError}</span>
+              <button
+                className="shrink-0 px-2.5 py-1 rounded-md font-semibold"
+                style={{ backgroundColor: "var(--accent)", color: "white" }}
+                onClick={() => void loadSnapshot()}
+              >
+                Retry
+              </button>
+            </div>
           )}
 
-          {activeTab === "leads" && (
-            <LeadsView
-              leads={leads}
-              counsellors={counsellors}
-              onAddToast={addToast}
-              onUpdateLead={handleUpdateLead}
-            />
-          )}
+          {loading && !loadError ? (
+            <div className="text-xs py-10 text-center" style={{ color: "var(--muted)" }}>
+              Loading manager data from the database...
+            </div>
+          ) : (
+            <>
+              {activeTab === "dashboard" && (
+                <DashboardView
+                  stats={stats}
+                  leads={leads}
+                  admissions={admissions}
+                  alerts={alerts}
+                  onNavigateTab={setActiveTab}
+                  onSelectLead={() => setActiveTab("leads")}
+                />
+              )}
 
-          {activeTab === "admissions" && (
-            <AdmissionsView
-              admissions={admissions}
-              onAddToast={addToast}
-              onUpdateAdmission={handleUpdateAdmission}
-            />
-          )}
+              {activeTab === "leads" && (
+                <LeadsView
+                  leads={leads}
+                  counsellors={counsellors}
+                  onAddToast={addToast}
+                  onUpdateLead={handleUpdateLead}
+                />
+              )}
 
-          {activeTab === "cohorts" && (
-            <CohortsView
-              cohorts={cohorts}
-              onScheduleBatch={(batchCode) => {
-                setSelectedScheduleBatch(batchCode);
-                setActiveTab("schedule");
-              }}
-            />
-          )}
+              {activeTab === "admissions" && (
+                <AdmissionsView
+                  admissions={admissions}
+                  onAddToast={addToast}
+                  onUpdateAdmission={handleUpdateAdmission}
+                />
+              )}
 
-          {activeTab === "schedule" && (
-            <ScheduleClassesView
-              cohorts={cohorts}
-              classes={scheduledClasses}
-              initialBatchCode={selectedScheduleBatch}
-              onSaveClass={handleSaveScheduledClass}
-              onDeleteClass={handleDeleteScheduledClass}
-              onAddToast={addToast}
-            />
-          )}
+              {activeTab === "cohorts" && (
+                <CohortsView
+                  cohorts={cohorts}
+                  onScheduleBatch={(batchCode) => {
+                    setSelectedScheduleBatch(batchCode);
+                    setActiveTab("schedule");
+                  }}
+                />
+              )}
 
-          {activeTab === "attendance" && (
-            <AttendanceAlertsView
-              alerts={alerts}
-              onAddToast={addToast}
-              onUpdateAlert={handleUpdateAlert}
-            />
-          )}
+              {activeTab === "schedule" && (
+                <ScheduleClassesView
+                  cohorts={cohorts}
+                  classes={scheduledClasses}
+                  initialBatchCode={selectedScheduleBatch}
+                  onSaveClass={handleSaveScheduledClass}
+                  onDeleteClass={handleDeleteScheduledClass}
+                  onAddToast={addToast}
+                />
+              )}
 
-          {activeTab === "fees" && (
-            <FeesView payments={payments} onAddToast={addToast} />
-          )}
+              {activeTab === "attendance" && (
+                <AttendanceAlertsView
+                  alerts={alerts}
+                  onAddToast={addToast}
+                  onUpdateAlert={handleUpdateAlert}
+                />
+              )}
 
-          {activeTab === "counsellors" && (
-            <CounsellorsView counsellors={counsellors} onAddToast={addToast} />
-          )}
+              {activeTab === "fees" && (
+                <FeesView payments={payments} onAddToast={addToast} />
+              )}
 
-          {activeTab === "announcements" && (
-            <AnnouncementsView
-              announcements={announcements}
-              onAddToast={addToast}
-              onPublishAnnouncement={handlePublishAnnouncement}
-            />
-          )}
+              {activeTab === "counsellors" && (
+                <CounsellorsView counsellors={counsellors} onAddToast={addToast} />
+              )}
 
-          {activeTab === "reports" && <ReportsView onAddToast={addToast} />}
+              {activeTab === "announcements" && (
+                <AnnouncementsView
+                  announcements={announcements}
+                  onAddToast={addToast}
+                  onPublishAnnouncement={handlePublishAnnouncement}
+                />
+              )}
+
+              {activeTab === "reports" && <ReportsView reports={reports} onAddToast={addToast} />}
+            </>
+          )}
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation Bar matching reference UI */}
+      <ManagerBottomNav
+        activeTab={activeTab}
+        onSelectTab={setActiveTab}
+        onOpenMore={() => setMobileSidebarOpen(true)}
+        approvalsBadgeCount={stats.pendingAdmissionsCount}
+      />
 
       {/* Global Interactive Toast Notification Host */}
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
