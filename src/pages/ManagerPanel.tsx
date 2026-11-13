@@ -372,6 +372,7 @@ export default function ManagerPanel() {
         <ManagerHeader
           activeTab={activeTab}
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+          onLogout={handleLogout}
           onQuickAction={(action) => {
             if (action === "create_lead") {
               setIsCreateLeadOpen(true);

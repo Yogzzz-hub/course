@@ -178,41 +178,39 @@ export function ManagerSidebar({
           isMobileDrawer ? "block" : "hidden md:block"
         } p-3 border-t border-[var(--sidebar-border)] bg-[var(--sidebar-surface)] space-y-2 shrink-0`}
       >
-        <button
-          type="button"
-          title={isCollapsed ? "Operations Manager" : undefined}
-          onClick={() => setProfileMenuOpen((v) => !v)}
-          aria-expanded={profileMenuOpen}
-          className={`w-full p-2 rounded-xl flex items-center gap-2.5 text-left cursor-pointer hover:bg-[var(--sidebar-hover)] transition ${
+        <div
+          title={isCollapsed ? "Operations Manager (manager@aintrix.edu)" : undefined}
+          className={`w-full p-2 rounded-xl flex items-center justify-between gap-2.5 text-left ${
             isCollapsed ? "justify-center" : ""
           }`}
         >
-          <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[11px] shrink-0 bg-[var(--btn-primary-bg)] text-white border border-[var(--accent-soft)]/30">
-            OM
-          </div>
-          {!isCollapsed && (
-            <div className="min-w-0 flex-1">
-              <div className="text-[11px] font-semibold truncate leading-tight text-white">
-                Operations Manager
-              </div>
-              <div className="text-[10px] truncate leading-tight text-[var(--accent-soft)]">
-                manager@aintrix.edu
-              </div>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[11px] shrink-0 bg-[var(--btn-primary-bg)] text-white border border-[var(--accent-soft)]/30">
+              OM
             </div>
-          )}
-        </button>
+            {!isCollapsed && (
+              <div className="min-w-0 flex-1">
+                <div className="text-[11px] font-semibold truncate leading-tight text-white">
+                  Operations Manager
+                </div>
+                <div className="text-[10px] truncate leading-tight text-[var(--accent-soft)]">
+                  manager@aintrix.edu
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
 
-        {profileMenuOpen && (
-          <button
-            type="button"
-            title={isCollapsed ? "Log out" : undefined}
-            onClick={onLogout}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-colors bg-[var(--btn-primary-bg)] text-white hover:bg-[var(--btn-primary-hover)] cursor-pointer min-h-[44px]"
-          >
-            <LogOut size={16} />
-            {!isCollapsed && <span>Log out</span>}
-          </button>
-        )}
+        {/* Prominent Always-Visible Logout Button */}
+        <button
+          type="button"
+          title={isCollapsed ? "Log out" : undefined}
+          onClick={onLogout}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-colors bg-[var(--btn-primary-bg)] text-white hover:bg-[var(--btn-primary-hover)] cursor-pointer min-h-[40px]"
+        >
+          <LogOut size={16} />
+          {!isCollapsed && <span>Log out</span>}
+        </button>
 
         {!isMobileDrawer && (
           <button
