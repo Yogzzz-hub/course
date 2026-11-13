@@ -27,8 +27,8 @@ const navItems: NavItem[] = [
   { id: "batches", label: "My batches", icon: Layers },
   { id: "schedule", label: "Schedule", icon: Calendar },
   { id: "attendance", label: "Attendance", icon: UserCheck },
-  { id: "assignments", label: "Assignments", icon: FileCheck, badge: 5 },
-  { id: "doubts", label: "Doubt sessions", icon: HelpCircle, badge: 3 },
+  { id: "assignments", label: "Assignments", icon: FileCheck },
+  { id: "doubts", label: "Doubt sessions", icon: HelpCircle },
   { id: "announcements", label: "Announcements", icon: Megaphone },
 ];
 
@@ -38,12 +38,14 @@ export function TrainerSidebar({
   onLogout,
   onClose,
   isMobileDrawer = false,
+  badges,
 }: {
   activeTab: TrainerNavTab;
   onSelectTab: (tab: TrainerNavTab) => void;
   onLogout: () => void;
   onClose?: () => void;
   isMobileDrawer?: boolean;
+  badges?: Partial<Record<TrainerNavTab, number>>;
 }) {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -111,6 +113,7 @@ export function TrainerSidebar({
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
+            const badgeCount = badges?.[item.id] ?? item.badge;
             return (
               <button
                 key={item.id}
@@ -138,7 +141,7 @@ export function TrainerSidebar({
                   <span className={isCollapsed ? "sr-only" : "truncate"}>{item.label}</span>
                 </div>
 
-                {!isCollapsed && item.badge !== undefined && item.badge > 0 && (
+                {!isCollapsed && badgeCount !== undefined && badgeCount > 0 && (
                   <span
                     className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ml-1.5 ${
                       isActive
@@ -146,10 +149,10 @@ export function TrainerSidebar({
                         : "bg-[var(--btn-primary-bg)] text-white border border-[var(--accent-soft)]/25"
                     }`}
                   >
-                    {item.badge}
+                    {badgeCount}
                   </span>
                 )}
-                {isCollapsed && item.badge !== undefined && item.badge > 0 && (
+                {isCollapsed && badgeCount !== undefined && badgeCount > 0 && (
                   <span
                     className="absolute right-2.5 top-2 size-2 rounded-full bg-[var(--accent-soft)]"
                     aria-hidden="true"

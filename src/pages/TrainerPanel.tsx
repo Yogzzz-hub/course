@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { readCrmSession } from "../utils/authSession";
+import { createInitialTrainerFallback } from "../data/trainerFallbackData";
 import {
   trainerApi,
   TrainerSidebar,
@@ -83,6 +84,16 @@ export default function TrainerPanel() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setMobileSidebarOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const loadSnapshot = async () => {
     setLoading(true);
     setLoadError(null);
@@ -97,7 +108,16 @@ export default function TrainerPanel() {
       setAnnouncements(snapshot.announcements);
       if (snapshot.batches.length > 0) setSelectedBatchForAttendance(snapshot.batches[0].code);
     } catch (err) {
-      setLoadError(err instanceof Error ? err.message : "Could not load trainer data from the database.");
+      console.warn("[TrainerPanel] Database offline, loaded offline fallback dataset:", err);
+      const fallback = createInitialTrainerFallback();
+      setStats(fallback.stats);
+      setBatches(fallback.batches);
+      setSchedule(fallback.schedule);
+      setRosterMap(fallback.rosterMap);
+      setAssignments(fallback.assignments);
+      setDoubts(fallback.doubts);
+      setAnnouncements(fallback.announcements);
+      if (fallback.batches.length > 0) setSelectedBatchForAttendance(fallback.batches[0].code);
     } finally {
       setLoading(false);
     }
@@ -187,6 +207,9 @@ export default function TrainerPanel() {
       });
   };
 
+  const pendingAssignmentsCount = assignments.filter((a) => a.status === "PENDING_REVIEW").length;
+  const pendingDoubtsCount = doubts.filter((d) => d.status === "WAITING").length;
+
   return (
     <div
       className="trainer-workspace manager-workspace min-h-screen flex flex-col md:flex-row transition-colors duration-200"
@@ -202,6 +225,10 @@ export default function TrainerPanel() {
           activeTab={activeTab}
           onSelectTab={setActiveTab}
           onLogout={handleLogout}
+          badges={{
+            assignments: pendingAssignmentsCount,
+            doubts: pendingDoubtsCount,
+          }}
         />
       </div>
 
@@ -230,6 +257,10 @@ export default function TrainerPanel() {
               onLogout={handleLogout}
               onClose={() => setMobileSidebarOpen(false)}
               isMobileDrawer={true}
+              badges={{
+                assignments: pendingAssignmentsCount,
+                doubts: pendingDoubtsCount,
+              }}
             />
           </div>
         </div>

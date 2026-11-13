@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { CheckCircle2, AlertCircle, ShieldCheck } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { CheckCircle2, AlertCircle, ShieldCheck, X } from "lucide-react";
 import type { Admission } from "./types";
 import { Drawer } from "./Drawer";
 import { ResponsiveTable } from "./ResponsiveTable";
@@ -14,6 +14,28 @@ export function AdmissionsView({
   onUpdateAdmission: (updated: Admission) => void;
 }) {
   const [selectedAdmission, setSelectedAdmission] = useState<Admission | null>(null);
+
+  // Staging New Enrolment Modal State
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [candidateName, setCandidateName] = useState("");
+  const [candidateEmail, setCandidateEmail] = useState("");
+  const [candidatePhone, setCandidatePhone] = useState("");
+  const [candidateCourse, setCandidateCourse] = useState("Python Full Stack");
+  const [candidateBatch, setCandidateBatch] = useState("PFS-2026-A");
+  const [candidateFeeStatus, setCandidateFeeStatus] = useState<
+    "1st Installment Paid" | "Full Payment Verified" | "Installment Due"
+  >("1st Installment Paid");
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsCreateModalOpen(false);
+        setSelectedAdmission(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const handleApprove = (adm: Admission) => {
     // TODO: Connect to backend API: POST /api/admissions/[id]/approve
@@ -33,12 +55,38 @@ export function AdmissionsView({
   };
 
   const handleCreateEnrolment = () => {
-    // TODO: Connect to backend API: POST /api/admissions
+    setIsCreateModalOpen(true);
+  };
+
+  const handleCreateEnrolmentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!candidateName.trim() || !candidateEmail.trim()) return;
+
+    const newAdm: Admission = {
+      id: `ADM-${Date.now().toString().slice(-4)}`,
+      registrationNumber: `REG-${Math.floor(1000 + Math.random() * 9000)}`,
+      studentName: candidateName.trim(),
+      email: candidateEmail.trim(),
+      phone: candidatePhone.trim() || "+91 98765 00000",
+      course: candidateCourse,
+      batch: candidateBatch,
+      feeStatus: candidateFeeStatus,
+      agreementSigned: candidateFeeStatus === "Full Payment Verified",
+      enrolledDate: "Today",
+      status: "PENDING_VERIFICATION",
+    };
+
+    onUpdateAdmission(newAdm);
     onAddToast({
-      type: "info",
-      title: "New Enrolment Staged",
-      message: "Ready to capture candidate documents and fee schedule.",
+      type: "success",
+      title: "Enrolment Staged",
+      message: `${newAdm.studentName} registered for ${newAdm.course} (${newAdm.batch}).`,
     });
+
+    setIsCreateModalOpen(false);
+    setCandidateName("");
+    setCandidateEmail("");
+    setCandidatePhone("");
   };
 
   return (
@@ -272,6 +320,182 @@ export function AdmissionsView({
           </div>
         )}
       </Drawer>
+
+      {/* Stage New Enrolment Modal */}
+      {isCreateModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+        >
+          <div
+            className="relative w-full max-w-lg rounded-2xl border p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95"
+            style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
+          >
+            <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: "var(--border)" }}>
+              <div>
+                <span className="text-[10px] font-mono font-bold uppercase" style={{ color: "var(--accent)" }}>
+                  Admissions Console
+                </span>
+                <h3 className="text-base font-bold" style={{ color: "var(--text)" }}>
+                  Stage Candidate Enrolment
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCreateModalOpen(false)}
+                className="rounded-lg p-2 text-stone-500 hover:text-stone-900 transition cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateEnrolmentSubmit} className="space-y-3 text-xs">
+              <div>
+                <label className="font-semibold block mb-1" style={{ color: "var(--text)" }}>
+                  Student Full Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Vikram Malhotra"
+                  value={candidateName}
+                  onChange={(e) => setCandidateName(e.target.value)}
+                  className="w-full p-2.5 rounded-lg border outline-none text-xs"
+                  style={{
+                    backgroundColor: "var(--bg-secondary)",
+                    borderColor: "var(--border)",
+                    color: "var(--text)",
+                  }}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold block mb-1" style={{ color: "var(--text)" }}>
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="student@example.com"
+                    value={candidateEmail}
+                    onChange={(e) => setCandidateEmail(e.target.value)}
+                    className="w-full p-2.5 rounded-lg border outline-none text-xs"
+                    style={{
+                      backgroundColor: "var(--bg-secondary)",
+                      borderColor: "var(--border)",
+                      color: "var(--text)",
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1" style={{ color: "var(--text)" }}>
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="+91 98765 43210"
+                    value={candidatePhone}
+                    onChange={(e) => setCandidatePhone(e.target.value)}
+                    className="w-full p-2.5 rounded-lg border outline-none text-xs"
+                    style={{
+                      backgroundColor: "var(--bg-secondary)",
+                      borderColor: "var(--border)",
+                      color: "var(--text)",
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold block mb-1" style={{ color: "var(--text)" }}>
+                    Enrolled Course
+                  </label>
+                  <select
+                    value={candidateCourse}
+                    onChange={(e) => setCandidateCourse(e.target.value)}
+                    className="w-full p-2.5 rounded-lg border outline-none text-xs cursor-pointer"
+                    style={{
+                      backgroundColor: "var(--bg-secondary)",
+                      borderColor: "var(--border)",
+                      color: "var(--text)",
+                    }}
+                  >
+                    <option value="Python Full Stack">Python Full Stack</option>
+                    <option value="Full-Stack App Development">Full-Stack App Development</option>
+                    <option value="Django & Cloud APIs">Django & Cloud APIs</option>
+                    <option value="React & Next.js Architecture">React & Next.js Architecture</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1" style={{ color: "var(--text)" }}>
+                    Allocated Cohort Batch
+                  </label>
+                  <select
+                    value={candidateBatch}
+                    onChange={(e) => setCandidateBatch(e.target.value)}
+                    className="w-full p-2.5 rounded-lg border outline-none text-xs cursor-pointer"
+                    style={{
+                      backgroundColor: "var(--bg-secondary)",
+                      borderColor: "var(--border)",
+                      color: "var(--text)",
+                    }}
+                  >
+                    <option value="PFS-2026-A">PFS-2026-A (Weekdays)</option>
+                    <option value="FSA-2026-B">FSA-2026-B (Weekends)</option>
+                    <option value="DCA-2026-C">DCA-2026-C (Morning)</option>
+                    <option value="RNA-2026-D">RNA-2026-D (Evening)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="font-semibold block mb-1" style={{ color: "var(--text)" }}>
+                  Initial Tuition State
+                </label>
+                <select
+                  value={candidateFeeStatus}
+                  onChange={(e) =>
+                    setCandidateFeeStatus(
+                      e.target.value as "1st Installment Paid" | "Full Payment Verified" | "Installment Due"
+                    )
+                  }
+                  className="w-full p-2.5 rounded-lg border outline-none text-xs cursor-pointer"
+                  style={{
+                    backgroundColor: "var(--bg-secondary)",
+                    borderColor: "var(--border)",
+                    color: "var(--text)",
+                  }}
+                >
+                  <option value="1st Installment Paid">1st Installment Paid</option>
+                  <option value="Full Payment Verified">Full Payment Verified</option>
+                  <option value="Installment Due">Installment Due</option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t" style={{ borderColor: "var(--border)" }}>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="px-4 py-2 rounded-lg border font-semibold text-xs hover:bg-black/5 dark:hover:bg-white/5 transition"
+                  style={{ borderColor: "var(--border)", color: "var(--text)" }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg font-semibold text-xs shadow-xs hover:opacity-90 transition"
+                  style={{ backgroundColor: "var(--accent)", color: "var(--accent-contrast)" }}
+                >
+                  Confirm Candidate Enrolment
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

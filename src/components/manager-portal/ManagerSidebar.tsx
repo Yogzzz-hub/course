@@ -27,11 +27,11 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "leads", label: "Leads & enquiries", icon: Users, badge: 14 },
-  { id: "admissions", label: "Admissions", icon: UserCheck, badge: 3 },
+  { id: "leads", label: "Leads & enquiries", icon: Users },
+  { id: "admissions", label: "Admissions", icon: UserCheck },
   { id: "cohorts", label: "Cohorts & seats", icon: GraduationCap },
   { id: "schedule", label: "Class schedule", icon: CalendarDays },
-  { id: "attendance", label: "Attendance alerts", icon: AlertCircle, badge: 4 },
+  { id: "attendance", label: "Attendance alerts", icon: AlertCircle },
   { id: "fees", label: "Fees & payments", icon: CreditCard },
   { id: "counsellors", label: "Counsellors", icon: Headphones },
   { id: "announcements", label: "Announcements", icon: Megaphone },
@@ -44,12 +44,14 @@ export function ManagerSidebar({
   onLogout,
   onClose,
   isMobileDrawer = false,
+  badges,
 }: {
   activeTab: ManagerNavTab;
   onSelectTab: (tab: ManagerNavTab) => void;
   onLogout: () => void;
   onClose?: () => void;
   isMobileDrawer?: boolean;
+  badges?: Partial<Record<ManagerNavTab, number>>;
 }) {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -119,6 +121,7 @@ export function ManagerSidebar({
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
+            const badgeCount = badges?.[item.id] ?? item.badge;
             return (
               <button
                 key={item.id}
@@ -146,7 +149,7 @@ export function ManagerSidebar({
                   <span className={isCollapsed ? "sr-only" : "truncate"}>{item.label}</span>
                 </div>
 
-                {!isCollapsed && item.badge !== undefined && item.badge > 0 && (
+                {!isCollapsed && badgeCount !== undefined && badgeCount > 0 && (
                   <span
                     className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ml-1.5 ${
                       isActive
@@ -154,10 +157,10 @@ export function ManagerSidebar({
                         : "bg-[var(--btn-primary-bg)] text-white border border-[var(--accent-soft)]/25"
                     }`}
                   >
-                    {item.badge}
+                    {badgeCount}
                   </span>
                 )}
-                {isCollapsed && item.badge !== undefined && item.badge > 0 && (
+                {isCollapsed && badgeCount !== undefined && badgeCount > 0 && (
                   <span
                     className="absolute right-2.5 top-2 size-2 rounded-full bg-[var(--accent-soft)]"
                     aria-hidden="true"
