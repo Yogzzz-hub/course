@@ -1,6 +1,7 @@
 import {
   getTrainerPool,
   getTrainerSnapshot,
+  resolveTrainerProfileId,
   saveAttendanceRecords,
   gradeSubmissionRecord,
   acceptDoubtRecord,
@@ -11,9 +12,27 @@ function jsonRes(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 }
 
-async function primaryTrainerProfileId(pool: ReturnType<typeof getTrainerPool>): Promise<string | null> {
-  const { rows } = await pool.query('SELECT id FROM "TrainerProfile" ORDER BY "createdAt" ASC LIMIT 1');
-  return rows.length ? rows[0].id : null;
+function resolveTrainerIdentity(request: Request): { email?: string; id?: string } | null {
+  const url = new URL(request.url);
+  const paramEmail = url.searchParams.get("trainerEmail") || url.searchParams.get("email");
+  if (paramEmail) return { email: paramEmail };
+
+  const crmHeader = request.headers.get("x-crm-session");
+  if (crmHeader) {
+    try {
+      const parsed = JSON.parse(crmHeader);
+      if (parsed.email) return { email: parsed.email, id: parsed.userId };
+    } catch {}
+  }
+  const cookie = request.headers.get("cookie") || "";
+  const match = cookie.match(/(?:^|;\s*)crm_session=([^;]*)/);
+  if (match) {
+    try {
+      const parsed = JSON.parse(decodeURIComponent(match[1]));
+      if (parsed.email) return { email: parsed.email, id: parsed.userId };
+    } catch {}
+  }
+  return null;
 }
 
 export async function handleTrainerRequest(request: Request): Promise<Response> {
@@ -23,12 +42,13 @@ export async function handleTrainerRequest(request: Request): Promise<Response> 
 
   try {
     const pool = getTrainerPool();
+    const identity = resolveTrainerIdentity(request);
+    const trainerId = await resolveTrainerProfileId(pool, identity);
 
     if (path === "/" && method === "GET") {
-      return jsonRes(await getTrainerSnapshot(pool));
+      return jsonRes(await getTrainerSnapshot(pool, trainerId));
     }
 
-    const trainerId = await primaryTrainerProfileId(pool);
     if (!trainerId) return jsonRes({ error: "No trainer profile exists yet." }, 404);
 
     if (path === "/attendance" && method === "POST") {

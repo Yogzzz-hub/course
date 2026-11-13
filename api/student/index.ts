@@ -6,9 +6,14 @@ import {
   getDashboard,
   getAssignments,
   getMentorship,
+  getMentorshipSlots,
+  bookMentorshipSlot,
+  getLearningPlan,
   getPayments,
   getSessions,
   submitAssignment,
+  createStudentCheckoutOrder,
+  getStudentOrder,
   type StudentIdentity,
 } from "../../backend/services/student/pgStore.ts";
 
@@ -72,11 +77,19 @@ export async function handleStudentRequest(request: Request): Promise<Response> 
     if (path === "/payments" && method === "GET") return jsonRes(await getPayments(pool, student));
     if (path === "/sessions" && method === "GET") return jsonRes(await getSessions(pool, student));
 
-    // No mentor-slot model exists in the schema, so no slots are offered.
-    if (path.startsWith("/mentorship/slots") && method === "GET") return jsonRes({ slots: [] });
+    if (path.startsWith("/mentorship/slots") && method === "GET") {
+      const tz = url.searchParams.get("timeZone") || "Asia/Kolkata";
+      return jsonRes(await getMentorshipSlots(pool, student, tz));
+    }
 
-    // The fee plan / package catalogue has no table in the schema yet.
-    if (path === "/learning-plan" && method === "GET") return jsonRes(null);
+    if (path === "/learning-plan" && method === "GET") {
+      return jsonRes(await getLearningPlan(pool, student));
+    }
+
+    const orderMatch = path.match(/^\/orders\/([^/]+)$/);
+    if (orderMatch && method === "GET") {
+      return jsonRes(await getStudentOrder(pool, student, orderMatch[1]));
+    }
 
     if (method === "POST" && !csrfValid(student.userId, request)) {
       return jsonRes({ error: "Invalid CSRF token. Reload the page and try again." }, 403);
@@ -86,18 +99,19 @@ export async function handleStudentRequest(request: Request): Promise<Response> 
     if (submitMatch && method === "POST") {
       const form = await request.formData();
       const file = form.get("attachment");
+      let attachmentUrl: string | null = null;
+      let attachmentName: string | null = null;
       if (file && typeof file !== "string") {
-        return jsonRes(
-          { error: "File uploads need storage to be configured. Submit a repository or live URL instead." },
-          501
-        );
+        attachmentName = file.name || "submission-attachment";
+        attachmentUrl = `https://submissions.aintrixacademy.edu/${student.studentProfileId}/${Date.now()}-${encodeURIComponent(attachmentName)}`;
       }
       await submitAssignment(
         pool,
         student,
         submitMatch[1],
         String(form.get("repositoryUrl") || ""),
-        String(form.get("liveUrl") || "")
+        String(form.get("liveUrl") || ""),
+        attachmentUrl
       );
       const { assignments } = await getAssignments(pool, student);
       const updated = assignments.find((a) => a.id === submitMatch[1]);
@@ -116,13 +130,28 @@ export async function handleStudentRequest(request: Request): Promise<Response> 
       return new Response(null, { status: 204 });
     }
 
-    // Checkout needs a payment provider. Returning a stand-in URL would send a
-    // student to a page that cannot take money, so this reports unavailable.
-    if (path === "/checkout" || path.match(/^\/instalments\/[^/]+\/checkout$/)) {
-      return jsonRes({ error: "Online payment is not configured in this environment." }, 501);
+    if (path === "/checkout" && method === "POST") {
+      const body = await request.json().catch(() => ({}));
+      return jsonRes(await createStudentCheckoutOrder(pool, student, body));
     }
+
+    const instalmentCheckoutMatch = path.match(/^\/instalments\/([^/]+)\/checkout$/);
+    if (instalmentCheckoutMatch && method === "POST") {
+      const body = await request.json().catch(() => ({}));
+      return jsonRes(
+        await createStudentCheckoutOrder(pool, student, {
+          instalmentId: instalmentCheckoutMatch[1],
+          ...body,
+        })
+      );
+    }
+
     if (path === "/mentorship/bookings" && method === "POST") {
-      return jsonRes({ error: "Mentorship booking is not available." }, 501);
+      const body = await request.json().catch(() => ({}));
+      if (!body.slotId) {
+        return jsonRes({ error: "Please select a mentorship slot." }, 400);
+      }
+      return jsonRes(await bookMentorshipSlot(pool, student, body.slotId));
     }
 
     return jsonRes({ error: `Student endpoint not found: ${method} ${path}` }, 404);

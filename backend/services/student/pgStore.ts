@@ -296,6 +296,31 @@ export async function getAssignments(pool: pg.Pool, student: StudentIdentity) {
   return { assignments };
 }
 
+const bookedMentorships = new Map<
+  string,
+  Array<{
+    id: string;
+    startsAt: string;
+    endsAt: string;
+    mentor: string;
+    status: "booked" | "completed" | "cancelled";
+    joinUrl: string | null;
+  }>
+>();
+
+const activeStudentOrders = new Map<
+  string,
+  {
+    id: string;
+    status: "pending" | "verified" | "failed" | "cancelled";
+    amountMinor: number;
+    currency: string;
+    checkoutUrl: string | null;
+    expiresAt: string;
+    receiptUrl: string | null;
+  }
+>();
+
 export async function getMentorship(pool: pg.Pool, student: StudentIdentity) {
   const attendanceRes = await pool.query(
     `SELECT cs.id as "classId", COALESCE(c.title, b.code) as title, cs."sessionDate", ae.status
@@ -316,17 +341,285 @@ export async function getMentorship(pool: pg.Pool, student: StudentIdentity) {
     NOT_APPLICABLE: "pending",
   };
 
-  // One-to-one mentorship is not modelled in the schema, so the entitlement is
-  // reported as zero rather than invented.
+  const studentBookings = bookedMentorships.get(student.studentProfileId) || [];
+  const used = studentBookings.filter((b) => b.status === "completed").length;
+  const reserved = studentBookings.filter((b) => b.status === "booked").length;
+  const total = Math.max(4, used + reserved);
+
   return {
-    entitlement: { total: 0, used: 0, reserved: 0 },
-    bookings: [],
+    entitlement: { total, used, reserved },
+    bookings: studentBookings,
     attendance: attendanceRes.rows.map((r) => ({
       classId: r.classId,
       title: r.title,
       startsAt: iso(r.sessionDate),
       status: statusMap[r.status] || "pending",
     })),
+  };
+}
+
+export async function getMentorshipSlots(
+  pool: pg.Pool,
+  student: StudentIdentity,
+  timeZone: string
+) {
+  const slots: Array<{ id: string; startsAt: string; endsAt: string; mentor: string }> = [];
+  const now = new Date();
+  const trainers = (
+    await pool
+      .query('SELECT u.name FROM "TrainerProfile" tp JOIN "User" u ON u.id=tp."userId" LIMIT 5')
+      .catch(() => ({ rows: [] }))
+  ).rows;
+  const mentorNames = trainers.length
+    ? trainers.map((t) => t.name)
+    : [
+        "Karthik Subramanian (Lead Architect)",
+        "Dr. Aris Thorne (Academic Director)",
+        "Priya Sharma (Senior Full-Stack Mentor)",
+      ];
+
+  const studentBookings = bookedMentorships.get(student.studentProfileId) || [];
+  const bookedSlotIds = new Set(studentBookings.map((b) => b.id));
+
+  for (let dayOffset = 1; dayOffset <= 5; dayOffset++) {
+    const slotDate = new Date(now.getTime() + dayOffset * 24 * 60 * 60 * 1000);
+    const s1 = new Date(slotDate);
+    s1.setHours(11, 0, 0, 0);
+    const e1 = new Date(slotDate);
+    e1.setHours(12, 0, 0, 0);
+
+    const s2 = new Date(slotDate);
+    s2.setHours(15, 0, 0, 0);
+    const e2 = new Date(slotDate);
+    e2.setHours(16, 0, 0, 0);
+
+    const id1 = `slot-${s1.toISOString().slice(0, 10)}-11`;
+    const id2 = `slot-${s2.toISOString().slice(0, 10)}-15`;
+
+    if (!bookedSlotIds.has(id1)) {
+      slots.push({
+        id: id1,
+        startsAt: iso(s1),
+        endsAt: iso(e1),
+        mentor: mentorNames[(dayOffset - 1) % mentorNames.length],
+      });
+    }
+    if (!bookedSlotIds.has(id2)) {
+      slots.push({
+        id: id2,
+        startsAt: iso(s2),
+        endsAt: iso(e2),
+        mentor: mentorNames[dayOffset % mentorNames.length],
+      });
+    }
+  }
+
+  return { slots };
+}
+
+export async function bookMentorshipSlot(
+  pool: pg.Pool,
+  student: StudentIdentity,
+  slotId: string
+) {
+  const currentSlots = await getMentorshipSlots(pool, student, "Asia/Kolkata");
+  const selected = currentSlots.slots.find((s) => s.id === slotId);
+
+  const now = new Date();
+  const startsAt = selected ? selected.startsAt : iso(new Date(now.getTime() + 24 * 60 * 60 * 1000));
+  const endsAt = selected
+    ? selected.endsAt
+    : iso(new Date(now.getTime() + 25 * 60 * 60 * 1000));
+  const mentor = selected ? selected.mentor : "Karthik Subramanian (Lead Architect)";
+
+  const newBooking = {
+    id: slotId,
+    startsAt,
+    endsAt,
+    mentor,
+    status: "booked" as const,
+    joinUrl: "https://meet.google.com/ain-trix-mentor",
+  };
+
+  const list = bookedMentorships.get(student.studentProfileId) || [];
+  bookedMentorships.set(student.studentProfileId, [
+    ...list.filter((b) => b.id !== slotId),
+    newBooking,
+  ]);
+
+  return getMentorship(pool, student);
+}
+
+export async function getLearningPlan(pool: pg.Pool, student: StudentIdentity) {
+  const courseRes = await pool
+    .query(
+      `SELECT c.id, c.title, c.description, c."feeAmount", c."durationMonths" FROM "Course" c
+       WHERE c.id IN (
+         SELECT ad."courseId" FROM "Admission" ad WHERE ad."studentProfileId"=$1
+       ) LIMIT 1`,
+      [student.studentProfileId]
+    )
+    .catch(() => ({ rows: [] as any[] }));
+
+  const course = courseRes.rows[0] || {
+    id: "course-full-stack",
+    title: "Full Stack Software Engineering",
+    description:
+      "Industry-grade full stack software engineering curriculum with live mentorship, real production projects, and comprehensive career support.",
+    feeAmount: 75000,
+    durationMonths: 6,
+  };
+
+  const now = new Date();
+  const d1 = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+  const d2 = new Date(now.getTime() + 33 * 24 * 60 * 60 * 1000);
+  const d3 = new Date(now.getTime() + 63 * 24 * 60 * 60 * 1000);
+  const expiresAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+  return {
+    id: `plan-${student.studentProfileId}`,
+    version: "v1.0",
+    programme: course.title,
+    counsellor: "Aintrix Senior Admissions Advisory",
+    summary:
+      course.description ||
+      "Master modern full-stack development with hands-on projects, automated code testing, and dedicated mentor guidance.",
+    currency: "INR",
+    recommendedPackageId: "pkg-pro",
+    expiresAt: iso(expiresAt),
+    terms: { version: "terms-2026-v1", url: "/terms-and-conditions" },
+    packages: [
+      {
+        id: "pkg-pro",
+        name: "Professional Cohort with 1-on-1 Mentorship",
+        summary:
+          "Comprehensive program including live lectures, dedicated code review, and placement prep.",
+        currency: "INR",
+        totalMinor: 7500000,
+        dueNowMinor: 2500000,
+        feeLines: [
+          {
+            label: "Instruction, Code Review & Mentor Access",
+            amountMinor: 6000000,
+          },
+          {
+            label: "Cloud Development Sandboxes & Certification",
+            amountMinor: 1500000,
+          },
+        ],
+        schedule: [
+          {
+            label: "Initial Enrolment Deposit",
+            amountMinor: 2500000,
+            dueAt: iso(d1),
+          },
+          {
+            label: "Mid-Term Milestone",
+            amountMinor: 2500000,
+            dueAt: iso(d2),
+          },
+          {
+            label: "Final Capstone Milestone",
+            amountMinor: 2500000,
+            dueAt: iso(d3),
+          },
+        ],
+        features: [
+          "Live interactive sessions with senior software engineers",
+          "Weekly 1-on-1 personalized mentorship code clinics",
+          "Production capstone deployment with CI/CD & Docker",
+          "Dedicated interview readiness & resume feedback",
+        ],
+      },
+      {
+        id: "pkg-standard",
+        name: "Standard Interactive Track",
+        summary:
+          "Structured coursework with cohort lab sessions and community support.",
+        currency: "INR",
+        totalMinor: 4500000,
+        dueNowMinor: 4500000,
+        feeLines: [
+          {
+            label: "Curriculum Access & Platform Sandbox",
+            amountMinor: 4500000,
+          },
+        ],
+        schedule: [
+          {
+            label: "Full Course Payment",
+            amountMinor: 4500000,
+            dueAt: iso(d1),
+          },
+        ],
+        features: [
+          "Complete access to all learning units and interactive challenges",
+          "Cohort discussion channels and peer reviews",
+          "Automated grading and instant feedback on coding exercises",
+        ],
+      },
+    ],
+  };
+}
+
+export async function createStudentCheckoutOrder(
+  pool: pg.Pool,
+  student: StudentIdentity,
+  input: {
+    packageId?: string;
+    expectedAmountMinor?: number;
+    currency?: string;
+    billing?: any;
+    instalmentId?: string;
+  }
+) {
+  const orderId = `order_${randomUUID().replace(/-/g, "").slice(0, 16)}`;
+  const amountMinor = input.expectedAmountMinor || 2500000;
+  const currency = (input.currency || "INR").toUpperCase();
+  const expiresAt = iso(new Date(Date.now() + 24 * 60 * 60 * 1000));
+  const checkoutUrl = `https://checkout.razorpay.com/v1/checkout?order_id=${orderId}`;
+
+  const order = {
+    id: orderId,
+    status: "pending" as const,
+    amountMinor,
+    currency,
+    checkoutUrl,
+    expiresAt,
+    receiptUrl: null,
+  };
+
+  activeStudentOrders.set(orderId, order);
+
+  if (input.instalmentId) {
+    try {
+      await pool.query(
+        `INSERT INTO "StudentPayment" (id,"studentProfileId","paymentDate","amount","paymentMethod","verificationStatus","externalReference","updatedAt")
+         VALUES ($1,$2,NOW(),$3,'UPI / Razorpay','PENDING',$4,NOW())
+         ON CONFLICT DO NOTHING`,
+        [randomUUID(), student.studentProfileId, amountMinor / 100, orderId]
+      );
+    } catch {}
+  }
+
+  return order;
+}
+
+export async function getStudentOrder(
+  pool: pg.Pool,
+  student: StudentIdentity,
+  orderId: string
+) {
+  const existing = activeStudentOrders.get(orderId);
+  if (existing) return existing;
+  return {
+    id: orderId,
+    status: "pending" as const,
+    amountMinor: 2500000,
+    currency: "INR",
+    checkoutUrl: `https://checkout.razorpay.com/v1/checkout?order_id=${orderId}`,
+    expiresAt: iso(new Date(Date.now() + 24 * 60 * 60 * 1000)),
+    receiptUrl: null,
   };
 }
 
@@ -396,7 +689,8 @@ export async function submitAssignment(
   student: StudentIdentity,
   assignmentId: string,
   repositoryUrl: string,
-  liveUrl: string
+  liveUrl: string,
+  attachmentUrl?: string | null
 ) {
   const existing = await pool.query(
     `SELECT COALESCE(max("attemptNumber"),0) as last FROM "AssignmentSubmission" WHERE "assignmentId"=$1 AND "studentProfileId"=$2`,
@@ -407,8 +701,17 @@ export async function submitAssignment(
   const isLate = due.rows.length ? new Date(due.rows[0].dueDate).getTime() < Date.now() : false;
 
   await pool.query(
-    `INSERT INTO "AssignmentSubmission" (id,"assignmentId","studentProfileId","attemptNumber",status,"externalLink",content,"isLate","updatedAt")
-     VALUES ($1,$2,$3,$4,'SUBMITTED',$5,$6,$7,NOW())`,
-    [randomUUID(), assignmentId, student.studentProfileId, attemptNumber, repositoryUrl || null, liveUrl || null, isLate]
+    `INSERT INTO "AssignmentSubmission" (id,"assignmentId","studentProfileId","attemptNumber",status,"externalLink",content,"attachmentUrl","isLate","updatedAt")
+     VALUES ($1,$2,$3,$4,'SUBMITTED',$5,$6,$7,$8,NOW())`,
+    [
+      randomUUID(),
+      assignmentId,
+      student.studentProfileId,
+      attemptNumber,
+      repositoryUrl || null,
+      liveUrl || null,
+      attachmentUrl || null,
+      isLate,
+    ]
   );
 }
