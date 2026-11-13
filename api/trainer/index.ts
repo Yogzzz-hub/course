@@ -84,57 +84,36 @@ const inMemoryTrainerStore = {
       date: "Today",
       time: "10:00 AM - 12:00 PM",
       duration: "2 hours",
-      roomLink: "https://meet.google.com/ain-trix-dev",
-      status: "LIVE" as const,
+      room: "Lab 3 / Zoom Room Alpha",
+      attendees: 28,
+      status: "SCHEDULED" as const,
+      joinUrl: "https://zoom.us/j/sample-aintrix-class",
     },
     {
       id: "sch-02",
       batchCode: "CLOUD-2026-A1",
       batchName: "AWS & DevOps Engineering",
-      topic: "Kubernetes Ingress Controllers & Cert-Manager",
+      topic: "Kubernetes StatefulSets, Persistent Volumes & Helm Charts",
       date: "Tomorrow",
-      time: "2:00 PM - 4:00 PM",
+      time: "02:00 PM - 04:00 PM",
       duration: "2 hours",
-      roomLink: "https://meet.google.com/ain-trix-cloud",
+      room: "Lab 1 / Zoom Room Beta",
+      attendees: 22,
       status: "UPCOMING" as const,
-    },
-    {
-      id: "sch-03",
-      batchCode: "PY-2026-B1",
-      batchName: "Python Full Stack Mastery",
-      topic: "Celery Background Workers with Redis Broker",
-      date: "15 Nov 2026",
-      time: "10:00 AM - 12:00 PM",
-      duration: "2 hours",
-      roomLink: "https://meet.google.com/ain-trix-dev",
-      status: "UPCOMING" as const,
+      joinUrl: "https://zoom.us/j/sample-aintrix-cloud",
     },
   ],
-  rosterMap: {
-    "PY-2026-B1": [
-      { studentId: "stu-01", name: "Aryan Verma", rollNo: "PY-001", status: "PRESENT" as const },
-      { studentId: "stu-02", name: "Sneha Rao", rollNo: "PY-002", status: "PRESENT" as const },
-      { studentId: "stu-03", name: "Karthik Nair", rollNo: "PY-003", status: "PRESENT" as const },
-      { studentId: "stu-04", name: "Ananya Joshi", rollNo: "PY-004", status: "ABSENT" as const, notes: "Medical leave notified" },
-      { studentId: "stu-05", name: "Rohan Mehta", rollNo: "PY-005", status: "PRESENT" as const },
-      { studentId: "stu-06", name: "Pooja Kulkarni", rollNo: "PY-006", status: "PRESENT" as const },
-    ],
-    "CLOUD-2026-A1": [
-      { studentId: "stu-07", name: "Vikram Sengupta", rollNo: "CL-001", status: "PRESENT" as const },
-      { studentId: "stu-08", name: "Tanvi Saxena", rollNo: "CL-002", status: "PRESENT" as const },
-      { studentId: "stu-09", name: "Aditya Roy", rollNo: "CL-003", status: "ABSENT" as const },
-    ],
-  },
+  rosterMap: {} as Record<string, any[]>,
   assignments: [
     {
       id: "asg-01",
       studentName: "Aryan Verma",
       studentEmail: "aryan.v@example.com",
       batchCode: "PY-2026-B1",
-      assignmentTitle: "Production REST API with JWT Auth & Rate Limiting",
-      submittedAt: "Today, 11:20 AM",
-      status: "PENDING_REVIEW" as const,
-      fileUrl: "https://github.com/example/aryan-rest-api",
+      assignmentTitle: "E-Commerce Microservice Schema & Migrations",
+      submittedAt: "Today, 09:30 AM",
+      status: "PENDING" as const,
+      fileUrl: "https://github.com/example/aryan-ecom-backend",
       maxScore: 100,
     },
     {
@@ -142,9 +121,9 @@ const inMemoryTrainerStore = {
       studentName: "Sneha Rao",
       studentEmail: "sneha.r@example.com",
       batchCode: "PY-2026-B1",
-      assignmentTitle: "Production REST API with JWT Auth & Rate Limiting",
-      submittedAt: "Today, 09:45 AM",
-      status: "PENDING_REVIEW" as const,
+      assignmentTitle: "Django REST Framework ViewSets & JWT",
+      submittedAt: "Today, 08:45 AM",
+      status: "PENDING" as const,
       fileUrl: "https://github.com/example/sneha-rest-api",
       maxScore: 100,
     },
@@ -290,7 +269,7 @@ export async function handleTrainerRequest(request: Request): Promise<Response> 
         targetAsg.status = "GRADED";
         targetAsg.score = body.score;
         targetAsg.feedback = body.feedback;
-        inMemoryTrainerStore.stats.pendingReviews = inMemoryTrainerStore.assignments.filter((a) => a.status === "PENDING_REVIEW").length;
+        inMemoryTrainerStore.stats.pendingReviews = inMemoryTrainerStore.assignments.filter((a) => (a.status as string) === "PENDING" || (a.status as string) === "PENDING_REVIEW").length;
       }
       return jsonRes({ ok: true });
     }

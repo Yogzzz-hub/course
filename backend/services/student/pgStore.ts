@@ -32,24 +32,18 @@ export interface StudentIdentity {
   registrationNumber: string;
 }
 
-/** Resolves the signed-in student from their email; falls back to the first student on record. */
+/** Resolves the signed-in student from their email. Returns null if unauthenticated. */
 export async function resolveStudent(pool: pg.Pool, email?: string | null): Promise<StudentIdentity | null> {
-  const byEmail = email
-    ? await pool.query(
-        `SELECT sp.id as "studentProfileId", u.id as "userId", u.name, u.email, sp."registrationNumber"
-         FROM "StudentProfile" sp JOIN "User" u ON u.id=sp."userId"
-         WHERE lower(u.email)=lower($1) LIMIT 1`,
-        [email]
-      )
-    : { rows: [] as any[] };
-  if (byEmail.rows.length) return byEmail.rows[0];
-
-  const first = await pool.query(
+  if (!email || !email.trim()) return null;
+  const byEmail = await pool.query(
     `SELECT sp.id as "studentProfileId", u.id as "userId", u.name, u.email, sp."registrationNumber"
      FROM "StudentProfile" sp JOIN "User" u ON u.id=sp."userId"
-     ORDER BY sp."createdAt" ASC LIMIT 1`
+     WHERE lower(u.email)=lower($1) LIMIT 1`,
+    [email.trim()]
   );
-  return first.rows.length ? first.rows[0] : null;
+  if (byEmail.rows.length) return byEmail.rows[0];
+
+  return null;
 }
 
 async function activeBatchIds(pool: pg.Pool, studentProfileId: string): Promise<string[]> {

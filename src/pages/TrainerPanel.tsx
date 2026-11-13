@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { readCrmSession } from "../utils/authSession";
 import { createInitialTrainerFallback } from "../data/trainerFallbackData";
 import {
   trainerApi,
@@ -25,6 +24,7 @@ import {
 import { ToastContainer } from "../components/manager-portal/Toast";
 import { readScheduledClasses, subscribeScheduledClasses } from "../utils/classScheduleStore";
 import type { ToastMessage } from "../components/manager-portal/types";
+import { readCrmSession, isTrainerAuthorized, clearCrmSession } from "../utils/authSession";
 
 const EMPTY_STATS: TrainerStats = {
   todayClasses: 0,
@@ -124,13 +124,16 @@ export default function TrainerPanel() {
   };
 
   useEffect(() => {
+    const session = readCrmSession();
+    if (!session || !isTrainerAuthorized(session)) {
+      navigate("/login?returnTo=/trainer", { replace: true });
+      return;
+    }
     void loadSnapshot();
-  }, []);
+  }, [navigate]);
 
   const handleLogout = () => {
-    try {
-      localStorage.removeItem("crm_session");
-    } catch {}
+    clearCrmSession();
     navigate("/login");
   };
 

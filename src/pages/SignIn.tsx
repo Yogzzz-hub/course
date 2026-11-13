@@ -9,18 +9,21 @@ export default function SignInPage() {
   const isAdmin = location.pathname.includes('admin');
   const returnTo = search.get('returnTo') || search.get('returnUrl') || (isAdmin ? '/admin-panel' : '/student-panel');
 
+  const loginTarget = `/login?returnTo=${encodeURIComponent(returnTo)}`;
+
   useEffect(() => {
-    navigate(`/login?returnUrl=${encodeURIComponent(returnTo)}`, { replace: true });
-  }, [navigate, returnTo]);
+    navigate(loginTarget, { replace: true });
+  }, [navigate, loginTarget]);
 
   return (
     <PageHero
       labels={['Secure', 'Access']}
-      title="Redirecting to Portal Login…"
-      description="Taking you to the unified Aintrix Academy portal login."
+      title={isAdmin ? 'Admin sign-in' : 'Student sign-in'}
+      description="Redirecting to the central authentication portal..."
     >
       <div className="hero-actions">
-        <Button to={`/login?returnUrl=${encodeURIComponent(returnTo)}`}>Go to Sign In</Button>
+        <Button to={loginTarget}>Proceed to Sign In</Button>
+        <Button to="/contact" secondary>Contact the academy</Button>
       </div>
     </PageHero>
   );

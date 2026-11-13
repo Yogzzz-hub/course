@@ -482,3 +482,149 @@ export async function createAnnouncementRecord(
   );
   return { id, title: data.title, body: data.body, author: data.author, audience: data.audience, createdAt: fmtDate(new Date()), priority: data.priority };
 }
+
+export async function getManagerScheduledClasses(pool: pg.Pool) {
+  const { rows } = await pool.query(`
+    SELECT so.id, so."plannedDate", so."plannedStartTime", so."plannedEndTime", so.status, so.location,
+           b.code as "batchCode", c.name as "batchName", u.name as "facultyName"
+    FROM "SessionOccurrence" so
+    JOIN "Batch" b ON b.id = so."batchId"
+    JOIN "Course" c ON c.id = b."courseId"
+    LEFT JOIN "TrainerProfile" tp ON tp.id = so."trainerProfileId"
+    LEFT JOIN "User" u ON u.id = tp."userId"
+    ORDER BY so."plannedDate" DESC, so."plannedStartTime" ASC
+  `);
+  return rows.map((r) => {
+    let topic = "";
+    let roomLink = "";
+    if (r.location) {
+      try {
+        const parsed = JSON.parse(r.location);
+        topic = parsed.topic || "";
+        roomLink = parsed.roomLink || "";
+      } catch {
+        topic = r.location;
+      }
+    }
+    const plannedDateStr = r.plannedDate instanceof Date ? r.plannedDate.toISOString().slice(0, 10) : String(r.plannedDate || "").slice(0, 10);
+    return {
+      id: r.id,
+      batchCode: r.batchCode,
+      batchName: r.batchName,
+      topic: topic || `${r.batchName} Session`,
+      date: fmtDate(r.plannedDate),
+      dateIso: plannedDateStr,
+      time: `${r.plannedStartTime} - ${r.plannedEndTime}`,
+      startTime: r.plannedStartTime,
+      endTime: r.plannedEndTime,
+      facultyName: r.facultyName || "Faculty Lead",
+      roomLink: roomLink,
+      status: r.status === "HELD" ? "COMPLETED" : "UPCOMING",
+    };
+  });
+}
+
+export async function createManagerScheduledClass(
+  pool: pg.Pool,
+  data: {
+    batchCode: string;
+    topic: string;
+    dateIso: string;
+    startTime: string;
+    endTime: string;
+    roomLink?: string;
+  }
+) {
+  const batchRes = await pool.query('SELECT id, "courseId" FROM "Batch" WHERE code=$1 LIMIT 1', [data.batchCode]);
+  if (!batchRes.rows.length) throw new Error(`Batch not found for code ${data.batchCode}`);
+  const batchId = batchRes.rows[0].id;
+
+  const allocRes = await pool.query(
+    'SELECT "trainerProfileId" FROM "TrainerBatchAllocation" WHERE "batchId"=$1 ORDER BY "isPrimary" DESC LIMIT 1',
+    [batchId]
+  );
+  let trainerProfileId: string;
+  if (allocRes.rows.length) {
+    trainerProfileId = allocRes.rows[0].trainerProfileId;
+  } else {
+    const firstTrainer = await pool.query('SELECT id FROM "TrainerProfile" ORDER BY "createdAt" ASC LIMIT 1');
+    if (!firstTrainer.rows.length) throw new Error("No trainer profiles found.");
+    trainerProfileId = firstTrainer.rows[0].id;
+  }
+
+  const id = `so-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  const location = JSON.stringify({ topic: data.topic, roomLink: data.roomLink || "" });
+  const plannedDate = new Date(`${data.dateIso}T00:00:00.000Z`);
+
+  await pool.query(
+    `INSERT INTO "SessionOccurrence" (id, "batchId", "trainerProfileId", "plannedDate", "plannedStartTime", "plannedEndTime", status, location, "createdAt", "updatedAt")
+     VALUES ($1, $2, $3, $4, $5, $6, 'SCHEDULED', $7, NOW(), NOW())`,
+    [id, batchId, trainerProfileId, plannedDate, data.startTime, data.endTime, location]
+  );
+
+  return {
+    id,
+    batchCode: data.batchCode,
+    topic: data.topic,
+    dateIso: data.dateIso,
+    date: fmtDate(plannedDate),
+    startTime: data.startTime,
+    endTime: data.endTime,
+    time: `${data.startTime} - ${data.endTime}`,
+    roomLink: data.roomLink || "",
+    status: "UPCOMING",
+  };
+}
+
+export async function deleteManagerScheduledClass(pool: pg.Pool, id: string) {
+  await pool.query('DELETE FROM "SessionOccurrence" WHERE id=$1', [id]);
+}
+
+export async function createLeadRecord(
+  pool: pg.Pool,
+  data: {
+    fullName: string;
+    phone?: string;
+    email: string;
+    courseTrack?: string;
+    source?: string;
+    schedulePreference?: string;
+  }
+) {
+  const id = `lead-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  
+  let courseId: string | null = null;
+  if (data.courseTrack) {
+    const cRes = await pool.query('SELECT id FROM "Course" WHERE lower(name) LIKE lower($1) OR lower(category) LIKE lower($1) LIMIT 1', [`%${data.courseTrack}%`]);
+    if (cRes.rows.length) courseId = cRes.rows[0].id;
+  }
+  if (!courseId) {
+    const firstC = await pool.query('SELECT id FROM "Course" ORDER BY "createdAt" ASC LIMIT 1');
+    courseId = firstC.rows.length ? firstC.rows[0].id : null;
+  }
+
+  const mRes = await pool.query('SELECT id FROM "ManagerProfile" ORDER BY "createdAt" ASC LIMIT 1');
+  const assignedManagerId = mRes.rows.length ? mRes.rows[0].id : null;
+
+  const schedulePref = data.schedulePreference === "WEEKENDS" ? "WEEKENDS" : "WEEKDAYS";
+
+  await pool.query(
+    `INSERT INTO "Lead" (id, "fullName", phone, email, "courseInterestId", "schedulePreference", status, source, "consentGiven", "isLost", "assignedManagerId", "createdAt", "updatedAt")
+     VALUES ($1, $2, $3, $4, $5, $6::"ScheduleType", 'NEW', $7, true, false, $8, NOW(), NOW())`,
+    [id, data.fullName, data.phone || "—", data.email, courseId, schedulePref, data.source || "WEBSITE_CONTACT", assignedManagerId]
+  );
+
+  return {
+    id,
+    name: data.fullName,
+    phone: data.phone || "—",
+    email: data.email,
+    track: data.courseTrack || "Python Full-Stack",
+    date: fmtDate(new Date()),
+    status: "New Lead",
+    score: 55,
+    assignedCounsellor: "Admissions Team",
+    source: data.source || "WEBSITE_CONTACT",
+    notes: [],
+  };
+}

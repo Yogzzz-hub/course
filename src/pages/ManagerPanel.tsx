@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
-import { readCrmSession } from "../utils/authSession";
 import { exportToCsv } from "../utils/csvExport";
 import { createInitialManagerFallback } from "../data/managerFallbackData";
 import {
@@ -37,6 +36,7 @@ import {
   writeScheduledClasses,
   type ScheduledClassItem,
 } from "../utils/classScheduleStore";
+import { readCrmSession, isManagerAuthorized, clearCrmSession } from "../utils/authSession";
 
 const EMPTY_STATS: ManagerStats = {
   newEnquiries: 0,
@@ -55,7 +55,7 @@ export default function ManagerPanel() {
 
   useEffect(() => {
     const session = readCrmSession();
-    if (!session || (session.role !== "MANAGER" && session.role !== "ADMIN")) {
+    if (!session || !isManagerAuthorized(session)) {
       navigate("/login?returnUrl=/manager", { replace: true });
     }
   }, [navigate]);
@@ -77,6 +77,7 @@ export default function ManagerPanel() {
   const [reports, setReports] = useState<ManagerReportsData>(EMPTY_REPORTS);
   const [scheduledClasses, setScheduledClasses] = useState<ScheduledClassItem[]>(() => readScheduledClasses());
   const [selectedScheduleBatch, setSelectedScheduleBatch] = useState<string | undefined>(undefined);
+
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
@@ -130,6 +131,14 @@ export default function ManagerPanel() {
       setCounsellors(snapshot.counsellors);
       setAnnouncements(snapshot.announcements);
       setReports(snapshot.reports);
+
+      try {
+        const schedRes = await managerApi.getSchedule();
+        if (schedRes.classes && schedRes.classes.length) {
+          setScheduledClasses(schedRes.classes);
+          writeScheduledClasses(schedRes.classes);
+        }
+      } catch {}
     } catch (err) {
       console.warn("[ManagerPanel] Database offline, loaded offline fallback dataset:", err);
       const fallback = createInitialManagerFallback();
@@ -148,15 +157,47 @@ export default function ManagerPanel() {
   };
 
   useEffect(() => {
+    const session = readCrmSession();
+    if (!session || !isManagerAuthorized(session)) {
+      navigate("/login?returnTo=/manager", { replace: true });
+      return;
+    }
     void loadSnapshot();
-  }, []);
+  }, [navigate]);
 
-  const handleSaveScheduledClass = (item: ScheduledClassItem, isEdit: boolean) => {
-    setScheduledClasses((prev) => {
-      const next = isEdit ? prev.map((existing) => (existing.id === item.id ? item : existing)) : [item, ...prev];
-      writeScheduledClasses(next);
-      return next;
-    });
+  const handleSaveScheduledClass = async (item: ScheduledClassItem, isEdit: boolean) => {
+    try {
+      const res = await managerApi.createSchedule({
+        batchCode: item.batchCode,
+        topic: item.topic,
+        dateIso: item.dateIso || new Date().toISOString().slice(0, 10),
+        startTime: item.startTime || "10:00",
+        endTime: item.endTime || "12:00",
+        roomLink: item.roomLink,
+      });
+      const savedItem: ScheduledClassItem = { ...item, id: res.item.id };
+      setScheduledClasses((prev) => {
+        const next = isEdit ? prev.map((existing) => (existing.id === item.id ? savedItem : existing)) : [savedItem, ...prev];
+        writeScheduledClasses(next);
+        return next;
+      });
+      addToast({
+        type: "success",
+        title: "Class Scheduled",
+        message: `Class for ${item.batchCode} saved to database schedule.`,
+      });
+    } catch {
+      setScheduledClasses((prev) => {
+        const next = isEdit ? prev.map((existing) => (existing.id === item.id ? item : existing)) : [item, ...prev];
+        writeScheduledClasses(next);
+        return next;
+      });
+      addToast({
+        type: "info",
+        title: "Schedule Saved",
+        message: `Session recorded for ${item.batchCode}.`,
+      });
+    }
   };
 
   const handleDeleteScheduledClass = (id: string) => {
@@ -165,12 +206,12 @@ export default function ManagerPanel() {
       writeScheduledClasses(next);
       return next;
     });
+    managerApi.deleteSchedule(id).catch(() => {});
   };
 
+
   const handleLogout = () => {
-    try {
-      localStorage.removeItem("crm_session");
-    } catch {}
+    clearCrmSession();
     navigate("/login");
   };
 
@@ -212,6 +253,12 @@ export default function ManagerPanel() {
 
     setLeads((prev) => [newLead, ...prev]);
     setIsCreateLeadOpen(false);
+    managerApi.createLead({
+      fullName: newLeadName.trim(),
+      email: newLeadEmail.trim(),
+      phone: newLeadPhone.trim(),
+      courseTrack: newLeadTrack,
+    }).catch(() => {});
     setNewLeadName("");
     setNewLeadEmail("");
     setNewLeadPhone("");
@@ -497,7 +544,7 @@ export default function ManagerPanel() {
         approvalsBadgeCount={stats.pendingAdmissionsCount}
       />
 
-      {/* Create Lead Modal */}
+{/* Create Lead Modal */}
       {isCreateLeadOpen && (
         <div
           role="dialog"

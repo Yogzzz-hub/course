@@ -1,4 +1,5 @@
 import type { Lead, Admission, CohortSeat, AttendanceAlert, FeePayment, Counsellor, Announcement, ManagerStats, ManagerReportsData } from "./types";
+import type { ScheduledClassItem } from "../../utils/classScheduleStore";
 
 export interface ManagerSnapshot {
   stats: ManagerStats;
@@ -24,6 +25,32 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 export const managerApi = {
   getSnapshot(): Promise<ManagerSnapshot> {
     return requestJson("/api/manager");
+  },
+  getSchedule(): Promise<{ classes: ScheduledClassItem[] }> {
+    return requestJson("/api/manager/schedule");
+  },
+  createSchedule(data: {
+    batchCode: string;
+    topic: string;
+    dateIso: string;
+    startTime: string;
+    endTime: string;
+    roomLink?: string;
+  }): Promise<{ item: ScheduledClassItem }> {
+    return requestJson("/api/manager/schedule", { method: "POST", body: JSON.stringify(data) });
+  },
+  deleteSchedule(id: string): Promise<void> {
+    return requestJson(`/api/manager/schedule/${encodeURIComponent(id)}`, { method: "DELETE" });
+  },
+  createLead(data: {
+    fullName: string;
+    phone?: string;
+    email: string;
+    courseTrack?: string;
+    source?: string;
+    schedulePreference?: string;
+  }): Promise<{ lead: Lead }> {
+    return requestJson("/api/manager/leads", { method: "POST", body: JSON.stringify(data) });
   },
   updateLead(id: string, patch: { status?: Lead["status"] }): Promise<void> {
     return requestJson(`/api/manager/leads/${encodeURIComponent(id)}`, { method: "POST", body: JSON.stringify(patch) });
