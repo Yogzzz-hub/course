@@ -71,10 +71,54 @@ export default defineConfig(({ mode }) => {
             });
           return;
         }
-        if (request.url?.startsWith('/api/booking/programmes')) {
-          response.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
-          response.end(JSON.stringify({ programmes: allBookingProgrammes }));
+        if (request.url === '/api/booking' || request.url?.startsWith('/api/booking/')) {
+          if (request.url === '/api/booking/programmes' || request.url.startsWith('/api/booking/programmes')) {
+            response.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+            response.end(JSON.stringify({ programmes: allBookingProgrammes }));
+            return;
+          }
+          void import('./api/booking.ts')
+            .then(({ handleRequest }) => handleRequest(request, response))
+            .catch((err) => {
+              response.writeHead(500, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+              response.end(JSON.stringify({ error: err instanceof Error ? err.message : 'Booking API error' }));
+            });
           return;
+        }
+        if (request.url === '/api/enquiry' || request.url?.startsWith('/api/enquiry')) {
+          if (request.method === 'GET') {
+            response.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+            response.end(JSON.stringify({ available: true, siteKey: '0x4AAAAAAABkZp0000000000' }));
+            return;
+          }
+          if (request.method === 'POST') {
+            let body = '';
+            request.on('data', (chunk: Buffer) => { body += chunk; });
+            request.on('end', async () => {
+              try {
+                const data = JSON.parse(body || '{}');
+                if (process.env.DATABASE_URL) {
+                  try {
+                    const pg = await import('pg');
+                    const pool = new pg.default.Pool({ connectionString: process.env.DATABASE_URL });
+                    await pool.query(
+                      'INSERT INTO enquiries(id, name, email, phone, programme, contact_method, message, status, created_at, updated_at) VALUES(gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, NOW(), NOW())',
+                      [data.name || 'Candidate', data.email || 'lead@example.com', data.phone || null, data.programme || 'General', data.contactMethod || 'email', data.message || null, 'NEW']
+                    );
+                    await pool.end();
+                  } catch (dbErr) {
+                    console.warn('[Enquiry Dev Proxy] Database insert note:', dbErr);
+                  }
+                }
+                response.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+                response.end(JSON.stringify({ success: true, message: 'Your enquiry has been received.' }));
+              } catch {
+                response.writeHead(400, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+                response.end(JSON.stringify({ success: false, message: 'Invalid payload.' }));
+              }
+            });
+            return;
+          }
         }
         if (request.url?.startsWith('/api/notify')) {
           response.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });

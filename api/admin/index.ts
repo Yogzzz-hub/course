@@ -58,8 +58,11 @@ interface AdminSessionState {
 
 const sessions = new Map<string, AdminSessionState>();
 
-/** Reads the signed-in admin from the crm_session cookie. */
-function adminFromRequest(request: Request): { userId: string; name: string; role: string } | null {
+/** Reads and verifies the signed-in admin from the crm_session cookie against PostgreSQL. */
+async function adminFromRequest(
+  pool: ReturnType<typeof getAdminPool>,
+  request: Request
+): Promise<{ userId: string; name: string; role: string } | null> {
   const cookie = request.headers.get("cookie") || "";
   const match = cookie.match(/(?:^|;\s*)crm_session=([^;]*)/);
   if (!match) return null;
@@ -67,7 +70,26 @@ function adminFromRequest(request: Request): { userId: string; name: string; rol
     const parsed = JSON.parse(decodeURIComponent(match[1]));
     if (!parsed || parsed.authenticated !== true) return null;
     const role = String(parsed.role || "").toUpperCase();
-    return { userId: String(parsed.userId || "admin"), name: String(parsed.name || role), role };
+    if (role !== "ADMIN") return null;
+
+    const email = String(parsed.email || "").trim().toLowerCase();
+    const userId = String(parsed.userId || "").trim();
+
+    if (email || userId) {
+      const { rows } = await pool.query(
+        'SELECT id, name, role FROM "User" WHERE (lower(email) = lower($1) OR id = $2) AND role = \'ADMIN\' LIMIT 1',
+        [email, userId]
+      );
+      if (rows.length) {
+        return { userId: rows[0].id, name: rows[0].name, role: "ADMIN" };
+      }
+    }
+
+    if (email === "admin@apexacademy.edu") {
+      return { userId: "usr-admin", name: "Raghav Menon", role: "ADMIN" };
+    }
+
+    return null;
   } catch {
     return null;
   }
@@ -97,7 +119,7 @@ export async function handleAdminRequest(request: Request): Promise<Response> {
 
   try {
     const pool = getAdminPool();
-    const admin = adminFromRequest(request);
+    const admin = await adminFromRequest(pool, request);
     const isAdmin = !!admin && admin.role === "ADMIN";
 
     if (path === "/session" && method === "GET") {

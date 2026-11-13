@@ -127,8 +127,8 @@ async function seedTrainerData(pool: pg.Pool, trainerProfileId: string): Promise
   }
 }
 
-export async function getTrainerSnapshot(pool: pg.Pool) {
-  const trainerProfileId = await getPrimaryTrainerProfileId(pool);
+export async function getTrainerSnapshot(pool: pg.Pool, explicitTrainerProfileId?: string | null) {
+  const trainerProfileId = explicitTrainerProfileId || (await getPrimaryTrainerProfileId(pool));
   if (!trainerProfileId) {
     return {
       stats: { todayClasses: 0, totalStudents: 0, pendingReviews: 0, openDoubts: 0, nextClassTime: "", nextClassTitle: "", nextClassBatch: "", nextClassStudents: 0 },

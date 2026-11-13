@@ -244,7 +244,7 @@ export function KpiCard({
           {trend && (
             <span
               className={`font-semibold ${
-                trend.positive ? "text-emerald-700" : "text-amber-700"
+                trend.positive ? "text-[var(--accent)]" : "text-[var(--text-muted)]"
               }`}
             >
               {trend.value}

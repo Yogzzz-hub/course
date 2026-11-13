@@ -207,11 +207,7 @@ export function StudentsSection() {
                           </span>
                           <span
                             className={`h-2 w-2 rounded-full ${
-                              s.attendancePct >= 90
-                                ? "bg-emerald-600"
-                                : s.attendancePct >= 80
-                                  ? "bg-amber-600"
-                                  : "bg-red-600"
+                              s.attendancePct >= 80 ? "bg-[var(--accent)]" : "bg-[var(--text-muted)]"
                             }`}
                           />
                         </div>

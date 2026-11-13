@@ -11,7 +11,27 @@ function jsonRes(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 }
 
-async function primaryTrainerProfileId(pool: ReturnType<typeof getTrainerPool>): Promise<string | null> {
+function emailFromRequest(request: Request): string | null {
+  const cookie = request.headers.get("cookie") || "";
+  const match = cookie.match(/(?:^|;\s*)crm_session=([^;]*)/);
+  if (!match) return null;
+  try {
+    const parsed = JSON.parse(decodeURIComponent(match[1]));
+    return typeof parsed?.email === "string" ? parsed.email : null;
+  } catch {
+    return null;
+  }
+}
+
+async function resolveTrainerProfileId(pool: ReturnType<typeof getTrainerPool>, request: Request): Promise<string | null> {
+  const email = emailFromRequest(request);
+  if (email) {
+    const byEmail = await pool.query(
+      `SELECT tp.id FROM "TrainerProfile" tp JOIN "User" u ON u.id = tp."userId" WHERE lower(u.email) = lower($1) LIMIT 1`,
+      [email.trim()]
+    );
+    if (byEmail.rows.length) return byEmail.rows[0].id;
+  }
   const { rows } = await pool.query('SELECT id FROM "TrainerProfile" ORDER BY "createdAt" ASC LIMIT 1');
   return rows.length ? rows[0].id : null;
 }
@@ -24,11 +44,11 @@ export async function handleTrainerRequest(request: Request): Promise<Response> 
   try {
     const pool = getTrainerPool();
 
-    if (path === "/" && method === "GET") {
-      return jsonRes(await getTrainerSnapshot(pool));
-    }
+    const trainerId = await resolveTrainerProfileId(pool, request);
 
-    const trainerId = await primaryTrainerProfileId(pool);
+    if (path === "/" && method === "GET") {
+      return jsonRes(await getTrainerSnapshot(pool, trainerId));
+    }
     if (!trainerId) return jsonRes({ error: "No trainer profile exists yet." }, 404);
 
     if (path === "/attendance" && method === "POST") {

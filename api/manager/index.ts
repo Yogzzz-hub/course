@@ -5,6 +5,10 @@ import {
   updateAdmissionRecord,
   updateAlertRecord,
   createAnnouncementRecord,
+  getManagerScheduledClasses,
+  createManagerScheduledClass,
+  deleteManagerScheduledClass,
+  createLeadRecord,
 } from "../../backend/services/manager/pgStore.ts";
 
 function jsonRes(data: unknown, status = 200): Response {
@@ -21,6 +25,28 @@ export async function handleManagerRequest(request: Request): Promise<Response> 
 
     if (path === "/" && method === "GET") {
       return jsonRes(await getManagerSnapshot(pool));
+    }
+
+    if (path === "/schedule" && method === "GET") {
+      return jsonRes({ classes: await getManagerScheduledClasses(pool) });
+    }
+
+    if (path === "/schedule" && method === "POST") {
+      const body = await request.json();
+      const created = await createManagerScheduledClass(pool, body);
+      return jsonRes({ item: created });
+    }
+
+    const deleteScheduleMatch = path.match(/^\/schedule\/([^/]+)$/);
+    if (deleteScheduleMatch && (method === "DELETE" || method === "POST")) {
+      await deleteManagerScheduledClass(pool, deleteScheduleMatch[1]);
+      return jsonRes({ ok: true });
+    }
+
+    if (path === "/leads" && method === "POST") {
+      const body = await request.json();
+      const created = await createLeadRecord(pool, body);
+      return jsonRes({ lead: created });
     }
 
     const leadMatch = path.match(/^\/leads\/([^/]+)$/);

@@ -146,6 +146,24 @@ export function isFinancierAuthorized(session: CrmSession | null): boolean {
   return role === "FINANCIER" || role === "ADMIN";
 }
 
+export function isManagerAuthorized(session: CrmSession | null): boolean {
+  if (!session || !session.authenticated) return false;
+  const role = session.role.toUpperCase();
+  return role === "MANAGER" || role === "ADMIN";
+}
+
+export function isTrainerAuthorized(session: CrmSession | null): boolean {
+  if (!session || !session.authenticated) return false;
+  const role = session.role.toUpperCase();
+  return role === "TRAINER" || role === "ADMIN";
+}
+
+export function isAdminAuthorized(session: CrmSession | null): boolean {
+  if (!session || !session.authenticated) return false;
+  const role = session.role.toUpperCase();
+  return role === "ADMIN";
+}
+
 export function getRedirectPathForSession(session: CrmSession | null): string {
   if (!session || !session.authenticated) return "/login";
   switch (session.role.toUpperCase()) {

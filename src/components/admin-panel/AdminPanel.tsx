@@ -495,7 +495,7 @@ function AdminWorkspace({
                   {session.name}
                 </div>
                 <div className="flex items-center gap-1 text-[10px] text-[var(--accent-soft)]">
-                  <ShieldCheck size={12} className="text-emerald-400 shrink-0" />
+                  <ShieldCheck size={12} className="text-[var(--accent)] shrink-0" />
                   <span className="truncate">2FA Verified</span>
                 </div>
               </div>

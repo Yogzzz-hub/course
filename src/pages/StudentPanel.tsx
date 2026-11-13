@@ -20,7 +20,11 @@ const gateway = createHostedPaymentGateway(
 export default function StudentPanelPage() {
   const [search] = useSearchParams();
   const checkoutPackageId = requestedCheckoutPackage(search);
-  const signInUrl = import.meta.env.VITE_STUDENT_SIGN_IN_URL || (checkoutPackageId ? `/auth/sign-in?returnTo=${encodeURIComponent(checkoutHref(checkoutPackageId))}` : undefined);
+  const signInUrl =
+    import.meta.env.VITE_STUDENT_SIGN_IN_URL ||
+    (checkoutPackageId
+      ? `/login?returnTo=${encodeURIComponent(checkoutHref(checkoutPackageId))}`
+      : "/login?returnTo=/student-panel");
   return (
     <StudentPanel
       key={checkoutPackageId ?? 'workspace'}

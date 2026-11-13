@@ -4,6 +4,7 @@ import { PaletteMenu } from "../components/PaletteMenu";
 import { ProfileMenu } from "../components/ProfileMenu";
 import { LogoMark } from "../components/LogoMark";
 import {
+  clearCrmSession,
   getRedirectPathForSession,
   isFinancierAuthorized,
   readCrmSession,
@@ -41,6 +42,7 @@ import {
   type FinancierStudentDebt,
 } from "../data/financierSeedData";
 import { loadFinancierLiveData } from "../data/financierLiveData";
+import { financierApi } from "../components/financier/api";
 
 export type FinancierTab = "ledger" | "students" | "reconciliation" | "accounts";
 
@@ -59,16 +61,13 @@ export default function FinancierPanel() {
 
   useEffect(() => {
     const session = readCrmSession();
-    if (session && !isFinancierAuthorized(session)) {
-      const target = getRedirectPathForSession(session);
-      navigate(target, { replace: true });
+    if (!session || !isFinancierAuthorized(session)) {
+      navigate("/login?returnTo=/financier", { replace: true });
     }
   }, [navigate]);
 
   const handleLogout = () => {
-    try {
-      localStorage.removeItem("crm_session");
-    } catch {}
+    clearCrmSession();
     navigate("/login");
   };
 
@@ -135,7 +134,7 @@ export default function FinancierPanel() {
     setSearchParams({ tab: "students" });
   };
 
-  const handleAddTransaction = (e: React.FormEvent) => {
+  const handleAddTransaction = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!modalAmount || Number(modalAmount) <= 0) return;
 
@@ -181,6 +180,34 @@ export default function FinancierPanel() {
     setModalAmount("");
     setModalStudent("");
     setModalDescription("");
+
+    // Persist to Postgres database via API
+    try {
+      const matchedStudent = students.find((s) => s.name === modalStudent || s.id === modalStudent) || students[0];
+      if (isCredit && matchedStudent) {
+        let method: "CASH" | "UPI" | "BANK_TRANSFER" | "CARD" = "UPI";
+        const upper = modalMethod.toUpperCase();
+        if (upper.includes("BANK")) method = "BANK_TRANSFER";
+        else if (upper.includes("CASH")) method = "CASH";
+        else if (upper.includes("CARD")) method = "CARD";
+
+        await financierApi.recordPayment({
+          studentProfileId: matchedStudent.id,
+          amountPaise: amountMinor,
+          paymentMethod: method,
+          paymentDate: new Date().toISOString().slice(0, 10),
+          externalReference: `TXN-${Date.now().toString(36).toUpperCase()}`,
+          notes: modalDescription || `Tuition payment by ${matchedStudent.name}`,
+        });
+
+        const refreshed = await loadFinancierLiveData();
+        setAccounts(refreshed.accounts);
+        setLedgerLines(refreshed.ledgerLines);
+        setStudents(refreshed.students);
+      }
+    } catch (err) {
+      console.warn("Could not persist transaction to database:", err);
+    }
   };
 
   // Filtered Ledger
@@ -519,13 +546,7 @@ export default function FinancierPanel() {
                   <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block">
                     Net Account Balance
                   </span>
-                  <div
-                    className={`text-2xl sm:text-4xl font-extrabold mt-1 tracking-tight ${
-                      currentAccount.netBalanceMinor < 0
-                        ? "text-rose-600"
-                        : "text-emerald-700"
-                    }`}
-                  >
+                  <div className="text-2xl sm:text-4xl font-extrabold mt-1 tracking-tight text-[var(--accent)]">
                     {formatRupees(currentAccount.netBalanceMinor)}
                   </div>
                   <p className="text-xs text-[var(--muted)] mt-1">
@@ -547,19 +568,19 @@ export default function FinancierPanel() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 text-xs">
                 <div className="p-3 bg-[var(--surface-alt)] rounded-xl border border-[var(--border)]">
                   <span className="text-[var(--muted)] block uppercase text-[10px] font-semibold">Total Verified Inflows</span>
-                  <span className="text-base font-bold text-emerald-700 mt-0.5 block">
+                  <span className="text-base font-bold text-[var(--text)] mt-0.5 block">
                     {formatRupees(currentAccount.totalInflowMinor)}
                   </span>
                 </div>
                 <div className="p-3 bg-[var(--surface-alt)] rounded-xl border border-[var(--border)]">
                   <span className="text-[var(--muted)] block uppercase text-[10px] font-semibold">Total Verified Outflows</span>
-                  <span className="text-base font-bold text-rose-600 mt-0.5 block">
+                  <span className="text-base font-bold text-[var(--text-muted)] mt-0.5 block">
                     {formatRupees(currentAccount.totalOutflowMinor)}
                   </span>
                 </div>
                 <div className="p-3 bg-[var(--surface-alt)] rounded-xl border border-[var(--border)]">
                   <span className="text-[var(--muted)] block uppercase text-[10px] font-semibold">Pending Match Variance</span>
-                  <span className="text-base font-bold text-amber-700 mt-0.5 block">
+                  <span className="text-base font-bold text-[var(--accent)] mt-0.5 block">
                     {currentAccount.pendingReconciliationCount} Unreconciled
                   </span>
                 </div>
@@ -620,7 +641,7 @@ export default function FinancierPanel() {
                             {line.date}
                           </span>
                         </div>
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 shrink-0">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-[var(--surface-alt)] text-[var(--accent)] border border-[var(--border)] shrink-0">
                           {line.status}
                         </span>
                       </div>
@@ -635,11 +656,11 @@ export default function FinancierPanel() {
                             Flow / Amount
                           </span>
                           {line.creditMinor > 0 ? (
-                            <span className="font-bold text-emerald-700 text-sm">
+                            <span className="font-bold text-[var(--accent)] text-sm">
                               +{formatRupees(line.creditMinor)}
                             </span>
                           ) : (
-                            <span className="font-bold text-rose-600 text-sm">
+                            <span className="font-bold text-[var(--text-muted)] text-sm">
                               -{formatRupees(line.debitMinor)}
                             </span>
                           )}
@@ -649,11 +670,7 @@ export default function FinancierPanel() {
                           <span className="text-[10px] text-[var(--muted)] uppercase font-semibold block">
                             Rolling Net Balance
                           </span>
-                          <span
-                            className={`font-extrabold text-sm ${
-                              line.balanceMinor < 0 ? "text-rose-600" : "text-[var(--text)]"
-                            }`}
-                          >
+                          <span className="font-extrabold text-sm text-[var(--text)]">
                             {formatRupees(line.balanceMinor)}
                           </span>
                         </div>
@@ -714,21 +731,17 @@ export default function FinancierPanel() {
                               {line.category}
                             </span>
                           </td>
-                          <td className="py-3.5 px-4 text-right font-mono font-bold text-rose-600 whitespace-nowrap">
+                          <td className="py-3.5 px-4 text-right font-mono font-bold text-[var(--text-muted)] whitespace-nowrap">
                             {line.debitMinor > 0 ? formatRupees(line.debitMinor) : "—"}
                           </td>
-                          <td className="py-3.5 px-4 text-right font-mono font-bold text-emerald-700 whitespace-nowrap">
+                          <td className="py-3.5 px-4 text-right font-mono font-bold text-[var(--accent)] whitespace-nowrap">
                             {line.creditMinor > 0 ? `+${formatRupees(line.creditMinor)}` : "—"}
                           </td>
-                          <td
-                            className={`py-3.5 px-4 text-right font-mono font-extrabold whitespace-nowrap ${
-                              line.balanceMinor < 0 ? "text-rose-600" : "text-[var(--text)]"
-                            }`}
-                          >
+                          <td className="py-3.5 px-4 text-right font-mono font-extrabold whitespace-nowrap text-[var(--text)]">
                             {formatRupees(line.balanceMinor)}
                           </td>
                           <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                            <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                            <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[var(--surface-alt)] text-[var(--accent)] border border-[var(--border)]">
                               {line.status}
                             </span>
                           </td>
@@ -848,12 +861,10 @@ export default function FinancierPanel() {
                             </td>
                             <td className="py-2.5 px-3 text-center">
                               <span
-                                className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold border border-[var(--border)] ${
                                   inst.status === "PAID"
-                                    ? "bg-emerald-100 text-emerald-800"
-                                    : inst.status === "OVERDUE"
-                                    ? "bg-rose-100 text-rose-800"
-                                    : "bg-amber-100 text-amber-800"
+                                    ? "bg-[var(--accent)] text-[var(--accent-contrast)]"
+                                    : "bg-[var(--surface-alt)] text-[var(--text)]"
                                 }`}
                               >
                                 {inst.status}
@@ -886,12 +897,10 @@ export default function FinancierPanel() {
                         <p className="text-xs text-[var(--muted)] mt-0.5">{st.courseTitle}</p>
                       </div>
                       <span
-                        className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold shrink-0 ${
+                        className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold shrink-0 border border-[var(--border)] ${
                           st.status === "PAID_IN_FULL"
-                            ? "bg-emerald-100 text-emerald-800"
-                            : st.status === "OVERDUE"
-                            ? "bg-rose-100 text-rose-800"
-                            : "bg-amber-100 text-amber-800"
+                            ? "bg-[var(--accent)] text-[var(--accent-contrast)]"
+                            : "bg-[var(--surface-alt)] text-[var(--text)]"
                         }`}
                       >
                         {st.status.replace(/_/g, " ")}
@@ -905,7 +914,7 @@ export default function FinancierPanel() {
                       </div>
                       <div>
                         <span className="text-[10px] text-[var(--muted)] uppercase font-semibold block">Remaining Due</span>
-                        <span className={`font-bold ${st.remainingDueMinor > 0 ? "text-amber-800" : "text-emerald-700"}`}>
+                        <span className="font-bold text-[var(--text)]">
                           {formatRupees(st.remainingDueMinor)}
                         </span>
                       </div>
@@ -946,20 +955,18 @@ export default function FinancierPanel() {
                         <td className="py-3 px-4 text-right font-mono font-bold text-[var(--text)]">
                           {formatRupees(st.contractedFeeMinor)}
                         </td>
-                        <td className="py-3 px-4 text-right font-mono font-bold text-emerald-700">
+                        <td className="py-3 px-4 text-right font-mono font-bold text-[var(--accent)]">
                           {formatRupees(st.paidAmountMinor)}
                         </td>
-                        <td className="py-3 px-4 text-right font-mono font-bold text-amber-800">
+                        <td className="py-3 px-4 text-right font-mono font-bold text-[var(--text)]">
                           {formatRupees(st.remainingDueMinor)}
                         </td>
                         <td className="py-3 px-4 text-center">
                           <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold border border-[var(--border)] ${
                               st.status === "PAID_IN_FULL"
-                                ? "bg-emerald-100 text-emerald-800"
-                                : st.status === "OVERDUE"
-                                ? "bg-rose-100 text-rose-800"
-                                : "bg-amber-100 text-amber-800"
+                                ? "bg-[var(--accent)] text-[var(--accent-contrast)]"
+                                : "bg-[var(--surface-alt)] text-[var(--text)]"
                             }`}
                           >
                             {st.status.replace(/_/g, " ")}
@@ -1021,11 +1028,7 @@ export default function FinancierPanel() {
 
                   <div>
                     <span className="text-[10px] text-[var(--muted)] uppercase font-semibold block">Net Balance</span>
-                    <div
-                      className={`text-2xl font-extrabold mt-0.5 ${
-                        acc.netBalanceMinor < 0 ? "text-rose-600" : "text-emerald-700"
-                      }`}
-                    >
+                    <div className="text-2xl font-extrabold mt-0.5 text-[var(--text)]">
                       {formatRupees(acc.netBalanceMinor)}
                     </div>
                   </div>
@@ -1033,11 +1036,11 @@ export default function FinancierPanel() {
                   <div className="pt-3 border-t border-[var(--border)] flex items-center justify-between text-xs">
                     <span className="text-[var(--muted)]">
                       {acc.pendingReconciliationCount > 0 ? (
-                        <span className="text-amber-700 font-semibold">
+                        <span className="text-[var(--text-muted)] font-semibold">
                           ⚠ {acc.pendingReconciliationCount} pending match
                         </span>
                       ) : (
-                        <span className="text-emerald-700 font-semibold">✓ 100% Reconciled</span>
+                        <span className="text-[var(--accent)] font-semibold">✓ 100% Reconciled</span>
                       )}
                     </span>
 

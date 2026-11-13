@@ -33,6 +33,7 @@ import {
   writeScheduledClasses,
   type ScheduledClassItem,
 } from "../utils/classScheduleStore";
+import { readCrmSession, isManagerAuthorized, clearCrmSession } from "../utils/authSession";
 
 const EMPTY_STATS: ManagerStats = {
   newEnquiries: 0,
@@ -66,6 +67,13 @@ export default function ManagerPanel() {
   const [scheduledClasses, setScheduledClasses] = useState<ScheduledClassItem[]>(() => readScheduledClasses());
   const [selectedScheduleBatch, setSelectedScheduleBatch] = useState<string | undefined>(undefined);
 
+  const [newLeadModalOpen, setNewLeadModalOpen] = useState(false);
+  const [newLeadName, setNewLeadName] = useState("");
+  const [newLeadEmail, setNewLeadEmail] = useState("");
+  const [newLeadPhone, setNewLeadPhone] = useState("");
+  const [newLeadTrack, setNewLeadTrack] = useState("Python Full-Stack");
+  const [newLeadSubmitting, setNewLeadSubmitting] = useState(false);
+
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const addToast = (toast: {
@@ -98,6 +106,14 @@ export default function ManagerPanel() {
       setCounsellors(snapshot.counsellors);
       setAnnouncements(snapshot.announcements);
       setReports(snapshot.reports);
+
+      try {
+        const schedRes = await managerApi.getSchedule();
+        if (schedRes.classes && schedRes.classes.length) {
+          setScheduledClasses(schedRes.classes);
+          writeScheduledClasses(schedRes.classes);
+        }
+      } catch {}
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "Could not load manager data from the database.");
     } finally {
@@ -106,15 +122,47 @@ export default function ManagerPanel() {
   };
 
   useEffect(() => {
+    const session = readCrmSession();
+    if (!session || !isManagerAuthorized(session)) {
+      navigate("/login?returnTo=/manager", { replace: true });
+      return;
+    }
     void loadSnapshot();
-  }, []);
+  }, [navigate]);
 
-  const handleSaveScheduledClass = (item: ScheduledClassItem, isEdit: boolean) => {
-    setScheduledClasses((prev) => {
-      const next = isEdit ? prev.map((existing) => (existing.id === item.id ? item : existing)) : [item, ...prev];
-      writeScheduledClasses(next);
-      return next;
-    });
+  const handleSaveScheduledClass = async (item: ScheduledClassItem, isEdit: boolean) => {
+    try {
+      const res = await managerApi.createSchedule({
+        batchCode: item.batchCode,
+        topic: item.topic,
+        dateIso: item.dateIso || new Date().toISOString().slice(0, 10),
+        startTime: item.startTime || "10:00",
+        endTime: item.endTime || "12:00",
+        roomLink: item.roomLink,
+      });
+      const savedItem: ScheduledClassItem = { ...item, id: res.item.id };
+      setScheduledClasses((prev) => {
+        const next = isEdit ? prev.map((existing) => (existing.id === item.id ? savedItem : existing)) : [savedItem, ...prev];
+        writeScheduledClasses(next);
+        return next;
+      });
+      addToast({
+        type: "success",
+        title: "Class Scheduled",
+        message: `Class for ${item.batchCode} saved to database schedule.`,
+      });
+    } catch {
+      setScheduledClasses((prev) => {
+        const next = isEdit ? prev.map((existing) => (existing.id === item.id ? item : existing)) : [item, ...prev];
+        writeScheduledClasses(next);
+        return next;
+      });
+      addToast({
+        type: "info",
+        title: "Schedule Saved",
+        message: `Session recorded for ${item.batchCode}.`,
+      });
+    }
   };
 
   const handleDeleteScheduledClass = (id: string) => {
@@ -123,12 +171,74 @@ export default function ManagerPanel() {
       writeScheduledClasses(next);
       return next;
     });
+    managerApi.deleteSchedule(id).catch(() => {});
+  };
+
+  const handleCreateLead = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newLeadName.trim() || !newLeadEmail.trim()) {
+      addToast({ type: "warning", title: "Missing Information", message: "Please enter candidate name and email." });
+      return;
+    }
+    setNewLeadSubmitting(true);
+    try {
+      const { lead: created } = await managerApi.createLead({
+        fullName: newLeadName.trim(),
+        email: newLeadEmail.trim(),
+        phone: newLeadPhone.trim(),
+        courseTrack: newLeadTrack,
+      });
+      setLeads((prev) => [created, ...prev]);
+      setNewLeadModalOpen(false);
+      setNewLeadName("");
+      setNewLeadEmail("");
+      setNewLeadPhone("");
+      addToast({
+        type: "success",
+        title: "Lead Created",
+        message: `${created.name} registered into candidate leads pipeline.`,
+      });
+    } catch (err) {
+      addToast({
+        type: "danger",
+        title: "Creation Failed",
+        message: err instanceof Error ? err.message : "Could not create lead.",
+      });
+    } finally {
+      setNewLeadSubmitting(false);
+    }
+  };
+
+  const exportActiveDataToCsv = () => {
+    const filename = `manager_${activeTab}_${new Date().toISOString().slice(0, 10)}.csv`;
+    let csvContent = "";
+    if (activeTab === "leads") {
+      csvContent = "ID,Name,Email,Phone,Track,Status,Score,Date\n" +
+        leads.map((l) => `"${l.id}","${l.name}","${l.email}","${l.phone}","${l.track}","${l.status}","${l.score}","${l.date}"`).join("\n");
+    } else if (activeTab === "admissions") {
+      csvContent = "ID,Student Name,Reg No,Course,Batch,Enrolled Date,Fee Status,Status\n" +
+        admissions.map((a) => `"${a.id}","${a.studentName}","${a.registrationNumber}","${a.course}","${a.batch}","${a.enrolledDate}","${a.feeStatus}","${a.status}"`).join("\n");
+    } else {
+      csvContent = "ID,Invoice ID,Student Name,Course,Amount,Due Date,Paid Date,Status,Method\n" +
+        payments.map((p) => `"${p.id}","${p.invoiceId}","${p.studentName}","${p.course}","${p.amount}","${p.dueDate}","${p.paidDate || ''}","${p.status}","${p.method || ''}"`).join("\n");
+    }
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    addToast({
+      type: "success",
+      title: "CSV Exported",
+      message: `Downloaded ${filename} for offline analysis.`,
+    });
   };
 
   const handleLogout = () => {
-    try {
-      localStorage.removeItem("crm_session");
-    } catch {}
+    clearCrmSession();
     navigate("/login");
   };
 
@@ -217,20 +327,12 @@ export default function ManagerPanel() {
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
           onQuickAction={(action) => {
             if (action === "create_lead") {
-              addToast({
-                type: "info",
-                title: "Create Lead",
-                message: "Fill in candidate enquiry details to register new lead.",
-              });
+              setNewLeadModalOpen(true);
             } else if (action === "create_class") {
               setSelectedScheduleBatch(undefined);
               setActiveTab("schedule");
             } else if (action === "export_csv") {
-              addToast({
-                type: "success",
-                title: "CSV Export",
-                message: "Downloading data report for your offline records.",
-              });
+              exportActiveDataToCsv();
             }
           }}
         />
@@ -344,6 +446,140 @@ export default function ManagerPanel() {
         onOpenMore={() => setMobileSidebarOpen(true)}
         approvalsBadgeCount={stats.pendingAdmissionsCount}
       />
+
+      {/* New Candidate Lead Registration Modal */}
+      {newLeadModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+            onClick={() => setNewLeadModalOpen(false)}
+            aria-hidden="true"
+          />
+          <div
+            className="relative z-10 w-full max-w-md rounded-2xl p-6 shadow-2xl border"
+            style={{
+              backgroundColor: "var(--surface)",
+              borderColor: "var(--border)",
+              color: "var(--text)",
+            }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-semibold" style={{ color: "var(--text)" }}>
+                Register New Candidate Lead
+              </h3>
+              <button
+                type="button"
+                onClick={() => setNewLeadModalOpen(false)}
+                className="p-1 rounded-md transition-opacity hover:opacity-70 cursor-pointer"
+                style={{ color: "var(--text-muted)" }}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <form onSubmit={handleCreateLead} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>
+                  Full Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={newLeadName}
+                  onChange={(e) => setNewLeadName(e.target.value)}
+                  placeholder="e.g. Priya Sharma"
+                  className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none transition-colors"
+                  style={{
+                    backgroundColor: "var(--bg)",
+                    borderColor: "var(--border)",
+                    color: "var(--text)",
+                  }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>
+                  Email Address *
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={newLeadEmail}
+                  onChange={(e) => setNewLeadEmail(e.target.value)}
+                  placeholder="candidate@example.com"
+                  className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none transition-colors"
+                  style={{
+                    backgroundColor: "var(--bg)",
+                    borderColor: "var(--border)",
+                    color: "var(--text)",
+                  }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={newLeadPhone}
+                  onChange={(e) => setNewLeadPhone(e.target.value)}
+                  placeholder="+91 98765 43210"
+                  className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none transition-colors"
+                  style={{
+                    backgroundColor: "var(--bg)",
+                    borderColor: "var(--border)",
+                    color: "var(--text)",
+                  }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>
+                  Course of Interest
+                </label>
+                <select
+                  value={newLeadTrack}
+                  onChange={(e) => setNewLeadTrack(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none transition-colors"
+                  style={{
+                    backgroundColor: "var(--bg)",
+                    borderColor: "var(--border)",
+                    color: "var(--text)",
+                  }}
+                >
+                  <option value="Python Full-Stack">Python Full-Stack Cohort</option>
+                  <option value="React Development">Modern React & Frontend</option>
+                  <option value="Django Backend">Django REST Backend</option>
+                  <option value="DSA & System Design">DSA & Technical Interview</option>
+                </select>
+              </div>
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setNewLeadModalOpen(false)}
+                  className="px-4 py-2 rounded-lg text-xs font-medium border cursor-pointer"
+                  style={{
+                    borderColor: "var(--border)",
+                    color: "var(--text-muted)",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={newLeadSubmitting}
+                  className="px-4 py-2 rounded-lg text-xs font-medium cursor-pointer transition-opacity"
+                  style={{
+                    backgroundColor: "var(--accent)",
+                    color: "var(--accent-contrast)",
+                    opacity: newLeadSubmitting ? 0.6 : 1,
+                  }}
+                >
+                  {newLeadSubmitting ? "Registering..." : "Create Lead"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Global Interactive Toast Notification Host */}
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
