@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Award,
   BookOpen,
@@ -9,8 +9,10 @@ import {
   Search,
   User,
   X,
+  ExternalLink,
 } from "lucide-react";
 import { Button, Card, Empty, inputClass, ScreenTitle, StatusPill } from "./ui";
+import { exportToCsv } from "../../utils/csvExport";
 
 interface StudentRecord {
   id: string;
@@ -27,6 +29,17 @@ interface StudentRecord {
 export function StudentsSection() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterFee, setFilterFee] = useState<string>("all");
+  const [selectedStudentForLms, setSelectedStudentForLms] = useState<StudentRecord | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && selectedStudentForLms) {
+        setSelectedStudentForLms(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedStudentForLms]);
 
   const [students] = useState<StudentRecord[]>([
     {
@@ -102,13 +115,31 @@ export function StudentsSection() {
     });
   }, [students, filterFee, searchTerm]);
 
+  const handleDownloadRoster = () => {
+    exportToCsv(
+      `aintrix-students-roster-${new Date().toISOString().slice(0, 10)}.csv`,
+      filtered,
+      [
+        { header: "Student ID", accessor: (s) => s.id },
+        { header: "Name", accessor: (s) => s.name },
+        { header: "Email", accessor: (s) => s.email },
+        { header: "Programme", accessor: (s) => s.programme },
+        { header: "Batch Code", accessor: (s) => s.batch },
+        { header: "Attendance %", accessor: (s) => `${s.attendancePct}%` },
+        { header: "Syllabus Progress %", accessor: (s) => `${s.progressPct}%` },
+        { header: "Fee Status", accessor: (s) => s.feeStatus },
+        { header: "Next Assignment", accessor: (s) => s.nextAssignment },
+      ]
+    );
+  };
+
   return (
     <div className="space-y-6">
       <ScreenTitle
         eyebrow="Learner Management"
         title="Active Students Roster"
         actions={
-          <Button secondary>
+          <Button secondary onClick={handleDownloadRoster}>
             Download roster
           </Button>
         }
@@ -233,6 +264,7 @@ export function StudentsSection() {
                       <td className="px-6 py-4 text-right">
                         <button
                           type="button"
+                          onClick={() => setSelectedStudentForLms(s)}
                           className="inline-flex min-h-[36px] items-center justify-center rounded-lg border border-[var(--border)] px-3 text-xs font-semibold text-[var(--accent)] hover:bg-[var(--accent-tint)] hover:border-[var(--accent)] transition"
                         >
                           View LMS
@@ -289,6 +321,7 @@ export function StudentsSection() {
                   <div className="pt-2 flex justify-end">
                     <button
                       type="button"
+                      onClick={() => setSelectedStudentForLms(s)}
                       className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-[var(--btn-primary-bg)] px-4 text-xs font-bold text-white shadow-sm"
                     >
                       View Student LMS
@@ -300,6 +333,87 @@ export function StudentsSection() {
           </>
         )}
       </Card>
+
+      {/* Student LMS Detail Modal */}
+      {selectedStudentForLms && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="lms-modal-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+        >
+          <div className="relative w-full max-w-lg rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+            <div className="flex items-start justify-between">
+              <div>
+                <span className="text-xs font-bold font-mono uppercase text-[var(--accent)]">
+                  {selectedStudentForLms.batch} · {selectedStudentForLms.id}
+                </span>
+                <h3 id="lms-modal-title" className="text-xl font-bold text-[var(--text)] mt-0.5">
+                  {selectedStudentForLms.name}
+                </h3>
+                <p className="text-xs text-[var(--muted)]">{selectedStudentForLms.email}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedStudentForLms(null)}
+                className="rounded-lg p-2 text-[var(--muted)] hover:bg-[var(--surface-alt)] hover:text-[var(--text)] transition cursor-pointer"
+                aria-label="Close dialog"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] p-4 space-y-3">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-[var(--muted)]">Enrolled Programme:</span>
+                <span className="font-bold text-[var(--text)]">{selectedStudentForLms.programme}</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-[var(--muted)]">Attendance Compliance:</span>
+                <span className="font-bold text-emerald-600">{selectedStudentForLms.attendancePct}%</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-[var(--muted)]">Tuition / Fee Status:</span>
+                <StatusPill status={selectedStudentForLms.feeStatus} />
+              </div>
+              <div className="space-y-1 pt-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-[var(--muted)]">Curriculum Progress:</span>
+                  <span className="font-bold text-[var(--accent)]">{selectedStudentForLms.progressPct}%</span>
+                </div>
+                <div className="h-2 w-full rounded-full bg-[var(--accent-tint)] overflow-hidden">
+                  <div
+                    style={{ width: `${selectedStudentForLms.progressPct}%` }}
+                    className="h-full bg-[var(--btn-primary-bg)] rounded-full"
+                  />
+                </div>
+              </div>
+              <div className="border-t border-[var(--border)] pt-2 text-xs">
+                <span className="text-[var(--muted)] block">Upcoming Deliverable:</span>
+                <span className="font-medium text-[var(--text)] mt-0.5 block">{selectedStudentForLms.nextAssignment}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <Button
+                secondary
+                onClick={() => setSelectedStudentForLms(null)}
+              >
+                Close
+              </Button>
+              <a
+                href={`/student-panel?mode=enrolled`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl bg-[var(--btn-primary-bg)] px-4 text-xs font-semibold text-white shadow-sm hover:bg-[var(--btn-primary-hover)] transition"
+              >
+                <ExternalLink size={14} />
+                Open Student LMS View
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

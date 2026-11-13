@@ -9,6 +9,7 @@ import {
   isFinancierAuthorized,
   readCrmSession,
 } from "../utils/authSession";
+import { exportToCsv } from "../utils/csvExport";
 import {
   Coins,
   CreditCard,
@@ -204,6 +205,25 @@ export default function FinancierPanel() {
 
     return matchesSearch && matchesCategory;
   });
+
+  const handleExportLedgerCsv = () => {
+    const listToExport = filteredLedger.length > 0 ? filteredLedger : ledgerLines;
+    exportToCsv(
+      `aintrix-${currentAccount.code.toLowerCase()}-ledger-${new Date().toISOString().slice(0, 10)}.csv`,
+      listToExport,
+      [
+        { header: "Txn #", accessor: (l) => l.transactionNumber },
+        { header: "Date", accessor: (l) => l.date },
+        { header: "Description", accessor: (l) => l.description },
+        { header: "Category", accessor: (l) => l.category },
+        { header: "Student / Payee", accessor: (l) => l.studentName || "—" },
+        { header: "Debit (INR)", accessor: (l) => (l.debitMinor / 100).toFixed(2) },
+        { header: "Credit (INR)", accessor: (l) => (l.creditMinor / 100).toFixed(2) },
+        { header: "Status", accessor: (l) => l.status },
+        { header: "Reference", accessor: (l) => l.reference || "" },
+      ]
+    );
+  };
 
   const selectedStudent = students.find((s) => s.id === studentDetailId);
 
@@ -520,7 +540,7 @@ export default function FinancierPanel() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => alert("Exporting verified ledger entries as CSV...")}
+                  onClick={handleExportLedgerCsv}
                   className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] text-xs font-semibold hover:bg-[var(--accent-tint)] transition active:scale-95 shadow-2xs"
                 >
                   <Download size={15} /> Export CSV

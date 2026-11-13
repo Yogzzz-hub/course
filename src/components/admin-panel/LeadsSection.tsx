@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   ArrowRight,
   Clock,
@@ -15,6 +15,7 @@ import { useAdminAction, useAdminAuthority, useAdminResource } from "./hooks";
 import { ActionFeedback } from "./ActionFeedback";
 import { Button, Card, Empty, inputClass, ScreenTitle, StatusPill } from "./ui";
 import { dateTime, slaLabel } from "./utils";
+import { exportToCsv } from "../../utils/csvExport";
 
 export function LeadsSection({
   initialSearch = "",
@@ -30,6 +31,16 @@ export function LeadsSection({
   const [activeStage, setActiveStage] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState<string>(initialSearch);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && selectedLead) {
+        setSelectedLead(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedLead]);
 
   const leads = leadsQuery.data?.leads || [];
   const owners = leadsQuery.data?.owners || [];
@@ -81,6 +92,24 @@ export function LeadsSection({
     };
   }, [leads]);
 
+  const handleExportLeads = () => {
+    const listToExport = filteredLeads.length > 0 ? filteredLeads : leads;
+    exportToCsv(
+      `aintrix-leads-${new Date().toISOString().slice(0, 10)}.csv`,
+      listToExport,
+      [
+        { header: "Lead ID", accessor: (l) => l.id },
+        { header: "Name", accessor: (l) => l.name },
+        { header: "Email", accessor: (l) => l.email },
+        { header: "Programme", accessor: (l) => l.programme },
+        { header: "Stage", accessor: (l) => l.stage },
+        { header: "Owner", accessor: (l) => l.ownerId || "Unassigned" },
+        { header: "Next Action", accessor: (l) => l.nextActionAt || "—" },
+        { header: "Updated At", accessor: (l) => l.updatedAt },
+      ]
+    );
+  };
+
   return (
     <div className="space-y-6">
       <ScreenTitle
@@ -89,9 +118,7 @@ export function LeadsSection({
         actions={
           <Button
             secondary
-            onClick={() => {
-              /* export or filter */
-            }}
+            onClick={handleExportLeads}
           >
             Export leads
           </Button>
