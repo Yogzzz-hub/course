@@ -41,7 +41,7 @@ export function adminError(error: unknown) {
 export function createHttpAdminApi({
   baseUrl = "/api/admin",
   fetcher = fetch,
-  timeoutMs = 20000,
+  timeoutMs = 55000,
 }: {
   baseUrl?: string;
   fetcher?: typeof fetch;

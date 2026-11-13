@@ -516,3 +516,124 @@ export async function recordAuditEvent(
     console.warn("[Admin API] audit write skipped:", err);
   }
 }
+
+export async function requestRefund(
+  pool: pg.Pool,
+  adminId: string,
+  paymentId: string,
+  amountMinor: number,
+  reason: string
+): Promise<string> {
+  const refundId = `ref_${randomUUID().replace(/-/g, "").slice(0, 16)}`;
+  const payRes = await pool
+    .query('SELECT "studentProfileId" FROM "StudentPayment" WHERE id=$1', [paymentId])
+    .catch(() => ({ rows: [] as any[] }));
+  const studentProfileId = payRes.rows[0]?.studentProfileId || "unknown";
+
+  await pool.query(
+    `INSERT INTO "RefundRequest" (id,"studentPaymentId","studentProfileId","requestedAmount",reason,status,"requestedById","createdAt","updatedAt")
+     VALUES ($1,$2,$3,$4,$5,'REQUESTED',$6,NOW(),NOW())`,
+    [refundId, paymentId, studentProfileId, amountMinor / 100, reason, adminId]
+  );
+  return refundId;
+}
+
+export async function decideRefund(
+  pool: pg.Pool,
+  adminId: string,
+  refundId: string,
+  decision: "approved" | "rejected",
+  reason: string
+): Promise<boolean> {
+  const status = decision === "approved" ? "APPROVED" : "REJECTED";
+  const result = await pool.query(
+    `UPDATE "RefundRequest"
+     SET status=$1, "reviewedById"=$2, "reviewedAt"=NOW(), "reviewNotes"=$3, "updatedAt"=NOW()
+     WHERE id=$4`,
+    [status, adminId, reason, refundId]
+  );
+  return (result.rowCount || 0) > 0;
+}
+
+export async function executeRefund(
+  pool: pg.Pool,
+  adminId: string,
+  refundId: string,
+  reason: string
+): Promise<boolean> {
+  const res = await pool.query(
+    `UPDATE "RefundRequest"
+     SET status='PROCESSED', "updatedAt"=NOW()
+     WHERE id=$1
+     RETURNING "studentPaymentId"`,
+    [refundId]
+  );
+  if (res.rows.length && res.rows[0].studentPaymentId) {
+    await pool.query(
+      `UPDATE "StudentPayment"
+       SET "verificationStatus"='REFUNDED', "updatedAt"=NOW()
+       WHERE id=$1`,
+      [res.rows[0].studentPaymentId]
+    );
+  }
+  return (res.rowCount || 0) > 0;
+}
+
+const reportExportCache = new Map<string, { id: string; csv: string; expiresAt: string }>();
+
+export async function exportReportsCsv(
+  pool: pg.Pool,
+  from?: string,
+  to?: string
+): Promise<{ id: string; status: "ready"; downloadUrl: string; expiresAt: string }> {
+  const exportId = `exp_${randomUUID().replace(/-/g, "").slice(0, 12)}`;
+  const expiresAt = iso(new Date(Date.now() + 4 * 60 * 60 * 1000));
+
+  const [leadsRes, paymentsRes] = await Promise.all([
+    pool
+      .query('SELECT name, email, phone, status, "createdAt" FROM "Lead" ORDER BY "createdAt" DESC LIMIT 500')
+      .catch(() => ({ rows: [] as any[] })),
+    pool
+      .query(
+        `SELECT sp.id, sp.amount, sp."paymentMethod", sp."verificationStatus", sp."paymentDate", u.name as "studentName"
+         FROM "StudentPayment" sp
+         LEFT JOIN "StudentProfile" prof ON prof.id=sp."studentProfileId"
+         LEFT JOIN "User" u ON u.id=prof."userId"
+         ORDER BY sp."paymentDate" DESC LIMIT 500`
+      )
+      .catch(() => ({ rows: [] as any[] })),
+  ]);
+
+  const csvRows: string[] = [
+    `"Aintrix Academy CRM Report Export - Generated: ${new Date().toISOString()}"`,
+    `"Filter Range: ${from || "Beginning"} to ${to || "Current"}"`,
+    "",
+    `"--- REVENUE & PAYMENTS ---"`,
+    `"Payment ID","Student Name","Amount (INR)","Payment Method","Status","Payment Date"`,
+    ...paymentsRes.rows.map(
+      (p) =>
+        `"${p.id}","${p.studentName || "Student"}","${p.amount}","${p.paymentMethod || "UPI"}","${p.verificationStatus}","${iso(p.paymentDate)}"`
+    ),
+    "",
+    `"--- LEADS & INQUIRIES ---"`,
+    `"Name","Email","Phone","Status","Created At"`,
+    ...leadsRes.rows.map(
+      (l) => `"${l.name}","${l.email}","${l.phone || ""}","${l.status}","${iso(l.createdAt)}"`
+    ),
+  ];
+
+  const csv = csvRows.join("\r\n");
+  reportExportCache.set(exportId, { id: exportId, csv, expiresAt });
+
+  return {
+    id: exportId,
+    status: "ready",
+    downloadUrl: `/api/admin/reports/export/${exportId}`,
+    expiresAt,
+  };
+}
+
+export function getCachedReportExport(exportId: string): string | null {
+  const item = reportExportCache.get(exportId);
+  return item ? item.csv : null;
+}

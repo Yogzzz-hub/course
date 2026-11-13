@@ -49,8 +49,37 @@ export async function getSession(): Promise<SessionPayload | null> {
   const token =
     cookieStore.get(SESSION_COOKIE_NAME)?.value ||
     cookieStore.get("auth_token")?.value;
-  if (!token) return null;
-  return await verifySessionToken(token);
+  if (token) {
+    const verified = await verifySessionToken(token);
+    if (verified) return verified;
+  }
+
+  // Also support crm_session cookie set by unified login/portal
+  const crmRaw = cookieStore.get("crm_session")?.value;
+  if (crmRaw) {
+    try {
+      const decoded = decodeURIComponent(crmRaw);
+      const parsed = JSON.parse(decoded) as {
+        userId?: string;
+        email?: string;
+        role?: Role;
+        name?: string;
+        authenticated?: boolean;
+      };
+      if (parsed && parsed.authenticated && parsed.role) {
+        return {
+          userId: parsed.userId || "usr-admin",
+          email: parsed.email || `${String(parsed.role).toLowerCase()}@apexacademy.edu`,
+          role: parsed.role as Role,
+          name: parsed.name || String(parsed.role),
+        };
+      }
+    } catch {
+      // ignore parse failure
+    }
+  }
+
+  return null;
 }
 
 const userActiveCache = new Map<string, { isActive: boolean; expires: number }>();

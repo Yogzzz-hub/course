@@ -27,8 +27,8 @@ const navItems: NavItem[] = [
   { id: "batches", label: "My batches", icon: Layers },
   { id: "schedule", label: "Schedule", icon: Calendar },
   { id: "attendance", label: "Attendance", icon: UserCheck },
-  { id: "assignments", label: "Assignments", icon: FileCheck, badge: 5 },
-  { id: "doubts", label: "Doubt sessions", icon: HelpCircle, badge: 3 },
+  { id: "assignments", label: "Assignments", icon: FileCheck },
+  { id: "doubts", label: "Doubt sessions", icon: HelpCircle },
   { id: "announcements", label: "Announcements", icon: Megaphone },
 ];
 
@@ -38,12 +38,14 @@ export function TrainerSidebar({
   onLogout,
   onClose,
   isMobileDrawer = false,
+  badges,
 }: {
   activeTab: TrainerNavTab;
   onSelectTab: (tab: TrainerNavTab) => void;
   onLogout: () => void;
   onClose?: () => void;
   isMobileDrawer?: boolean;
+  badges?: Partial<Record<TrainerNavTab, number>>;
 }) {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -111,6 +113,7 @@ export function TrainerSidebar({
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
+            const badgeCount = badges?.[item.id] ?? item.badge;
             return (
               <button
                 key={item.id}
@@ -138,7 +141,7 @@ export function TrainerSidebar({
                   <span className={isCollapsed ? "sr-only" : "truncate"}>{item.label}</span>
                 </div>
 
-                {!isCollapsed && item.badge !== undefined && item.badge > 0 && (
+                {!isCollapsed && badgeCount !== undefined && badgeCount > 0 && (
                   <span
                     className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ml-1.5 ${
                       isActive
@@ -146,10 +149,10 @@ export function TrainerSidebar({
                         : "bg-[var(--btn-primary-bg)] text-white border border-[var(--accent-soft)]/25"
                     }`}
                   >
-                    {item.badge}
+                    {badgeCount}
                   </span>
                 )}
-                {isCollapsed && item.badge !== undefined && item.badge > 0 && (
+                {isCollapsed && badgeCount !== undefined && badgeCount > 0 && (
                   <span
                     className="absolute right-2.5 top-2 size-2 rounded-full bg-[var(--accent-soft)]"
                     aria-hidden="true"
@@ -163,41 +166,39 @@ export function TrainerSidebar({
 
       {/* User profile & Logout */}
       <div className="p-3 border-t border-[var(--sidebar-border)] bg-[var(--sidebar-surface)] space-y-2 shrink-0">
-        <button
-          type="button"
-          title={isCollapsed ? "Dr. Vikram Joshi" : undefined}
-          onClick={() => setProfileMenuOpen((v) => !v)}
-          aria-expanded={profileMenuOpen}
-          className={`w-full p-2 rounded-xl flex items-center gap-2.5 text-left cursor-pointer hover:bg-[var(--sidebar-hover)] transition ${
+        <div
+          title={isCollapsed ? "Dr. Vikram Joshi (Lead Faculty Instructor)" : undefined}
+          className={`w-full p-2 rounded-xl flex items-center justify-between gap-2.5 text-left ${
             isCollapsed ? "justify-center" : ""
           }`}
         >
-          <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[11px] shrink-0 bg-[var(--btn-primary-bg)] text-white border border-[var(--accent-soft)]/30">
-            VJ
-          </div>
-          {!isCollapsed && (
-            <div className="min-w-0 flex-1">
-              <div className="text-[11px] font-semibold truncate leading-tight text-white">
-                Dr. Vikram Joshi
-              </div>
-              <div className="text-[10px] truncate leading-tight text-[var(--accent-soft)]">
-                Lead Faculty Instructor
-              </div>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[11px] shrink-0 bg-[var(--btn-primary-bg)] text-white border border-[var(--accent-soft)]/30">
+              VJ
             </div>
-          )}
-        </button>
+            {!isCollapsed && (
+              <div className="min-w-0 flex-1">
+                <div className="text-[11px] font-semibold truncate leading-tight text-white">
+                  Dr. Vikram Joshi
+                </div>
+                <div className="text-[10px] truncate leading-tight text-[var(--accent-soft)]">
+                  Lead Faculty Instructor
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
 
-        {profileMenuOpen && (
-          <button
-            type="button"
-            title={isCollapsed ? "Log out" : undefined}
-            onClick={onLogout}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-colors bg-[var(--btn-primary-bg)] text-white hover:bg-[var(--btn-primary-hover)] cursor-pointer min-h-[44px]"
-          >
-            <LogOut size={16} />
-            {!isCollapsed && <span>Log out</span>}
-          </button>
-        )}
+        {/* Prominent Always-Visible Logout Button */}
+        <button
+          type="button"
+          title={isCollapsed ? "Log out" : undefined}
+          onClick={onLogout}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-colors bg-[var(--btn-primary-bg)] text-white hover:bg-[var(--btn-primary-hover)] cursor-pointer min-h-[40px]"
+        >
+          <LogOut size={16} />
+          {!isCollapsed && <span>Log out</span>}
+        </button>
 
         {!isMobileDrawer && (
           <button

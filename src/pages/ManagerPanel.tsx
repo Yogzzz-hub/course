@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { X } from "lucide-react";
+import { exportToCsv } from "../utils/csvExport";
+import { createInitialManagerFallback } from "../data/managerFallbackData";
 import {
   managerApi,
   ManagerSidebar,
@@ -49,6 +52,14 @@ const EMPTY_REPORTS: ManagerReportsData = { monthlyAdmissions: [], trackBreakdow
 
 export default function ManagerPanel() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const session = readCrmSession();
+    if (!session || !isManagerAuthorized(session)) {
+      navigate("/login?returnUrl=/manager", { replace: true });
+    }
+  }, [navigate]);
+
   const [activeTab, setActiveTab] = useState<ManagerNavTab>("dashboard");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
@@ -67,14 +78,28 @@ export default function ManagerPanel() {
   const [scheduledClasses, setScheduledClasses] = useState<ScheduledClassItem[]>(() => readScheduledClasses());
   const [selectedScheduleBatch, setSelectedScheduleBatch] = useState<string | undefined>(undefined);
 
-  const [newLeadModalOpen, setNewLeadModalOpen] = useState(false);
+
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  // Create Lead Modal State
+  const [isCreateLeadOpen, setIsCreateLeadOpen] = useState(false);
   const [newLeadName, setNewLeadName] = useState("");
   const [newLeadEmail, setNewLeadEmail] = useState("");
   const [newLeadPhone, setNewLeadPhone] = useState("");
-  const [newLeadTrack, setNewLeadTrack] = useState("Python Full-Stack");
-  const [newLeadSubmitting, setNewLeadSubmitting] = useState(false);
+  const [newLeadTrack, setNewLeadTrack] = useState("Python Full Stack");
+  const [newLeadCounsellor, setNewLeadCounsellor] = useState("");
+  const [newLeadNotes, setNewLeadNotes] = useState("");
 
-  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsCreateLeadOpen(false);
+        setMobileSidebarOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const addToast = (toast: {
     type: "success" | "info" | "warning" | "danger";
@@ -115,7 +140,17 @@ export default function ManagerPanel() {
         }
       } catch {}
     } catch (err) {
-      setLoadError(err instanceof Error ? err.message : "Could not load manager data from the database.");
+      console.warn("[ManagerPanel] Database offline, loaded offline fallback dataset:", err);
+      const fallback = createInitialManagerFallback();
+      setStats(fallback.stats);
+      setLeads(fallback.leads);
+      setAdmissions(fallback.admissions);
+      setCohorts(fallback.cohorts);
+      setAlerts(fallback.alerts);
+      setPayments(fallback.payments);
+      setCounsellors(fallback.counsellors);
+      setAnnouncements(fallback.announcements);
+      setReports(fallback.reports);
     } finally {
       setLoading(false);
     }
@@ -174,68 +209,6 @@ export default function ManagerPanel() {
     managerApi.deleteSchedule(id).catch(() => {});
   };
 
-  const handleCreateLead = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newLeadName.trim() || !newLeadEmail.trim()) {
-      addToast({ type: "warning", title: "Missing Information", message: "Please enter candidate name and email." });
-      return;
-    }
-    setNewLeadSubmitting(true);
-    try {
-      const { lead: created } = await managerApi.createLead({
-        fullName: newLeadName.trim(),
-        email: newLeadEmail.trim(),
-        phone: newLeadPhone.trim(),
-        courseTrack: newLeadTrack,
-      });
-      setLeads((prev) => [created, ...prev]);
-      setNewLeadModalOpen(false);
-      setNewLeadName("");
-      setNewLeadEmail("");
-      setNewLeadPhone("");
-      addToast({
-        type: "success",
-        title: "Lead Created",
-        message: `${created.name} registered into candidate leads pipeline.`,
-      });
-    } catch (err) {
-      addToast({
-        type: "danger",
-        title: "Creation Failed",
-        message: err instanceof Error ? err.message : "Could not create lead.",
-      });
-    } finally {
-      setNewLeadSubmitting(false);
-    }
-  };
-
-  const exportActiveDataToCsv = () => {
-    const filename = `manager_${activeTab}_${new Date().toISOString().slice(0, 10)}.csv`;
-    let csvContent = "";
-    if (activeTab === "leads") {
-      csvContent = "ID,Name,Email,Phone,Track,Status,Score,Date\n" +
-        leads.map((l) => `"${l.id}","${l.name}","${l.email}","${l.phone}","${l.track}","${l.status}","${l.score}","${l.date}"`).join("\n");
-    } else if (activeTab === "admissions") {
-      csvContent = "ID,Student Name,Reg No,Course,Batch,Enrolled Date,Fee Status,Status\n" +
-        admissions.map((a) => `"${a.id}","${a.studentName}","${a.registrationNumber}","${a.course}","${a.batch}","${a.enrolledDate}","${a.feeStatus}","${a.status}"`).join("\n");
-    } else {
-      csvContent = "ID,Invoice ID,Student Name,Course,Amount,Due Date,Paid Date,Status,Method\n" +
-        payments.map((p) => `"${p.id}","${p.invoiceId}","${p.studentName}","${p.course}","${p.amount}","${p.dueDate}","${p.paidDate || ''}","${p.status}","${p.method || ''}"`).join("\n");
-    }
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    addToast({
-      type: "success",
-      title: "CSV Exported",
-      message: `Downloaded ${filename} for offline analysis.`,
-    });
-  };
 
   const handleLogout = () => {
     clearCrmSession();
@@ -250,9 +223,120 @@ export default function ManagerPanel() {
   };
 
   const handleUpdateAdmission = (updated: Admission) => {
-    setAdmissions((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+    setAdmissions((prev) =>
+      prev.some((a) => a.id === updated.id)
+        ? prev.map((a) => (a.id === updated.id ? updated : a))
+        : [updated, ...prev]
+    );
     managerApi.updateAdmission(updated.id, updated.status).catch((err) => {
       addToast({ type: "danger", title: "Sync Failed", message: err instanceof Error ? err.message : "Could not save admission update." });
+    });
+  };
+
+  const handleCreateLeadSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newLeadName.trim() || !newLeadEmail.trim()) return;
+
+    const newLead: Lead = {
+      id: `LEAD-${Date.now().toString().slice(-4)}`,
+      name: newLeadName.trim(),
+      email: newLeadEmail.trim(),
+      phone: newLeadPhone.trim() || "+91 98765 00000",
+      track: newLeadTrack,
+      date: "Today",
+      status: "New Lead",
+      assignedCounsellor: newLeadCounsellor || counsellors[0]?.name || "Unassigned",
+      notes: newLeadNotes.trim() ? [newLeadNotes.trim()] : ["Candidate registered via Manager Enrolment Desk."],
+      source: "Manager Console",
+      score: 85,
+    };
+
+    setLeads((prev) => [newLead, ...prev]);
+    setIsCreateLeadOpen(false);
+    managerApi.createLead({
+      fullName: newLeadName.trim(),
+      email: newLeadEmail.trim(),
+      phone: newLeadPhone.trim(),
+      courseTrack: newLeadTrack,
+    }).catch(() => {});
+    setNewLeadName("");
+    setNewLeadEmail("");
+    setNewLeadPhone("");
+    setNewLeadNotes("");
+    addToast({
+      type: "success",
+      title: "Lead Created",
+      message: `Lead ${newLead.name} enrolled for ${newLead.track}.`,
+    });
+  };
+
+  const handleExportManagerCsv = (tab: ManagerNavTab) => {
+    const today = new Date().toISOString().slice(0, 10);
+    if (tab === "leads") {
+      exportToCsv(`aintrix-manager-leads-${today}.csv`, leads, [
+        { header: "Lead ID", accessor: (l) => l.id },
+        { header: "Name", accessor: (l) => l.name },
+        { header: "Email", accessor: (l) => l.email },
+        { header: "Phone", accessor: (l) => l.phone },
+        { header: "Track", accessor: (l) => l.track },
+        { header: "Status", accessor: (l) => l.status },
+        { header: "Counsellor", accessor: (l) => l.assignedCounsellor },
+        { header: "Score", accessor: (l) => l.score },
+      ]);
+    } else if (tab === "admissions") {
+      exportToCsv(`aintrix-manager-admissions-${today}.csv`, admissions, [
+        { header: "Reg No", accessor: (a) => a.registrationNumber },
+        { header: "Name", accessor: (a) => a.studentName },
+        { header: "Email", accessor: (a) => a.email },
+        { header: "Phone", accessor: (a) => a.phone },
+        { header: "Course", accessor: (a) => a.course },
+        { header: "Batch", accessor: (a) => a.batch },
+        { header: "Fee Status", accessor: (a) => a.feeStatus },
+        { header: "Status", accessor: (a) => a.status },
+      ]);
+    } else if (tab === "cohorts") {
+      exportToCsv(`aintrix-manager-cohorts-${today}.csv`, cohorts, [
+        { header: "Cohort Code", accessor: (c) => c.code },
+        { header: "Course", accessor: (c) => c.courseTitle },
+        { header: "Faculty", accessor: (c) => c.facultyName },
+        { header: "Enrolled", accessor: (c) => c.enrolledCount },
+        { header: "Max Seats", accessor: (c) => c.maxSeats },
+        { header: "Status", accessor: (c) => c.status },
+        { header: "Progress %", accessor: (c) => `${c.progress}%` },
+      ]);
+    } else if (tab === "fees") {
+      exportToCsv(`aintrix-manager-fees-${today}.csv`, payments, [
+        { header: "Invoice ID", accessor: (p) => p.invoiceId },
+        { header: "Student", accessor: (p) => p.studentName },
+        { header: "Course", accessor: (p) => p.course },
+        { header: "Amount", accessor: (p) => p.amount },
+        { header: "Due Date", accessor: (p) => p.dueDate },
+        { header: "Method", accessor: (p) => p.method || "—" },
+        { header: "Status", accessor: (p) => p.status },
+      ]);
+    } else if (tab === "counsellors") {
+      exportToCsv(`aintrix-manager-counsellors-${today}.csv`, counsellors, [
+        { header: "ID", accessor: (c) => c.id },
+        { header: "Name", accessor: (c) => c.name },
+        { header: "Email", accessor: (c) => c.email },
+        { header: "Phone", accessor: (c) => c.phone },
+        { header: "Target", accessor: (c) => c.targetCount },
+        { header: "Converted", accessor: (c) => c.convertedCount },
+        { header: "Conversion", accessor: (c) => `${c.conversionRate}%` },
+      ]);
+    } else {
+      exportToCsv(`aintrix-manager-data-${today}.csv`, leads, [
+        { header: "Lead ID", accessor: (l) => l.id },
+        { header: "Name", accessor: (l) => l.name },
+        { header: "Email", accessor: (l) => l.email },
+        { header: "Track", accessor: (l) => l.track },
+        { header: "Status", accessor: (l) => l.status },
+      ]);
+    }
+    addToast({
+      type: "success",
+      title: "Data Exported",
+      message: `Downloaded CSV snapshot for ${tab}.`,
     });
   };
 
@@ -287,6 +371,11 @@ export default function ManagerPanel() {
           activeTab={activeTab}
           onSelectTab={setActiveTab}
           onLogout={handleLogout}
+          badges={{
+            leads: leads.filter((l) => l.status === "New Lead").length,
+            admissions: admissions.filter((a) => a.status === "PENDING_VERIFICATION").length,
+            attendance: alerts.filter((al) => !al.warningSent).length,
+          }}
         />
       </div>
 
@@ -315,6 +404,11 @@ export default function ManagerPanel() {
               onLogout={handleLogout}
               onClose={() => setMobileSidebarOpen(false)}
               isMobileDrawer={true}
+              badges={{
+                leads: leads.filter((l) => l.status === "New Lead").length,
+                admissions: admissions.filter((a) => a.status === "PENDING_VERIFICATION").length,
+                attendance: alerts.filter((al) => !al.warningSent).length,
+              }}
             />
           </div>
         </div>
@@ -325,14 +419,17 @@ export default function ManagerPanel() {
         <ManagerHeader
           activeTab={activeTab}
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+          onLogout={handleLogout}
           onQuickAction={(action) => {
             if (action === "create_lead") {
-              setNewLeadModalOpen(true);
+              setIsCreateLeadOpen(true);
             } else if (action === "create_class") {
               setSelectedScheduleBatch(undefined);
               setActiveTab("schedule");
+            } else if (action === "create_announcement") {
+              setActiveTab("announcements");
             } else if (action === "export_csv") {
-              exportActiveDataToCsv();
+              handleExportManagerCsv(activeTab);
             }
           }}
         />
@@ -447,133 +544,171 @@ export default function ManagerPanel() {
         approvalsBadgeCount={stats.pendingAdmissionsCount}
       />
 
-      {/* New Candidate Lead Registration Modal */}
-      {newLeadModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+{/* Create Lead Modal */}
+      {isCreateLeadOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+        >
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs"
-            onClick={() => setNewLeadModalOpen(false)}
-            aria-hidden="true"
-          />
-          <div
-            className="relative z-10 w-full max-w-md rounded-2xl p-6 shadow-2xl border"
-            style={{
-              backgroundColor: "var(--surface)",
-              borderColor: "var(--border)",
-              color: "var(--text)",
-            }}
+            className="relative w-full max-w-lg rounded-2xl border p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95"
+            style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
           >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-semibold" style={{ color: "var(--text)" }}>
-                Register New Candidate Lead
-              </h3>
+            <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: "var(--border)" }}>
+              <div>
+                <span className="text-[10px] font-mono font-bold uppercase" style={{ color: "var(--accent)" }}>
+                  Admissions Pipeline
+                </span>
+                <h3 className="text-base font-bold" style={{ color: "var(--text)" }}>
+                  Register New Candidate Lead
+                </h3>
+              </div>
               <button
                 type="button"
-                onClick={() => setNewLeadModalOpen(false)}
-                className="p-1 rounded-md transition-opacity hover:opacity-70 cursor-pointer"
-                style={{ color: "var(--text-muted)" }}
-                aria-label="Close"
+                onClick={() => setIsCreateLeadOpen(false)}
+                className="rounded-lg p-2 text-stone-500 hover:text-stone-900 transition cursor-pointer"
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
-            <form onSubmit={handleCreateLead} className="space-y-4">
+
+            <form onSubmit={handleCreateLeadSubmit} className="space-y-3 text-xs">
               <div>
-                <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>
-                  Full Name *
+                <label className="font-semibold block mb-1" style={{ color: "var(--text)" }}>
+                  Full Name
                 </label>
                 <input
                   type="text"
                   required
+                  placeholder="e.g. Priya Sharma"
                   value={newLeadName}
                   onChange={(e) => setNewLeadName(e.target.value)}
-                  placeholder="e.g. Priya Sharma"
-                  className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none transition-colors"
+                  className="w-full p-2.5 rounded-lg border outline-none text-xs"
                   style={{
-                    backgroundColor: "var(--bg)",
+                    backgroundColor: "var(--bg-secondary)",
                     borderColor: "var(--border)",
                     color: "var(--text)",
                   }}
                 />
               </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold block mb-1" style={{ color: "var(--text)" }}>
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="candidate@example.com"
+                    value={newLeadEmail}
+                    onChange={(e) => setNewLeadEmail(e.target.value)}
+                    className="w-full p-2.5 rounded-lg border outline-none text-xs"
+                    style={{
+                      backgroundColor: "var(--bg-secondary)",
+                      borderColor: "var(--border)",
+                      color: "var(--text)",
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1" style={{ color: "var(--text)" }}>
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="+91 98765 43210"
+                    value={newLeadPhone}
+                    onChange={(e) => setNewLeadPhone(e.target.value)}
+                    className="w-full p-2.5 rounded-lg border outline-none text-xs"
+                    style={{
+                      backgroundColor: "var(--bg-secondary)",
+                      borderColor: "var(--border)",
+                      color: "var(--text)",
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold block mb-1" style={{ color: "var(--text)" }}>
+                    Course Track
+                  </label>
+                  <select
+                    value={newLeadTrack}
+                    onChange={(e) => setNewLeadTrack(e.target.value)}
+                    className="w-full p-2.5 rounded-lg border outline-none text-xs cursor-pointer"
+                    style={{
+                      backgroundColor: "var(--bg-secondary)",
+                      borderColor: "var(--border)",
+                      color: "var(--text)",
+                    }}
+                  >
+                    <option value="Python Full Stack">Python Full Stack</option>
+                    <option value="Full-Stack App Development">Full-Stack App Development</option>
+                    <option value="Django & Cloud APIs">Django & Cloud APIs</option>
+                    <option value="React & Next.js Architecture">React & Next.js Architecture</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1" style={{ color: "var(--text)" }}>
+                    Assign Counsellor
+                  </label>
+                  <select
+                    value={newLeadCounsellor}
+                    onChange={(e) => setNewLeadCounsellor(e.target.value)}
+                    className="w-full p-2.5 rounded-lg border outline-none text-xs cursor-pointer"
+                    style={{
+                      backgroundColor: "var(--bg-secondary)",
+                      borderColor: "var(--border)",
+                      color: "var(--text)",
+                    }}
+                  >
+                    <option value="">Select Counsellor...</option>
+                    {counsellors.map((c) => (
+                      <option key={c.id} value={c.name}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               <div>
-                <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>
-                  Email Address *
+                <label className="font-semibold block mb-1" style={{ color: "var(--text)" }}>
+                  Initial Notes
                 </label>
-                <input
-                  type="email"
-                  required
-                  value={newLeadEmail}
-                  onChange={(e) => setNewLeadEmail(e.target.value)}
-                  placeholder="candidate@example.com"
-                  className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none transition-colors"
+                <textarea
+                  rows={2}
+                  placeholder="Career objectives, educational background, preferred schedule..."
+                  value={newLeadNotes}
+                  onChange={(e) => setNewLeadNotes(e.target.value)}
+                  className="w-full p-2.5 rounded-lg border outline-none text-xs"
                   style={{
-                    backgroundColor: "var(--bg)",
+                    backgroundColor: "var(--bg-secondary)",
                     borderColor: "var(--border)",
                     color: "var(--text)",
                   }}
                 />
               </div>
-              <div>
-                <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  value={newLeadPhone}
-                  onChange={(e) => setNewLeadPhone(e.target.value)}
-                  placeholder="+91 98765 43210"
-                  className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none transition-colors"
-                  style={{
-                    backgroundColor: "var(--bg)",
-                    borderColor: "var(--border)",
-                    color: "var(--text)",
-                  }}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>
-                  Course of Interest
-                </label>
-                <select
-                  value={newLeadTrack}
-                  onChange={(e) => setNewLeadTrack(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg text-sm border focus:outline-none transition-colors"
-                  style={{
-                    backgroundColor: "var(--bg)",
-                    borderColor: "var(--border)",
-                    color: "var(--text)",
-                  }}
-                >
-                  <option value="Python Full-Stack">Python Full-Stack Cohort</option>
-                  <option value="React Development">Modern React & Frontend</option>
-                  <option value="Django Backend">Django REST Backend</option>
-                  <option value="DSA & System Design">DSA & Technical Interview</option>
-                </select>
-              </div>
-              <div className="flex items-center justify-end gap-2 pt-2">
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t" style={{ borderColor: "var(--border)" }}>
                 <button
                   type="button"
-                  onClick={() => setNewLeadModalOpen(false)}
-                  className="px-4 py-2 rounded-lg text-xs font-medium border cursor-pointer"
-                  style={{
-                    borderColor: "var(--border)",
-                    color: "var(--text-muted)",
-                  }}
+                  onClick={() => setIsCreateLeadOpen(false)}
+                  className="px-4 py-2 rounded-lg border font-semibold text-xs hover:bg-black/5 dark:hover:bg-white/5 transition"
+                  style={{ borderColor: "var(--border)", color: "var(--text)" }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={newLeadSubmitting}
-                  className="px-4 py-2 rounded-lg text-xs font-medium cursor-pointer transition-opacity"
-                  style={{
-                    backgroundColor: "var(--accent)",
-                    color: "var(--accent-contrast)",
-                    opacity: newLeadSubmitting ? 0.6 : 1,
-                  }}
+                  className="px-4 py-2 rounded-lg font-semibold text-xs shadow-xs hover:opacity-90 transition"
+                  style={{ backgroundColor: "var(--accent)", color: "var(--accent-contrast)" }}
                 >
-                  {newLeadSubmitting ? "Registering..." : "Create Lead"}
+                  Register Lead
                 </button>
               </div>
             </form>

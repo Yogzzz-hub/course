@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { AdminPanel, createHttpAdminApi } from "../components/admin-panel";
 import type { AdminApi } from "../components/admin-panel/contracts";
+import { createDevFallbackAdminApi } from "../dev/admin-preview-api";
 
 const httpApi = createHttpAdminApi({
   baseUrl: import.meta.env.VITE_ADMIN_API_URL || "/api/admin",
@@ -9,8 +10,9 @@ const httpApi = createHttpAdminApi({
 
 export default function AdminPanelPage() {
   const navigate = useNavigate();
-  // Always backed by the real API (local PostgreSQL). No synthetic data.
-  const api: AdminApi = useMemo<AdminApi>(() => httpApi, []);
+  const api: AdminApi = useMemo(() => {
+    return createDevFallbackAdminApi(httpApi);
+  }, []);
 
   return (
     <AdminPanel

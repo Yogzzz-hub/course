@@ -13,11 +13,11 @@ export function canonicalizeDemoUser(
   const email = rawEmail.trim().toLowerCase();
   const roleUpper = explicitRole?.trim().toUpperCase();
 
-  if (email === "analyst.finance@apexacademy.edu") {
+  if (email === "analyst.finance@aintrixacademy.edu" || email === "analyst.finance@apexacademy.edu") {
     return {
       userId: "usr-analyst",
       name: "Siddharth Rao",
-      email: "analyst.finance@apexacademy.edu",
+      email: "analyst.finance@aintrixacademy.edu",
       role: "FINANCIER",
       authenticated: true,
     };
@@ -27,7 +27,7 @@ export function canonicalizeDemoUser(
     return {
       userId: "usr-financier",
       name: "Meera Nair",
-      email: email || "financier@apexacademy.edu",
+      email: email || "financier@aintrixacademy.edu",
       role: "FINANCIER",
       authenticated: true,
     };
@@ -37,7 +37,7 @@ export function canonicalizeDemoUser(
     return {
       userId: "usr-trainer",
       name: "Arjun Krishnan",
-      email: email || "trainer@apexacademy.edu",
+      email: email || "trainer@aintrixacademy.edu",
       role: "TRAINER",
       authenticated: true,
     };
@@ -47,7 +47,7 @@ export function canonicalizeDemoUser(
     return {
       userId: "usr-manager",
       name: "Vikram Menon",
-      email: email || "manager@apexacademy.edu",
+      email: email || "manager@aintrixacademy.edu",
       role: "MANAGER",
       authenticated: true,
     };
@@ -57,7 +57,7 @@ export function canonicalizeDemoUser(
     return {
       userId: "std-001",
       name: "Enrolled Student",
-      email: email || "student@apexacademy.edu",
+      email: email || "student@aintrixacademy.edu",
       role: "STUDENT",
       authenticated: true,
     };
@@ -66,7 +66,7 @@ export function canonicalizeDemoUser(
   return {
     userId: "usr-admin",
     name: "Raghav Menon",
-    email: email || "admin@apexacademy.edu",
+    email: email || "admin@aintrixacademy.edu",
     role: "ADMIN",
     authenticated: true,
   };

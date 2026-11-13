@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   AlertTriangle,
   ArrowDownLeft,
@@ -8,14 +8,17 @@ import {
   CreditCard,
   Download,
   Filter,
+  Printer,
   Receipt,
   Search,
   Wallet,
+  X,
 } from "lucide-react";
 import type { LedgerEntry } from "./contracts";
 import { useAdminAuthority, useAdminResource } from "./hooks";
 import { Button, Card, Empty, inputClass, KpiCard, ScreenTitle, StatusPill } from "./ui";
 import { dateTime, money } from "./utils";
+import { exportToCsv } from "../../utils/csvExport";
 
 export function PaymentsSection() {
   const { can } = useAdminAuthority();
@@ -24,6 +27,17 @@ export function PaymentsSection() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [receiptEntry, setReceiptEntry] = useState<LedgerEntry | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && receiptEntry) {
+        setReceiptEntry(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [receiptEntry]);
 
   const revenue = reportsQuery.data?.revenue || {
     capturedMinor: 48500000,
@@ -47,18 +61,30 @@ export function PaymentsSection() {
     return true;
   });
 
+  const handleExportLedger = () => {
+    const listToExport = filteredEntries.length > 0 ? filteredEntries : entries;
+    exportToCsv(
+      `aintrix-ledger-${new Date().toISOString().slice(0, 10)}.csv`,
+      listToExport,
+      [
+        { header: "Entry ID", accessor: (e) => e.id },
+        { header: "Student", accessor: (e) => e.student },
+        { header: "Description", accessor: (e) => e.description },
+        { header: "Reference", accessor: (e) => e.providerReference || "" },
+        { header: "Amount", accessor: (e) => money(e.amountMinor, e.currency) },
+        { header: "Status", accessor: (e) => e.status },
+        { header: "Due Date", accessor: (e) => (e.dueAt ? dateTime(e.dueAt) : "") },
+      ]
+    );
+  };
+
   return (
     <div className="space-y-6">
       <ScreenTitle
         eyebrow="Financial Operations"
         title="Payments & Invoices"
         actions={
-          <Button
-            secondary
-            onClick={() => {
-              /* export csv */
-            }}
-          >
+          <Button secondary onClick={handleExportLedger}>
             <Download size={16} /> Export ledger
           </Button>
         }
@@ -196,7 +222,8 @@ export function PaymentsSection() {
                       <td className="px-6 py-4 text-right">
                         <button
                           type="button"
-                          className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-[var(--border)] px-3 text-xs font-semibold text-[var(--accent)] hover:bg-[var(--accent-tint)] hover:border-[var(--accent)] transition"
+                          onClick={() => setReceiptEntry(item)}
+                          className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-[var(--border)] px-3 text-xs font-semibold text-[var(--accent)] hover:bg-[var(--accent-tint)] hover:border-[var(--accent)] transition cursor-pointer"
                         >
                           <Receipt size={14} /> Receipt
                         </button>
@@ -233,7 +260,8 @@ export function PaymentsSection() {
 
                     <button
                       type="button"
-                      className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-[var(--border)] px-3.5 text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent-tint)]"
+                      onClick={() => setReceiptEntry(item)}
+                      className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-[var(--border)] px-3.5 text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent-tint)] cursor-pointer"
                     >
                       <Receipt size={15} /> Download Receipt
                     </button>
@@ -244,6 +272,80 @@ export function PaymentsSection() {
           </>
         )}
       </Card>
+
+      {/* Receipt Modal */}
+      {receiptEntry && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+        >
+          <div className="relative w-full max-w-lg rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+            <div className="flex items-start justify-between border-b border-[var(--border)] pb-4">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">
+                  Payment Receipt
+                </span>
+                <h3 className="text-lg font-bold text-[var(--text)] mt-0.5">
+                  Aintrix Academy
+                </h3>
+                <p className="text-xs text-[var(--muted)]">Tax Invoice & Proof of Enrolment</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReceiptEntry(null)}
+                className="rounded-lg p-2 text-[var(--muted)] hover:bg-[var(--surface-alt)] hover:text-[var(--text)] transition cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs bg-[var(--surface-alt)] p-4 rounded-xl border border-[var(--border)]">
+              <div className="flex justify-between">
+                <span className="text-[var(--muted)]">Receipt Ref:</span>
+                <span className="font-mono font-bold text-[var(--text)]">
+                  {receiptEntry.providerReference || receiptEntry.id}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--muted)]">Billed To Learner:</span>
+                <span className="font-semibold text-[var(--text)]">{receiptEntry.student}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--muted)]">Description:</span>
+                <span className="text-[var(--text)]">{receiptEntry.description}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--muted)]">Payment Kind:</span>
+                <span className="capitalize text-[var(--text)]">{receiptEntry.kind}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--muted)]">Status:</span>
+                <StatusPill status={receiptEntry.status} />
+              </div>
+              <div className="flex justify-between items-center border-t border-[var(--border)] pt-2.5">
+                <span className="font-bold text-sm text-[var(--text)]">Total Captured:</span>
+                <span className="font-extrabold text-base text-[var(--accent)]">
+                  {money(receiptEntry.amountMinor, receiptEntry.currency)}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <Button secondary onClick={() => setReceiptEntry(null)}>
+                Close
+              </Button>
+              <Button
+                onClick={() => {
+                  window.print();
+                }}
+              >
+                <Printer size={15} /> Print Receipt
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

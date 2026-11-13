@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import pg from 'pg';
 import { verifyTrialBalance, computeAccountBalances } from '../backend/services/financier/ledger';
 
-describe('PostgreSQL Ledger & Trial Balance Verification', () => {
+describe.skipIf(!process.env.DATABASE_URL)('PostgreSQL Ledger & Trial Balance Verification', () => {
   it('loads entries from PostgreSQL and verifies trial balance is 100% balanced', async () => {
     const pool = new pg.Pool({
       connectionString: process.env.DATABASE_URL || 'postgresql://postgres:mkccsql@127.0.0.1:5432/academy',

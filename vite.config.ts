@@ -71,7 +71,7 @@ export default defineConfig(({ mode }) => {
             });
           return;
         }
-        if (request.url === '/api/booking' || request.url?.startsWith('/api/booking/')) {
+if (request.url === '/api/booking' || request.url?.startsWith('/api/booking/')) {
           if (request.url === '/api/booking/programmes' || request.url.startsWith('/api/booking/programmes')) {
             response.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
             response.end(JSON.stringify({ programmes: allBookingProgrammes }));

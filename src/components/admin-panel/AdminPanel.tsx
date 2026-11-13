@@ -280,6 +280,20 @@ function AdminWorkspace({
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
 
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const selectSection = (section: DashboardSection) => {
     setActiveSection(section);
     if (typeof window !== "undefined") {
@@ -568,6 +582,7 @@ function AdminWorkspace({
                 className="absolute left-3.5 top-3.5 text-[var(--muted)]"
               />
               <input
+                ref={searchInputRef}
                 type="search"
                 placeholder="Search leads, students, payments (Press Enter)..."
                 value={globalSearch}
@@ -577,8 +592,11 @@ function AdminWorkspace({
                     // update automatically if already on leads
                   }
                 }}
-                className={`${inputClass} pl-10`}
+                className={`${inputClass} pl-10 pr-16`}
               />
+              <kbd className="absolute right-3 top-2.5 px-1.5 py-0.5 rounded text-[10px] font-mono border border-[var(--border)] text-[var(--muted)] pointer-events-none select-none">
+                Ctrl K
+              </kbd>
             </form>
 
             {/* Header Right Actions */}
