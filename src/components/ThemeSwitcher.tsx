@@ -64,12 +64,18 @@ export function useTheme() {
   const currentTheme = useSyncExternalStore(subscribeTheme, getThemeSnapshot, () => 'theme-1');
 
   const setTheme = (themeId: string) => {
+    const resolved = normaliseTheme(themeId);
     if (typeof document !== 'undefined') {
-      document.documentElement.dataset.theme = normaliseTheme(themeId);
+      document.documentElement.dataset.theme = resolved;
+      const themeMeta = themes.find(t => t.id === resolved);
+      if (themeMeta) {
+        const metaEl = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+        if (metaEl) metaEl.content = themeMeta.bg;
+      }
       window.dispatchEvent(new Event('academy-theme-change'));
       document.documentElement.dataset.themeTransitioning = 'true';
       try {
-        localStorage.setItem('academy-theme', themeId);
+        localStorage.setItem('academy-theme', resolved);
       } catch {
         // ignore storage errors
       }

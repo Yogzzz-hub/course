@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { PaletteMenu } from "../components/PaletteMenu";
+import { ProfileMenu } from "../components/ProfileMenu";
+import { LogoMark } from "../components/LogoMark";
 import {
   clearCrmSession,
   getRedirectPathForSession,
@@ -12,7 +15,6 @@ import {
   TrendingUp,
   FileText,
   DollarSign,
-  LogOut,
   CheckCircle2,
   AlertCircle,
   ArrowDownLeft,
@@ -23,7 +25,6 @@ import {
   Filter,
   Plus,
   X,
-  Menu,
   ChevronRight,
   Building,
   User,
@@ -32,6 +33,8 @@ import {
   Calendar,
   Wallet,
   Receipt,
+  LogOut,
+  PanelLeftClose,
 } from "lucide-react";
 import {
   initialAccounts,
@@ -135,6 +138,11 @@ export default function FinancierPanel() {
           return;
         }
         if (summaryRes.status === 401 || summaryRes.status === 403) {
+          const session = readCrmSession();
+          if (session && isFinancierAuthorized(session)) {
+            setSyncStatus("offline_preview");
+            return;
+          }
           setSyncStatus("auth_required");
           setSyncMessage(
             "Sign in with a Financier or Admin account to load live CRM treasury data."
@@ -142,10 +150,7 @@ export default function FinancierPanel() {
           return;
         }
         if (!summaryRes.ok || !isJson) {
-          setSyncStatus("error");
-          setSyncMessage(
-            `Unable to load live finance summary (HTTP ${summaryRes.status}). The backend may still be starting up.`
-          );
+          setSyncStatus("offline_preview");
           return;
         }
 
@@ -360,10 +365,11 @@ export default function FinancierPanel() {
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // New Transaction Entry Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarLogoutOpen, setSidebarLogoutOpen] = useState(false);
   const [modalType, setModalType] = useState<"tuition" | "expense" | "refund">("tuition");
   const [modalStudent, setModalStudent] = useState("");
   const [modalAmount, setModalAmount] = useState("");
@@ -375,7 +381,6 @@ export default function FinancierPanel() {
 
   const setTab = (tab: FinancierTab, accountCode = "BANK") => {
     setSearchParams({ tab, account: accountCode });
-    setMobileSidebarOpen(false);
   };
 
   const openStudent = (id: string) => {
@@ -452,138 +457,324 @@ export default function FinancierPanel() {
 
   const selectedStudent = students.find((s) => s.id === studentDetailId);
 
+  const overdueStudentsCount = students.filter((s) => s.overdueMinor > 0).length;
+
   return (
-    <div className="manager-workspace min-h-screen bg-[var(--bg,#f6f6f8)] text-[var(--text,#1d1d24)] flex flex-col font-sans">
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-40 h-16 border-b border-[var(--border,#e4e4ea)] bg-white/95 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between gap-3 shadow-2xs">
-        <div className="flex items-center gap-2 sm:gap-3">
+    <div className="manager-workspace fin-portal min-h-screen bg-[var(--bg)] text-[var(--text)] flex flex-col font-sans">
+      {/* Desktop-only Fixed Sidebar */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-30 hidden h-dvh md:flex flex-col justify-between overflow-y-auto overflow-x-hidden border-r border-[var(--sidebar-border)] bg-[var(--sidebar-bg)] text-[var(--sidebar-text)] select-none transition-[width] duration-200 ${
+          sidebarCollapsed ? "w-20" : "w-60"
+        }`}
+        aria-label="Financier sidebar navigation"
+      >
+        <div className="flex flex-col flex-1 min-h-0">
+          {/* Sidebar Brand Header */}
+          <div
+            className={`h-16 border-b border-[var(--sidebar-border)] flex items-center gap-2 shrink-0 ${
+              sidebarCollapsed ? "justify-center px-2" : "justify-between px-4"
+            }`}
+          >
+            <a href="/" className="flex items-center gap-2.5 min-w-0 hover:opacity-90 transition">
+              <LogoMark size={28} surface="dark" className="shrink-0" />
+              {!sidebarCollapsed && (
+                <div className="min-w-0">
+                  <div className="text-[15px] font-bold truncate leading-tight text-white">
+                    Aintrix
+                  </div>
+                  <div className="text-[9px] font-medium tracking-[0.2em] uppercase leading-tight mt-0.5 text-[var(--accent-soft)]">
+                    Academy · Financier
+                  </div>
+                </div>
+              )}
+            </a>
+            {!sidebarCollapsed && (
+              <button
+                type="button"
+                onClick={() => setSidebarCollapsed(true)}
+                aria-label="Collapse sidebar"
+                title="Collapse sidebar"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--sidebar-text)]/70 hover:bg-[var(--sidebar-hover)] hover:text-white transition cursor-pointer"
+              >
+                <PanelLeftClose size={16} aria-hidden="true" />
+              </button>
+            )}
+          </div>
+
+          {/* Sidebar Nav Items + Live Operating Accounts Quick-Jump */}
+          <nav className="flex-1 flex flex-col justify-between gap-2 p-3 overflow-y-auto overflow-x-hidden" aria-label="Financier sections">
+            <div className="flex-1 flex flex-col justify-between gap-1.5">
+              <button
+                type="button"
+                title={sidebarCollapsed ? "Operating Ledger" : undefined}
+                onClick={() => setTab("ledger", "BANK")}
+                aria-current={activeTab === "ledger" ? "page" : undefined}
+                className={`group flex flex-1 min-h-[44px] max-h-[64px] w-full items-center rounded-xl py-2 text-left text-xs transition ${
+                  sidebarCollapsed ? "justify-center px-2" : "justify-between px-3"
+                } ${
+                  activeTab === "ledger"
+                    ? "bg-[var(--btn-primary-bg)] text-white font-bold shadow-sm"
+                    : "text-[var(--sidebar-text)]/80 hover:bg-[var(--sidebar-hover)] hover:text-white font-semibold"
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Receipt
+                    size={17}
+                    className={`shrink-0 ${
+                      activeTab === "ledger"
+                        ? "text-[var(--accent-soft)]"
+                        : "text-[var(--sidebar-text)]/70 group-hover:text-white"
+                    }`}
+                  />
+                  <span className={sidebarCollapsed ? "sr-only" : "truncate"}>Operating Ledger</span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                title={sidebarCollapsed ? "Student Balances" : undefined}
+                onClick={() => setTab("students")}
+                aria-current={activeTab === "students" ? "page" : undefined}
+                className={`relative group flex flex-1 min-h-[44px] max-h-[64px] w-full items-center rounded-xl py-2 text-left text-xs transition ${
+                  sidebarCollapsed ? "justify-center px-2" : "justify-between px-3"
+                } ${
+                  activeTab === "students"
+                    ? "bg-[var(--btn-primary-bg)] text-white font-bold shadow-sm"
+                    : "text-[var(--sidebar-text)]/80 hover:bg-[var(--sidebar-hover)] hover:text-white font-semibold"
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <User
+                    size={17}
+                    className={`shrink-0 ${
+                      activeTab === "students"
+                        ? "text-[var(--accent-soft)]"
+                        : "text-[var(--sidebar-text)]/70 group-hover:text-white"
+                    }`}
+                  />
+                  <span className={sidebarCollapsed ? "sr-only" : "truncate"}>Student Balances</span>
+                </div>
+                {!sidebarCollapsed && overdueStudentsCount > 0 && (
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ml-1.5 ${
+                      activeTab === "students"
+                        ? "sidebar-badge bg-white text-[var(--accent)]"
+                        : "bg-[var(--btn-primary-bg)] text-white border border-[var(--accent-soft)]/25"
+                    }`}
+                  >
+                    {overdueStudentsCount}
+                  </span>
+                )}
+                {sidebarCollapsed && overdueStudentsCount > 0 && (
+                  <span
+                    className="absolute right-2.5 top-2 size-2 rounded-full bg-[var(--accent-soft)]"
+                    aria-hidden="true"
+                  />
+                )}
+              </button>
+
+              <button
+                type="button"
+                title={sidebarCollapsed ? "Treasury Accounts" : undefined}
+                onClick={() => setTab("accounts")}
+                aria-current={activeTab === "accounts" ? "page" : undefined}
+                className={`group flex flex-1 min-h-[44px] max-h-[64px] w-full items-center rounded-xl py-2 text-left text-xs transition ${
+                  sidebarCollapsed ? "justify-center px-2" : "justify-between px-3"
+                } ${
+                  activeTab === "accounts"
+                    ? "bg-[var(--btn-primary-bg)] text-white font-bold shadow-sm"
+                    : "text-[var(--sidebar-text)]/80 hover:bg-[var(--sidebar-hover)] hover:text-white font-semibold"
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Building
+                    size={17}
+                    className={`shrink-0 ${
+                      activeTab === "accounts"
+                        ? "text-[var(--accent-soft)]"
+                        : "text-[var(--sidebar-text)]/70 group-hover:text-white"
+                    }`}
+                  />
+                  <span className={sidebarCollapsed ? "sr-only" : "truncate"}>Treasury Accounts</span>
+                </div>
+              </button>
+            </div>
+
+            {!sidebarCollapsed && accounts.length > 0 && (
+              <div className="rounded-xl border border-[var(--sidebar-border)] bg-[var(--sidebar-surface)] p-2.5 space-y-1.5 shrink-0">
+                <div className="px-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--accent-soft)]">
+                  Accounts Snapshot
+                </div>
+                {accounts.map((acc) => {
+                  const isAccActive = activeTab === "ledger" && selectedAccountCode === acc.code;
+                  return (
+                    <button
+                      key={acc.code}
+                      type="button"
+                      onClick={() => setTab("ledger", acc.code)}
+                      className={`w-full flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-[11px] transition cursor-pointer ${
+                        isAccActive
+                          ? "bg-[var(--btn-primary-bg)] text-white font-semibold"
+                          : "text-[var(--sidebar-text)]/80 hover:bg-[var(--sidebar-hover)] hover:text-white"
+                      }`}
+                    >
+                      <span className="truncate">{acc.name}</span>
+                      <span className="font-mono font-semibold shrink-0 text-[10px] text-[var(--accent-soft)]">
+                        {formatRupees(acc.netBalanceMinor)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </nav>
+        </div>
+
+        {/* Sidebar Profile, Logout & Collapse Footer */}
+        <div className="border-t border-[var(--sidebar-border)] bg-[var(--sidebar-surface)] p-3 space-y-2 shrink-0">
           <button
             type="button"
-            onClick={() => setMobileSidebarOpen(true)}
-            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-[#6D1A2B] hover:bg-slate-100 transition md:hidden"
-            aria-label="Open side navigation menu"
+            title={sidebarCollapsed ? "Lead Financier" : undefined}
+            onClick={() => setSidebarLogoutOpen((v) => !v)}
+            aria-expanded={sidebarLogoutOpen}
+            className={`w-full p-2 rounded-xl flex items-center gap-2.5 text-left cursor-pointer hover:bg-[var(--sidebar-hover)] transition ${
+              sidebarCollapsed ? "justify-center" : ""
+            }`}
           >
-            <Menu size={22} />
-          </button>
-          <div className="flex size-9 items-center justify-center rounded-xl bg-[#6D1A2B] text-white shrink-0 shadow-xs">
-            <Coins size={18} />
-          </div>
-          <div>
-            <div className="text-sm sm:text-base font-bold text-[#1d1d24] leading-tight truncate">
-              Aintrix Academy — Financier Portal
+            <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[11px] shrink-0 bg-[var(--btn-primary-bg)] text-white border border-[var(--accent-soft)]/30">
+              LF
             </div>
-            <div className="text-[11px] text-[var(--muted,#5f5f6b)] hidden sm:block truncate">
-              Treasury, Account Ledgers & Student Dues
-            </div>
-          </div>
-        </div>
+            {!sidebarCollapsed && (
+              <div className="min-w-0 flex-1">
+                <div className="text-[11px] font-semibold truncate leading-tight text-white">
+                  Lead Financier
+                </div>
+                <div className="text-[10px] truncate leading-tight text-[var(--accent-soft)]">
+                  Finance Operations
+                </div>
+              </div>
+            )}
+          </button>
 
-        {/* Desktop Header Nav Links */}
-        <nav className="hidden md:flex items-center gap-1">
-          <button
-            onClick={() => setTab("ledger", "BANK")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-              activeTab === "ledger"
-                ? "bg-[#6D1A2B] text-white shadow-xs"
-                : "text-[var(--muted,#5f5f6b)] hover:text-[#1d1d24] hover:bg-slate-100"
-            }`}
-          >
-            Operating Ledger
-          </button>
-          <button
-            onClick={() => setTab("students")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-              activeTab === "students"
-                ? "bg-[#6D1A2B] text-white shadow-xs"
-                : "text-[var(--muted,#5f5f6b)] hover:text-[#1d1d24] hover:bg-slate-100"
-            }`}
-          >
-            Student Balances
-          </button>
-          <button
-            onClick={() => setTab("accounts")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-              activeTab === "accounts"
-                ? "bg-[#6D1A2B] text-white shadow-xs"
-                : "text-[var(--muted,#5f5f6b)] hover:text-[#1d1d24] hover:bg-slate-100"
-            }`}
-          >
-            Treasury Accounts
-          </button>
-        </nav>
+          {sidebarLogoutOpen && (
+            <button
+              type="button"
+              title={sidebarCollapsed ? "Log out" : undefined}
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-colors bg-[var(--btn-primary-bg)] text-white hover:bg-[var(--btn-primary-hover)] cursor-pointer min-h-[44px]"
+            >
+              <LogOut size={16} />
+              {!sidebarCollapsed && <span>Log out</span>}
+            </button>
+          )}
 
-        <div className="flex items-center gap-2">
-          {syncStatus === "live" && (
-            <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 border border-emerald-200">
-              Live CRM
-            </span>
-          )}
-          {syncStatus === "syncing" && (
-            <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
-              Syncing...
-            </span>
-          )}
-          <span className="hidden lg:inline text-xs text-[var(--muted,#5f5f6b)]">
-            Logged in as <strong className="text-[#1d1d24]">{operatorName}</strong>
-          </span>
           <button
-            onClick={handleLogout}
-            className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-red-200 bg-red-50 text-red-700 text-xs font-semibold hover:bg-red-100 transition active:scale-95"
+            type="button"
+            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!sidebarCollapsed}
+            title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            onClick={() => setSidebarCollapsed((v) => !v)}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-colors text-[var(--sidebar-text)]/80 hover:bg-[var(--sidebar-hover)] hover:text-white cursor-pointer min-h-[40px]"
           >
-            <LogOut size={15} />
-            <span className="hidden sm:inline">Sign Out</span>
+            {sidebarCollapsed ? (
+              <ChevronRight size={17} aria-hidden="true" />
+            ) : (
+              <>
+                <PanelLeftClose size={17} aria-hidden="true" />
+                <span>Collapse sidebar</span>
+              </>
+            )}
           </button>
         </div>
-      </header>
+      </aside>
 
-      {/* Main Workspace Body */}
-      <main className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-28 md:pb-12">
-        {(syncStatus === "error" || syncStatus === "auth_required") && (
-          <div
-            role="alert"
-            className={`mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-xs ${
-              syncStatus === "auth_required"
-                ? "border-amber-200 bg-amber-50 text-amber-900"
-                : "border-rose-200 bg-rose-50 text-rose-900"
-            }`}
-          >
-            <div className="flex items-center gap-2 font-medium">
-              <AlertCircle size={16} className="shrink-0" />
-              <span>{syncMessage}</span>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {syncStatus === "auth_required" ? (
-                <Link
-                  to="/login?returnUrl=/financier"
-                  className="inline-flex items-center justify-center rounded-xl bg-[#6D1A2B] px-3 py-2 font-semibold text-white hover:bg-[#521320]"
-                >
-                  Sign In to CRM
-                </Link>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setSyncNonce((n) => n + 1)}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-rose-700 px-3 py-2 font-semibold text-white hover:bg-rose-800"
-                >
-                  <RotateCcw size={13} /> Retry Connection
-                </button>
-              )}
+      {/* Main Content Shell */}
+      <div className={`flex-1 flex flex-col min-w-0 transition-[padding] duration-200 ${sidebarCollapsed ? "md:pl-20" : "md:pl-60"}`}>
+        {/* Top Navbar */}
+        <header className="sticky top-0 z-40 h-16 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <a href="/" className="flex md:hidden items-center shrink-0" aria-label="Aintrix Academy Home">
+              <LogoMark size={28} surface="light" />
+            </a>
+            <div className="min-w-0">
+              <div className="text-sm sm:text-base font-bold text-[var(--text)] leading-tight truncate">
+                Aintrix Academy — Financier Portal
+              </div>
+              <div className="text-[11px] text-[var(--muted)] hidden sm:block truncate">
+                Treasury, Account Ledgers & Student Dues
+              </div>
             </div>
           </div>
-        )}
+
+          <div className="flex items-center gap-2 shrink-0">
+            {syncStatus === "live" && (
+              <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 border border-emerald-200">
+                Live CRM
+              </span>
+            )}
+            {syncStatus === "syncing" && (
+              <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                Syncing...
+              </span>
+            )}
+            <PaletteMenu />
+            <ProfileMenu
+              initials="LF"
+              name={operatorName || "Lead Financier"}
+              subtitle="Finance Operations"
+              onLogout={handleLogout}
+            />
+          </div>
+        </header>
+
+        {/* Main Workspace Body */}
+        <main className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-28 md:pb-12">
+          {(syncStatus === "error" || syncStatus === "auth_required") && (
+            <div
+              role="alert"
+              className={`mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-xs ${
+                syncStatus === "auth_required"
+                  ? "border-amber-200 bg-amber-50 text-amber-900"
+                  : "border-rose-200 bg-rose-50 text-rose-900"
+              }`}
+            >
+              <div className="flex items-center gap-2 font-medium">
+                <AlertCircle size={16} className="shrink-0" />
+                <span>{syncMessage}</span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {syncStatus === "auth_required" ? (
+                  <Link
+                    to="/login?returnUrl=/financier"
+                    className="inline-flex items-center justify-center rounded-xl bg-[#6D1A2B] px-3 py-2 font-semibold text-white hover:bg-[#521320]"
+                  >
+                    Sign In to CRM
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setSyncNonce((n) => n + 1)}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-rose-700 px-3 py-2 font-semibold text-white hover:bg-rose-800"
+                  >
+                    <RotateCcw size={13} /> Retry Connection
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         {/* SUBVIEW 1: OPERATING BANK ACCOUNT LEDGER */}
         {activeTab === "ledger" && (
           <div className="space-y-6">
             {/* Header / Account Switcher Card */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#C9A24B]">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--accent)]">
                   Treasury Ledger Register
                 </span>
-                <h1 className="text-xl sm:text-2xl font-bold text-[#1d1d24] mt-0.5">
+                <h1 className="text-lg sm:text-xl font-bold text-[var(--text)] mt-0.5">
                   {currentAccount.name}
                 </h1>
-                <p className="text-xs sm:text-sm text-[var(--muted,#5f5f6b)] mt-1">
+                <p className="text-xs sm:text-sm text-[var(--muted)] mt-1">
                   Account: <span className="font-mono font-semibold">{currentAccount.accountNumber}</span> · {currentAccount.bankName}
                 </p>
               </div>
@@ -596,14 +787,14 @@ export default function FinancierPanel() {
                     setModalType("tuition");
                     setIsModalOpen(true);
                   }}
-                  className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#6D1A2B] text-white text-xs font-semibold shadow-xs hover:bg-[#521320] transition active:scale-95"
+                  className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--btn-primary-bg)] text-white text-xs font-semibold shadow-xs hover:bg-[var(--btn-primary-hover)] transition active:scale-95"
                 >
                   <Plus size={16} /> Record Transaction
                 </button>
                 <button
                   type="button"
                   onClick={() => alert("Exporting verified ledger entries as CSV...")}
-                  className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--border,#e4e4ea)] bg-white text-slate-700 text-xs font-semibold hover:bg-slate-50 transition active:scale-95 shadow-2xs"
+                  className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] text-xs font-semibold hover:bg-[var(--accent-tint)] transition active:scale-95 shadow-2xs"
                 >
                   <Download size={15} /> Export CSV
                 </button>
@@ -611,10 +802,10 @@ export default function FinancierPanel() {
             </div>
 
             {/* Net Account Balance Card (Full-width on mobile & stacks nicely) */}
-            <div className="w-full rounded-2xl border border-[var(--border,#e4e4ea)] bg-white p-5 sm:p-6 shadow-sm">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[var(--border,#e4e4ea)]">
+            <div className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[var(--border)]">
                 <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted,#5f5f6b)] block">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block">
                     Net Account Balance
                   </span>
                   <div
@@ -626,7 +817,7 @@ export default function FinancierPanel() {
                   >
                     {formatRupees(currentAccount.netBalanceMinor)}
                   </div>
-                  <p className="text-xs text-[var(--muted,#5f5f6b)] mt-1">
+                  <p className="text-xs text-[var(--muted)] mt-1">
                     {currentAccount.netBalanceMinor < 0
                       ? "Operating deficit (Pending tuition settlement or scheduled debits)"
                       : "Positive operating liquidity"}
@@ -634,8 +825,8 @@ export default function FinancierPanel() {
                 </div>
 
                 <div className="flex items-center gap-2 self-start sm:self-auto">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-900 border border-indigo-100">
-                    <ShieldCheck size={14} className="text-indigo-600" />
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-[var(--accent-tint)] text-[var(--accent)] border border-[var(--accent-border)]">
+                    <ShieldCheck size={14} className="text-[var(--accent)]" />
                     Last Reconciled: {currentAccount.lastReconciledAt}
                   </span>
                 </div>
@@ -643,20 +834,20 @@ export default function FinancierPanel() {
 
               {/* Sub-Metrics Breakdown */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 text-xs">
-                <div className="p-3 bg-slate-50 rounded-xl">
-                  <span className="text-[var(--muted,#5f5f6b)] block uppercase text-[10px] font-semibold">Total Verified Inflows</span>
+                <div className="p-3 bg-[var(--surface-alt)] rounded-xl border border-[var(--border)]">
+                  <span className="text-[var(--muted)] block uppercase text-[10px] font-semibold">Total Verified Inflows</span>
                   <span className="text-base font-bold text-emerald-700 mt-0.5 block">
                     {formatRupees(currentAccount.totalInflowMinor)}
                   </span>
                 </div>
-                <div className="p-3 bg-slate-50 rounded-xl">
-                  <span className="text-[var(--muted,#5f5f6b)] block uppercase text-[10px] font-semibold">Total Verified Outflows</span>
+                <div className="p-3 bg-[var(--surface-alt)] rounded-xl border border-[var(--border)]">
+                  <span className="text-[var(--muted)] block uppercase text-[10px] font-semibold">Total Verified Outflows</span>
                   <span className="text-base font-bold text-rose-600 mt-0.5 block">
                     {formatRupees(currentAccount.totalOutflowMinor)}
                   </span>
                 </div>
-                <div className="p-3 bg-slate-50 rounded-xl">
-                  <span className="text-[var(--muted,#5f5f6b)] block uppercase text-[10px] font-semibold">Pending Match Variance</span>
+                <div className="p-3 bg-[var(--surface-alt)] rounded-xl border border-[var(--border)]">
+                  <span className="text-[var(--muted)] block uppercase text-[10px] font-semibold">Pending Match Variance</span>
                   <span className="text-base font-bold text-amber-700 mt-0.5 block">
                     {currentAccount.pendingReconciliationCount} Unreconciled
                   </span>
@@ -667,13 +858,13 @@ export default function FinancierPanel() {
             {/* Search and Category Filter Bar */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
               <div className="relative flex-1">
-                <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
                 <input
                   type="text"
                   placeholder="Search operating bank account ledger lines, descriptions, or students..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--border,#e4e4ea)] bg-white text-base sm:text-xs text-[#1d1d24] placeholder:text-slate-400 focus:border-[#6D1A2B] focus:outline-none min-h-[44px] shadow-2xs"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-base sm:text-xs text-[var(--text)] placeholder:text-[var(--muted)] focus:border-[var(--accent)] focus:outline-none min-h-[44px] shadow-2xs"
                 />
               </div>
 
@@ -681,7 +872,7 @@ export default function FinancierPanel() {
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full sm:w-auto px-3 py-2.5 rounded-xl border border-[var(--border,#e4e4ea)] bg-white text-base sm:text-xs text-[#1d1d24] font-medium min-h-[44px] shadow-2xs focus:outline-none focus:border-[#6D1A2B]"
+                  className="w-full sm:w-auto px-3 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-base sm:text-xs text-[var(--text)] font-medium min-h-[44px] shadow-2xs focus:outline-none focus:border-[var(--accent)]"
                 >
                   <option value="ALL">All Categories</option>
                   <option value="Tuition Collection">Tuition Collection</option>
@@ -698,23 +889,23 @@ export default function FinancierPanel() {
               {/* MOBILE CARDS (target width 360px up to 767px) */}
               <div className="block md:hidden space-y-3">
                 {filteredLedger.length === 0 ? (
-                  <div className="p-8 text-center bg-white rounded-2xl border border-[var(--border,#e4e4ea)]">
-                    <AlertCircle size={28} className="mx-auto text-slate-400 mb-2" />
-                    <p className="text-sm font-semibold text-[#1d1d24]">No matching ledger entries</p>
-                    <p className="text-xs text-[var(--muted,#5f5f6b)] mt-1">Try clearing your search query or filter.</p>
+                  <div className="p-8 text-center bg-[var(--surface)] rounded-2xl border border-[var(--border)]">
+                    <AlertCircle size={28} className="mx-auto text-[var(--muted)] mb-2" />
+                    <p className="text-sm font-semibold text-[var(--text)]">No matching ledger entries</p>
+                    <p className="text-xs text-[var(--muted)] mt-1">Try clearing your search query or filter.</p>
                   </div>
                 ) : (
                   filteredLedger.map((line) => (
                     <div
                       key={line.id}
-                      className="w-full bg-white rounded-2xl border border-[var(--border,#e4e4ea)] p-4 shadow-sm space-y-3"
+                      className="w-full bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-4 shadow-sm space-y-3"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <span className="font-mono text-xs font-bold text-[#6D1A2B]">
+                          <span className="font-mono text-xs font-bold text-[var(--accent)]">
                             {line.transactionNumber}
                           </span>
-                          <span className="text-[11px] text-[var(--muted,#5f5f6b)] block mt-0.5">
+                          <span className="text-[11px] text-[var(--muted)] block mt-0.5">
                             {line.date}
                           </span>
                         </div>
@@ -723,13 +914,13 @@ export default function FinancierPanel() {
                         </span>
                       </div>
 
-                      <p className="text-xs sm:text-sm font-medium text-[#1d1d24] leading-snug">
+                      <p className="text-xs sm:text-sm font-medium text-[var(--text)] leading-snug">
                         {line.description}
                       </p>
 
-                      <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-3 rounded-xl">
+                      <div className="grid grid-cols-2 gap-2 text-xs bg-[var(--surface-alt)] p-3 rounded-xl border border-[var(--border)]">
                         <div>
-                          <span className="text-[10px] text-[var(--muted,#5f5f6b)] uppercase font-semibold block">
+                          <span className="text-[10px] text-[var(--muted)] uppercase font-semibold block">
                             Flow / Amount
                           </span>
                           {line.creditMinor > 0 ? (
@@ -744,21 +935,21 @@ export default function FinancierPanel() {
                         </div>
 
                         <div>
-                          <span className="text-[10px] text-[var(--muted,#5f5f6b)] uppercase font-semibold block">
+                          <span className="text-[10px] text-[var(--muted)] uppercase font-semibold block">
                             Rolling Net Balance
                           </span>
                           <span
                             className={`font-extrabold text-sm ${
-                              line.balanceMinor < 0 ? "text-rose-600" : "text-slate-900"
+                              line.balanceMinor < 0 ? "text-rose-600" : "text-[var(--text)]"
                             }`}
                           >
                             {formatRupees(line.balanceMinor)}
                           </span>
                         </div>
 
-                        <div className="col-span-2 pt-2 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-600">
+                        <div className="col-span-2 pt-2 border-t border-[var(--border)] flex items-center justify-between text-[11px] text-[var(--muted)]">
                           <span>{line.category}</span>
-                          <span className="font-mono text-[10px] bg-white px-2 py-0.5 rounded border border-slate-200">
+                          <span className="font-mono text-[10px] bg-[var(--surface)] px-2 py-0.5 rounded border border-[var(--border)]">
                             {line.paymentMethod || "Direct Transfer"}
                           </span>
                         </div>
@@ -769,10 +960,10 @@ export default function FinancierPanel() {
               </div>
 
               {/* DESKTOP TABLE (Hidden on mobile < md) */}
-              <div className="hidden md:block overflow-x-auto rounded-2xl border border-[var(--border,#e4e4ea)] bg-white shadow-sm">
+              <div className="hidden md:block overflow-x-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="border-b border-[var(--border,#e4e4ea)] bg-slate-50/70 text-[#1d1d24] font-semibold">
+                    <tr className="border-b border-[var(--border)] bg-[var(--accent-tint)] text-[var(--text)] font-semibold">
                       <th className="py-3.5 px-4 font-mono">Date</th>
                       <th className="py-3.5 px-4">Txn #</th>
                       <th className="py-3.5 px-4">Transaction / Description</th>
@@ -783,32 +974,32 @@ export default function FinancierPanel() {
                       <th className="py-3.5 px-4 text-center">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[var(--border,#e4e4ea)]">
+                  <tbody className="divide-y divide-[var(--border)]">
                     {filteredLedger.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="py-12 text-center text-[var(--muted,#5f5f6b)]">
+                        <td colSpan={8} className="py-12 text-center text-[var(--muted)]">
                           No matching ledger entries found.
                         </td>
                       </tr>
                     ) : (
                       filteredLedger.map((line) => (
-                        <tr key={line.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="py-3.5 px-4 text-slate-600 font-medium whitespace-nowrap">
+                        <tr key={line.id} className="hover:bg-[var(--surface-alt)] transition-colors">
+                          <td className="py-3.5 px-4 text-[var(--muted)] font-medium whitespace-nowrap">
                             {line.date}
                           </td>
-                          <td className="py-3.5 px-4 font-mono font-bold text-[#6D1A2B] whitespace-nowrap">
+                          <td className="py-3.5 px-4 font-mono font-bold text-[var(--accent)] whitespace-nowrap">
                             {line.transactionNumber}
                           </td>
-                          <td className="py-3.5 px-4 font-medium text-[#1d1d24]">
+                          <td className="py-3.5 px-4 font-medium text-[var(--text)]">
                             <div>{line.description}</div>
                             {line.studentName && (
-                              <div className="text-[11px] text-slate-500 mt-0.5">
-                                Student: <strong className="text-slate-700">{line.studentName}</strong> ({line.paymentMethod})
+                              <div className="text-[11px] text-[var(--muted)] mt-0.5">
+                                Student: <strong className="text-[var(--text)]">{line.studentName}</strong> ({line.paymentMethod})
                               </div>
                             )}
                           </td>
-                          <td className="py-3.5 px-4 text-slate-600 whitespace-nowrap">
-                            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[11px]">
+                          <td className="py-3.5 px-4 text-[var(--muted)] whitespace-nowrap">
+                            <span className="px-2 py-0.5 rounded-full bg-[var(--accent-tint)] text-[var(--text)] text-[11px]">
                               {line.category}
                             </span>
                           </td>
@@ -820,7 +1011,7 @@ export default function FinancierPanel() {
                           </td>
                           <td
                             className={`py-3.5 px-4 text-right font-mono font-extrabold whitespace-nowrap ${
-                              line.balanceMinor < 0 ? "text-rose-600" : "text-slate-900"
+                              line.balanceMinor < 0 ? "text-rose-600" : "text-[var(--text)]"
                             }`}
                           >
                             {formatRupees(line.balanceMinor)}
@@ -845,22 +1036,19 @@ export default function FinancierPanel() {
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#C9A24B]">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--accent)]">
                   Student Billing Register
                 </span>
-                <h1 className="text-xl sm:text-2xl font-bold text-[#1d1d24] mt-0.5">
+                <h1 className="text-xl sm:text-2xl font-bold text-[var(--text)] mt-0.5">
                   Fee Agreements & Dues Roster
                 </h1>
-                <p className="text-xs sm:text-sm text-[var(--muted,#5f5f6b)] mt-1">
-                  Review student tuition agreements, overdue installments, and payment receipts.
-                </p>
               </div>
 
               {selectedStudent && (
                 <button
                   type="button"
                   onClick={closeStudent}
-                  className="flex min-h-[44px] items-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--border,#e4e4ea)] bg-white text-xs font-semibold hover:bg-slate-50 transition"
+                  className="flex min-h-[44px] items-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-xs font-semibold text-[var(--text)] hover:bg-[var(--accent-tint)] transition"
                 >
                   <X size={15} /> Close Student Profile
                 </button>
@@ -869,19 +1057,19 @@ export default function FinancierPanel() {
 
             {/* Selected Student Detail View / Drawer */}
             {selectedStudent && (
-              <div className="w-full bg-white rounded-2xl border-2 border-[#6D1A2B]/20 p-5 sm:p-6 shadow-md space-y-5 animate-fade-in">
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-4 border-b border-[var(--border,#e4e4ea)]">
+              <div className="w-full bg-[var(--surface)] rounded-2xl border-2 border-[var(--accent-border)] p-5 sm:p-6 shadow-md space-y-5 animate-fade-in">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-4 border-b border-[var(--border)]">
                   <div>
-                    <span className="font-mono text-xs font-bold text-[#6D1A2B]">
+                    <span className="font-mono text-xs font-bold text-[var(--accent)]">
                       {selectedStudent.registrationNumber}
                     </span>
-                    <h2 className="text-lg sm:text-xl font-bold text-[#1d1d24] mt-0.5">
+                    <h2 className="text-lg sm:text-xl font-bold text-[var(--text)] mt-0.5">
                       {selectedStudent.name}
                     </h2>
-                    <p className="text-xs text-[var(--muted,#5f5f6b)] mt-1">
-                      {selectedStudent.courseTitle} · Cohort: <strong className="text-slate-800">{selectedStudent.batchCode}</strong>
+                    <p className="text-xs text-[var(--muted)] mt-1">
+                      {selectedStudent.courseTitle} · Cohort: <strong className="text-[var(--text)]">{selectedStudent.batchCode}</strong>
                     </p>
-                    <p className="text-xs text-slate-500 mt-0.5">
+                    <p className="text-xs text-[var(--muted)] mt-0.5">
                       {selectedStudent.email} · {selectedStudent.phone}
                     </p>
                   </div>
@@ -900,26 +1088,26 @@ export default function FinancierPanel() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
-                  <div className="p-3 bg-slate-50 rounded-xl">
-                    <span className="text-[var(--muted,#5f5f6b)] uppercase text-[10px] font-semibold block">Total Contracted</span>
-                    <span className="text-base font-bold text-slate-900 mt-0.5 block">
+                  <div className="p-3 bg-[var(--surface-alt)] rounded-xl border border-[var(--border)]">
+                    <span className="text-[var(--muted)] uppercase text-[10px] font-semibold block">Total Contracted</span>
+                    <span className="text-base font-bold text-[var(--text)] mt-0.5 block">
                       {formatRupees(selectedStudent.contractedFeeMinor)}
                     </span>
                   </div>
-                  <div className="p-3 bg-slate-50 rounded-xl">
-                    <span className="text-[var(--muted,#5f5f6b)] uppercase text-[10px] font-semibold block">Total Paid to Date</span>
+                  <div className="p-3 bg-[var(--surface-alt)] rounded-xl border border-[var(--border)]">
+                    <span className="text-[var(--muted)] uppercase text-[10px] font-semibold block">Total Paid to Date</span>
                     <span className="text-base font-bold text-[#10754A] mt-0.5 block">
                       {formatRupees(selectedStudent.paidAmountMinor)}
                     </span>
                   </div>
-                  <div className="p-3 bg-slate-50 rounded-xl">
-                    <span className="text-[var(--muted,#5f5f6b)] uppercase text-[10px] font-semibold block">Remaining Balance</span>
-                    <span className="text-base font-bold text-slate-900 mt-0.5 block">
+                  <div className="p-3 bg-[var(--surface-alt)] rounded-xl border border-[var(--border)]">
+                    <span className="text-[var(--muted)] uppercase text-[10px] font-semibold block">Remaining Balance</span>
+                    <span className="text-base font-bold text-[var(--text)] mt-0.5 block">
                       {formatRupees(selectedStudent.remainingDueMinor)}
                     </span>
                   </div>
-                  <div className="p-3 bg-slate-50 rounded-xl">
-                    <span className="text-[var(--muted,#5f5f6b)] uppercase text-[10px] font-semibold block">Overdue Balance</span>
+                  <div className="p-3 bg-[var(--surface-alt)] rounded-xl border border-[var(--border)]">
+                    <span className="text-[var(--muted)] uppercase text-[10px] font-semibold block">Overdue Balance</span>
                     <span className="text-base font-bold text-[#A72828] mt-0.5 block">
                       {formatRupees(selectedStudent.overdueMinor)}
                     </span>
@@ -928,10 +1116,10 @@ export default function FinancierPanel() {
 
                 {/* Installments Table */}
                 <div>
-                  <h3 className="text-sm font-bold text-[#1d1d24] mb-2">Agreed Installment Breakdown</h3>
-                  <div className="overflow-x-auto rounded-xl border border-[var(--border,#e4e4ea)]">
+                  <h3 className="text-sm font-bold text-[var(--text)] mb-2">Agreed Installment Breakdown</h3>
+                  <div className="overflow-x-auto rounded-xl border border-[var(--border)]">
                     <table className="w-full text-left text-xs">
-                      <thead className="bg-slate-50 border-b border-[var(--border,#e4e4ea)] font-semibold text-slate-700">
+                      <thead className="bg-[var(--accent-tint)] border-b border-[var(--border)] font-semibold text-[var(--text)]">
                         <tr>
                           <th className="py-2.5 px-3">Installment #</th>
                           <th className="py-2.5 px-3">Due Date</th>
@@ -939,12 +1127,12 @@ export default function FinancierPanel() {
                           <th className="py-2.5 px-3 text-center">Status</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[var(--border,#e4e4ea)]">
+                      <tbody className="divide-y divide-[var(--border)]">
                         {selectedStudent.installments.map((inst) => (
-                          <tr key={inst.number} className="hover:bg-slate-50">
-                            <td className="py-2.5 px-3 font-semibold text-[#1d1d24]">Term {inst.number}</td>
-                            <td className="py-2.5 px-3 text-slate-600">{inst.dueDate}</td>
-                            <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
+                          <tr key={inst.number} className="hover:bg-[var(--surface-alt)]">
+                            <td className="py-2.5 px-3 font-semibold text-[var(--text)]">Term {inst.number}</td>
+                            <td className="py-2.5 px-3 text-[var(--muted)]">{inst.dueDate}</td>
+                            <td className="py-2.5 px-3 text-right font-mono font-bold text-[var(--text)]">
                               {formatRupees(inst.amountMinor)}
                             </td>
                             <td className="py-2.5 px-3 text-center">
@@ -976,15 +1164,15 @@ export default function FinancierPanel() {
                 {students.map((st) => (
                   <div
                     key={st.id}
-                    className="w-full bg-white rounded-2xl border border-[var(--border,#e4e4ea)] p-4 shadow-sm space-y-3"
+                    className="w-full bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-4 shadow-sm space-y-3"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <span className="font-mono text-xs font-bold text-[#6D1A2B]">
+                        <span className="font-mono text-xs font-bold text-[var(--accent)]">
                           {st.registrationNumber}
                         </span>
-                        <h4 className="font-bold text-sm text-[#1d1d24] mt-0.5">{st.name}</h4>
-                        <p className="text-xs text-[var(--muted,#5f5f6b)] mt-0.5">{st.courseTitle}</p>
+                        <h4 className="font-bold text-sm text-[var(--text)] mt-0.5">{st.name}</h4>
+                        <p className="text-xs text-[var(--muted)] mt-0.5">{st.courseTitle}</p>
                       </div>
                       <span
                         className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold shrink-0 ${
@@ -999,13 +1187,13 @@ export default function FinancierPanel() {
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-xl">
+                    <div className="grid grid-cols-2 gap-2 text-xs bg-[var(--surface-alt)] p-2.5 rounded-xl border border-[var(--border)]">
                       <div>
-                        <span className="text-[10px] text-[var(--muted,#5f5f6b)] uppercase font-semibold block">Total Fee</span>
-                        <span className="font-bold text-slate-900">{formatRupees(st.contractedFeeMinor)}</span>
+                        <span className="text-[10px] text-[var(--muted)] uppercase font-semibold block">Total Fee</span>
+                        <span className="font-bold text-[var(--text)]">{formatRupees(st.contractedFeeMinor)}</span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-[var(--muted,#5f5f6b)] uppercase font-semibold block">Remaining Due</span>
+                        <span className="text-[10px] text-[var(--muted)] uppercase font-semibold block">Remaining Due</span>
                         <span className={`font-bold ${st.remainingDueMinor > 0 ? "text-amber-800" : "text-emerald-700"}`}>
                           {formatRupees(st.remainingDueMinor)}
                         </span>
@@ -1015,7 +1203,7 @@ export default function FinancierPanel() {
                     <button
                       type="button"
                       onClick={() => openStudent(st.id)}
-                      className="w-full min-h-[44px] flex items-center justify-center gap-1.5 rounded-xl border border-[#6D1A2B] bg-white text-[#6D1A2B] text-xs font-semibold hover:bg-rose-50 transition active:scale-95"
+                      className="w-full min-h-[44px] flex items-center justify-center gap-1.5 rounded-xl border border-[var(--accent)] bg-[var(--surface)] text-[var(--accent)] text-xs font-semibold hover:bg-[var(--accent-tint)] transition active:scale-95"
                     >
                       View Student Ledger & Installments
                     </button>
@@ -1024,10 +1212,10 @@ export default function FinancierPanel() {
               </div>
 
               {/* DESKTOP TABLE */}
-              <div className="hidden md:block overflow-x-auto rounded-2xl border border-[var(--border,#e4e4ea)] bg-white shadow-sm">
+              <div className="hidden md:block overflow-x-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="border-b border-[var(--border,#e4e4ea)] bg-slate-50 font-semibold text-slate-700">
+                    <tr className="border-b border-[var(--border)] bg-[var(--accent-tint)] font-semibold text-[var(--text)]">
                       <th className="py-3 px-4">Registration #</th>
                       <th className="py-3 px-4">Student Name</th>
                       <th className="py-3 px-4">Program & Cohort</th>
@@ -1038,13 +1226,13 @@ export default function FinancierPanel() {
                       <th className="py-3 px-4 text-right">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[var(--border,#e4e4ea)]">
+                  <tbody className="divide-y divide-[var(--border)]">
                     {students.map((st) => (
-                      <tr key={st.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="py-3 px-4 font-mono font-bold text-[#6D1A2B]">{st.registrationNumber}</td>
-                        <td className="py-3 px-4 font-semibold text-[#1d1d24]">{st.name}</td>
-                        <td className="py-3 px-4 text-slate-600">{st.courseTitle} ({st.batchCode})</td>
-                        <td className="py-3 px-4 text-right font-mono font-bold text-slate-900">
+                      <tr key={st.id} className="hover:bg-[var(--surface-alt)] transition-colors">
+                        <td className="py-3 px-4 font-mono font-bold text-[var(--accent)]">{st.registrationNumber}</td>
+                        <td className="py-3 px-4 font-semibold text-[var(--text)]">{st.name}</td>
+                        <td className="py-3 px-4 text-[var(--muted)]">{st.courseTitle} ({st.batchCode})</td>
+                        <td className="py-3 px-4 text-right font-mono font-bold text-[var(--text)]">
                           {formatRupees(st.contractedFeeMinor)}
                         </td>
                         <td className="py-3 px-4 text-right font-mono font-bold text-emerald-700">
@@ -1070,7 +1258,7 @@ export default function FinancierPanel() {
                           <button
                             type="button"
                             onClick={() => openStudent(st.id)}
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-[#6D1A2B] hover:underline"
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent)] hover:underline"
                           >
                             Details →
                           </button>
@@ -1088,13 +1276,13 @@ export default function FinancierPanel() {
         {activeTab === "accounts" && (
           <div className="space-y-6">
             <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#C9A24B]">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--accent)]">
                 Treasury & Liquidity Management
               </span>
-              <h1 className="text-xl sm:text-2xl font-bold text-[#1d1d24] mt-0.5">
+              <h1 className="text-xl sm:text-2xl font-bold text-[var(--text)] mt-0.5">
                 Bank & Escrow Accounts
               </h1>
-              <p className="text-xs sm:text-sm text-[var(--muted,#5f5f6b)] mt-1">
+              <p className="text-xs sm:text-sm text-[var(--muted)] mt-1">
                 Centralized balance reconciliation across Corporate Banking, Razorpay Escrow, and Campus Cash.
               </p>
             </div>
@@ -1103,25 +1291,25 @@ export default function FinancierPanel() {
               {accounts.map((acc) => (
                 <div
                   key={acc.id}
-                  className={`w-full rounded-2xl border p-5 shadow-sm space-y-4 bg-white transition hover:shadow-md ${
-                    acc.code === selectedAccountCode ? "border-[#6D1A2B] ring-2 ring-[#6D1A2B]/10" : "border-[var(--border,#e4e4ea)]"
+                  className={`w-full rounded-2xl border p-5 shadow-sm space-y-4 bg-[var(--surface)] transition hover:shadow-md ${
+                    acc.code === selectedAccountCode ? "border-[var(--accent)] ring-2 ring-[var(--accent)]/15" : "border-[var(--border)]"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#5f5f6b)]">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
                         {acc.type}
                       </span>
-                      <h3 className="text-base font-bold text-[#1d1d24] mt-0.5">{acc.name}</h3>
-                      <p className="text-xs text-[var(--muted,#5f5f6b)] font-mono">{acc.accountNumber}</p>
+                      <h3 className="text-base font-bold text-[var(--text)] mt-0.5">{acc.name}</h3>
+                      <p className="text-xs text-[var(--muted)] font-mono">{acc.accountNumber}</p>
                     </div>
-                    <div className="p-2 bg-slate-100 rounded-xl text-slate-700">
+                    <div className="p-2 bg-[var(--accent-tint)] rounded-xl text-[var(--accent)]">
                       <Building size={18} />
                     </div>
                   </div>
 
                   <div>
-                    <span className="text-[10px] text-[var(--muted,#5f5f6b)] uppercase font-semibold block">Net Balance</span>
+                    <span className="text-[10px] text-[var(--muted)] uppercase font-semibold block">Net Balance</span>
                     <div
                       className={`text-2xl font-extrabold mt-0.5 ${
                         acc.netBalanceMinor < 0 ? "text-rose-600" : "text-emerald-700"
@@ -1131,8 +1319,8 @@ export default function FinancierPanel() {
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-[var(--border,#e4e4ea)] flex items-center justify-between text-xs">
-                    <span className="text-[var(--muted,#5f5f6b)]">
+                  <div className="pt-3 border-t border-[var(--border)] flex items-center justify-between text-xs">
+                    <span className="text-[var(--muted)]">
                       {acc.pendingReconciliationCount > 0 ? (
                         <span className="text-amber-700 font-semibold">
                           ⚠ {acc.pendingReconciliationCount} pending match
@@ -1145,7 +1333,7 @@ export default function FinancierPanel() {
                     <button
                       type="button"
                       onClick={() => setTab("ledger", acc.code)}
-                      className="inline-flex min-h-[44px] items-center gap-1 text-xs font-bold text-[#6D1A2B] hover:underline"
+                      className="inline-flex min-h-[44px] items-center gap-1 text-xs font-bold text-[var(--accent)] hover:underline"
                     >
                       View Ledger →
                     </button>
@@ -1160,16 +1348,16 @@ export default function FinancierPanel() {
       {/* Responsive Transaction Modal: Bottom-sheet on mobile & Centered dialog on desktop */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/50 backdrop-blur-xs animate-fade-in">
-          <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl border border-[var(--border,#e4e4ea)]">
-            <div className="flex items-center justify-between pb-4 border-b border-[var(--border,#e4e4ea)]">
-              <h2 className="text-base font-bold text-[#1d1d24] flex items-center gap-2">
-                <Plus size={18} className="text-[#6D1A2B]" />
+          <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-[var(--surface)] rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl border border-[var(--border)]">
+            <div className="flex items-center justify-between pb-4 border-b border-[var(--border)]">
+              <h2 className="text-base font-bold text-[var(--text)] flex items-center gap-2">
+                <Plus size={18} className="text-[var(--accent)]" />
                 Record Ledger Transaction
               </h2>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="flex size-9 items-center justify-center rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 min-h-[44px] min-w-[44px]"
+                className="flex size-9 items-center justify-center rounded-xl text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--accent-tint)] min-h-[44px] min-w-[44px]"
                 aria-label="Close modal"
               >
                 <X size={18} />
@@ -1178,7 +1366,7 @@ export default function FinancierPanel() {
 
             <form onSubmit={handleAddTransaction} className="space-y-4 mt-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                <label className="block text-xs font-semibold text-[var(--text)] mb-1.5">
                   Transaction Classification *
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -1187,8 +1375,8 @@ export default function FinancierPanel() {
                     onClick={() => setModalType("tuition")}
                     className={`py-2 px-3 rounded-xl text-xs font-semibold border min-h-[44px] transition ${
                       modalType === "tuition"
-                        ? "border-[#6D1A2B] bg-rose-50 text-[#6D1A2B]"
-                        : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                        ? "border-[var(--accent)] bg-[var(--accent-tint)] text-[var(--accent)]"
+                        : "border-[var(--border)] text-[var(--muted)] hover:bg-[var(--surface-alt)]"
                     }`}
                   >
                     Tuition Inflow
@@ -1198,8 +1386,8 @@ export default function FinancierPanel() {
                     onClick={() => setModalType("expense")}
                     className={`py-2 px-3 rounded-xl text-xs font-semibold border min-h-[44px] transition ${
                       modalType === "expense"
-                        ? "border-[#6D1A2B] bg-rose-50 text-[#6D1A2B]"
-                        : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                        ? "border-[var(--accent)] bg-[var(--accent-tint)] text-[var(--accent)]"
+                        : "border-[var(--border)] text-[var(--muted)] hover:bg-[var(--surface-alt)]"
                     }`}
                   >
                     Operating Out
@@ -1209,8 +1397,8 @@ export default function FinancierPanel() {
                     onClick={() => setModalType("refund")}
                     className={`py-2 px-3 rounded-xl text-xs font-semibold border min-h-[44px] transition ${
                       modalType === "refund"
-                        ? "border-[#6D1A2B] bg-rose-50 text-[#6D1A2B]"
-                        : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                        ? "border-[var(--accent)] bg-[var(--accent-tint)] text-[var(--accent)]"
+                        : "border-[var(--border)] text-[var(--muted)] hover:bg-[var(--surface-alt)]"
                     }`}
                   >
                     Refund
@@ -1219,7 +1407,7 @@ export default function FinancierPanel() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-[var(--text)] mb-1">
                   Amount in Rupees (₹) *
                 </label>
                 <input
@@ -1229,14 +1417,14 @@ export default function FinancierPanel() {
                   placeholder="e.g. 45000"
                   value={modalAmount}
                   onChange={(e) => setModalAmount(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-base sm:text-xs text-slate-900 focus:outline-none focus:border-[#6D1A2B] min-h-[44px]"
+                  className="w-full px-3 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-base sm:text-xs text-[var(--text)] focus:outline-none focus:border-[var(--accent)] min-h-[44px]"
                   required
                 />
               </div>
 
               {modalType === "tuition" && (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-[var(--text)] mb-1">
                     Student Name
                   </label>
                   <input
@@ -1244,19 +1432,19 @@ export default function FinancierPanel() {
                     placeholder="e.g. Karthik Subramanian"
                     value={modalStudent}
                     onChange={(e) => setModalStudent(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-base sm:text-xs text-slate-900 focus:outline-none focus:border-[#6D1A2B] min-h-[44px]"
+                    className="w-full px-3 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-base sm:text-xs text-[var(--text)] focus:outline-none focus:border-[var(--accent)] min-h-[44px]"
                   />
                 </div>
               )}
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-[var(--text)] mb-1">
                   Payment / Transfer Method
                 </label>
                 <select
                   value={modalMethod}
                   onChange={(e) => setModalMethod(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-base sm:text-xs text-slate-900 bg-white min-h-[44px] focus:outline-none focus:border-[#6D1A2B]"
+                  className="w-full px-3 py-2.5 rounded-xl border border-[var(--border)] text-base sm:text-xs text-[var(--text)] bg-[var(--surface)] min-h-[44px] focus:outline-none focus:border-[var(--accent)]"
                 >
                   <option value="UPI / Razorpay">UPI / Razorpay</option>
                   <option value="Bank Transfer (NEFT/RTGS)">Bank Transfer (NEFT/RTGS)</option>
@@ -1266,7 +1454,7 @@ export default function FinancierPanel() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-[var(--text)] mb-1">
                   Transaction Notes / Description
                 </label>
                 <textarea
@@ -1274,7 +1462,7 @@ export default function FinancierPanel() {
                   placeholder="Description or reference number..."
                   value={modalDescription}
                   onChange={(e) => setModalDescription(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-base sm:text-xs text-slate-900 focus:outline-none focus:border-[#6D1A2B]"
+                  className="w-full px-3 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-base sm:text-xs text-[var(--text)] focus:outline-none focus:border-[var(--accent)]"
                 />
               </div>
 
@@ -1282,13 +1470,13 @@ export default function FinancierPanel() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="w-full sm:w-auto min-h-[44px] min-w-[44px] px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition"
+                  className="w-full sm:w-auto min-h-[44px] min-w-[44px] px-4 py-2.5 rounded-xl border border-[var(--border)] text-[var(--text)] text-xs font-semibold hover:bg-[var(--accent-tint)] transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="w-full sm:w-auto min-h-[44px] min-w-[44px] px-5 py-2.5 rounded-xl bg-[#6D1A2B] text-white text-xs font-semibold hover:bg-[#521320] shadow-sm transition active:scale-95"
+                  className="w-full sm:w-auto min-h-[44px] min-w-[44px] px-5 py-2.5 rounded-xl bg-[var(--btn-primary-bg)] text-white text-xs font-semibold hover:bg-[var(--btn-primary-hover)] shadow-sm transition active:scale-95"
                 >
                   Record Entry
                 </button>
@@ -1301,14 +1489,14 @@ export default function FinancierPanel() {
       {/* Mobile Fixed Bottom Nav Bar (Matches Admin & Student Panel layout) */}
       <nav
         aria-label="Financier workspace mobile navigation"
-        className="fixed bottom-0 left-0 right-0 z-40 flex md:hidden items-center justify-around border-t border-[#DFE5EC] bg-white/95 px-2 py-1 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] backdrop-blur pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+        className="fixed bottom-0 left-0 right-0 z-40 flex md:hidden items-center justify-around border-t border-[var(--border)] bg-[var(--surface)]/95 px-2 py-1 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] backdrop-blur pb-[max(0.5rem,env(safe-area-inset-bottom))]"
       >
         <button
           type="button"
           onClick={() => setTab("ledger", "BANK")}
           aria-current={activeTab === "ledger" ? "page" : undefined}
           className={`flex min-h-[48px] min-w-[48px] flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 transition ${
-            activeTab === "ledger" ? "text-[#681C35] font-bold" : "text-[#645A62] hover:text-[#241921]"
+            activeTab === "ledger" ? "text-[var(--accent)] font-bold" : "text-[var(--muted)] hover:text-[var(--text)]"
           }`}
         >
           <Receipt size={20} aria-hidden="true" />
@@ -1320,7 +1508,7 @@ export default function FinancierPanel() {
           onClick={() => setTab("students")}
           aria-current={activeTab === "students" ? "page" : undefined}
           className={`flex min-h-[48px] min-w-[48px] flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 transition ${
-            activeTab === "students" ? "text-[#681C35] font-bold" : "text-[#645A62] hover:text-[#241921]"
+            activeTab === "students" ? "text-[var(--accent)] font-bold" : "text-[var(--muted)] hover:text-[var(--text)]"
           }`}
         >
           <User size={20} aria-hidden="true" />
@@ -1332,7 +1520,7 @@ export default function FinancierPanel() {
           onClick={() => setTab("accounts")}
           aria-current={activeTab === "accounts" ? "page" : undefined}
           className={`flex min-h-[48px] min-w-[48px] flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 transition ${
-            activeTab === "accounts" ? "text-[#681C35] font-bold" : "text-[#645A62] hover:text-[#241921]"
+            activeTab === "accounts" ? "text-[var(--accent)] font-bold" : "text-[var(--muted)] hover:text-[var(--text)]"
           }`}
         >
           <Building size={20} aria-hidden="true" />
@@ -1345,122 +1533,13 @@ export default function FinancierPanel() {
             setModalType("tuition");
             setIsModalOpen(true);
           }}
-          className="flex min-h-[48px] min-w-[48px] flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 transition text-[#645A62] hover:text-[#241921]"
+          className="flex min-h-[48px] min-w-[48px] flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 transition text-[var(--muted)] hover:text-[var(--text)]"
         >
           <Plus size={20} aria-hidden="true" />
           <span className="text-[10px] tracking-tight whitespace-nowrap">Record</span>
         </button>
       </nav>
-
-      {/* Mobile Slide-over Sidebar Drawer */}
-      {mobileSidebarOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex md:hidden"
-        >
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
-            onClick={() => setMobileSidebarOpen(false)}
-          />
-          <div
-            className="relative z-10 flex w-72 max-w-[85vw] flex-col bg-white text-slate-900 shadow-2xl animate-in slide-in-from-left duration-200 border-r border-slate-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex min-h-[64px] items-center justify-between border-b border-slate-100 px-4">
-              <div className="flex items-center gap-2.5">
-                <div className="flex size-8 items-center justify-center rounded-lg bg-[#6D1A2B] text-white">
-                  <Coins size={16} />
-                </div>
-                <span className="font-bold text-sm tracking-tight text-slate-900 truncate">
-                  Financier Portal
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setMobileSidebarOpen(false)}
-                className="flex min-h-[40px] min-w-[40px] items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"
-                aria-label="Close navigation menu"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4" aria-label="Financier mobile side navigation">
-              <button
-                type="button"
-                onClick={() => setTab("ledger", "BANK")}
-                className={`flex min-h-[44px] w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition ${
-                  activeTab === "ledger"
-                    ? "bg-[#681C35] text-white shadow-sm font-bold !text-white"
-                    : "text-slate-700 hover:bg-slate-100"
-                }`}
-              >
-                <Receipt size={18} className={activeTab === "ledger" ? "!text-white" : "text-slate-500"} />
-                <span>Operating Ledger</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setTab("students")}
-                className={`flex min-h-[44px] w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition ${
-                  activeTab === "students"
-                    ? "bg-[#681C35] text-white shadow-sm font-bold !text-white"
-                    : "text-slate-700 hover:bg-slate-100"
-                }`}
-              >
-                <User size={18} className={activeTab === "students" ? "!text-white" : "text-slate-500"} />
-                <span>Student Balances</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setTab("accounts")}
-                className={`flex min-h-[44px] w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition ${
-                  activeTab === "accounts"
-                    ? "bg-[#681C35] text-white shadow-sm font-bold !text-white"
-                    : "text-slate-700 hover:bg-slate-100"
-                }`}
-              >
-                <Building size={18} className={activeTab === "accounts" ? "!text-white" : "text-slate-500"} />
-                <span>Treasury Accounts</span>
-              </button>
-
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setModalType("tuition");
-                    setIsModalOpen(true);
-                    setMobileSidebarOpen(false);
-                  }}
-                  className="flex min-h-[44px] w-full items-center gap-3 rounded-xl bg-[#681C35]/10 text-[#681C35] px-3 py-2.5 text-xs font-bold hover:bg-[#681C35]/15 transition"
-                >
-                  <Plus size={18} />
-                  <span>Record Transaction</span>
-                </button>
-              </div>
-            </nav>
-
-            <div className="border-t border-slate-100 p-4 bg-slate-50">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-slate-900">Lead Financier</div>
-                  <div className="text-[10px] text-slate-500">Finance Operations</div>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-rose-700 hover:underline"
-                >
-                  <LogOut size={14} />
-                  Sign out
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

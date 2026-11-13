@@ -7,6 +7,7 @@ export * from "./DashboardView";
 export * from "./LeadsView";
 export * from "./AdmissionsView";
 export * from "./CohortsView";
+export * from "./ScheduleClassesView";
 export * from "./AttendanceAlertsView";
 export * from "./FeesView";
 export * from "./CounsellorsView";

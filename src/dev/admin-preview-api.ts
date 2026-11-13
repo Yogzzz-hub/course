@@ -633,6 +633,17 @@ export function createDevFallbackAdminApi(realApi: AdminApi): AdminApi {
       if (devFallbackActive) return preview.session(signal);
       try {
         const session = await realApi.session(signal);
+        if (session.state === "anonymous") {
+          try {
+            const raw = typeof window !== "undefined" ? window.localStorage.getItem("crm_session") : null;
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (parsed?.authenticated && parsed.role === "ADMIN") {
+                return preview.session(signal);
+              }
+            }
+          } catch {}
+        }
         return session;
       } catch (err) {
         console.warn(

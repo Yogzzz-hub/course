@@ -1,9 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   initialTrainerStats,
   initialTrainerBatches,
-  initialTrainerSchedule,
   initialAttendanceRoster,
   initialAssignments,
   initialDoubts,
@@ -16,6 +15,10 @@ import {
   type TrainerAnnouncement,
 } from "../data/trainerMock";
 import {
+  readScheduledClasses,
+  subscribeScheduledClasses,
+} from "../utils/classScheduleStore";
+import {
   TrainerSidebar,
   TrainerHeader,
   DashboardView,
@@ -25,7 +28,6 @@ import {
   AssignmentsView,
   DoubtsView,
   AnnouncementsView,
-  TrainerBottomNav,
   type TrainerNavTab,
 } from "../components/trainer-portal";
 import { ToastContainer } from "../components/manager-portal/Toast";
@@ -39,7 +41,12 @@ export default function TrainerPanel() {
   // Live state connected to mocks
   const [stats, setStats] = useState(initialTrainerStats);
   const [batches, setBatches] = useState<TrainerBatch[]>(initialTrainerBatches);
-  const [schedule, setSchedule] = useState<TrainerScheduleItem[]>(initialTrainerSchedule);
+  const [schedule, setSchedule] = useState<TrainerScheduleItem[]>(() => readScheduledClasses());
+
+  useEffect(() => {
+    setSchedule(readScheduledClasses());
+    return subscribeScheduledClasses((items) => setSchedule(items));
+  }, []);
   const [rosterMap, setRosterMap] = useState<Record<string, AttendanceStudent[]>>(initialAttendanceRoster);
   const [selectedBatchForAttendance, setSelectedBatchForAttendance] = useState("BATCH-PY-2026-A");
   const [assignments, setAssignments] = useState<TrainerAssignmentSubmission[]>(initialAssignments);
@@ -169,9 +176,10 @@ export default function TrainerPanel() {
         <TrainerHeader
           activeTab={activeTab}
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+          onLogout={handleLogout}
         />
 
-        <main className="manager-main p-3 sm:p-5 md:p-6 pb-20 md:pb-6 flex-1 w-full space-y-4">
+        <main className="manager-main p-3 sm:p-5 md:p-6 pb-6 flex-1 w-full space-y-4">
           {activeTab === "dashboard" && (
             <DashboardView
               stats={stats}
@@ -226,14 +234,6 @@ export default function TrainerPanel() {
           )}
         </main>
       </div>
-
-      {/* Mobile Bottom Navigation Bar matching Manager UI */}
-      <TrainerBottomNav
-        activeTab={activeTab}
-        onSelectTab={setActiveTab}
-        onOpenMore={() => setMobileSidebarOpen(true)}
-        assignmentsBadgeCount={5}
-      />
 
       {/* Global Interactive Toast Notification Host */}
       <ToastContainer toasts={toasts} onDismiss={removeToast} />

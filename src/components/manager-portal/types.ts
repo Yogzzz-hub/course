@@ -3,6 +3,7 @@ export type ManagerNavTab =
   | "leads"
   | "admissions"
   | "cohorts"
+  | "schedule"
   | "attendance"
   | "fees"
   | "counsellors"

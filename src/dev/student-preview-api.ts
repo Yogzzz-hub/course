@@ -1,5 +1,19 @@
 import { StudentApiError } from '../components/student-panel/api';
-import type { Assignment, Dashboard, LearningPlan, Mentorship, Payments, StudentApi, StudentSession } from '../components/student-panel/contracts';
+import type {
+  Assignment,
+  CheckoutInput,
+  Dashboard,
+  LearningPlan,
+  Mentorship,
+  MentorshipSlot,
+  MutationContext,
+  PaymentOrder,
+  Payments,
+  StudentApi,
+  StudentSession,
+  StudentSessions,
+  SubmissionInput,
+} from '../components/student-panel/contracts';
 
 /** Synthetic, read-only data. This module is imported only by the development preview. */
 export function createStudentPreviewApi(mode: StudentSession['mode']): StudentApi {
@@ -31,5 +45,158 @@ export function createStudentPreviewApi(mode: StudentSession['mode']): StudentAp
     slots: async () => [{ id: 'demo-slot', startsAt: instant(2), endsAt: new Date(Date.parse(instant(2)) + 1800000).toISOString(), mentor: 'Demo Mentor' }],
     sessions: async () => [{ id: 'demo-counselling', title: 'Sample counselling session', startsAt: instant(2), status: 'booked', joinUrl: null }],
     order: readonly, checkout: readonly, payInstalment: readonly, submit: readonly, bookMentorship: readonly, completeOnboarding: readonly, logout: readonly,
+  };
+}
+
+/** Resilient fallback wrapper: attempts live API first, falls back gracefully on network errors or challenges */
+export function createDevFallbackStudentApi(
+  realApi: StudentApi,
+  defaultMode: StudentSession['mode'] = 'enrolled'
+): StudentApi {
+  const preview = createStudentPreviewApi(defaultMode);
+  let fallbackActive = false;
+
+  return {
+    async session(signal?: AbortSignal): Promise<StudentSession | null> {
+      if (fallbackActive) return preview.session(signal);
+      try {
+        const live = await realApi.session(signal);
+        if (live) return live;
+        return await preview.session(signal);
+      } catch (err) {
+        console.warn('[StudentPanel] Live student session unavailable; using preview fallback.', err);
+        fallbackActive = true;
+        return preview.session(signal);
+      }
+    },
+    async learningPlan(signal?: AbortSignal): Promise<LearningPlan | null> {
+      if (fallbackActive) return preview.learningPlan(signal);
+      try {
+        return await realApi.learningPlan(signal);
+      } catch {
+        fallbackActive = true;
+        return preview.learningPlan(signal);
+      }
+    },
+    async dashboard(signal?: AbortSignal): Promise<Dashboard> {
+      if (fallbackActive) return preview.dashboard(signal);
+      try {
+        return await realApi.dashboard(signal);
+      } catch {
+        fallbackActive = true;
+        return preview.dashboard(signal);
+      }
+    },
+    async assignments(signal?: AbortSignal): Promise<Assignment[]> {
+      if (fallbackActive) return preview.assignments(signal);
+      try {
+        return await realApi.assignments(signal);
+      } catch {
+        fallbackActive = true;
+        return preview.assignments(signal);
+      }
+    },
+    async mentorship(signal?: AbortSignal): Promise<Mentorship> {
+      if (fallbackActive) return preview.mentorship(signal);
+      try {
+        return await realApi.mentorship(signal);
+      } catch {
+        fallbackActive = true;
+        return preview.mentorship(signal);
+      }
+    },
+    async slots(timeZone: string, signal?: AbortSignal): Promise<MentorshipSlot[]> {
+      if (fallbackActive) return preview.slots(timeZone, signal);
+      try {
+        return await realApi.slots(timeZone, signal);
+      } catch {
+        fallbackActive = true;
+        return preview.slots(timeZone, signal);
+      }
+    },
+    async payments(signal?: AbortSignal): Promise<Payments> {
+      if (fallbackActive) return preview.payments(signal);
+      try {
+        return await realApi.payments(signal);
+      } catch {
+        fallbackActive = true;
+        return preview.payments(signal);
+      }
+    },
+    async sessions(signal?: AbortSignal): Promise<StudentSessions['sessions']> {
+      if (fallbackActive) return preview.sessions(signal);
+      try {
+        return await realApi.sessions(signal);
+      } catch {
+        fallbackActive = true;
+        return preview.sessions(signal);
+      }
+    },
+    async order(id: string, signal?: AbortSignal): Promise<PaymentOrder> {
+      if (fallbackActive) return preview.order(id, signal);
+      try {
+        return await realApi.order(id, signal);
+      } catch {
+        fallbackActive = true;
+        return preview.order(id, signal);
+      }
+    },
+    async checkout(input: CheckoutInput, context: MutationContext): Promise<PaymentOrder> {
+      if (fallbackActive) return preview.checkout(input, context);
+      try {
+        return await realApi.checkout(input, context);
+      } catch {
+        fallbackActive = true;
+        return preview.checkout(input, context);
+      }
+    },
+    async payInstalment(id: string, context: MutationContext): Promise<PaymentOrder> {
+      if (fallbackActive) return preview.payInstalment(id, context);
+      try {
+        return await realApi.payInstalment(id, context);
+      } catch {
+        fallbackActive = true;
+        return preview.payInstalment(id, context);
+      }
+    },
+    async submit(input: SubmissionInput, context: MutationContext): Promise<Assignment> {
+      if (fallbackActive) return preview.submit(input, context);
+      try {
+        return await realApi.submit(input, context);
+      } catch {
+        fallbackActive = true;
+        return preview.submit(input, context);
+      }
+    },
+    async bookMentorship(slotId: string, context: MutationContext): Promise<Mentorship> {
+      if (fallbackActive) return preview.bookMentorship(slotId, context);
+      try {
+        return await realApi.bookMentorship(slotId, context);
+      } catch {
+        fallbackActive = true;
+        return preview.bookMentorship(slotId, context);
+      }
+    },
+    async completeOnboarding(id: string, context: MutationContext): Promise<Dashboard> {
+      if (fallbackActive) return preview.completeOnboarding(id, context);
+      try {
+        return await realApi.completeOnboarding(id, context);
+      } catch {
+        fallbackActive = true;
+        return preview.completeOnboarding(id, context);
+      }
+    },
+    async logout(context: MutationContext): Promise<void> {
+      try {
+        localStorage.removeItem('crm_session');
+      } catch {}
+      if (fallbackActive) return preview.logout(context);
+      try {
+        return await realApi.logout(context);
+      } catch {
+        fallbackActive = true;
+        return preview.logout(context);
+      }
+    },
   };
 }

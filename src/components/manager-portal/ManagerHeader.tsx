@@ -1,5 +1,7 @@
 import React from "react";
 import { Bell, Menu, Plus, Download } from "lucide-react";
+import { PaletteMenu } from "../PaletteMenu";
+import { ProfileMenu } from "../ProfileMenu";
 import type { ManagerNavTab } from "./types";
 
 const tabDisplayTitles: Record<ManagerNavTab, string> = {
@@ -7,6 +9,7 @@ const tabDisplayTitles: Record<ManagerNavTab, string> = {
   leads: "Leads & Enquiries",
   admissions: "Admissions",
   cohorts: "Cohorts & Seats",
+  schedule: "Class Schedule",
   attendance: "Attendance Alerts",
   fees: "Fees & Payments",
   counsellors: "Counsellors",
@@ -18,10 +21,12 @@ export function ManagerHeader({
   activeTab,
   onOpenMobileSidebar,
   onQuickAction,
+  onLogout,
 }: {
   activeTab: ManagerNavTab;
   onOpenMobileSidebar: () => void;
   onQuickAction?: (action: string) => void;
+  onLogout?: () => void;
 }) {
   const title = tabDisplayTitles[activeTab] || "Dashboard";
 
@@ -85,6 +90,21 @@ export function ManagerHeader({
           </button>
         )}
 
+        {activeTab === "cohorts" && (
+          <button
+            type="button"
+            onClick={() => onQuickAction?.("create_class")}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity shadow-xs cursor-pointer min-h-[44px]"
+            style={{
+              backgroundColor: "var(--accent)",
+              color: "var(--accent-contrast)",
+            }}
+          >
+            <Plus size={14} />
+            <span>Schedule Class</span>
+          </button>
+        )}
+
         {(activeTab === "fees" || activeTab === "reports") && (
           <button
             type="button"
@@ -101,6 +121,8 @@ export function ManagerHeader({
           </button>
         )}
 
+        <PaletteMenu />
+
         <div
           className="w-9 h-9 sm:w-8 sm:h-8 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-lg border flex items-center justify-center relative cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
           style={{
@@ -116,6 +138,15 @@ export function ManagerHeader({
             style={{ backgroundColor: "var(--accent)" }}
           />
         </div>
+
+        {onLogout && (
+          <ProfileMenu
+            initials="OM"
+            name="Operations Manager"
+            subtitle="manager@aintrix.edu"
+            onLogout={onLogout}
+          />
+        )}
       </div>
     </header>
   );
