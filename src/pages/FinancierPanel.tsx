@@ -88,6 +88,8 @@ export default function FinancierPanel() {
   const [students, setStudents] = useState<FinancierStudentDebt[]>(initialFinancierStudents);
   const [dataLoading, setDataLoading] = useState(false);
   const [dataError, setDataError] = useState<string | null>(null);
+  const [operatorName, setOperatorName] = useState<string>(() => readCrmSession()?.name || "Lead Financier");
+  const syncStatus = dataLoading ? "syncing" : dataError ? "offline_preview" : "live";
 
   useEffect(() => {
     let cancelled = false;
