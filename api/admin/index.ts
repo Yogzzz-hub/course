@@ -6,6 +6,8 @@ import {
   getOffers,
   getFinance,
   getProgrammes,
+  getStudents,
+  getBatches,
   getReports,
   getNotifications,
   search,
@@ -179,6 +181,8 @@ export async function handleAdminRequest(request: Request): Promise<Response> {
       if (path === "/offers") return jsonRes(await getOffers(pool));
       if (path === "/finance") return jsonRes(await getFinance(pool));
       if (path === "/programmes") return jsonRes(await getProgrammes(pool));
+      if (path === "/students") return jsonRes(await getStudents(pool));
+      if (path === "/batches") return jsonRes(await getBatches(pool));
       if (path === "/audit") return jsonRes(await getAudit(pool));
       if (path === "/notifications") return jsonRes(await getNotifications(pool));
       if (path === "/operations") return jsonRes({ operations: [] });

@@ -486,7 +486,7 @@ export async function createAnnouncementRecord(
 export async function getManagerScheduledClasses(pool: pg.Pool) {
   const { rows } = await pool.query(`
     SELECT so.id, so."plannedDate", so."plannedStartTime", so."plannedEndTime", so.status, so.location,
-           b.code as "batchCode", c.name as "batchName", u.name as "facultyName"
+           b.code as "batchCode", c.title as "batchName", u.name as "facultyName"
     FROM "SessionOccurrence" so
     JOIN "Batch" b ON b.id = so."batchId"
     JOIN "Course" c ON c.id = b."courseId"

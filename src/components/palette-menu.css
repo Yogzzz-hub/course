@@ -93,3 +93,5 @@
 .workspace-appearance { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 24px; background: var(--surface); border-bottom: 1px solid var(--border); }
 .workspace-appearance .workspace-home { color: var(--text); text-decoration: none; font-size: 14px; font-weight: 700; line-height: 1.4; }
 .workspace-home span { display: block; color: var(--muted); font-size: 10px; font-weight: 500; }
+
+

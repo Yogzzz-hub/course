@@ -11,7 +11,7 @@ const getEnvVar = (name: string, fallback: string): string => {
   return fallback;
 };
 
-const supabaseUrl = getEnvVar('NEXT_PUBLIC_SUPABASE_URL', getEnvVar('VITE_SUPABASE_URL', 'https://bzrziphgocbsopvidknp.supabase.co'));
+const supabaseUrl = getEnvVar('NEXT_PUBLIC_SUPABASE_URL', getEnvVar('VITE_SUPABASE_URL', 'https://itkovwoiskuoxyhqiycq.supabase.co'));
 const supabaseKey = getEnvVar(
   'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
   getEnvVar(

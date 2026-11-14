@@ -52,14 +52,32 @@ export const themes: ThemeOption[] = [
   },
 ];
 
-function normaliseTheme(value: string | null | undefined) { return themes.some(theme => theme.id === value) ? value! : 'theme-1'; }
-function getThemeSnapshot() { return normaliseTheme(document.documentElement.dataset.theme); }
+function normaliseTheme(value: string | null | undefined) {
+  return themes.some(theme => theme.id === value) ? value! : 'theme-1';
+}
+
+function getThemeSnapshot() {
+  return typeof document !== 'undefined'
+    ? normaliseTheme(document.documentElement.dataset.theme)
+    : 'theme-1';
+}
+
 function subscribeTheme(update: () => void) {
-  const storageChanged = (event: StorageEvent) => { if (event.key === 'academy-theme') { document.documentElement.dataset.theme = normaliseTheme(event.newValue); update(); } };
+  if (typeof window === 'undefined') return () => {};
+  const storageChanged = (event: StorageEvent) => {
+    if (event.key === 'academy-theme') {
+      document.documentElement.dataset.theme = normaliseTheme(event.newValue);
+      update();
+    }
+  };
   window.addEventListener('academy-theme-change', update);
   window.addEventListener('storage', storageChanged);
-  return () => { window.removeEventListener('academy-theme-change', update); window.removeEventListener('storage', storageChanged); };
+  return () => {
+    window.removeEventListener('academy-theme-change', update);
+    window.removeEventListener('storage', storageChanged);
+  };
 }
+
 export function useTheme() {
   const currentTheme = useSyncExternalStore(subscribeTheme, getThemeSnapshot, () => 'theme-1');
 
@@ -67,28 +85,26 @@ export function useTheme() {
     const resolved = normaliseTheme(themeId);
     if (typeof document !== 'undefined') {
       document.documentElement.dataset.theme = resolved;
-      const themeMeta = themes.find(t => t.id === resolved);
-      if (themeMeta) {
-        const metaEl = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
-        if (metaEl) metaEl.content = themeMeta.bg;
-      }
-      window.dispatchEvent(new Event('academy-theme-change'));
-      document.documentElement.dataset.themeTransitioning = 'true';
+      const targetTheme = themes.find((t) => t.id === resolved) || themes[0];
+      const metaEl = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+      if (metaEl) metaEl.content = targetTheme.bg;
       try {
         localStorage.setItem('academy-theme', resolved);
-      } catch {
-        // ignore storage errors
-      }
-      setTimeout(() => {
-        delete document.documentElement.dataset.themeTransitioning;
-      }, 400);
+      } catch {}
+      window.dispatchEvent(new Event('academy-theme-change'));
     }
   };
 
   return { currentTheme, setTheme };
 }
 
-export function ThemeSwitcher({ compact = false }: { compact?: boolean }) {
+export function ThemeSwitcher({
+  compact = false,
+  onSelect,
+}: {
+  compact?: boolean;
+  onSelect?: () => void;
+}) {
   const { currentTheme, setTheme } = useTheme();
 
   return (
@@ -109,7 +125,10 @@ export function ThemeSwitcher({ compact = false }: { compact?: boolean }) {
               key={t.id}
               type="button"
               className={`theme-btn ${isActive ? 'active' : ''}`}
-              onClick={() => setTheme(t.id)}
+              onClick={() => {
+                setTheme(t.id);
+                onSelect?.();
+              }}
               aria-pressed={isActive}
               aria-label={t.name}
               title={`${t.name} — ${t.tagline}`}
