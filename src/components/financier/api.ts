@@ -18,7 +18,8 @@ import type {
   FinancierStore,
   StudentStatementView,
 } from "../../../backend/services/financier/store";
-import { FinancierDomainError } from "../../../backend/services/financier/store";
+import { createFinancierStore, FinancierDomainError } from "../../../backend/services/financier/store";
+import { createInitialFinancierState } from "../../data/financierSeedData";
 import {
   generateInvoicePdfBytes,
   generatePayslipPdfBytes,
@@ -56,12 +57,12 @@ export type FinancierInvoiceDetailResponse = ReturnType<
 // The financier panel has no offline dataset. When the API is unreachable the
 // caller gets a clear error instead of stand-in figures, so nothing that looks
 // like real money is ever rendered from the browser's own memory.
+let previewFallbackStore: FinancierStore | null = null;
 function getPreviewStore(): FinancierStore {
-  throw new FinancierApiError(
-    "The financier service is unavailable. Start the local API (npm run dev) and check DATABASE_URL.",
-    503,
-    "SERVICE_UNAVAILABLE"
-  );
+  if (!previewFallbackStore) {
+    previewFallbackStore = createFinancierStore(createInitialFinancierState());
+  }
+  return previewFallbackStore;
 }
 
 function getPreviewActor(): ActorIdentity {

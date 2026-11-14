@@ -75,35 +75,70 @@ export async function loadFinancierLiveData(): Promise<{
   const students: FinancierStudentDebt[] = summary.students.map((stu: {
     id: string; name: string; email: string; registrationNumber: string; batchCode: string; trackTitle: string;
     netPayablePaise: number; totalPaidPaise: number; outstandingPaise: number; overdueInstallmentsCount: number;
-  }) => ({
-    id: stu.id,
-    registrationNumber: stu.registrationNumber,
-    name: stu.name,
-    email: stu.email,
-    phone: (stu as { phone?: string }).phone || "+91 98765 43210",
-    courseTitle: stu.trackTitle,
-    batchCode: stu.batchCode,
-    contractedFeeMinor: stu.netPayablePaise,
-    paidAmountMinor: stu.totalPaidPaise,
-    remainingDueMinor: stu.outstandingPaise,
-    overdueMinor: stu.overdueInstallmentsCount > 0 ? stu.outstandingPaise : 0,
-    nextDueDate: new Date().toISOString(),
-    status: stu.outstandingPaise <= 0 ? "PAID_IN_FULL" : stu.overdueInstallmentsCount > 0 ? "OVERDUE" : "CURRENT",
-    installments: [
-      {
-        number: 1,
-        dueDate: "2026-08-15",
-        amountMinor: Math.round(stu.netPayablePaise / 2),
-        status: stu.totalPaidPaise >= Math.round(stu.netPayablePaise / 2) ? ("PAID" as const) : ("OVERDUE" as const),
-      },
-      {
-        number: 2,
-        dueDate: "2026-11-15",
-        amountMinor: Math.round(stu.netPayablePaise / 2),
-        status: stu.totalPaidPaise >= stu.netPayablePaise ? ("PAID" as const) : ("DUE" as const),
-      },
-    ],
-  }));
+    installments?: Array<{
+      installmentNumber: number;
+      dueDate: string;
+      amountDuePaise: number;
+      amountPaidPaise: number;
+      remainingBalancePaise: number;
+      status: string;
+    }>;
+  }) => {
+    const rawInsts = stu.installments;
+    const installments = (rawInsts && rawInsts.length > 0)
+      ? rawInsts.map((inst) => {
+          const status = inst.status === "PAID" || inst.remainingBalancePaise <= 0
+            ? ("PAID" as const)
+            : inst.status === "OVERDUE" || Date.parse(inst.dueDate) < Date.now()
+            ? ("OVERDUE" as const)
+            : ("DUE" as const);
+          return {
+            number: inst.installmentNumber,
+            amountMinor: inst.amountDuePaise,
+            dueDate: inst.dueDate ? inst.dueDate.slice(0, 10) : new Date().toISOString().slice(0, 10),
+            status,
+          };
+        })
+      : [
+          {
+            number: 1,
+            dueDate: "2026-08-15",
+            amountMinor: Math.round(stu.netPayablePaise / 2),
+            status: stu.totalPaidPaise >= Math.round(stu.netPayablePaise / 2) ? ("PAID" as const) : ("OVERDUE" as const),
+          },
+          {
+            number: 2,
+            dueDate: "2026-11-15",
+            amountMinor: Math.round(stu.netPayablePaise / 2),
+            status: stu.totalPaidPaise >= stu.netPayablePaise ? ("PAID" as const) : ("DUE" as const),
+          },
+        ];
+
+    const overdueInsts = rawInsts?.filter((i) => i.status === "OVERDUE" || (i.remainingBalancePaise > 0 && Date.parse(i.dueDate) < Date.now())) || [];
+    const overdueMinor = overdueInsts.length > 0
+      ? overdueInsts.reduce((sum, i) => sum + i.remainingBalancePaise, 0)
+      : (stu.overdueInstallmentsCount > 0 ? stu.outstandingPaise : 0);
+
+    const firstUnpaid = rawInsts?.find((i) => i.remainingBalancePaise > 0);
+    const nextDueDate = firstUnpaid?.dueDate ? firstUnpaid.dueDate.slice(0, 10) : new Date().toISOString().slice(0, 10);
+
+    return {
+      id: stu.id,
+      registrationNumber: stu.registrationNumber,
+      name: stu.name,
+      email: stu.email,
+      phone: (stu as { phone?: string }).phone || "+91 98765 43210",
+      courseTitle: stu.trackTitle,
+      batchCode: stu.batchCode,
+      contractedFeeMinor: stu.netPayablePaise,
+      paidAmountMinor: stu.totalPaidPaise,
+      remainingDueMinor: stu.outstandingPaise,
+      overdueMinor,
+      nextDueDate,
+      status: stu.outstandingPaise <= 0 ? "PAID_IN_FULL" : (overdueMinor > 0 ? "OVERDUE" : "CURRENT"),
+      installments,
+    };
+  });
 
   return { accounts, ledgerLines, students };
 }

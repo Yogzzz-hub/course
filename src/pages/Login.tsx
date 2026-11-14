@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { canonicalizeDemoUser, writeCrmSession, type CrmSession } from "../utils/authSession";
 import { PaletteMenu } from "../components/PaletteMenu";
 import { LogoMark } from "../components/LogoMark";
+import { Eclipse, EclipseRing } from "../components/Eclipse";
 import {
   KeyRound,
   GraduationCap,
@@ -16,7 +17,10 @@ import {
   Coins,
   Mail,
   Lock,
+  Eye,
+  EyeOff,
 } from "lucide-react";
+import "../styles/login.css";
 
 function getSafeReturnUrl(params: URLSearchParams): string | null {
   const raw = params.get("returnUrl") || params.get("returnTo");
@@ -42,7 +46,19 @@ function defaultPathForRole(role: CrmSession["role"]): string {
 export default function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<"STAFF" | "STUDENT">("STAFF");
+
+  const initialTab =
+    searchParams.get("role") === "staff" ||
+    searchParams.get("role") === "trainer" ||
+    searchParams.get("role") === "manager" ||
+    searchParams.get("role") === "admin" ||
+    searchParams.get("role") === "financier" ||
+    searchParams.get("tab") === "staff"
+      ? "STAFF"
+      : "STUDENT";
+
+  const [activeTab, setActiveTab] = useState<"STAFF" | "STUDENT">(initialTab);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Staff State
   const [staffEmail, setStaffEmail] = useState("");
@@ -89,6 +105,14 @@ export default function LoginPage() {
         const isJson = contentType.includes("application/json");
         if (res.status === 404 && !isJson) {
           return { kind: "offline_preview" };
+        }
+        if (res.status === 503 && isJson) {
+          try {
+            const peek = (await res.clone().json()) as { available?: boolean };
+            if (peek && peek.available === false) {
+              return { kind: "offline_preview" };
+            }
+          } catch {}
         }
         if ((res.status === 502 || res.status === 503 || res.status === 504) && attempt === 0) {
           await new Promise((r) => window.setTimeout(r, 1500));
@@ -291,7 +315,7 @@ export default function LoginPage() {
     }
 
     setStudentLoading(false);
-    const session = canonicalizeDemoUser(studentId || "student@apexacademy.edu", "STUDENT");
+    const session = canonicalizeDemoUser(studentId || "student@aintrixacademy.edu", "STUDENT");
     writeCrmSession(session);
     navigate(resolveStudentTarget());
   };
@@ -343,7 +367,7 @@ export default function LoginPage() {
     setStudentLoading(true);
     setStudentError("");
 
-    const resolveStudentTarget = () => {
+    const resolveStudentModeTarget = () => {
       const returnUrl = getSafeReturnUrl(searchParams);
       if (returnUrl && returnUrl.startsWith("/student")) return returnUrl;
       return null;
@@ -372,7 +396,7 @@ export default function LoginPage() {
         authenticated: true,
       };
       writeCrmSession(verifiedSession);
-      const returnTarget = resolveStudentTarget();
+      const returnTarget = resolveStudentModeTarget();
       if (returnTarget) {
         navigate(returnTarget);
       } else {
@@ -391,7 +415,7 @@ export default function LoginPage() {
     setStudentLoading(false);
     const session = canonicalizeDemoUser(studentId || "student@aintrixacademy.edu", "STUDENT");
     writeCrmSession(session);
-    const returnTarget = resolveStudentTarget();
+    const returnTarget = resolveStudentModeTarget();
     if (returnTarget) {
       navigate(returnTarget);
     } else {
@@ -401,710 +425,501 @@ export default function LoginPage() {
   };
 
   return (
-    <div
-      className="ss-admin relative overflow-x-hidden"
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        background:
-          "radial-gradient(960px 620px at 92% -8%, color-mix(in srgb, var(--accent-soft) 52%, transparent), transparent 62%), radial-gradient(780px 560px at -8% 85%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 60%), radial-gradient(620px 440px at 50% 105%, color-mix(in srgb, var(--accent-soft-dark) 20%, transparent), transparent 65%), var(--bg)",
-        color: "var(--text)",
-      }}
-    >
-      {/* Ambient architectural grid & floating aurora orbs */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed inset-0 overflow-hidden"
-        style={{ zIndex: 0 }}
-      >
-        {/* Subtle technical grid fading cleanly toward edges */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            backgroundImage:
-              "linear-gradient(to right, color-mix(in srgb, var(--accent) 8%, transparent) 1px, transparent 1px), linear-gradient(to bottom, color-mix(in srgb, var(--accent) 8%, transparent) 1px, transparent 1px)",
-            backgroundSize: "48px 48px",
-            maskImage:
-              "radial-gradient(ellipse 75% 65% at 50% 48%, rgba(0,0,0,0.9), transparent 82%)",
-            WebkitMaskImage:
-              "radial-gradient(ellipse 75% 65% at 50% 48%, rgba(0,0,0,0.9), transparent 82%)",
-          }}
-        />
+    <div className={`login-page-root ${activeTab === "STUDENT" ? "mode-student" : "mode-staff"}`}>
+      {/* ===================================================================
+          HERO PANE: Atmospheric Total Eclipse Stage with Pointer Tracing
+          - Student Login: Sits on the LEFT (0%)
+          - Staff / Trainer / Admin Login: Morphs & slides to the RIGHT (100%)
+          =================================================================== */}
+      <section className="login-hero-pane" aria-label="Visual Hero Stage">
+        <div className="login-sky" aria-hidden="true" />
+        <div className="login-aurora" aria-hidden="true" />
 
-        {/* Soft blurred theme-reactive gradient blobs */}
-        <div
-          style={{
-            position: "absolute",
-            top: "-12%",
-            right: "-6%",
-            width: "520px",
-            height: "520px",
-            borderRadius: "9999px",
-            background:
-              "radial-gradient(circle, color-mix(in srgb, var(--accent-soft) 68%, transparent) 0%, transparent 70%)",
-            filter: "blur(56px)",
-            opacity: 0.75,
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            bottom: "-14%",
-            left: "-8%",
-            width: "480px",
-            height: "480px",
-            borderRadius: "9999px",
-            background:
-              "radial-gradient(circle, color-mix(in srgb, var(--accent) 26%, transparent) 0%, transparent 72%)",
-            filter: "blur(64px)",
-            opacity: 0.85,
-          }}
-        />
-
-        {/* Concentric Aintrix Eclipse orbital rings behind the sign-in stage */}
-        <svg
-          viewBox="0 0 900 900"
-          fill="none"
-          style={{
-            position: "absolute",
-            left: "50%",
-            top: "52%",
-            width: "min(960px, 125vw)",
-            height: "min(960px, 125vw)",
-            transform: "translate(-50%, -50%)",
-            opacity: 0.9,
-          }}
-        >
-          <g className="login-orbit-cw">
-            <circle
-              cx="450"
-              cy="450"
-              r="380"
-              stroke="color-mix(in srgb, var(--accent) 14%, transparent)"
-              strokeWidth="1"
-              strokeDasharray="6 10"
-            />
-            <circle
-              cx="450"
-              cy="70"
-              r="5"
-              fill="color-mix(in srgb, var(--accent) 42%, transparent)"
-            />
-            <circle
-              cx="830"
-              cy="450"
-              r="3.5"
-              fill="color-mix(in srgb, var(--accent-soft-dark) 55%, transparent)"
-            />
-          </g>
-          <g className="login-orbit-ccw">
-            <circle
-              cx="450"
-              cy="450"
-              r="290"
-              stroke="color-mix(in srgb, var(--accent) 18%, transparent)"
-              strokeWidth="1.2"
-            />
-            <circle
-              cx="160"
-              cy="450"
-              r="4.5"
-              fill="var(--accent)"
-              opacity="0.35"
-            />
-            <circle
-              cx="655"
-              cy="245"
-              r="6"
-              fill="var(--accent-soft)"
-              opacity="0.8"
-            />
-          </g>
-          <circle
-            cx="450"
-            cy="450"
-            r="210"
-            stroke="color-mix(in srgb, var(--accent) 10%, transparent)"
-            strokeWidth="1"
-          />
-        </svg>
-      </div>
-
-      <div style={{ position: "relative", zIndex: 1, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 24px" }}>
-        <Link to="/" className="logo flex flex-row items-center flex-nowrap gap-3 shrink-0" style={{ textDecoration: "none" }} aria-label="Aintrix Academy home">
-          <span className="logo-mark"><LogoMark size={32} surface="light" /></span>
-          <span className="logo-wordmark flex flex-col justify-center leading-tight">
-            <span className="logo-name whitespace-nowrap">Aintrix</span>
-            <span className="logo-subtitle whitespace-nowrap">Academy</span>
-          </span>
+        {/* Prominent, Big & Perfectly Placed Logo */}
+        <Link to="/" className="login-hero-brand" aria-label="Aintrix Academy home">
+          <div className="login-brand-logo">
+            <LogoMark size={36} surface="light" />
+          </div>
+          <div className="login-brand-meta">
+            <span className="login-brand-title">Aintrix Academy</span>
+            <span className="login-brand-tag">Engineering Career Ecosystem</span>
+          </div>
         </Link>
-        <PaletteMenu />
-      </div>
 
-      <div style={{ position: "relative", zIndex: 1, flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 16px 40px" }}>
-        <div style={{ width: "100%", maxWidth: "480px" }}>
-          
-          {/* Portal Heading */}
-          <div style={{ textAlign: "center", marginBottom: "22px" }}>
-            <h1 style={{ fontSize: "20px", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text)", margin: "0 0 6px" }}>
-              CRM Portal
+        {/* Center Content: Headline & Live Interactive Eclipse with Mouse Tracing */}
+        <div className="login-hero-content">
+          <h2 className="login-hero-headline">
+            Discover your skills,<br />
+            identify your gaps,<br />
+            and build your <span className="hero-highlight">personalized career roadmap.</span>
+          </h2>
+
+          <div className="login-eclipse-stage">
+            <div className="login-eclipse-frame">
+              <EclipseRing half="back" />
+              <Eclipse className="login-hero-eclipse" live={true} />
+              <EclipseRing half="front" />
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Stage Footer */}
+        <div className="login-hero-footer">
+          <span className="login-pointer-hint">Total Eclipse · Move cursor to trace flare</span>
+          <span>© 2026 Aintrix Academy</span>
+        </div>
+      </section>
+
+      {/* ===================================================================
+          FORM PANE: Sweeping Curved Auth Card with Animated Morph
+          - Student Login: Sits on the RIGHT (curved left edge)
+          - Staff / Trainer / Admin Login: Morphs & slides to the LEFT (curved right edge)
+          =================================================================== */}
+      <main className="login-form-pane">
+        {/* Top Bar: Return Link + Theme Palette Switcher */}
+        <header className="login-form-topbar">
+          <Link to="/" className="login-nav-link" aria-label="Return to home page">
+            ← Return to Home
+          </Link>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <PaletteMenu />
+          </div>
+        </header>
+
+        {/* Main Form Box */}
+        <div className="login-card-inner">
+          <div className="login-header-group">
+            <h1 className="login-title">
+              {activeTab === "STUDENT" ? "Student Sign In" : "Staff & Operations Sign In"}
             </h1>
-            <p style={{ fontSize: "13.5px", color: "var(--muted)", margin: 0 }}>
-              Sign in to manage courses, students, batches, and operations.
+            <p className="login-subtitle">
+              {activeTab === "STUDENT"
+                ? "Access your learning track, assignments, and mentorship portal."
+                : "Manage faculty sessions, candidate admissions, and institutional operations."}
             </p>
           </div>
 
-          {/* Card Container */}
-          <div style={{
-            background: "color-mix(in srgb, var(--surface) 90%, transparent)",
-            backdropFilter: "blur(18px) saturate(1.3)",
-            WebkitBackdropFilter: "blur(18px) saturate(1.3)",
-            border: "1px solid color-mix(in srgb, var(--border-strong) 85%, transparent)",
-            borderRadius: "22px",
-            padding: "32px",
-            boxShadow: "0 1px 0 rgb(255 255 255 / 0.85) inset, 0 28px 64px -26px color-mix(in srgb, var(--accent) 32%, transparent)"
-          }}>
-            
-            {/* Tabs */}
-            <div style={{
-              display: "flex",
-              borderRadius: "12px",
-              background: "var(--surface-alt)",
-              border: "1px solid var(--border)",
-              padding: "4px",
-              marginBottom: "24px"
-            }}>
+          {/* Mode Switcher Pills: Toggling triggers the smooth morphing slide */}
+          <div className="login-tabs-pills" role="tablist" aria-label="Authentication portal category">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "STUDENT"}
+              className={`login-tab-pill ${activeTab === "STUDENT" ? "is-active" : ""}`}
+              onClick={() => {
+                setActiveTab("STUDENT");
+                setStaffError("");
+                setStudentError("");
+                setStudentModePrompt(false);
+              }}
+            >
+              <GraduationCap size={16} /> Student Portal
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "STAFF"}
+              className={`login-tab-pill ${activeTab === "STAFF" ? "is-active" : ""}`}
+              onClick={() => {
+                setActiveTab("STAFF");
+                setStaffError("");
+                setStudentError("");
+                setStudentModePrompt(false);
+              }}
+            >
+              <Users size={16} /> Staff &amp; Faculty
+            </button>
+          </div>
+
+          <div className="login-divider" aria-hidden="true">
+            <span>or sign in below</span>
+          </div>
+
+          {studentModePrompt ? (
+            /* Student Mode Selection (Prospect vs Enrolled) */
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+              <div>
+                <div style={{ fontSize: "16px", fontWeight: 700, color: "var(--text)", marginBottom: "4px" }}>
+                  Choose Student Access
+                </div>
+                <p style={{ fontSize: "13px", color: "var(--muted)", margin: 0 }}>
+                  Select whether to open the portal as a prospect or as a demo student.
+                </p>
+              </div>
+
               <button
                 type="button"
-                onClick={() => { setActiveTab("STAFF"); setStaffError(""); setStudentError(""); setStudentModePrompt(false); }}
+                onClick={() => enterStudentWorkspace("prospect")}
                 style={{
-                  flex: 1,
-                  padding: "10px 0",
-                  borderRadius: "9px",
-                  fontSize: "13px",
-                  fontWeight: 600,
+                  width: "100%",
+                  padding: "16px",
+                  borderRadius: "14px",
+                  border: "1px solid var(--border-strong)",
+                  background: "var(--surface-alt)",
+                  color: "var(--text)",
+                  textAlign: "left",
+                  cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                  cursor: "pointer",
-                  border: "none",
-                  transition: "all 0.2s",
-                  background: activeTab === "STAFF" ? "var(--btn-primary-bg)" : "transparent",
-                  color: activeTab === "STAFF" ? "var(--btn-primary-text)" : "var(--muted)"
+                  justifyContent: "space-between",
+                  gap: "12px",
+                  transition: "all 0.18s ease",
                 }}
               >
-                <Users size={16} /> Staff & Trainer
+                <div>
+                  <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--accent)", marginBottom: "3px" }}>
+                    Prospect
+                  </div>
+                  <div style={{ fontSize: "12px", color: "var(--muted)" }}>
+                    Explore programmes, recommended learning plan &amp; counselling sessions
+                  </div>
+                </div>
+                <ArrowRight size={18} color="var(--accent)" />
               </button>
+
               <button
                 type="button"
-                onClick={() => { setActiveTab("STUDENT"); setStaffError(""); setStudentError(""); setStudentModePrompt(false); }}
+                onClick={() => enterStudentWorkspace("enrolled")}
                 style={{
-                  flex: 1,
-                  padding: "10px 0",
-                  borderRadius: "9px",
-                  fontSize: "13px",
-                  fontWeight: 600,
+                  width: "100%",
+                  padding: "16px",
+                  borderRadius: "14px",
+                  border: "1px solid transparent",
+                  background: "var(--btn-primary-bg)",
+                  color: "var(--btn-primary-text)",
+                  textAlign: "left",
+                  cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                  cursor: "pointer",
-                  border: "none",
-                  transition: "all 0.2s",
-                  background: activeTab === "STUDENT" ? "var(--btn-primary-bg)" : "transparent",
-                  color: activeTab === "STUDENT" ? "var(--btn-primary-text)" : "var(--muted)"
+                  justifyContent: "space-between",
+                  gap: "12px",
+                  boxShadow: "0 4px 16px color-mix(in srgb, var(--accent) 30%, transparent)",
                 }}
               >
-                <GraduationCap size={16} /> Student Portal
+                <div>
+                  <div style={{ fontSize: "14px", fontWeight: 700, marginBottom: "3px" }}>
+                    Demo Student
+                  </div>
+                  <div style={{ fontSize: "12px", opacity: 0.9 }}>
+                    Enter the enrolled student workspace with classes, tasks &amp; mentorship
+                  </div>
+                </div>
+                <ArrowRight size={18} />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setStudentModePrompt(false)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  padding: "6px 0",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  color: "var(--muted)",
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
+              >
+                ← Back to credentials
               </button>
             </div>
-
-            {studentModePrompt ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                <div>
-                  <div style={{ fontSize: "16px", fontWeight: 700, color: "var(--text)", marginBottom: "4px" }}>
-                    Choose Student Access
-                  </div>
-                  <p style={{ fontSize: "13px", color: "var(--muted)", margin: 0 }}>
-                    Select whether to open the portal as a prospect or as a demo student.
-                  </p>
+          ) : activeTab === "STAFF" ? (
+            /* Staff & Trainer Sign-In Form */
+            <form onSubmit={handleStaffLogin} className="login-form">
+              {staffError && (
+                <div className="login-alert-error" role="alert">
+                  <AlertCircle size={16} />
+                  <span>{staffError}</span>
                 </div>
+              )}
 
+              <div className="login-field-group">
+                <label htmlFor="staff-email-input" className="login-field-label">
+                  Staff Email
+                </label>
+                <div className="login-input-wrap">
+                  <Mail size={16} className="login-input-icon" aria-hidden="true" />
+                  <input
+                    id="staff-email-input"
+                    type="email"
+                    required
+                    autoComplete="username"
+                    placeholder="name@aintrixacademy.edu"
+                    value={staffEmail}
+                    onChange={(e) => setStaffEmail(e.target.value)}
+                    className="login-input"
+                  />
+                </div>
+              </div>
+
+              <div className="login-field-group">
+                <label htmlFor="staff-password-input" className="login-field-label">
+                  Password
+                </label>
+                <div className="login-input-wrap">
+                  <Lock size={16} className="login-input-icon" aria-hidden="true" />
+                  <input
+                    id="staff-password-input"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    autoComplete="current-password"
+                    placeholder="••••••••••••"
+                    value={staffPassword}
+                    onChange={(e) => setStaffPassword(e.target.value)}
+                    className="login-input"
+                    style={{ paddingRight: "44px" }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    style={{
+                      position: "absolute",
+                      right: "12px",
+                      background: "none",
+                      border: "none",
+                      color: "var(--muted)",
+                      cursor: "pointer",
+                      padding: "4px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              <button type="submit" disabled={staffLoading} className="login-submit-btn">
+                {staffLoading ? "Signing In..." : "Sign In to Portal"} <ArrowRight size={16} />
+              </button>
+            </form>
+          ) : (
+            /* Student Sign-In Form (Password or 6-Digit Email OTP) */
+            <form
+              onSubmit={
+                studentAuthMode === "PASSWORD"
+                  ? handleStudentPasswordLogin
+                  : otpSent
+                    ? handleVerifyOtp
+                    : handleRequestOtp
+              }
+              className="login-form"
+            >
+              <div style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
                 <button
                   type="button"
-                  onClick={() => enterStudentWorkspace("prospect")}
-                  style={{
-                    width: "100%",
-                    padding: "16px",
-                    borderRadius: "12px",
-                    border: "1px solid var(--border-strong)",
-                    background: "var(--surface-alt)",
-                    color: "var(--text)",
-                    textAlign: "left",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: "12px",
+                  onClick={() => {
+                    setStudentAuthMode("PASSWORD");
+                    setStudentError("");
+                    setStudentMessage("");
                   }}
-                >
-                  <div>
-                    <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--accent)", marginBottom: "3px" }}>
-                      Prospect
-                    </div>
-                    <div style={{ fontSize: "12px", color: "var(--muted)" }}>
-                      Explore programmes, recommended learning plan &amp; counselling sessions
-                    </div>
-                  </div>
-                  <ArrowRight size={18} color="var(--accent)" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => enterStudentWorkspace("enrolled")}
                   style={{
-                    width: "100%",
-                    padding: "16px",
-                    borderRadius: "12px",
-                    border: "1px solid transparent",
-                    background: "var(--btn-primary-bg)",
-                    color: "var(--btn-primary-text)",
-                    textAlign: "left",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: "12px",
-                  }}
-                >
-                  <div>
-                    <div style={{ fontSize: "14px", fontWeight: 700, marginBottom: "3px" }}>
-                      Demo
-                    </div>
-                    <div style={{ fontSize: "12px", opacity: 0.88 }}>
-                      Enter the enrolled student workspace with classes, tasks &amp; mentorship
-                    </div>
-                  </div>
-                  <ArrowRight size={18} />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setStudentModePrompt(false)}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    padding: "6px 0",
+                    flex: 1,
+                    padding: "6px 10px",
+                    borderRadius: "8px",
                     fontSize: "12px",
-                    fontWeight: 600,
-                    color: "var(--muted)",
+                    fontWeight: 700,
                     cursor: "pointer",
-                    textAlign: "left",
+                    border: studentAuthMode === "PASSWORD" ? "1px solid var(--accent)" : "1px solid var(--border)",
+                    background: studentAuthMode === "PASSWORD" ? "color-mix(in srgb, var(--accent) 12%, transparent)" : "var(--surface-alt)",
+                    color: studentAuthMode === "PASSWORD" ? "var(--accent)" : "var(--muted)",
+                    transition: "all 0.15s ease",
                   }}
                 >
-                  ← Back to sign in
+                  Password Sign-In
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStudentAuthMode("OTP");
+                    setStudentError("");
+                    setStudentMessage("");
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: "6px 10px",
+                    borderRadius: "8px",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    border: studentAuthMode === "OTP" ? "1px solid var(--accent)" : "1px solid var(--border)",
+                    background: studentAuthMode === "OTP" ? "color-mix(in srgb, var(--accent) 12%, transparent)" : "var(--surface-alt)",
+                    color: studentAuthMode === "OTP" ? "var(--accent)" : "var(--muted)",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  6-Digit OTP
                 </button>
               </div>
-            ) : activeTab === "STAFF" ? (
-              <form onSubmit={handleStaffLogin} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
-                {staffError && (
-                  <div style={{ padding: "12px", borderRadius: "8px", background: "rgba(185, 28, 28, 0.08)", border: "1px solid rgba(185, 28, 28, 0.2)", display: "flex", alignItems: "center", gap: "10px", color: "#B91C1C", fontSize: "13px" }}>
-                    <AlertCircle size={16} />
-                    <span>{staffError}</span>
-                  </div>
-                )}
 
-                <div>
-                  <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "var(--muted)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    Staff Email
-                  </label>
-                  <div style={{ position: "relative" }}>
-                    <Mail size={16} style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "var(--muted)" }} />
-                    <input
-                      type="email"
-                      required
-                      placeholder="trainer@aintrixacademy.edu"
-                      value={staffEmail}
-                      onChange={(e) => setStaffEmail(e.target.value)}
-                      style={{
-                        width: "100%",
-                        padding: "12px 14px 12px 40px",
-                        borderRadius: "10px",
-                        border: "1px solid var(--border-strong)",
-                        background: "var(--bg)",
-                        color: "var(--text)",
-                        fontSize: "14px",
-                        outline: "none",
-                        boxSizing: "border-box"
-                      }}
-                    />
-                  </div>
+              {studentError && (
+                <div className="login-alert-error" role="alert">
+                  <AlertCircle size={16} />
+                  <span>{studentError}</span>
                 </div>
+              )}
+              {studentMessage && (
+                <div className="login-alert-success" role="status">
+                  <CheckCircle size={16} />
+                  <span>{studentMessage}</span>
+                </div>
+              )}
 
-                <div>
-                  <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "var(--muted)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              <div className="login-field-group">
+                <label htmlFor="student-id-input" className="login-field-label">
+                  Student Email
+                </label>
+                <div className="login-input-wrap">
+                  <Mail size={16} className="login-input-icon" aria-hidden="true" />
+                  <input
+                    id="student-id-input"
+                    type="email"
+                    required
+                    autoComplete="username"
+                    placeholder="student@aintrixacademy.edu"
+                    value={studentId}
+                    onChange={(e) => setStudentId(e.target.value)}
+                    disabled={studentAuthMode === "OTP" && otpSent}
+                    className="login-input"
+                  />
+                </div>
+              </div>
+
+              {studentAuthMode === "PASSWORD" ? (
+                <div className="login-field-group">
+                  <label htmlFor="student-password-input" className="login-field-label">
                     Password
                   </label>
-                  <div style={{ position: "relative" }}>
-                    <Lock size={16} style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "var(--muted)" }} />
+                  <div className="login-input-wrap">
+                    <Lock size={16} className="login-input-icon" aria-hidden="true" />
                     <input
-                      type="password"
+                      id="student-password-input"
+                      type={showPassword ? "text" : "password"}
                       required
+                      autoComplete="current-password"
                       placeholder="••••••••••••"
-                      value={staffPassword}
-                      onChange={(e) => setStaffPassword(e.target.value)}
-                      style={{
-                        width: "100%",
-                        padding: "12px 14px 12px 40px",
-                        borderRadius: "10px",
-                        border: "1px solid var(--border-strong)",
-                        background: "var(--bg)",
-                        color: "var(--text)",
-                        fontSize: "14px",
-                        outline: "none",
-                        boxSizing: "border-box"
-                      }}
+                      value={studentPassword}
+                      onChange={(e) => setStudentPassword(e.target.value)}
+                      className="login-input"
+                      style={{ paddingRight: "44px" }}
                     />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={staffLoading}
-                  style={{
-                    marginTop: "6px",
-                    width: "100%",
-                    padding: "12px",
-                    borderRadius: "10px",
-                    background: "var(--btn-primary-bg)",
-                    color: "var(--btn-primary-text)",
-                    fontWeight: 700,
-                    fontSize: "14px",
-                    border: "none",
-                    cursor: staffLoading ? "not-allowed" : "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "8px"
-                  }}
-                >
-                  {staffLoading ? "Signing In..." : "Sign In to Portal"} <ArrowRight size={16} />
-                </button>
-              </form>
-            ) : (
-              /* Student Form (Password or 6-Digit Email OTP) */
-              <form
-                onSubmit={
-                  studentAuthMode === "PASSWORD"
-                    ? handleStudentPasswordLogin
-                    : otpSent
-                      ? handleVerifyOtp
-                      : handleRequestOtp
-                }
-                style={{ display: "flex", flexDirection: "column", gap: "18px" }}
-              >
-                <div style={{ display: "flex", gap: "8px", borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: "10px" }}>
-                  <button
-                    type="button"
-                    onClick={() => { setStudentAuthMode("PASSWORD"); setStudentError(""); setStudentMessage(""); }}
-                    style={{
-                      flex: 1,
-                      padding: "7px 10px",
-                      borderRadius: "6px",
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      border: studentAuthMode === "PASSWORD" ? "1px solid var(--accent, #1CE798)" : "1px solid rgba(255,255,255,0.1)",
-                      background: studentAuthMode === "PASSWORD" ? "rgba(28, 231, 152, 0.14)" : "transparent",
-                      color: studentAuthMode === "PASSWORD" ? "#1CE798" : "var(--muted, #94A3B8)",
-                    }}
-                  >
-                    Password Sign-In
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setStudentAuthMode("OTP"); setStudentError(""); setStudentMessage(""); }}
-                    style={{
-                      flex: 1,
-                      padding: "7px 10px",
-                      borderRadius: "6px",
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      border: studentAuthMode === "OTP" ? "1px solid var(--accent, #1CE798)" : "1px solid rgba(255,255,255,0.1)",
-                      background: studentAuthMode === "OTP" ? "rgba(28, 231, 152, 0.14)" : "transparent",
-                      color: studentAuthMode === "OTP" ? "#1CE798" : "var(--muted, #94A3B8)",
-                    }}
-                  >
-                    6-Digit OTP
-                  </button>
-                </div>
-
-                {studentError && (
-                  <div style={{ padding: "12px", borderRadius: "8px", background: "rgba(185, 28, 28, 0.08)", border: "1px solid rgba(185, 28, 28, 0.2)", display: "flex", alignItems: "center", gap: "10px", color: "#B91C1C", fontSize: "13px" }}>
-                    <AlertCircle size={16} />
-                    <span>{studentError}</span>
-                  </div>
-                )}
-                {studentMessage && (
-                  <div style={{ padding: "12px", borderRadius: "8px", background: "var(--accent-tint)", border: "1px solid var(--accent-border)", display: "flex", alignItems: "center", gap: "10px", color: "var(--accent)", fontSize: "13px" }}>
-                    <CheckCircle size={16} />
-                    <span>{studentMessage}</span>
-                  </div>
-                )}
-
-                <div>
-                  <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "var(--muted)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    Student Email
-                  </label>
-                  <div style={{ position: "relative" }}>
-                    <Mail size={16} style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "var(--muted)" }} />
-                    <input
-                      type="email"
-                      required
-                      placeholder="student@aintrixacademy.edu"
-                      value={studentId}
-                      onChange={(e) => setStudentId(e.target.value)}
-                      disabled={studentAuthMode === "OTP" && otpSent}
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
                       style={{
-                        width: "100%",
-                        padding: "12px 14px 12px 40px",
-                        borderRadius: "10px",
-                        border: "1px solid var(--border-strong)",
-                        background: "var(--bg)",
-                        color: "var(--text)",
-                        fontSize: "14px",
-                        outline: "none",
-                        boxSizing: "border-box"
+                        position: "absolute",
+                        right: "12px",
+                        background: "none",
+                        border: "none",
+                        color: "var(--muted)",
+                        cursor: "pointer",
+                        padding: "4px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
                       }}
-                    />
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
                   </div>
                 </div>
-
-                {studentAuthMode === "PASSWORD" ? (
-                  <div>
-                    <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "var(--muted, #94A3B8)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                      Password
-                    </label>
-                    <div style={{ position: "relative" }}>
-                      <Lock size={16} style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "var(--muted, #64748B)" }} />
-                      <input
-                        type="password"
-                        required
-                        placeholder="••••••••••••"
-                        value={studentPassword}
-                        onChange={(e) => setStudentPassword(e.target.value)}
-                        style={{
-                          width: "100%",
-                          padding: "12px 14px 12px 40px",
-                          borderRadius: "8px",
-                          border: "1px solid var(--border, rgba(255,255,255,0.15))",
-                          background: "rgba(0,0,0,0.25)",
-                          color: "var(--text, #FFF)",
-                          fontSize: "14px",
-                          outline: "none",
-                          boxSizing: "border-box"
-                        }}
-                      />
-                    </div>
-                  </div>
-                ) : otpSent && (
-                  <div>
-                    <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "var(--muted)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              ) : (
+                otpSent && (
+                  <div className="login-field-group">
+                    <label htmlFor="student-otp-input" className="login-field-label">
                       Verification Code (OTP)
                     </label>
                     <input
+                      id="student-otp-input"
                       type="text"
                       required
                       maxLength={6}
                       placeholder="123456"
                       value={otpCode}
                       onChange={(e) => setOtpCode(e.target.value)}
+                      className="login-input"
                       style={{
-                        width: "100%",
-                        padding: "12px 14px",
-                        borderRadius: "10px",
-                        border: "1px solid var(--accent)",
-                        background: "var(--bg)",
-                        color: "var(--text)",
-                        fontSize: "18px",
-                        letterSpacing: "4px",
+                        fontSize: "20px",
+                        letterSpacing: "6px",
                         textAlign: "center",
                         fontWeight: 700,
-                        outline: "none",
-                        boxSizing: "border-box"
+                        paddingLeft: "16px",
                       }}
                     />
                   </div>
-                )}
+                )
+              )}
 
-                <button
-                  type="submit"
-                  disabled={studentLoading}
-                  style={{
-                    marginTop: "6px",
-                    width: "100%",
-                    padding: "12px",
-                    borderRadius: "10px",
-                    background: "var(--btn-primary-bg)",
-                    color: "var(--btn-primary-text)",
-                    fontWeight: 700,
-                    fontSize: "14px",
-                    border: "none",
-                    cursor: studentLoading ? "not-allowed" : "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "8px"
-                  }}
-                >
-                  {studentLoading
-                    ? "Signing In..."
-                    : studentAuthMode === "PASSWORD"
-                      ? "Sign In to Student Portal"
-                      : otpSent
-                        ? "Verify & Enter Workspace"
-                        : "Send Login Code"} <ArrowRight size={16} />
-                </button>
-              </form>
-            )}
+              <button type="submit" disabled={studentLoading} className="login-submit-btn">
+                {studentLoading
+                  ? "Signing In..."
+                  : studentAuthMode === "PASSWORD"
+                    ? "Sign In to Student Portal"
+                    : otpSent
+                      ? "Verify & Enter Workspace"
+                      : "Send Login Code"} <ArrowRight size={16} />
+              </button>
+            </form>
+          )}
 
-            {/* Quick Demo Switcher */}
-            <div style={{ marginTop: "28px", paddingTop: "20px", borderTop: "1px solid var(--border)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "12px" }}>
-                <ShieldCheck size={14} color="var(--accent)" />
-                <span style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)" }}>
-                  Quick Role Access (1-Click Fill)
-                </span>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
-                <button
-                  type="button"
-                  onClick={() => fillCredentials("ADMIN")}
-                  style={{
-                    padding: "8px 6px",
-                    borderRadius: "8px",
-                    border: "1px solid var(--border)",
-                    background: "var(--surface-alt)",
-                    color: "var(--text)",
-                    fontSize: "11px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "4px"
-                  }}
-                >
-                  <KeyRound size={12} color="var(--accent)" /> Admin
-                </button>
-                <button
-                  type="button"
-                  onClick={() => fillCredentials("TRAINER")}
-                  style={{
-                    padding: "8px 6px",
-                    borderRadius: "8px",
-                    border: "1px solid var(--border)",
-                    background: "var(--surface-alt)",
-                    color: "var(--text)",
-                    fontSize: "11px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "4px"
-                  }}
-                >
-                  <Presentation size={12} color="var(--accent)" /> Trainer
-                </button>
-                <button
-                  type="button"
-                  onClick={() => fillCredentials("STUDENT")}
-                  style={{
-                    padding: "8px 6px",
-                    borderRadius: "8px",
-                    border: "1px solid var(--border)",
-                    background: "var(--surface-alt)",
-                    color: "var(--text)",
-                    fontSize: "11px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "4px"
-                  }}
-                >
-                  <GraduationCap size={12} color="var(--accent)" /> Student
-                </button>
-                <button
-                  type="button"
-                  onClick={() => fillCredentials("MANAGER")}
-                  style={{
-                    padding: "8px 6px",
-                    borderRadius: "8px",
-                    border: "1px solid var(--border)",
-                    background: "var(--surface-alt)",
-                    color: "var(--text)",
-                    fontSize: "11px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "4px"
-                  }}
-                >
-                  <Briefcase size={12} color="var(--accent)" /> Manager
-                </button>
-                <button
-                  type="button"
-                  onClick={() => fillCredentials("FINANCIER")}
-                  style={{
-                    padding: "8px 6px",
-                    borderRadius: "8px",
-                    border: "1px solid var(--border)",
-                    background: "var(--surface-alt)",
-                    color: "var(--text)",
-                    fontSize: "11px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "4px"
-                  }}
-                >
-                  <Coins size={12} color="var(--accent)" /> Financier
-                </button>
-                <Link
-                  to="/"
-                  style={{
-                    padding: "8px 6px",
-                    borderRadius: "8px",
-                    border: "1px solid var(--border)",
-                    background: "var(--surface-alt)",
-                    color: "var(--muted)",
-                    fontSize: "11px",
-                    fontWeight: 600,
-                    textDecoration: "none",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center"
-                  }}
-                >
-                  ← Home
-                </Link>
-              </div>
+          {/* Quick Demo Role Fillers (Required for 1-click test flows & fast review) */}
+          <div className="login-quick-roles">
+            <div className="login-quick-roles-title">
+              <ShieldCheck size={14} color="var(--accent)" />
+              <span>Quick Role Access (1-Click Fill)</span>
             </div>
-
+            <div className="login-roles-grid">
+              <button
+                type="button"
+                onClick={() => fillCredentials("ADMIN")}
+                className="login-role-btn"
+              >
+                <KeyRound size={12} color="var(--accent)" /> Admin
+              </button>
+              <button
+                type="button"
+                onClick={() => fillCredentials("TRAINER")}
+                className="login-role-btn"
+              >
+                <Presentation size={12} color="var(--accent)" /> Trainer
+              </button>
+              <button
+                type="button"
+                onClick={() => fillCredentials("STUDENT")}
+                className="login-role-btn"
+              >
+                <GraduationCap size={12} color="var(--accent)" /> Student
+              </button>
+              <button
+                type="button"
+                onClick={() => fillCredentials("MANAGER")}
+                className="login-role-btn"
+              >
+                <Briefcase size={12} color="var(--accent)" /> Manager
+              </button>
+              <button
+                type="button"
+                onClick={() => fillCredentials("FINANCIER")}
+                className="login-role-btn"
+              >
+                <Coins size={12} color="var(--accent)" /> Financier
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+
+        {/* Form Pane Footer */}
+        <footer className="login-form-footer">
+          <span>Secure AES/TLS Authentication</span>
+          <Link to="/" style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 600 }}>
+            Aintrix Academy
+          </Link>
+        </footer>
+      </main>
     </div>
   );
 }

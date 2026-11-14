@@ -441,11 +441,55 @@ export const adminCommandSchema = z.discriminatedUnion("type", [
     .refine((value) => value.from <= value.to, "Invalid export period."),
 ]);
 export type AdminCommand = z.infer<typeof adminCommandSchema>;
+
+export const studentRecordSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  programme: z.string(),
+  batch: z.string(),
+  attendancePct: z.number(),
+  progressPct: z.number(),
+  feeStatus: z.enum(["Paid", "Due", "Overdue"]),
+  nextAssignment: z.string(),
+});
+export const studentsSchema = z.object({
+  students: z.array(studentRecordSchema),
+});
+
+export const batchItemSchema = z.object({
+  id: z.string(),
+  programmeName: z.string(),
+  batchCode: z.string(),
+  startDate: z.string(),
+  timing: z.string(),
+  enrolled: z.number(),
+  totalSeats: z.number(),
+  priceMinor: z.number(),
+  currency: z.string(),
+  status: z.enum(["Active", "Starting Soon", "Filling Fast", "Completed"]),
+});
+export const rosterStudentSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  batchCode: z.string(),
+  attendancePct: z.number(),
+  progressPct: z.number(),
+  feeStatus: z.string(),
+});
+export const batchesSchema = z.object({
+  batches: z.array(batchItemSchema),
+  roster: z.record(z.string(), z.array(rosterStudentSchema)),
+});
+
 export const resourceSchemas = {
   leads: leadsSchema,
   offers: offersSchema,
   finance: financeSchema,
   programmes: programmesSchema,
+  students: studentsSchema,
+  batches: batchesSchema,
   reports: reportsSchema,
   audit: auditSchema,
   timeline: auditSchema,

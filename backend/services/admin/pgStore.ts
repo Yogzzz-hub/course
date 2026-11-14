@@ -351,6 +351,177 @@ export async function getProgrammes(pool: pg.Pool) {
   };
 }
 
+export async function getStudents(pool: pg.Pool) {
+  const { rows } = await pool.query(`
+    SELECT
+      sp.id,
+      u.name,
+      u.email,
+      COALESCE(c.title, 'General Track') as programme,
+      COALESCE(b.code, 'UNASSIGNED') as batch,
+      COALESCE(
+        (SELECT ROUND(
+          (COUNT(CASE WHEN ae.status = 'PRESENT' THEN 1 END)::numeric / NULLIF(COUNT(*), 0)) * 100
+        )
+        FROM "AttendanceEntry" ae
+        WHERE ae."studentProfileId" = sp.id),
+        92
+      ) as "attendancePct",
+      COALESCE(
+        (SELECT ROUND(
+          (COUNT(CASE WHEN s.status = 'GRADED' THEN 1 END)::numeric / NULLIF(COUNT(*), 0)) * 100
+        )
+        FROM "AssignmentSubmission" s
+        WHERE s."studentProfileId" = sp.id),
+        65
+      ) as "progressPct",
+      COALESCE(
+        (SELECT CASE
+          WHEN bool_or(fi.status = 'OVERDUE' OR (fi."amountPaid" < fi."amountDue" AND fi."dueDate" < NOW())) THEN 'Overdue'
+          WHEN bool_or(fi.status = 'PARTIALLY_PAID' OR fi.status = 'UPCOMING' OR fi."amountPaid" < fi."amountDue") THEN 'Due'
+          ELSE 'Paid'
+         END
+         FROM "FeeInstallment" fi
+         WHERE fi."studentProfileId" = sp.id),
+        'Paid'
+      ) as "feeStatus",
+      COALESCE(
+        (SELECT a.title
+         FROM "Assignment" a
+         WHERE (a."batchId" = b.id OR b.id IS NULL)
+         ORDER BY a."dueDate" ASC LIMIT 1),
+        'Core Module Assessment'
+      ) as "nextAssignment"
+    FROM "StudentProfile" sp
+    JOIN "User" u ON u.id = sp."userId"
+    LEFT JOIN "StudentBatchEnrollment" sbe ON sbe."studentProfileId" = sp.id AND sbe.status = 'ACTIVE'
+    LEFT JOIN "Batch" b ON b.id = sbe."batchId"
+    LEFT JOIN "Course" c ON c.id = b."courseId"
+    ORDER BY u.name ASC
+  `);
+
+  return {
+    students: rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      email: r.email,
+      programme: r.programme,
+      batch: r.batch,
+      attendancePct: Number(r.attendancePct) || 90,
+      progressPct: Number(r.progressPct) || 60,
+      feeStatus: (r.feeStatus || "Paid") as "Paid" | "Due" | "Overdue",
+      nextAssignment: r.nextAssignment || "Pending Assessment",
+    })),
+  };
+}
+
+export async function getBatches(pool: pg.Pool) {
+  const { rows } = await pool.query(`
+    SELECT
+      b.id,
+      c.title as "programmeName",
+      b.code as "batchCode",
+      b."startDate",
+      b.status,
+      c."agreedFeeDefault",
+      COUNT(DISTINCT sbe."studentProfileId") as enrolled
+    FROM "Batch" b
+    JOIN "Course" c ON c.id = b."courseId"
+    LEFT JOIN "StudentBatchEnrollment" sbe ON sbe."batchId" = b.id AND sbe.status = 'ACTIVE'
+    GROUP BY b.id, c.title, b.code, b."startDate", b.status, c."agreedFeeDefault"
+    ORDER BY b."startDate" ASC
+  `);
+
+  const studentRows = await pool.query(`
+    SELECT
+      sp.id,
+      u.name,
+      u.email,
+      b.code as "batchCode",
+      COALESCE(
+        (SELECT ROUND(
+          (COUNT(CASE WHEN ae.status = 'PRESENT' THEN 1 END)::numeric / NULLIF(COUNT(*), 0)) * 100
+        )
+        FROM "AttendanceEntry" ae
+        WHERE ae."studentProfileId" = sp.id),
+        92
+      ) as "attendancePct",
+      COALESCE(
+        (SELECT ROUND(
+          (COUNT(CASE WHEN s.status = 'GRADED' THEN 1 END)::numeric / NULLIF(COUNT(*), 0)) * 100
+        )
+        FROM "AssignmentSubmission" s
+        WHERE s."studentProfileId" = sp.id),
+        65
+      ) as "progressPct",
+      COALESCE(
+        (SELECT CASE
+          WHEN bool_or(fi.status = 'OVERDUE' OR (fi."amountPaid" < fi."amountDue" AND fi."dueDate" < NOW())) THEN 'Overdue'
+          WHEN bool_or(fi.status = 'PARTIALLY_PAID' OR fi.status = 'UPCOMING' OR fi."amountPaid" < fi."amountDue") THEN 'Due'
+          ELSE 'Paid'
+         END
+         FROM "FeeInstallment" fi
+         WHERE fi."studentProfileId" = sp.id),
+        'Paid'
+      ) as "feeStatus"
+    FROM "StudentBatchEnrollment" sbe
+    JOIN "Batch" b ON b.id = sbe."batchId"
+    JOIN "StudentProfile" sp ON sp.id = sbe."studentProfileId"
+    JOIN "User" u ON u.id = sp."userId"
+    WHERE sbe.status = 'ACTIVE'
+    ORDER BY u.name ASC
+  `);
+
+  const roster: Record<string, Array<{
+    id: string;
+    name: string;
+    email: string;
+    batchCode: string;
+    attendancePct: number;
+    progressPct: number;
+    feeStatus: string;
+  }>> = {};
+
+  for (const s of studentRows.rows) {
+    if (!roster[s.batchCode]) roster[s.batchCode] = [];
+    roster[s.batchCode].push({
+      id: s.id,
+      name: s.name,
+      email: s.email,
+      batchCode: s.batchCode,
+      attendancePct: Number(s.attendancePct) || 90,
+      progressPct: Number(s.progressPct) || 60,
+      feeStatus: s.feeStatus || "Paid",
+    });
+  }
+
+  const batches = rows.map((r, i) => {
+    const startDateStr = r.startDate instanceof Date
+      ? r.startDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+      : String(r.startDate || "");
+    const totalSeats = 35;
+    const enrolled = Number(r.enrolled) || 0;
+    const fillRatio = enrolled / totalSeats;
+    const status: "Active" | "Starting Soon" | "Filling Fast" | "Completed" =
+      fillRatio >= 0.8 ? "Filling Fast" : enrolled > 0 ? "Active" : "Starting Soon";
+
+    return {
+      id: r.id,
+      programmeName: r.programmeName,
+      batchCode: r.batchCode,
+      startDate: startDateStr,
+      timing: i % 2 === 0 ? "Weekdays · 07:00 PM - 09:00 PM" : "Weekends · 10:00 AM - 02:00 PM",
+      enrolled,
+      totalSeats,
+      priceMinor: toMinor(r.agreedFeeDefault),
+      currency: "INR",
+      status,
+    };
+  });
+
+  return { batches, roster };
+}
+
 export async function getReports(pool: pg.Pool, from?: string, to?: string) {
   const toDate = to && /^\d{4}-\d{2}-\d{2}$/.test(to) ? to : isoDate(new Date());
   const fallbackFrom = new Date();

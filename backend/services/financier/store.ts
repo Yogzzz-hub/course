@@ -239,6 +239,7 @@ export interface FinancierStore {
       financialHold: boolean;
       installmentCount: number;
       overdueInstallmentsCount: number;
+      installments: InstallmentRecord[];
     }>;
     batches: FinancierDatabaseState["batches"];
     tracks: FinancierDatabaseState["tracks"];
@@ -457,6 +458,7 @@ export function createFinancierStore(
           outstandingPaise: Math.max(0, subtractPaise(totalInvoicedPaise, totalPaidPaise)),
           installmentCount: stuInsts.length,
           overdueInstallmentsCount: stuInsts.filter((i) => i.status === "OVERDUE").length,
+          installments: stuInsts,
         };
       });
 

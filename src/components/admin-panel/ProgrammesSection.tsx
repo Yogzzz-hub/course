@@ -60,6 +60,7 @@ const mockRoster: Record<string, RosterStudent[]> = {
 
 export function ProgrammesSection() {
   const programmesQuery = useAdminResource("programmes", {});
+  const batchesQuery = useAdminResource("batches", {});
 
   const [batches, setBatches] = useState<BatchItem[]>([
     {
@@ -111,6 +112,17 @@ export function ProgrammesSection() {
       status: "Active",
     },
   ]);
+
+  useEffect(() => {
+    if (batchesQuery.data?.batches?.length) {
+      setBatches(batchesQuery.data.batches);
+    }
+  }, [batchesQuery.data?.batches]);
+
+  const activeRoster: Record<string, RosterStudent[]> = {
+    ...mockRoster,
+    ...(batchesQuery.data?.roster || {}),
+  };
 
   // Modals state
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
@@ -169,7 +181,7 @@ export function ProgrammesSection() {
   };
 
   const handleExportRoster = (batch: BatchItem) => {
-    const roster = mockRoster[batch.batchCode] || [
+    const roster = activeRoster[batch.batchCode] || [
       {
         id: `std-gen-1`,
         name: "Learner in Cohort",
@@ -527,7 +539,7 @@ export function ProgrammesSection() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--border)]">
-                  {(mockRoster[viewingRosterBatch.batchCode] || [
+                  {(activeRoster[viewingRosterBatch.batchCode] || [
                     {
                       id: "std-placeholder",
                       name: "Sample Learner",

@@ -48,8 +48,8 @@ export default function StudentPanelPage() {
   const signInUrl =
     import.meta.env.VITE_STUDENT_SIGN_IN_URL ||
     (checkoutPackageId
-      ? `/login?returnTo=${encodeURIComponent(checkoutHref(checkoutPackageId))}`
-      : "/login?returnTo=/student-panel");
+      ? `/auth/sign-in?returnTo=${encodeURIComponent(checkoutHref(checkoutPackageId))}`
+      : `/auth/sign-in?returnTo=${encodeURIComponent("/student-panel")}`);
 
   const demoStudentAction = (
     <button

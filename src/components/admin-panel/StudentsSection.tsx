@@ -12,9 +12,10 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { Button, Card, Empty, inputClass, ScreenTitle, StatusPill } from "./ui";
+import { useAdminResource } from "./hooks";
 import { exportToCsv } from "../../utils/csvExport";
 
-interface StudentRecord {
+export interface StudentRecord {
   id: string;
   name: string;
   email: string;
@@ -26,10 +27,73 @@ interface StudentRecord {
   nextAssignment: string;
 }
 
+const fallbackStudents: StudentRecord[] = [
+  {
+    id: "std-1",
+    name: "Asha Rao",
+    email: "asha.rao@example.test",
+    programme: "Python Full Stack",
+    batch: "PFS-2026-A",
+    attendancePct: 94,
+    progressPct: 68,
+    feeStatus: "Paid",
+    nextAssignment: "REST API Authentication",
+  },
+  {
+    id: "std-2",
+    name: "Noah Singh",
+    email: "noah.singh@example.test",
+    programme: "Python Full Stack",
+    batch: "PFS-2026-A",
+    attendancePct: 88,
+    progressPct: 42,
+    feeStatus: "Overdue",
+    nextAssignment: "Async Task Workers",
+  },
+  {
+    id: "std-3",
+    name: "Rohan Varma",
+    email: "rohan.v@example.test",
+    programme: "Full-Stack App Dev",
+    batch: "FSA-2026-B",
+    attendancePct: 96,
+    progressPct: 85,
+    feeStatus: "Paid",
+    nextAssignment: "Capstone Deployment Pipeline",
+  },
+  {
+    id: "std-4",
+    name: "Sneha Patel",
+    email: "sneha.p@example.test",
+    programme: "Django Backend Dev",
+    batch: "DCA-2026-C",
+    attendancePct: 90,
+    progressPct: 30,
+    feeStatus: "Due",
+    nextAssignment: "Database Indexes & Migrations",
+  },
+  {
+    id: "std-5",
+    name: "Devanand K",
+    email: "devanand.k@example.test",
+    programme: "React Development",
+    batch: "RNA-2026-D",
+    attendancePct: 82,
+    progressPct: 55,
+    feeStatus: "Paid",
+    nextAssignment: "State Management with Zustand",
+  },
+];
+
 export function StudentsSection() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterFee, setFilterFee] = useState<string>("all");
   const [selectedStudentForLms, setSelectedStudentForLms] = useState<StudentRecord | null>(null);
+
+  const studentsQuery = useAdminResource("students", {});
+  const students: StudentRecord[] = studentsQuery.data?.students?.length
+    ? studentsQuery.data.students
+    : fallbackStudents;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -40,64 +104,6 @@ export function StudentsSection() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedStudentForLms]);
-
-  const [students] = useState<StudentRecord[]>([
-    {
-      id: "std-1",
-      name: "Asha Rao",
-      email: "asha.rao@example.test",
-      programme: "Python Full Stack",
-      batch: "PFS-2026-A",
-      attendancePct: 94,
-      progressPct: 68,
-      feeStatus: "Paid",
-      nextAssignment: "REST API Authentication",
-    },
-    {
-      id: "std-2",
-      name: "Noah Singh",
-      email: "noah.singh@example.test",
-      programme: "Python Full Stack",
-      batch: "PFS-2026-A",
-      attendancePct: 88,
-      progressPct: 42,
-      feeStatus: "Overdue",
-      nextAssignment: "Async Task Workers",
-    },
-    {
-      id: "std-3",
-      name: "Rohan Varma",
-      email: "rohan.v@example.test",
-      programme: "Full-Stack App Dev",
-      batch: "FSA-2026-B",
-      attendancePct: 96,
-      progressPct: 85,
-      feeStatus: "Paid",
-      nextAssignment: "Capstone Deployment Pipeline",
-    },
-    {
-      id: "std-4",
-      name: "Sneha Patel",
-      email: "sneha.p@example.test",
-      programme: "Django Backend Dev",
-      batch: "DCA-2026-C",
-      attendancePct: 90,
-      progressPct: 30,
-      feeStatus: "Due",
-      nextAssignment: "Database Indexes & Migrations",
-    },
-    {
-      id: "std-5",
-      name: "Devanand K",
-      email: "devanand.k@example.test",
-      programme: "React Development",
-      batch: "RNA-2026-D",
-      attendancePct: 82,
-      progressPct: 55,
-      feeStatus: "Paid",
-      nextAssignment: "State Management with Zustand",
-    },
-  ]);
 
   const filtered = useMemo(() => {
     return students.filter((s) => {

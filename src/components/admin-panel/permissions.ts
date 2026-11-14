@@ -19,6 +19,8 @@ export const resourcePermissions: Record<Resource, readonly Permission[]> = {
   offers: ["offers.read"],
   finance: ["ledger.read"],
   programmes: ["cms.read"],
+  students: ["leads.read"],
+  batches: ["cms.read"],
   reports: ["reports.read"],
   audit: ["audit.read"],
   timeline: ["leads.read", "audit.read"],

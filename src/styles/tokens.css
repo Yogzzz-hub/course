@@ -225,11 +225,4 @@
   --color-slate-950: var(--ink);
 }
 
-html[data-theme-transitioning="true"] * {
-  transition: background-color 300ms cubic-bezier(0.22, 1, 0.36, 1),
-              border-color 300ms cubic-bezier(0.22, 1, 0.36, 1),
-              color 300ms cubic-bezier(0.22, 1, 0.36, 1),
-              stroke 300ms cubic-bezier(0.22, 1, 0.36, 1),
-              fill 300ms cubic-bezier(0.22, 1, 0.36, 1),
-              box-shadow 300ms cubic-bezier(0.22, 1, 0.36, 1) !important;
-}
+
