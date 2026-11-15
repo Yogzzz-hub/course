@@ -17,7 +17,6 @@ export async function GET(req: NextRequest) {
           include: {
             course: true,
             enrollments: true,
-            trainerPayouts: true,
           },
         }),
         prisma.studentProfile.findMany({
@@ -56,9 +55,10 @@ export async function GET(req: NextRequest) {
         }
       }
 
-      const payrollCostPaise = Math.round(
-        b.trainerPayouts.reduce((sum, p) => sum + (p.paidAmount || p.netPayableAmount || 0), 0) * 100
+      const totalPayroll = Math.round(
+        payrollPeriods.reduce((sum, pr) => sum + (pr.totalNetAmount || 0), 0) * 100
       );
+      const payrollCostPaise = batches.length > 0 ? Math.round(totalPayroll / batches.length) : 0;
       const outstandingPaise = Math.max(0, billedPaise - collectedPaise);
       const netContributionPaise = collectedPaise - payrollCostPaise;
       const contributionPercent =

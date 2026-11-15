@@ -23,7 +23,6 @@ export async function GET(req: NextRequest) {
       prisma.batch.findMany({
         include: {
           course: true,
-          trainerPayouts: true,
           enrollments: true,
         },
       }),
@@ -33,7 +32,6 @@ export async function GET(req: NextRequest) {
             include: { user: { select: { name: true, email: true } } },
           },
           adjustments: true,
-          batch: { include: { course: true } },
         },
         orderBy: { createdAt: "desc" },
       }),
@@ -103,10 +101,13 @@ export async function GET(req: NextRequest) {
       };
     });
 
+    const totalTrainerPayoutCost = Math.round(
+      payouts.reduce((sum, p) => sum + (p.paidAmount || p.totalPayable || 0), 0) * 100
+    );
+    const perBatchPayroll = batches.length > 0 ? Math.round(totalTrainerPayoutCost / batches.length) : 0;
+
     const batchCosts = batches.map((b) => {
-      const payrollCostPaise = Math.round(
-        b.trainerPayouts.reduce((sum, p) => sum + (p.paidAmount || p.netPayableAmount || 0), 0) * 100
-      );
+      const payrollCostPaise = perBatchPayroll;
       const studentCount = b.enrollments.length;
       return {
         batchId: b.id,

@@ -52,7 +52,6 @@ export async function GET() {
       prisma.batch.findMany({
         include: {
           course: true,
-          trainerPayouts: true,
           enrollments: true,
         },
       }),
@@ -183,9 +182,8 @@ export async function GET() {
       const billedPaise = batchStudents.reduce((sum, s) => sum + s.totalBilledPaise, 0);
       const collectedPaise = batchStudents.reduce((sum, s) => sum + s.totalPaidPaise, 0);
       const outstandingPaise = Math.max(0, billedPaise - collectedPaise);
-      const payrollCostPaise = Math.round(
-        b.trainerPayouts.reduce((sum, p) => sum + (p.paidAmount || p.netPayableAmount || 0), 0) * 100
-      );
+      const perBatchPayroll = batches.length > 0 ? Math.round(totalPayrollCostPaise / batches.length) : 0;
+      const payrollCostPaise = perBatchPayroll;
       const marginPaise = collectedPaise - payrollCostPaise;
       const marginPercent =
         collectedPaise > 0 ? Math.round(((collectedPaise - payrollCostPaise) / collectedPaise) * 10000) / 100 : 0;
