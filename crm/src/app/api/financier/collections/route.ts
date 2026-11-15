@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
         },
       }),
       prisma.notificationDeliveryLog.findMany({
-        orderBy: { sentAt: "desc" },
+        orderBy: { createdAt: "desc" },
         take: 50,
       }),
     ]);

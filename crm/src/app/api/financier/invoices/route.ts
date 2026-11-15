@@ -24,10 +24,10 @@ export async function GET(req: NextRequest) {
         orderBy: { issueDate: "desc" },
       }),
       prisma.financialApprovalRequest.findMany({
-        where: { requestType: "DISCOUNT" },
+        where: { requestType: { contains: "DISCOUNT" } },
         include: {
-          requestedBy: true,
-          approvedBy: true,
+          requester: true,
+          reviewer: true,
         },
         orderBy: { createdAt: "desc" },
       }),
@@ -74,20 +74,20 @@ export async function GET(req: NextRequest) {
 
     const formattedDiscounts = discounts.map((d) => ({
       id: d.id,
-      studentProfileId: d.targetEntityId || "stu-1",
+      studentProfileId: d.entityId || "stu-1",
       studentName: "Student",
       feeAgreementId: "fa-1",
       invoiceId: null,
       kind: "FIXED",
       basisPoints: null,
-      amountPaise: Math.round(d.amount * 100),
-      reason: d.justification,
+      amountPaise: Math.round(d.requestedAmount * 100),
+      reason: d.reason,
       status: d.status,
       requestedById: d.requestedById,
-      requestedByName: d.requestedBy?.name || "Staff",
+      requestedByName: d.requester?.name || "Staff",
       requestedAt: d.createdAt.toISOString(),
-      approvedById: d.approvedById,
-      approvedByName: d.approvedBy?.name || null,
+      approvedById: d.reviewedById,
+      approvedByName: d.reviewer?.name || null,
     }));
 
     return NextResponse.json({
