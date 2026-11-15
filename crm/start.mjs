@@ -1,30 +1,19 @@
-import fs from 'node:fs';
 import { execSync } from 'node:child_process';
-import path from 'node:path';
 
 const dbUrl = process.env.DATABASE_URL || '';
-const isPostgres = dbUrl.startsWith('postgresql') || dbUrl.startsWith('postgres');
+if (!/^postgres(ql)?:\/\//.test(dbUrl)) {
+  console.error('[CRM] DATABASE_URL must be a Supabase PostgreSQL URL (postgresql://...). Refusing to start.');
+  process.exit(1);
+}
+if (!process.env.DIRECT_URL) {
+  console.warn('[CRM] DIRECT_URL is not set. Migrations (db:push) need it; runtime queries use DATABASE_URL.');
+}
+console.log('[CRM] Using Supabase PostgreSQL database.');
 
-if (isPostgres) {
-  console.log('[CRM] Connected to Supabase PostgreSQL database.');
-  try {
-    execSync('node db/seeds/seed.mjs', { stdio: 'inherit' });
-  } catch (err) {
-    console.warn('[CRM] Seed check completed:', err.message);
-  }
-} else {
-  const dbPath = path.resolve(process.cwd(), 'db/dev.db');
-  if (!fs.existsSync(dbPath)) {
-    console.log('[CRM] Database file not found. Initializing schema and default seed data...');
-    execSync('npx prisma db push --accept-data-loss --skip-generate && node db/seeds/seed.mjs', { stdio: 'inherit' });
-  } else {
-    console.log('[CRM] Existing database detected. Ensuring seed user accounts...');
-    try {
-      execSync('node db/seeds/seed.mjs', { stdio: 'inherit' });
-    } catch (err) {
-      console.warn('[CRM] Seed update skipped:', err.message);
-    }
-  }
+// Demo/test seed data is opt-in only. Production must not inject sample users or records.
+if (process.env.RUN_SEED === 'true') {
+  console.warn('[CRM] RUN_SEED=true: running seed script (demo data).');
+  execSync('node db/seeds/seed.mjs', { stdio: 'inherit' });
 }
 
 const port = process.env.PORT || '10000';

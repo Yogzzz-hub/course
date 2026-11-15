@@ -47,19 +47,9 @@ export async function GET() {
       select: { id: true, name: true, email: true, role: true, isActive: true },
     });
 
-    let effectiveUser = user;
+    const effectiveUser = user;
     if (!effectiveUser || !effectiveUser.isActive || effectiveUser.role !== "ADMIN") {
-      if (session.role === "ADMIN") {
-        effectiveUser = {
-          id: session.userId || "usr-admin",
-          name: session.name || "Raghav Menon",
-          email: session.email || "admin@apexacademy.edu",
-          role: "ADMIN",
-          isActive: true,
-        };
-      } else {
-        return NextResponse.json({ state: "anonymous" }, { status: 200 });
-      }
+      return NextResponse.json({ state: "anonymous" }, { status: 200 });
     }
 
     let pendingApprovals: { id: string }[] = [];

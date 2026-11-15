@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createInitialTrainerFallback } from "../data/trainerFallbackData";
 import {
   trainerApi,
   TrainerSidebar,
@@ -108,16 +107,8 @@ export default function TrainerPanel() {
       setAnnouncements(snapshot.announcements);
       if (snapshot.batches.length > 0) setSelectedBatchForAttendance(snapshot.batches[0].code);
     } catch (err) {
-      console.warn("[TrainerPanel] Database offline, loaded offline fallback dataset:", err);
-      const fallback = createInitialTrainerFallback();
-      setStats(fallback.stats);
-      setBatches(fallback.batches);
-      setSchedule(fallback.schedule);
-      setRosterMap(fallback.rosterMap);
-      setAssignments(fallback.assignments);
-      setDoubts(fallback.doubts);
-      setAnnouncements(fallback.announcements);
-      if (fallback.batches.length > 0) setSelectedBatchForAttendance(fallback.batches[0].code);
+      console.error("[TrainerPanel] Failed to load live data:", err);
+      setLoadError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setLoading(false);
     }

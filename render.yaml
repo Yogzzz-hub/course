@@ -32,4 +32,6 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: DATABASE_URL
-        value: file:./db/dev.db
+        sync: false   # Supabase Postgres pooler URL (set in Render dashboard)
+      - key: DIRECT_URL
+        sync: false   # Supabase direct URL, port 5432 (set in Render dashboard)

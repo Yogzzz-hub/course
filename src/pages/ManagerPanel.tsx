@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
 import { exportToCsv } from "../utils/csvExport";
-import { createInitialManagerFallback } from "../data/managerFallbackData";
 import {
   managerApi,
   ManagerSidebar,
@@ -140,17 +139,8 @@ export default function ManagerPanel() {
         }
       } catch {}
     } catch (err) {
-      console.warn("[ManagerPanel] Database offline, loaded offline fallback dataset:", err);
-      const fallback = createInitialManagerFallback();
-      setStats(fallback.stats);
-      setLeads(fallback.leads);
-      setAdmissions(fallback.admissions);
-      setCohorts(fallback.cohorts);
-      setAlerts(fallback.alerts);
-      setPayments(fallback.payments);
-      setCounsellors(fallback.counsellors);
-      setAnnouncements(fallback.announcements);
-      setReports(fallback.reports);
+      console.error("[ManagerPanel] Failed to load live data:", err);
+      setLoadError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setLoading(false);
     }

@@ -18,13 +18,6 @@ import type {
   FinancierStore,
   StudentStatementView,
 } from "../../../backend/services/financier/store";
-import { createFinancierStore, FinancierDomainError } from "../../../backend/services/financier/store";
-import { createInitialFinancierState } from "../../data/financierSeedData";
-import {
-  generateInvoicePdfBytes,
-  generatePayslipPdfBytes,
-  generateReceiptPdfBytes,
-} from "../../../backend/services/financier/pdf";
 import { readCrmSession } from "../../utils/authSession";
 
 export class FinancierApiError extends Error {
@@ -54,34 +47,6 @@ export type FinancierInvoiceDetailResponse = ReturnType<
   FinancierStore["getInvoiceById"]
 >;
 
-// The financier panel has no offline dataset. When the API is unreachable the
-// caller gets a clear error instead of stand-in figures, so nothing that looks
-// like real money is ever rendered from the browser's own memory.
-let previewFallbackStore: FinancierStore | null = null;
-function getPreviewStore(): FinancierStore {
-  if (!previewFallbackStore) {
-    previewFallbackStore = createFinancierStore(createInitialFinancierState());
-  }
-  return previewFallbackStore;
-}
-
-function getPreviewActor(): ActorIdentity {
-  const s = readCrmSession();
-  if (!s || !s.authenticated) {
-    throw new FinancierApiError("Authentication required.", 401, "UNAUTHORIZED", "/login");
-  }
-  const role = s.role.toUpperCase();
-  if (role !== "FINANCIER" && role !== "ADMIN") {
-    throw new FinancierApiError("Insufficient permissions.", 403, "FORBIDDEN", "/login");
-  }
-  return {
-    id: s.userId || (role === "ADMIN" ? "usr-admin" : "usr-financier"),
-    name: s.name || role,
-    email: s.email || "financier@apexacademy.edu",
-    role,
-  };
-}
-
 function getAuthHeaders(extra?: Record<string, string>): Headers {
   const headers = new Headers(extra);
   const session = readCrmSession();
@@ -93,8 +58,7 @@ function getAuthHeaders(extra?: Record<string, string>): Headers {
 
 async function requestJson<T>(
   path: string,
-  options: RequestInit | undefined,
-  previewFallback: () => T
+  options: RequestInit | undefined
 ): Promise<T> {
   const headers = getAuthHeaders(
     options?.body ? { "Content-Type": "application/json" } : undefined
@@ -112,20 +76,18 @@ async function requestJson<T>(
   }
 
   if (res.status === 503) {
+    let peek: { available?: boolean; error?: string } = {};
     try {
-      const peek = (await res.clone().json()) as { available?: boolean };
-      if (peek && peek.available === false) {
-        try {
-          return previewFallback();
-        } catch (err) {
-          if (err instanceof FinancierDomainError) {
-            throw new FinancierApiError(err.message, err.statusCode, err.code);
-          }
-          throw err;
-        }
-      }
-    } catch (err) {
-      if (err instanceof FinancierApiError) throw err;
+      peek = (await res.clone().json()) as typeof peek;
+    } catch {
+      // body was not JSON; handled below as a generic error
+    }
+    if (peek.available === false) {
+      throw new FinancierApiError(
+        peek.error || "Financier database is unavailable. Please try again shortly.",
+        503,
+        "DB_UNAVAILABLE"
+      );
     }
   }
 
@@ -164,8 +126,7 @@ function triggerBrowserDownload(blob: Blob, filename: string): void {
 async function downloadBinary(
   path: string,
   filename: string,
-  mimeType: string,
-  previewBytes: () => Uint8Array | string
+  mimeType: string
 ): Promise<void> {
   const res = await fetch(path, {
     method: "GET",
@@ -174,18 +135,13 @@ async function downloadBinary(
   });
 
   if (res.status === 503) {
-    try {
-      const peek = (await res.clone().json()) as { available?: boolean };
-      if (peek && peek.available === false) {
-        getPreviewActor();
-        const data = previewBytes();
-        const blobPart: BlobPart =
-          typeof data === "string" ? data : data.slice().buffer;
-        triggerBrowserDownload(new Blob([blobPart], { type: mimeType }), filename);
-        return;
-      }
-    } catch (err) {
-      if (err instanceof FinancierApiError) throw err;
+    const peek = (await res.clone().json().catch(() => ({}))) as { available?: boolean; error?: string };
+    if (peek.available === false) {
+      throw new FinancierApiError(
+        peek.error || "Financier database is unavailable. Please try again shortly.",
+        503,
+        "DB_UNAVAILABLE"
+      );
     }
   }
 
@@ -204,39 +160,24 @@ async function downloadBinary(
 
 export const financierApi = {
   getSummary(): Promise<FinancierSummaryResponse> {
-    return requestJson("/api/financier/summary", { method: "GET" }, () => {
-      const actor = getPreviewActor();
-      return { actor, ...getPreviewStore().getSummary() };
-    });
+    return requestJson("/api/financier/summary", { method: "GET" });
   },
 
   getStudentStatement(studentId: string): Promise<StudentStatementView> {
     return requestJson(
       `/api/financier/students/${encodeURIComponent(studentId)}`,
-      { method: "GET" },
-      () => {
-        getPreviewActor();
-        return getPreviewStore().getStudentStatement(studentId);
-      }
+      { method: "GET" }
     );
   },
 
   listInvoices(): Promise<{ invoices: InvoiceRecord[]; discounts: DiscountRequestRecord[] }> {
-    return requestJson("/api/financier/invoices", { method: "GET" }, () => {
-      getPreviewActor();
-      const s = getPreviewStore();
-      return { invoices: s.listInvoices(), discounts: s.listDiscounts() };
-    });
+    return requestJson("/api/financier/invoices", { method: "GET" });
   },
 
   getInvoiceById(id: string): Promise<FinancierInvoiceDetailResponse> {
     return requestJson(
       `/api/financier/invoices/${encodeURIComponent(id)}`,
-      { method: "GET" },
-      () => {
-        getPreviewActor();
-        return getPreviewStore().getInvoiceById(id);
-      }
+      { method: "GET" }
     );
   },
 
@@ -253,12 +194,7 @@ export const financierApi = {
   }): Promise<{ invoices: InvoiceRecord[]; count: number }> {
     return requestJson(
       "/api/financier/invoices",
-      { method: "POST", body: JSON.stringify(payload) },
-      () => {
-        const actor = getPreviewActor();
-        const created = getPreviewStore().createInvoices(actor, payload);
-        return { invoices: created, count: created.length };
-      }
+      { method: "POST", body: JSON.stringify(payload) }
     );
   },
 
@@ -268,13 +204,7 @@ export const financierApi = {
   ): Promise<{ invoice: InvoiceRecord }> {
     return requestJson(
       `/api/financier/invoices/${encodeURIComponent(id)}/status`,
-      { method: "POST", body: JSON.stringify(payload) },
-      () => {
-        const actor = getPreviewActor();
-        return {
-          invoice: getPreviewStore().updateInvoiceStatus(actor, id, payload.status, payload.reason),
-        };
-      }
+      { method: "POST", body: JSON.stringify(payload) }
     );
   },
 
@@ -283,17 +213,7 @@ export const financierApi = {
   ): Promise<{ invoice: InvoiceRecord; notification: NotificationDispatchRecord }> {
     return requestJson(
       `/api/financier/invoices/${encodeURIComponent(id)}/send`,
-      { method: "POST", body: JSON.stringify({}) },
-      () => {
-        const actor = getPreviewActor();
-        const detail = getPreviewStore().getInvoiceById(id);
-        return getPreviewStore().logInvoiceEmailSent(actor, id, {
-          provider: "simulated",
-          providerId: `preview-mail-${Date.now()}`,
-          status: "SIMULATED",
-          subject: `Invoice ${detail.invoice.invoiceNumber}`,
-        });
-      }
+      { method: "POST", body: JSON.stringify({}) }
     );
   },
 
@@ -301,8 +221,7 @@ export const financierApi = {
     return downloadBinary(
       `/api/financier/invoices/${encodeURIComponent(invoice.id)}/pdf`,
       `${invoice.invoiceNumber}.pdf`,
-      "application/pdf",
-      () => generateInvoicePdfBytes(getPreviewStore().getInvoiceById(invoice.id).invoice)
+      "application/pdf"
     );
   },
 
@@ -316,11 +235,7 @@ export const financierApi = {
   }): Promise<{ discount: DiscountRequestRecord }> {
     return requestJson(
       "/api/financier/discounts",
-      { method: "POST", body: JSON.stringify(payload) },
-      () => {
-        const actor = getPreviewActor();
-        return { discount: getPreviewStore().requestDiscount(actor, payload) };
-      }
+      { method: "POST", body: JSON.stringify(payload) }
     );
   },
 
@@ -330,22 +245,12 @@ export const financierApi = {
   ): Promise<{ discount: DiscountRequestRecord }> {
     return requestJson(
       `/api/financier/discounts/${encodeURIComponent(discountId)}/decide`,
-      { method: "POST", body: JSON.stringify(payload) },
-      () => {
-        const actor = getPreviewActor();
-        return {
-          discount: getPreviewStore().decideDiscount(actor, { discountId, ...payload }),
-        };
-      }
+      { method: "POST", body: JSON.stringify(payload) }
     );
   },
 
   listPayments(): Promise<{ payments: PaymentRecord[]; refunds: RefundRecord[] }> {
-    return requestJson("/api/financier/payments", { method: "GET" }, () => {
-      getPreviewActor();
-      const s = getPreviewStore();
-      return { payments: s.listPayments(), refunds: s.listRefunds() };
-    });
+    return requestJson("/api/financier/payments", { method: "GET" });
   },
 
   recordPayment(payload: {
@@ -359,11 +264,7 @@ export const financierApi = {
   }): Promise<{ payment: PaymentRecord }> {
     return requestJson(
       "/api/financier/payments",
-      { method: "POST", body: JSON.stringify(payload) },
-      () => {
-        const actor = getPreviewActor();
-        return { payment: getPreviewStore().recordPayment(actor, payload) };
-      }
+      { method: "POST", body: JSON.stringify(payload) }
     );
   },
 
@@ -371,8 +272,7 @@ export const financierApi = {
     return downloadBinary(
       `/api/financier/payments/${encodeURIComponent(payment.id)}/receipt.pdf`,
       `${payment.receiptNumber}.pdf`,
-      "application/pdf",
-      () => generateReceiptPdfBytes(getPreviewStore().getPaymentById(payment.id))
+      "application/pdf"
     );
   },
 
@@ -384,11 +284,7 @@ export const financierApi = {
   }): Promise<{ refund: RefundRecord }> {
     return requestJson(
       "/api/financier/refunds",
-      { method: "POST", body: JSON.stringify(payload) },
-      () => {
-        const actor = getPreviewActor();
-        return { refund: getPreviewStore().requestRefund(actor, payload) };
-      }
+      { method: "POST", body: JSON.stringify(payload) }
     );
   },
 
@@ -398,13 +294,7 @@ export const financierApi = {
   ): Promise<{ refund: RefundRecord }> {
     return requestJson(
       `/api/financier/refunds/${encodeURIComponent(refundId)}/decide`,
-      { method: "POST", body: JSON.stringify(payload) },
-      () => {
-        const actor = getPreviewActor();
-        return {
-          refund: getPreviewStore().decideRefund(actor, { refundId, ...payload }),
-        };
-      }
+      { method: "POST", body: JSON.stringify(payload) }
     );
   },
 
@@ -414,13 +304,7 @@ export const financierApi = {
   ): Promise<{ refund: RefundRecord }> {
     return requestJson(
       `/api/financier/refunds/${encodeURIComponent(refundId)}/execute`,
-      { method: "POST", body: JSON.stringify(payload) },
-      () => {
-        const actor = getPreviewActor();
-        return {
-          refund: getPreviewStore().executeRefund(actor, { refundId, ...payload }),
-        };
-      }
+      { method: "POST", body: JSON.stringify(payload) }
     );
   },
 
@@ -439,16 +323,7 @@ export const financierApi = {
 
     return requestJson(
       `/api/financier/ledger${qs ? `?${qs}` : ""}`,
-      { method: "GET" },
-      () => {
-        getPreviewActor();
-        return getPreviewStore().getLedgerView({
-          fromDate: filters?.fromDate || undefined,
-          toDate: filters?.toDate || undefined,
-          accountCode: filters?.accountCode || undefined,
-          studentProfileId: filters?.studentProfileId || undefined,
-        });
-      }
+      { method: "GET" }
     );
   },
 
@@ -464,15 +339,7 @@ export const financierApi = {
 
     return requestJson(
       `/api/financier/ledger/accounts/${encodeURIComponent(accountCode)}${qs ? `?${qs}` : ""}`,
-      { method: "GET" },
-      () => {
-        getPreviewActor();
-        return getPreviewStore().getLedgerAccountDetail(accountCode, {
-          fromDate: filters?.fromDate || undefined,
-          toDate: filters?.toDate || undefined,
-          studentProfileId: filters?.studentProfileId || undefined,
-        });
-      }
+      { method: "GET" }
     );
   },
 
@@ -482,13 +349,7 @@ export const financierApi = {
   ): Promise<{ counterEntry: BalancedJournalEntry }> {
     return requestJson(
       `/api/financier/ledger/reverse/${encodeURIComponent(entryId)}`,
-      { method: "POST", body: JSON.stringify({ reason }) },
-      () => {
-        const actor = getPreviewActor();
-        return {
-          counterEntry: getPreviewStore().reverseJournalEntry(actor, entryId, reason),
-        };
-      }
+      { method: "POST", body: JSON.stringify({ reason }) }
     );
   },
 
@@ -508,14 +369,7 @@ export const financierApi = {
     return downloadBinary(
       `/api/financier/ledger/export${qs ? `?${qs}` : ""}`,
       "financier-general-ledger.csv",
-      "text/csv;charset=utf-8",
-      () =>
-        getPreviewStore().exportLedgerCsv({
-          fromDate: filters?.fromDate || undefined,
-          toDate: filters?.toDate || undefined,
-          accountCode: filters?.accountCode || undefined,
-          studentProfileId: filters?.studentProfileId || undefined,
-        })
+      "text/csv;charset=utf-8"
     );
   },
 
@@ -523,21 +377,13 @@ export const financierApi = {
     runs: PayrollRunRecord[];
     batchCosts: FinancierReportsResponse["revenueByBatch"];
   }> {
-    return requestJson("/api/financier/payroll", { method: "GET" }, () => {
-      getPreviewActor();
-      const s = getPreviewStore();
-      return { runs: s.listPayrollRuns(), batchCosts: s.getReportsView().revenueByBatch };
-    });
+    return requestJson("/api/financier/payroll", { method: "GET" });
   },
 
   getPayrollRun(runId: string): Promise<{ run: PayrollRunRecord }> {
     return requestJson(
       `/api/financier/payroll/${encodeURIComponent(runId)}`,
-      { method: "GET" },
-      () => {
-        getPreviewActor();
-        return { run: getPreviewStore().getPayrollRunById(runId) };
-      }
+      { method: "GET" }
     );
   },
 
@@ -548,11 +394,7 @@ export const financierApi = {
   }): Promise<{ run: PayrollRunRecord }> {
     return requestJson(
       "/api/financier/payroll",
-      { method: "POST", body: JSON.stringify(payload) },
-      () => {
-        const actor = getPreviewActor();
-        return { run: getPreviewStore().createPayrollRun(actor, payload) };
-      }
+      { method: "POST", body: JSON.stringify(payload) }
     );
   },
 
@@ -562,13 +404,7 @@ export const financierApi = {
   ): Promise<{ run: PayrollRunRecord }> {
     return requestJson(
       `/api/financier/payroll/${encodeURIComponent(runId)}/transition`,
-      { method: "POST", body: JSON.stringify(payload) },
-      () => {
-        const actor = getPreviewActor();
-        return {
-          run: getPreviewStore().transitionPayrollRun(actor, runId, payload.status, payload.reason),
-        };
-      }
+      { method: "POST", body: JSON.stringify(payload) }
     );
   },
 
@@ -583,16 +419,7 @@ export const financierApi = {
   ): Promise<{ adjustment: PayrollAdjustmentRecord }> {
     return requestJson(
       `/api/financier/payroll/${encodeURIComponent(runId)}/adjustments`,
-      { method: "POST", body: JSON.stringify(payload) },
-      () => {
-        const actor = getPreviewActor();
-        return {
-          adjustment: getPreviewStore().addPayrollAdjustment(actor, {
-            payrollRunId: runId,
-            ...payload,
-          }),
-        };
-      }
+      { method: "POST", body: JSON.stringify(payload) }
     );
   },
 
@@ -603,17 +430,7 @@ export const financierApi = {
   ): Promise<{ adjustment: PayrollAdjustmentRecord }> {
     return requestJson(
       `/api/financier/payroll/${encodeURIComponent(runId)}/adjustments/${encodeURIComponent(adjustmentId)}/decide`,
-      { method: "POST", body: JSON.stringify({ decision }) },
-      () => {
-        const actor = getPreviewActor();
-        return {
-          adjustment: getPreviewStore().decidePayrollAdjustment(actor, {
-            payrollRunId: runId,
-            adjustmentId,
-            decision,
-          }),
-        };
-      }
+      { method: "POST", body: JSON.stringify({ decision }) }
     );
   },
 
@@ -621,38 +438,18 @@ export const financierApi = {
     return downloadBinary(
       `/api/financier/payroll/${encodeURIComponent(runId)}/payslips/${encodeURIComponent(payoutId)}/pdf`,
       `${payslipNumber}.pdf`,
-      "application/pdf",
-      () => {
-        const run = getPreviewStore().getPayrollRunById(runId);
-        const payout = run.payouts.find((p) => p.id === payoutId)!;
-        return generatePayslipPdfBytes(run, payout);
-      }
+      "application/pdf"
     );
   },
 
   getCollections(): Promise<FinancierCollectionsResponse> {
-    return requestJson("/api/financier/collections", { method: "GET" }, () => {
-      getPreviewActor();
-      return getPreviewStore().getCollectionsView();
-    });
+    return requestJson("/api/financier/collections", { method: "GET" });
   },
 
   sendFeeReminder(studentProfileId: string): Promise<{ notification: NotificationDispatchRecord }> {
     return requestJson(
       "/api/financier/collections/remind",
-      { method: "POST", body: JSON.stringify({ studentProfileId }) },
-      () => {
-        const actor = getPreviewActor();
-        const st = getPreviewStore().getStudentStatement(studentProfileId);
-        return {
-          notification: getPreviewStore().recordFeeReminderSent(actor, studentProfileId, {
-            provider: "simulated",
-            providerId: `preview-rem-${Date.now()}`,
-            status: "SIMULATED",
-            subject: `Fee Reminder — ${st.student.name}`,
-          }),
-        };
-      }
+      { method: "POST", body: JSON.stringify({ studentProfileId }) }
     );
   },
 
@@ -664,27 +461,19 @@ export const financierApi = {
   }): Promise<{ note: FollowUpNoteRecord }> {
     return requestJson(
       "/api/financier/collections/notes",
-      { method: "POST", body: JSON.stringify(payload) },
-      () => {
-        const actor = getPreviewActor();
-        return { note: getPreviewStore().addFollowUpNote(actor, payload) };
-      }
+      { method: "POST", body: JSON.stringify(payload) }
     );
   },
 
   getReports(): Promise<FinancierReportsResponse> {
-    return requestJson("/api/financier/reports", { method: "GET" }, () => {
-      getPreviewActor();
-      return getPreviewStore().getReportsView();
-    });
+    return requestJson("/api/financier/reports", { method: "GET" });
   },
 
   downloadReportCsv(kind: "ageing" | "payroll-vs-revenue"): Promise<void> {
     return downloadBinary(
       `/api/financier/reports/export?kind=${kind}`,
       kind === "ageing" ? "collections-ageing-report.csv" : "payroll-vs-revenue-report.csv",
-      "text/csv;charset=utf-8",
-      () => getPreviewStore().exportReportCsv(kind)
+      "text/csv;charset=utf-8"
     );
   },
 
@@ -701,11 +490,7 @@ export const financierApi = {
 
     return requestJson(
       `/api/financier/audit${qs ? `?${qs}` : ""}`,
-      { method: "GET" },
-      () => {
-        getPreviewActor();
-        return { logs: getPreviewStore().listAuditLogs(filters) };
-      }
+      { method: "GET" }
     );
   },
 };

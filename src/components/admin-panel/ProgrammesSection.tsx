@@ -40,23 +40,6 @@ interface RosterStudent {
   feeStatus: string;
 }
 
-const mockRoster: Record<string, RosterStudent[]> = {
-  "PFS-2026-A": [
-    { id: "std-1", name: "Asha Rao", email: "asha.rao@example.test", batchCode: "PFS-2026-A", attendancePct: 94, progressPct: 68, feeStatus: "Paid" },
-    { id: "std-2", name: "Noah Singh", email: "noah.singh@example.test", batchCode: "PFS-2026-A", attendancePct: 88, progressPct: 42, feeStatus: "Overdue" },
-    { id: "std-6", name: "Aditi Roy", email: "aditi.roy@example.test", batchCode: "PFS-2026-A", attendancePct: 92, progressPct: 75, feeStatus: "Paid" },
-  ],
-  "FSA-2026-B": [
-    { id: "std-3", name: "Rohan Varma", email: "rohan.v@example.test", batchCode: "FSA-2026-B", attendancePct: 96, progressPct: 85, feeStatus: "Paid" },
-    { id: "std-7", name: "Kunal Ghosh", email: "kunal.g@example.test", batchCode: "FSA-2026-B", attendancePct: 84, progressPct: 60, feeStatus: "Paid" },
-  ],
-  "DCA-2026-C": [
-    { id: "std-4", name: "Sneha Patel", email: "sneha.p@example.test", batchCode: "DCA-2026-C", attendancePct: 90, progressPct: 30, feeStatus: "Due" },
-  ],
-  "RNA-2026-D": [
-    { id: "std-5", name: "Devanand K", email: "devanand.k@example.test", batchCode: "RNA-2026-D", attendancePct: 82, progressPct: 55, feeStatus: "Paid" },
-  ],
-};
 
 export function ProgrammesSection() {
   const programmesQuery = useAdminResource("programmes", {});
@@ -120,7 +103,6 @@ export function ProgrammesSection() {
   }, [batchesQuery.data?.batches]);
 
   const activeRoster: Record<string, RosterStudent[]> = {
-    ...mockRoster,
     ...(batchesQuery.data?.roster || {}),
   };
 
