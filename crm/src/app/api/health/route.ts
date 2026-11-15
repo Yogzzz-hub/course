@@ -20,6 +20,8 @@ export async function GET() {
   }
 
   const memoryUsage = process.memoryUsage();
+  const dbUrl = process.env.DATABASE_URL || "";
+  const isPostgres = dbUrl.startsWith("postgresql") || dbUrl.startsWith("postgres");
 
   const healthPayload = {
     status: overallStatus,
@@ -31,7 +33,7 @@ export async function GET() {
       database: {
         status: dbStatus,
         latencyMs: dbLatencyMs,
-        dialect: "sqlite",
+        dialect: isPostgres ? "postgresql (supabase)" : "sqlite",
       },
       process: {
         nodeVersion: process.version,
