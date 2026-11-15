@@ -112,11 +112,18 @@ export async function requireAuth(allowedRoles?: Role[]): Promise<SessionPayload
   }
 
   // Also verify user is still active in database (lookup by id or email fallback)
+  const altEmail = session.email?.endsWith("@aintrixacademy.edu")
+    ? session.email.replace("@aintrixacademy.edu", "@apexacademy.edu")
+    : session.email?.endsWith("@apexacademy.edu")
+    ? session.email.replace("@apexacademy.edu", "@aintrixacademy.edu")
+    : undefined;
+
   const user = await prisma.user.findFirst({
     where: {
       OR: [
         { id: session.userId },
         ...(session.email ? [{ email: session.email.toLowerCase().trim() }] : []),
+        ...(altEmail ? [{ email: altEmail.toLowerCase().trim() }] : []),
       ],
     },
     select: { id: true, isActive: true, role: true },
@@ -198,6 +205,11 @@ import { logAuditEvent } from "./audit";
 export async function generateStudentOtp(identifier: string): Promise<{ success: boolean; devOtp?: string; message: string }> {
   // Normalize identifier
   const cleanId = identifier.trim().toLowerCase();
+  const altCleanId = cleanId.endsWith("@aintrixacademy.edu")
+    ? cleanId.replace("@aintrixacademy.edu", "@apexacademy.edu")
+    : cleanId.endsWith("@apexacademy.edu")
+    ? cleanId.replace("@apexacademy.edu", "@aintrixacademy.edu")
+    : undefined;
 
   // Check if student exists by registered email or registration number
   const student = await prisma.user.findFirst({
@@ -206,6 +218,7 @@ export async function generateStudentOtp(identifier: string): Promise<{ success:
       isActive: true,
       OR: [
         { email: cleanId },
+        ...(altCleanId ? [{ email: altCleanId }] : []),
         { studentProfile: { registrationNumber: identifier.trim().toUpperCase() } },
       ],
     },

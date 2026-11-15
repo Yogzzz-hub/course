@@ -114,8 +114,8 @@ export default function LoginPage() {
             }
           } catch {}
         }
-        if ((res.status === 502 || res.status === 503 || res.status === 504) && attempt === 0) {
-          await new Promise((r) => window.setTimeout(r, 1500));
+        if ((res.status === 429 || res.status === 502 || res.status === 503 || res.status === 504) && attempt === 0) {
+          await new Promise((r) => window.setTimeout(r, 2000));
           continue;
         }
         if (isJson && res.status < 500) {

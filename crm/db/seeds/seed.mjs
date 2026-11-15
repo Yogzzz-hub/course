@@ -8,7 +8,8 @@ async function main() {
 
   const userCount = await prisma.user.count().catch(() => 0);
   if (userCount > 0) {
-    console.log(`Database already initialized with ${userCount} users. Preserving existing records.`);
+    console.log(`Database already initialized with ${userCount} users. Ensuring aintrix accounts exist...`);
+    await ensureAintrixUsers(prisma);
     return;
   }
 
@@ -1197,15 +1198,115 @@ async function main() {
     ],
   });
 
+  await ensureAintrixUsers(prisma);
+
   console.log("Database seeded successfully!");
   console.log("-----------------------------------------");
   console.log("Sample User Accounts for Testing:");
-  console.log("1. Admin:     admin@apexacademy.edu     / Admin@123456");
-  console.log("2. Manager:   manager@apexacademy.edu   / Manager@123456");
-  console.log("3. Financier: financier@apexacademy.edu / Financier@123456");
-  console.log("4. Trainer:   trainer@apexacademy.edu   / Trainer@123456");
-  console.log("5. Student:   student@apexacademy.edu   / Student@123456  (Phone: +15551234567)");
+  console.log("1. Admin:     admin@aintrixacademy.edu  (or admin@apexacademy.edu)     / Admin@123456");
+  console.log("2. Manager:   manager@aintrixacademy.edu (or manager@apexacademy.edu)   / Manager@123456");
+  console.log("3. Financier: financier@aintrixacademy.edu (or financier@apexacademy.edu) / Financier@123456");
+  console.log("4. Trainer:   trainer@aintrixacademy.edu (or trainer@apexacademy.edu)   / Trainer@123456");
+  console.log("5. Student:   student@aintrixacademy.edu (or student@apexacademy.edu)   / Student@123456");
   console.log("-----------------------------------------");
+}
+
+async function ensureAintrixUsers(client) {
+  const adminPasswordHash = await bcrypt.hash("Admin@123456", 10);
+  const trainerPasswordHash = await bcrypt.hash("Trainer@123456", 10);
+  const managerPasswordHash = await bcrypt.hash("Manager@123456", 10);
+  const financierPasswordHash = await bcrypt.hash("Financier@123456", 10);
+  const studentPasswordHash = await bcrypt.hash("Student@123456", 10);
+
+  // Admin
+  await client.user.upsert({
+    where: { email: "admin@aintrixacademy.edu" },
+    update: {},
+    create: {
+      email: "admin@aintrixacademy.edu",
+      name: "Victoria Sterling",
+      role: "ADMIN",
+      passwordHash: adminPasswordHash,
+      phone: "+15550000001",
+    },
+  }).catch(() => {});
+
+  // Manager
+  const existingMgr = await client.user.findUnique({ where: { email: "manager@aintrixacademy.edu" } }).catch(() => null);
+  if (!existingMgr) {
+    await client.user.create({
+      data: {
+        email: "manager@aintrixacademy.edu",
+        name: "Arthur Pendelton",
+        role: "MANAGER",
+        passwordHash: managerPasswordHash,
+        phone: "+15550000002",
+        managerProfile: {
+          create: { department: "Student Operations & Admissions" },
+        },
+      },
+    }).catch(() => {});
+  }
+
+  // Financier
+  const existingFin = await client.user.findUnique({ where: { email: "financier@aintrixacademy.edu" } }).catch(() => null);
+  if (!existingFin) {
+    await client.user.create({
+      data: {
+        email: "financier@aintrixacademy.edu",
+        name: "Eleanor Vance",
+        role: "FINANCIER",
+        passwordHash: financierPasswordHash,
+        phone: "+15550000003",
+        financierProfile: {
+          create: { department: "Academy Finance & Accounts" },
+        },
+      },
+    }).catch(() => {});
+  }
+
+  // Trainer
+  const existingTrn = await client.user.findUnique({ where: { email: "trainer@aintrixacademy.edu" } }).catch(() => null);
+  if (!existingTrn) {
+    await client.user.create({
+      data: {
+        email: "trainer@aintrixacademy.edu",
+        name: "David Chen",
+        role: "TRAINER",
+        passwordHash: trainerPasswordHash,
+        phone: "+15550000004",
+        trainerProfile: {
+          create: {
+            employeeCode: "TR-001-AINTRIX",
+            specialization: "Full-Stack Architecture & Cloud",
+            bio: "12+ years building distributed cloud backends and modern web frontends.",
+            isPublic: true,
+          },
+        },
+      },
+    }).catch(() => {});
+  }
+
+  // Student
+  const existingStd = await client.user.findUnique({ where: { email: "student@aintrixacademy.edu" } }).catch(() => null);
+  if (!existingStd) {
+    await client.user.create({
+      data: {
+        email: "student@aintrixacademy.edu",
+        name: "Alex Rivera",
+        role: "STUDENT",
+        passwordHash: studentPasswordHash,
+        phone: "+15551234567",
+        studentProfile: {
+          create: {
+            registrationNumber: "ACA-2026-AINTRIX",
+            emergencyContact: "+15559998877",
+            address: "128 Pinecrest Avenue, Metro City",
+          },
+        },
+      },
+    }).catch(() => {});
+  }
 }
 
 main()

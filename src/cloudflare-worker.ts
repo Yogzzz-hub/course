@@ -95,6 +95,14 @@ export default {
       newHeaders.set('x-forwarded-host', url.host);
       newHeaders.set('x-forwarded-proto', url.protocol.replace(':', ''));
 
+      // Forward genuine client IP to prevent Render rate limiting all Worker users under one IP
+      const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
+      if (clientIp) {
+        newHeaders.set('cf-connecting-ip', clientIp);
+        newHeaders.set('x-forwarded-for', clientIp);
+        newHeaders.set('x-real-ip', clientIp);
+      }
+
       // Strip Sec-CH-UA client hint headers that trigger Cloudflare Bot WAF Managed Challenge on Render
       newHeaders.delete('sec-ch-ua');
       newHeaders.delete('sec-ch-ua-mobile');
@@ -106,13 +114,57 @@ export default {
       newHeaders.delete('sec-ch-ua-full-version');
       newHeaders.delete('sec-ch-ua-full-version-list');
 
+      // Buffer body once to allow seamless retries during Render container cold starts
+      const hasBody = request.method !== 'GET' && request.method !== 'HEAD';
+      let bodyBytes: ArrayBuffer | null = null;
+      if (hasBody) {
+        try {
+          bodyBytes = await request.arrayBuffer();
+        } catch {
+          bodyBytes = null;
+        }
+      }
+
       try {
-        const response = await fetch(targetUrl.toString(), {
-          method: request.method,
-          headers: newHeaders,
-          body: request.method !== 'GET' && request.method !== 'HEAD' ? request.body : undefined,
-          redirect: 'manual',
-        });
+        let response: Response | null = null;
+        let lastError: unknown = null;
+        const maxRetries = 3;
+
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+          try {
+            const fetchHeaders = new Headers(newHeaders);
+            const res = await fetch(targetUrl.toString(), {
+              method: request.method,
+              headers: fetchHeaders,
+              body: bodyBytes ? bodyBytes.slice(0) : undefined,
+              redirect: 'manual',
+            });
+
+            const ct = res.headers.get('content-type') || '';
+            const isTransientError =
+              (res.status === 429 || res.status === 502 || res.status === 503 || res.status === 504) &&
+              (ct.includes('text/html') || res.status === 429);
+
+            // Cold-start wakeup backoff: retry if backend is still initializing
+            if (isTransientError && attempt < maxRetries - 1) {
+              await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)));
+              continue;
+            }
+
+            response = res;
+            break;
+          } catch (err) {
+            lastError = err;
+            if (attempt < maxRetries - 1) {
+              await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)));
+              continue;
+            }
+          }
+        }
+
+        if (!response) {
+          throw lastError || new Error('Backend failed to respond');
+        }
 
         // Intercept Cloudflare Bot Challenge HTML or 502/503 on JSON API routes to protect SPA callers
         const ct = response.headers.get('content-type') || '';
@@ -175,6 +227,12 @@ export default {
                 }
               }
             });
+          }
+
+          if (pathname === '/api/auth/login') {
+            return jsonResponse({
+              error: 'Academy CRM server is waking up. Please retry in a few moments.'
+            }, 503);
           }
 
           return jsonResponse({ error: 'Backend challenged or unavailable' }, 503);

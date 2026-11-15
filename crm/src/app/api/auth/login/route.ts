@@ -19,7 +19,7 @@ const LoginSchema = z
 export async function POST(req: NextRequest) {
   try {
     const ip = getClientIp(req);
-    const rateCheck = checkRateLimit(`login:${ip}`, 10, 60 * 1000);
+    const rateCheck = checkRateLimit(`login:${ip}`, 30, 60 * 1000);
     if (!rateCheck.success) {
       return NextResponse.json(
         { error: "Too many login attempts. Please wait before retrying." },
@@ -27,7 +27,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body = await req.json();
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid credentials format. Please enter your email/ID and password." },
+        { status: 400 }
+      );
+    }
+
     const parsed = LoginSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -41,11 +50,19 @@ export async function POST(req: NextRequest) {
     const rawId = (identifier || email || "").trim();
     const cleanId = rawId.toLowerCase();
 
+    // Map seamlessly between aintrix and apex academy domain variants
+    const altEmail = cleanId.endsWith("@aintrixacademy.edu")
+      ? cleanId.replace("@aintrixacademy.edu", "@apexacademy.edu")
+      : cleanId.endsWith("@apexacademy.edu")
+      ? cleanId.replace("@apexacademy.edu", "@aintrixacademy.edu")
+      : undefined;
+
     // Query user by email, student registration number, or trainer employee code
     const user = await prisma.user.findFirst({
       where: {
         OR: [
           { email: cleanId },
+          ...(altEmail ? [{ email: altEmail }] : []),
           { studentProfile: { registrationNumber: rawId.toUpperCase() } },
           { trainerProfile: { employeeCode: rawId.toUpperCase() } },
         ],
