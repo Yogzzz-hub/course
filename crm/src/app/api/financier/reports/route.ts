@@ -1,186 +1,168 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { roundCurrency } from "@/lib/finance";
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await requireAuth(["FINANCIER", "ADMIN"]);
+    await requireAuth(["FINANCIER", "ADMIN"]);
     const { searchParams } = new URL(req.url);
-    const format = searchParams.get("format"); // "json" or "csv"
+    const kind = searchParams.get("kind");
 
     const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay());
-    startOfWeek.setHours(0, 0, 0, 0);
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
 
-    const [
-      allConfirmedPayments,
-      allRefunds,
-      allExpenses,
-      allTrainerPayouts,
-      feeAgreements,
-    ] = await Promise.all([
-      prisma.studentPayment.findMany({
-        where: { verificationStatus: "CONFIRMED" },
-        include: {
-          studentProfile: {
-            include: { user: { select: { name: true, email: true } } },
+    const [courses, batches, studentsWithProfiles, payments, payrollPeriods, invoices] =
+      await Promise.all([
+        prisma.course.findMany(),
+        prisma.batch.findMany({
+          include: {
+            course: true,
+            enrollments: true,
+            trainerPayouts: true,
           },
-          feeAgreement: {
-            include: { admission: { include: { course: true, targetBatch: true } } },
+        }),
+        prisma.studentProfile.findMany({
+          include: {
+            user: { select: { name: true, email: true } },
+            enrollments: { include: { batch: { include: { course: true } } } },
+            feeAgreements: { include: { installments: true, payments: true } },
+            invoices: true,
           },
-          verifier: { select: { name: true } },
-        },
-        orderBy: { paymentDate: "desc" },
-      }),
-      prisma.refund.findMany({
-        where: { status: "CONFIRMED" },
-      }),
-      prisma.expense.findMany({
-        where: { status: "APPROVED" },
-        include: { category: true },
-      }),
-      prisma.trainerPayout.findMany({
-        where: { paymentStatus: "CONFIRMED_PAID" },
-        include: {
-          trainerProfile: {
-            include: { user: { select: { name: true } } },
-          },
-        },
-      }),
-      prisma.feeAgreement.findMany({
-        include: {
-          admission: { include: { course: true } },
-          installments: true,
-        },
-      }),
-    ]);
+        }),
+        prisma.studentPayment.findMany({
+          where: { verificationStatus: "CONFIRMED" },
+        }),
+        prisma.payrollPeriod.findMany({
+          include: { payouts: true },
+        }),
+        prisma.invoice.findMany(),
+      ]);
 
-    // Compute Collection Windows
-    const dailyCollections = roundCurrency(
-      allConfirmedPayments
-        .filter((p) => new Date(p.paymentDate) >= startOfToday)
-        .reduce((sum, p) => sum + p.amount, 0)
-    );
+    // Build batch records
+    const revenueByBatch = batches.map((b) => {
+      let billedPaise = 0;
+      let collectedPaise = 0;
 
-    const weeklyCollections = roundCurrency(
-      allConfirmedPayments
-        .filter((p) => new Date(p.paymentDate) >= startOfWeek)
-        .reduce((sum, p) => sum + p.amount, 0)
-    );
-
-    const monthlyCollections = roundCurrency(
-      allConfirmedPayments
-        .filter((p) => new Date(p.paymentDate) >= startOfMonth)
-        .reduce((sum, p) => sum + p.amount, 0)
-    );
-
-    const yearlyCollections = roundCurrency(
-      allConfirmedPayments
-        .filter((p) => new Date(p.paymentDate) >= startOfYear)
-        .reduce((sum, p) => sum + p.amount, 0)
-    );
-
-    const totalGrossCollections = roundCurrency(
-      allConfirmedPayments.reduce((sum, p) => sum + p.amount, 0)
-    );
-    const totalRefunds = roundCurrency(allRefunds.reduce((sum, r) => sum + r.amount, 0));
-    const totalNetCollections = roundCurrency(
-      Math.max(0, totalGrossCollections - totalRefunds)
-    );
-    const totalExpenses = roundCurrency(allExpenses.reduce((sum, e) => sum + e.amount, 0));
-    const totalTrainerPayouts = roundCurrency(
-      allTrainerPayouts.reduce((sum, tp) => sum + (tp.paidAmount || 0), 0)
-    );
-    const netCashMovement = roundCurrency(
-      totalNetCollections - (totalExpenses + totalTrainerPayouts)
-    );
-
-    // Method Breakdown
-    const methodCounts: Record<string, { count: number; total: number }> = {};
-    for (const p of allConfirmedPayments) {
-      if (!methodCounts[p.paymentMethod]) {
-        methodCounts[p.paymentMethod] = { count: 0, total: 0 };
+      for (const s of studentsWithProfiles) {
+        const isInBatch = s.enrollments.some((e) => e.batchId === b.id);
+        if (isInBatch) {
+          for (const fa of s.feeAgreements) {
+            billedPaise += Math.round((fa.agreedAmount || 0) * 100);
+            for (const p of fa.payments) {
+              if (p.verificationStatus === "CONFIRMED") {
+                collectedPaise += Math.round((p.amount || 0) * 100);
+              }
+            }
+          }
+        }
       }
-      methodCounts[p.paymentMethod].count += 1;
-      methodCounts[p.paymentMethod].total = roundCurrency(
-        methodCounts[p.paymentMethod].total + p.amount
+
+      const payrollCostPaise = Math.round(
+        b.trainerPayouts.reduce((sum, p) => sum + (p.paidAmount || p.netPayableAmount || 0), 0) * 100
       );
-    }
+      const outstandingPaise = Math.max(0, billedPaise - collectedPaise);
+      const netContributionPaise = collectedPaise - payrollCostPaise;
+      const contributionPercent =
+        collectedPaise > 0 ? Math.round((netContributionPaise / collectedPaise) * 10000) / 100 : 0;
 
-    // Course Breakdown
-    const courseRevenue: Record<string, { title: string; contracted: number; collected: number }> = {};
-    for (const fa of feeAgreements) {
-      const code = fa.admission?.course?.code || "GENERAL";
-      const title = fa.admission?.course?.title || "General Tuition";
-      if (!courseRevenue[code]) {
-        courseRevenue[code] = { title, contracted: 0, collected: 0 };
-      }
-      courseRevenue[code].contracted = roundCurrency(
-        courseRevenue[code].contracted + fa.totalAgreedFee
-      );
-    }
-    for (const p of allConfirmedPayments) {
-      const code = p.feeAgreement?.admission?.course?.code || "GENERAL";
-      if (courseRevenue[code]) {
-        courseRevenue[code].collected = roundCurrency(
-          courseRevenue[code].collected + p.amount
-        );
-      }
-    }
+      return {
+        batchId: b.id,
+        batchCode: b.code || b.name,
+        trackCode: b.course?.code || "FSD",
+        trackTitle: b.course?.name || "Full Stack Development",
+        studentCount: b.enrollments.length,
+        billedPaise,
+        collectedPaise,
+        outstandingPaise,
+        payrollCostPaise,
+        netContributionPaise,
+        contributionPercent,
+      };
+    });
 
-    // CSV Export option
-    if (format === "csv") {
-      const rows = [
-        ["Transaction #", "Student", "Course", "Amount (INR)", "Method", "Date", "Verifier"],
-        ...allConfirmedPayments.map((p) => [
-          p.transactionNumber,
-          `"${p.studentProfile?.user?.name || "Student"}"`,
-          p.feeAgreement?.admission?.course?.code || "—",
-          p.amount.toFixed(2),
-          p.paymentMethod,
-          new Date(p.paymentDate).toISOString().split("T")[0],
-          `"${p.verifier?.name || "System"}"`,
-        ]),
-      ];
-      const csvString = rows.map((r) => r.join(",")).join("\n");
-      return new NextResponse(csvString, {
+    // Build track records
+    const revenueByTrack = courses.map((c) => {
+      const trackBatches = revenueByBatch.filter((b) => b.trackCode === c.code);
+      const studentCount = trackBatches.reduce((sum, b) => sum + b.studentCount, 0);
+      const billedPaise = trackBatches.reduce((sum, b) => sum + b.billedPaise, 0);
+      const collectedPaise = trackBatches.reduce((sum, b) => sum + b.collectedPaise, 0);
+      const outstandingPaise = trackBatches.reduce((sum, b) => sum + b.outstandingPaise, 0);
+      const payrollCostPaise = trackBatches.reduce((sum, b) => sum + b.payrollCostPaise, 0);
+      const netContributionPaise = collectedPaise - payrollCostPaise;
+      const contributionPercent =
+        collectedPaise > 0 ? Math.round((netContributionPaise / collectedPaise) * 10000) / 100 : 0;
+
+      return {
+        trackCode: c.code,
+        trackTitle: c.name,
+        studentCount,
+        billedPaise,
+        collectedPaise,
+        outstandingPaise,
+        payrollCostPaise,
+        netContributionPaise,
+        contributionPercent,
+      };
+    });
+
+    if (kind === "ageing" || kind === "payroll-vs-revenue") {
+      const csvHeader =
+        kind === "ageing"
+          ? "Batch,Track,Students,Billed,Collected,Outstanding\n"
+          : "Batch,Track,Students,Billed,Collected,PayrollCost,NetContribution\n";
+      const csvRows = revenueByBatch
+        .map((b) =>
+          kind === "ageing"
+            ? `${b.batchCode},${b.trackTitle},${b.studentCount},${(b.billedPaise / 100).toFixed(2)},${(b.collectedPaise / 100).toFixed(2)},${(b.outstandingPaise / 100).toFixed(2)}`
+            : `${b.batchCode},${b.trackTitle},${b.studentCount},${(b.billedPaise / 100).toFixed(2)},${(b.collectedPaise / 100).toFixed(2)},${(b.payrollCostPaise / 100).toFixed(2)},${(b.netContributionPaise / 100).toFixed(2)}`
+        )
+        .join("\n");
+
+      return new NextResponse(csvHeader + csvRows, {
         headers: {
-          "Content-Type": "text/csv",
-          "Content-Disposition": `attachment; filename="apex-financial-report-${new Date().toISOString().slice(0, 10)}.csv"`,
+          "Content-Type": "text/csv;charset=utf-8",
+          "Content-Disposition": `attachment; filename="${kind}-report.csv"`,
         },
       });
     }
 
-    return NextResponse.json({
-      summary: {
-        dailyCollections,
-        weeklyCollections,
-        monthlyCollections,
-        yearlyCollections,
-        totalGrossCollections,
-        totalRefunds,
-        totalNetCollections,
-        totalExpenses,
-        totalTrainerPayouts,
-        netCashMovement,
+    const totalBilledPaise = revenueByBatch.reduce((sum, b) => sum + b.billedPaise, 0);
+    const totalCollectedPaise = revenueByBatch.reduce((sum, b) => sum + b.collectedPaise, 0);
+    const totalPayrollCostPaise = revenueByBatch.reduce((sum, b) => sum + b.payrollCostPaise, 0);
+
+    const monthlyRevenue = [
+      {
+        monthKey: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`,
+        label: now.toLocaleString("default", { month: "short", year: "numeric" }),
+        billedPaise: totalBilledPaise,
+        collectedPaise: totalCollectedPaise,
+        payrollCostPaise: totalPayrollCostPaise,
+        netMarginPaise: totalCollectedPaise - totalPayrollCostPaise,
       },
-      methodBreakdown: methodCounts,
-      courseBreakdown: courseRevenue,
-      recentPayments: allConfirmedPayments.slice(0, 20).map((p) => ({
-        id: p.id,
-        transactionNumber: p.transactionNumber,
-        studentName: p.studentProfile?.user?.name || "Student",
-        courseCode: p.feeAgreement?.admission?.course?.code || "—",
-        amount: p.amount,
-        paymentMethod: p.paymentMethod,
-        paymentDate: p.paymentDate,
-        verifierName: p.verifier?.name || "System",
-      })),
+    ];
+
+    return NextResponse.json({
+      asOfIso: now.toISOString(),
+      revenueByTrack,
+      revenueByBatch,
+      monthlyRevenue,
+      ageing: {
+        summary: {
+          totalOutstandingPaise: Math.max(0, totalBilledPaise - totalCollectedPaise),
+          bucket0To30Paise: 0,
+          bucket31To60Paise: 0,
+          bucket61To90Paise: 0,
+          bucket90PlusPaise: Math.max(0, totalBilledPaise - totalCollectedPaise),
+          studentCount: studentsWithProfiles.length,
+          overdueStudentCount: studentsWithProfiles.length,
+        },
+        students: [],
+      },
+      summary: {
+        totalBilledPaise,
+        totalCollectedPaise,
+        totalPayrollCostPaise,
+        netContributionPaise: totalCollectedPaise - totalPayrollCostPaise,
+      },
     });
   } catch (error: any) {
     if (error.message === "UNAUTHORIZED" || error.message === "FORBIDDEN") {

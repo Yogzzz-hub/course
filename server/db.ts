@@ -1,7 +1,13 @@
 import pg from 'pg';
 import { readFile } from 'node:fs/promises';
 import { bank } from './bank.ts';
-export const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 8, connectionTimeoutMillis: 5000, statement_timeout: 10000 });
+let cleanDbUrl = process.env.DATABASE_URL || '';
+try {
+  const u = new URL(cleanDbUrl);
+  u.searchParams.delete("sslmode");
+  cleanDbUrl = u.toString();
+} catch {}
+export const pool = new pg.Pool({ connectionString: cleanDbUrl, ssl: { rejectUnauthorized: false }, max: 8, connectionTimeoutMillis: 5000, statement_timeout: 10000 });
 export async function migrate() {
   const client = await pool.connect();
   try {

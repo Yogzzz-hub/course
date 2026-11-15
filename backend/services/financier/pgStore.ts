@@ -36,8 +36,15 @@ export function getPgPool(): pg.Pool {
   if (!pgPoolInstance) {
     const connStr = process.env.DATABASE_URL;
     if (!connStr) throw new Error("DATABASE_URL is required to connect to PostgreSQL.");
+    let cleanConnStr = connStr;
+    try {
+      const u = new URL(connStr);
+      u.searchParams.delete("sslmode");
+      cleanConnStr = u.toString();
+    } catch {}
     pgPoolInstance = new pg.Pool({
-      connectionString: connStr,
+      connectionString: cleanConnStr,
+      ssl: { rejectUnauthorized: false },
       max: 10,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 5000,
