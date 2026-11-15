@@ -5,7 +5,7 @@
   "description": "Apex Global Academy — Enterprise CRM, Student, Trainer & Admin Portal",
   "scripts": {
     "dev": "next dev -p 3000",
-    "build": "npx prisma generate && npx prisma db push --accept-data-loss && node db/seeds/seed.mjs && next build",
+    "build": "npx prisma generate && next build",
     "start": "node start.mjs",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
