@@ -5,6 +5,7 @@ import { onRequest as handleNotify } from '../functions/api/notify.ts';
 interface Env {
   ASSETS?: { fetch(request: Request): Promise<Response> };
   BACKEND_URL?: string;
+  FINANCIER_BACKEND_URL?: string;
   NEXT_PUBLIC_BACKEND_URL?: string;
   [key: string]: unknown;
 }
@@ -88,8 +89,12 @@ export default {
       pathname.startsWith('/api/calendar') ||
       pathname.startsWith('/api/webhooks');
 
-    if (isCrmRoute && BACKEND_URL) {
-      const targetUrl = new URL(pathname + url.search, BACKEND_URL);
+    const FINANCIER_UPSTREAM = (env.FINANCIER_BACKEND_URL as string) || '';
+    const UPSTREAM_URL =
+      pathname.startsWith('/api/financier') && FINANCIER_UPSTREAM ? FINANCIER_UPSTREAM : BACKEND_URL;
+
+    if (isCrmRoute && UPSTREAM_URL) {
+      const targetUrl = new URL(pathname + url.search, UPSTREAM_URL);
       const newHeaders = new Headers(request.headers);
       newHeaders.set('host', targetUrl.host);
       newHeaders.set('x-forwarded-host', url.host);
@@ -193,7 +198,7 @@ export default {
         const loc = response.headers.get('location');
         if (loc) {
           const respHeaders = new Headers(response.headers);
-          const rewrittenLoc = loc.replace(new URL(BACKEND_URL).origin, url.origin);
+          const rewrittenLoc = loc.replace(new URL(UPSTREAM_URL).origin, url.origin);
           respHeaders.set('location', rewrittenLoc);
           return new Response(response.body, {
             status: response.status,
