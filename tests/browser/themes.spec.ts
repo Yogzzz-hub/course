@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { themes } from '../../src/components/ThemeSwitcher';
+import { themes } from '../../frontend/src/components/ThemeSwitcher';
 import { enrolledSession, studentDashboard, studentPayments } from '../student-fixtures';
 import { adminSession, adminLeads } from '../admin-fixtures';
 

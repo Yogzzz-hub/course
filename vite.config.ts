@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
-import { allBookingProgrammes } from './src/data/bookingProgrammes.ts';
+import { allBookingProgrammes } from './frontend/src/data/bookingProgrammes.ts';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
@@ -27,7 +27,7 @@ export default defineConfig(({ mode }) => {
         if (request.url.startsWith('/api/learning/')) return next();
         if (target) return next();
         if (request.url === '/api/financier' || request.url.startsWith('/api/financier/')) {
-          void import('./api/financier/index.ts')
+          void import('./backend/api/financier/index.ts')
             .then(({ dispatchNodeFinancierRequest }) => dispatchNodeFinancierRequest(request, response))
             .catch((err) => {
               response.writeHead(500, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
@@ -36,7 +36,7 @@ export default defineConfig(({ mode }) => {
           return;
         }
         if (request.url === '/api/manager' || request.url.startsWith('/api/manager/')) {
-          void import('./api/manager/index.ts')
+          void import('./backend/api/manager/index.ts')
             .then(({ dispatchNodeManagerRequest }) => dispatchNodeManagerRequest(request, response))
             .catch((err) => {
               response.writeHead(500, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
@@ -45,7 +45,7 @@ export default defineConfig(({ mode }) => {
           return;
         }
         if (request.url === '/api/trainer' || request.url.startsWith('/api/trainer/')) {
-          void import('./api/trainer/index.ts')
+          void import('./backend/api/trainer/index.ts')
             .then(({ dispatchNodeTrainerRequest }) => dispatchNodeTrainerRequest(request, response))
             .catch((err) => {
               response.writeHead(500, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
@@ -54,7 +54,7 @@ export default defineConfig(({ mode }) => {
           return;
         }
         if (request.url === '/api/student' || request.url.startsWith('/api/student/')) {
-          void import('./api/student/index.ts')
+          void import('./backend/api/student/index.ts')
             .then(({ dispatchNodeStudentRequest }) => dispatchNodeStudentRequest(request, response))
             .catch((err) => {
               response.writeHead(500, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
@@ -63,7 +63,7 @@ export default defineConfig(({ mode }) => {
           return;
         }
         if (request.url === '/api/admin' || request.url.startsWith('/api/admin/')) {
-          void import('./api/admin/index.ts')
+          void import('./backend/api/admin/index.ts')
             .then(({ dispatchNodeAdminRequest }) => dispatchNodeAdminRequest(request, response))
             .catch((err) => {
               response.writeHead(500, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
@@ -77,7 +77,7 @@ if (request.url === '/api/booking' || request.url?.startsWith('/api/booking/')) 
             response.end(JSON.stringify({ programmes: allBookingProgrammes }));
             return;
           }
-          void import('./api/booking.ts')
+          void import('./backend/api/booking.ts')
             .then(({ handleRequest }) => handleRequest(request, response))
             .catch((err) => {
               response.writeHead(500, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
@@ -131,13 +131,19 @@ if (request.url === '/api/booking' || request.url?.startsWith('/api/booking/')) 
     },
   };
   return {
+    root: fileURLToPath(new URL('./frontend', import.meta.url)),
+    envDir: fileURLToPath(new URL('.', import.meta.url)),
     resolve: {
       alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url)),
+        '@': fileURLToPath(new URL('./frontend/src', import.meta.url)),
       },
     },
     plugins: [react(), tailwindcss(), unavailableApi],
-    build: { manifest: true },
+    build: {
+      manifest: true,
+      outDir: fileURLToPath(new URL('./dist', import.meta.url)),
+      emptyOutDir: true,
+    },
     server: {
       port: 5173,
       watch: { ignored: ['**/.local/**', '**/test-results*/**', '**/playwright-report/**', '**/.build/**', '**/dist/**'] },

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import { onRequest, type Env } from '../functions/api/enquiry';
-import { emptyEnquiry, validateEnquiry } from '../src/utils/enquiry';
-import { courseTotal, packages } from '../src/data/programmes';
+import { onRequest, type Env } from '../backend/functions/api/enquiry';
+import { emptyEnquiry, validateEnquiry } from '../frontend/src/utils/enquiry';
+import { courseTotal, packages } from '../frontend/src/data/programmes';
 const valid={...emptyEnquiry,name:'Test Learner',email:'learner@example.test',consent:true,token:'test-token'};
 function environment(){const values=new Map<string,string>();return {RESEND_API_KEY:'test',ENQUIRY_FROM:'test@example.test',ENQUIRY_TO:'academy@example.test',TURNSTILE_SECRET_KEY:'test',TURNSTILE_SITE_KEY:'test',ALLOWED_ORIGIN:'https://academy.example.test',RATE_LIMIT_SALT:'test-salt',LEGAL_APPROVED:'true',ENQUIRY_LIMITS:{get:async(key:string)=>values.get(key)||null,put:async(key:string,value:string)=>{values.set(key,value);}}} satisfies Env;}
 function request(body:unknown=valid,id=crypto.randomUUID(),origin='https://academy.example.test'){return new Request('https://academy.example.test/api/enquiry',{method:'POST',headers:{'Content-Type':'application/json','Origin':origin,'Idempotency-Key':id,'CF-Connecting-IP':'192.0.2.1'},body:JSON.stringify(body)});}

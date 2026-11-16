@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { sendEmail, isEmailConfigured, createSmtpTransporter } from '../server/mailer';
+import { sendEmail, isEmailConfigured, createSmtpTransporter } from '../backend/server/mailer';
 
 describe('Brevo SMTP Mailer', () => {
   const originalEnv = process.env;

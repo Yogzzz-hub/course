@@ -1,8 +1,8 @@
 import { describe,it,expect,vi } from 'vitest';
-import { judgeCode,validateJudge,verifyJudgeConfiguration } from '../server/judge';
-import { challenges } from '../server/challenges';
-import { challengeRubric } from '../server/rubric';
-import { understandingQuestions } from '../server/understanding';
+import { judgeCode,validateJudge,verifyJudgeConfiguration } from '../backend/server/judge';
+import { challenges } from '../backend/server/challenges';
+import { challengeRubric } from '../backend/server/rubric';
+import { understandingQuestions } from '../backend/server/understanding';
 const config={url:'https://isolated-judge.example.test',token:'test-only',languageId:71,reviewed:true};
 function fetcher(outputs:unknown[],status=3){let n=0;return vi.fn<typeof fetch>().mockImplementation(async(_url,init)=>new Response(JSON.stringify(init?.method==='POST'?{token:'job-1'}:{status:{id:status,description:'test'},stdout:JSON.stringify(outputs[n++])})));}
 describe('Isolated execution adapter',()=>{

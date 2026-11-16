@@ -39,7 +39,7 @@ try {
     throw new Error('The learning database is unreachable or needs migrations. Start PostgreSQL, then run npm run db:migrate. See docs/LEARNING-OPERATIONS.md.');
   } finally { await db.end(); }
   const target = `http://${apiHost}:${port}`;
-  start(['server/index.ts'], { APP_ORIGIN: origin.origin, NODE_ENV: 'development' });
+  start(['backend/server/index.ts'], { APP_ORIGIN: origin.origin, NODE_ENV: 'development' });
   let healthy = false;
   for (let i = 0; i < 40 && !stopping; i++) {
     try { healthy = (await fetch(`${target}/api/learning/health`, { signal: AbortSignal.timeout(1000) })).ok; } catch { /* Wait for the listener. */ }

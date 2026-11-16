@@ -12,7 +12,7 @@ This document outlines the security architecture, policies, and operational cont
 
 ### Implementation in this Codebase:
 - `.gitignore` strictly ignores `.env`, `.env.local`, `.env.*.local`, `.dev.vars`, `*.log`, and temporary credentials.
-- In production, serverless functions (`api/learning.ts`, `api/enquiry.ts`, `api/notify.ts`) emit structured JSON logs with correlation IDs (`requestId`) without exposing stack traces or database errors to client responses.
+- In production, serverless functions (`backend/api/learning.ts`, `backend/api/enquiry.ts`, `backend/api/notify.ts`) emit structured JSON logs with correlation IDs (`requestId`) without exposing stack traces or database errors to client responses.
 
 ---
 
@@ -24,10 +24,10 @@ This document outlines the security architecture, policies, and operational cont
 - **Hash passwords**: Never store passwords in plain text. Always use strong, modern cryptographic hashing algorithms like Argon2id or bcrypt (or hardened scrypt with high work factors) with a unique salt per user.
 
 ### Implementation in this Codebase:
-- **Password Hashing**: Implemented in [`server/security.ts`](file:///server/security.ts) using 16-byte cryptographically secure random salts per user, `scryptSync` (64-byte derivation), and `timingSafeEqual` to eliminate timing side-channel attacks.
-- **Role-Based Access Control (RBAC)**: Defined in [`server/security.ts`](file:///server/security.ts#L13-L19) with roles (`owner`, `administrator`, `instructor`, `counselor`, `analyst`) and explicit permission gates (`metrics`, `questions`, `publish`, `leads`).
+- **Password Hashing**: Implemented in [`backend/server/security.ts`](file:///backend/server/security.ts) using 16-byte cryptographically secure random salts per user, `scryptSync` (64-byte derivation), and `timingSafeEqual` to eliminate timing side-channel attacks.
+- **Role-Based Access Control (RBAC)**: Defined in [`backend/server/security.ts`](file:///backend/server/security.ts#L13-L19) with roles (`owner`, `administrator`, `instructor`, `counselor`, `analyst`) and explicit permission gates (`metrics`, `questions`, `publish`, `leads`).
 - **Session Security**: Admin and user sessions use isolated `__Host-` prefixed cookies with `HttpOnly; SameSite=Strict; Secure; Path=/` and cryptographic session tokens hashed via SHA-256 before database lookup.
-- **Database Row Level Security (RLS)**: Enforced across 100% of tables in [`supabase/schema.sql`](file:///supabase/schema.sql), restricting anonymous public queries and restricting administrative mutations to verified roles.
+- **Database Row Level Security (RLS)**: Enforced across 100% of tables in [`db/supabase/schema.sql`](file:///db/supabase/schema.sql), restricting anonymous public queries and restricting administrative mutations to verified roles.
 
 ---
 
@@ -39,7 +39,7 @@ This document outlines the security architecture, policies, and operational cont
 - **Security headers**: Configure standard HTTP response headers (such as `Content-Security-Policy`, `X-Frame-Options`, `X-Content-Type-Options`, and `Strict-Transport-Security`) to mitigate browser-side vulnerabilities.
 
 ### Implementation in this Codebase:
-- **Rate Limiting**: Sliding window rate-limiting is enforced in [`server/app.ts`](file:///server/app.ts#L37-L41) using partitioned hash buckets in `learning_limits` table (with automated pruning).
+- **Rate Limiting**: Sliding window rate-limiting is enforced in [`backend/server/app.ts`](file:///backend/server/app.ts#L37-L41) using partitioned hash buckets in `learning_limits` table (with automated pruning).
 - **CORS & Origin Validation**: Strict origin validation is enforced via `APP_ORIGIN` and `ALLOWED_ORIGIN`. Wildcards are banned.
 - **Security Headers**: Enforced in [`vercel.json`](file:///vercel.json) across all routes:
   - `Content-Security-Policy`: Restricts scripts, styles, frames, and connect origins to approved endpoints (Cloudflare Turnstile, Supabase APIs).
@@ -59,9 +59,9 @@ This document outlines the security architecture, policies, and operational cont
 - **Secure database**: Protect the database layer against SQL Injection (SQLi) by utilizing parameterized queries or Object-Relational Mapping (ORM) frameworks. Ensure database connections use TLS.
 
 ### Implementation in this Codebase:
-- **Schema Validation**: Server and client forms use strict Zod schemas with `.strict()` ([`server/app.ts`](file:///server/app.ts), [`src/data/bookingSchema.ts`](file:///src/data/bookingSchema.ts)) rejecting unknown keys and length overruns.
+- **Schema Validation**: Server and client forms use strict Zod schemas with `.strict()` ([`backend/server/app.ts`](file:///backend/server/app.ts), [`frontend/src/data/bookingSchema.ts`](file:///frontend/src/data/bookingSchema.ts)) rejecting unknown keys and length overruns.
 - **Payload Limits**: Ingestion endpoints enforce strict stream payload caps (e.g., 32KB max body) to prevent memory exhaustion attacks.
-- **SQL Injection Prevention**: All queries in [`server/db.ts`](file:///server/db.ts), [`server/app.ts`](file:///server/app.ts), [`api/enquiry.ts`](file:///api/enquiry.ts), and [`api/notify.ts`](file:///api/notify.ts) exclusively use parameterized statements (`$1, $2, ...`). Dynamic raw string concatenation in SQL queries is prohibited.
+- **SQL Injection Prevention**: All queries in [`backend/server/db.ts`](file:///backend/server/db.ts), [`backend/server/app.ts`](file:///backend/server/app.ts), [`backend/api/enquiry.ts`](file:///backend/api/enquiry.ts), and [`backend/api/notify.ts`](file:///backend/api/notify.ts) exclusively use parameterized statements (`$1, $2, ...`). Dynamic raw string concatenation in SQL queries is prohibited.
 - **Database TLS**: Database connections require SSL/TLS encrypted transport when connecting to remote PostgreSQL / Supabase hosts.
 
 ---

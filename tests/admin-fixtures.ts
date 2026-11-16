@@ -2,7 +2,7 @@ import {
   permissionSchema,
   type VerifiedAdmin,
   type ResourceMap,
-} from "../src/components/admin-panel/contracts";
+} from "../frontend/src/components/admin-panel/contracts";
 export const futureAdmin = (hours = 1) =>
   new Date(Date.now() + hours * 3600000).toISOString();
 const now = new Date().toISOString();

@@ -1,11 +1,11 @@
 import { describe,it,expect } from 'vitest';
-import { bank, questionSchema } from '../server/bank';
-import { assessmentLength,grade,nextQuestion,publicQuestion,roadmap,type Answer } from '../server/assessment';
-import { permitted,passwordHash,verifyPassword } from '../server/security';
-import { challenges,publicChallenge } from '../server/challenges';
-import { isPrivatePath } from '../src/utils/seo';
-import { classifyAttribution,csvCell,leadPriority,orderedFunnel } from '../server/insights';
-import { challengePoints } from '../server/ranking';
+import { bank, questionSchema } from '../backend/server/bank';
+import { assessmentLength,grade,nextQuestion,publicQuestion,roadmap,type Answer } from '../backend/server/assessment';
+import { permitted,passwordHash,verifyPassword } from '../backend/server/security';
+import { challenges,publicChallenge } from '../backend/server/challenges';
+import { isPrivatePath } from '../frontend/src/utils/seo';
+import { classifyAttribution,csvCell,leadPriority,orderedFunnel } from '../backend/server/insights';
+import { challengePoints } from '../backend/server/ranking';
 describe('Authoritative learning rules',()=>{
   it('covers 12 areas, supports focused checks and preserves legacy lengths',()=>{
     const skills=[...new Set(bank.map(q=>q.skill))];expect(skills).toHaveLength(12);expect(assessmentLength(bank)).toBe(12);

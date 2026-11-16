@@ -13,7 +13,7 @@ import {
 import type {
   PaymentOrder,
   StudentSession,
-} from "../../src/components/student-panel/contracts";
+} from "../../frontend/src/components/student-panel/contracts";
 
 async function mockStudentApi(
   page: Page,

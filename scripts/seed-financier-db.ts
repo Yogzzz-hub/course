@@ -1,5 +1,5 @@
 import pg from 'pg';
-import { createInitialFinancierState } from '../src/data/financierSeedData.ts';
+import { createInitialFinancierState } from '../frontend/src/data/financierSeedData.ts';
 
 let poolInstance: pg.Pool | null = null;
 function getSeedPool(): pg.Pool {

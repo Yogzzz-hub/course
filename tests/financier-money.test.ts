@@ -45,7 +45,7 @@ import {
   generatePayslipPdfBytes,
   generateReceiptPdfBytes,
 } from "../backend/services/financier/pdf";
-import { createInitialFinancierState } from "../src/data/financierSeedData";
+import { createInitialFinancierState } from "../frontend/src/data/financierSeedData";
 import { enforceFinancierRateLimit } from "../backend/services/rate-limit";
 import {
   renderFeeReminderEmailHtml,

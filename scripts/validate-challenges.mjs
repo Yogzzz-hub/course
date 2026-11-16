@@ -2,7 +2,7 @@
 import { spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
-import { challenges } from '../server/challenges.ts';
+import { challenges } from '../backend/server/challenges.ts';
 const image='python:3.12.12-alpine';
 const local=process.argv.includes('--trusted-local');
 if(process.argv.slice(2).some(arg=>arg!=='--trusted-local'))throw new Error('Only --trusted-local is supported; arbitrary source paths are not accepted.');

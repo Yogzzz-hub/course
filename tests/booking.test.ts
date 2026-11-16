@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createHttpBookingApi, parseProgrammes, parseSlot } from '../src/components/public-booking/api';
-import { initialJourneyState, journeyReducer, type JourneyState } from '../src/components/public-booking/state';
-import { dateKey, feeTotal, formatMoney, groupSlots, validateAbout, validateBrief } from '../src/components/public-booking/validation';
+import { createHttpBookingApi, parseProgrammes, parseSlot } from '../frontend/src/components/public-booking/api';
+import { initialJourneyState, journeyReducer, type JourneyState } from '../frontend/src/components/public-booking/state';
+import { dateKey, feeTotal, formatMoney, groupSlots, validateAbout, validateBrief } from '../frontend/src/components/public-booking/validation';
 import { bookingAbout, bookingBrief, bookingChallenge, bookingHold, bookingProgramme, bookingReceipt, bookingVerification } from './booking-fixtures';
 
 afterEach(() => vi.unstubAllGlobals());

@@ -20,57 +20,32 @@ A production-grade, unified full-stack web application combining the **Academy P
 
 ```text
 .
-├── frontend/                     # Tier 1: User Interfaces & Presentation
-│   ├── components/
-│   │   ├── layout/               # PublicNavbar, PublicFooter, DashboardShell, Sidebar
-│   │   ├── ui/                   # Button, Modal, DataTable, MetricCard, Toast, CourseCard, etc.
-│   │   └── public/               # Landing hero, enquiry banners, admissions modals
-│   ├── hooks/                    # Client state hooks
-│   └── styles/                   # Design system tokens (Burgundy #6D1A2B, Gold #C9A24B) & globals.css
-│
-├── backend/                      # Tier 2: Domain Services & Backend Business Logic
-│   ├── services/
-│   │   ├── auth.ts               # HS256 JWT tokens, bcrypt password hashing, session cookies
-│   │   ├── brevo-mail.ts         # Brevo transactional API & SMTP mailer with executive email templates
-│   │   ├── booking.ts            # 1-on-1 booking engine, OTP verification & lead ingestion
-│   │   ├── finance.ts            # Double-entry ledger, tuition calculations & fee allocations
-│   │   ├── payroll.ts            # Trainer compensation calculations & payout workflows
-│   │   ├── attendance.ts         # Held-to-date attendance computation engine
-│   │   ├── progress.ts           # Syllabus coverage & academic tracking
-│   │   ├── certificate.ts        # SHA-256 cryptographic certificate issuance & public verification
-│   │   ├── pdf-invoice.ts        # Vectorized PDF invoice generator (PDFKit)
-│   │   ├── pdf-receipt.ts        # Vectorized PDF receipt generator (PDFKit)
-│   │   ├── rate-limit.ts         # Sliding-window rate limiter
-│   │   └── audit.ts              # Immutable security audit trail
-│   ├── api/                      # Backend API route logic
-│   └── middleware/               # Edge auth verification & route guards
-│
-├── db/                           # Tier 3: Persistence & Database Layer
-│   ├── schema.prisma             # Unified Prisma Schema (SQLite + PostgreSQL ready)
-│   ├── prisma.ts                 # Type-safe Prisma Client Singleton (WAL mode, cache_size = 10000)
-│   ├── dev.db                    # Embedded SQLite Database (ready for 0-config local & single-server hosting)
-│   └── seeds/
-│       └── seed.mjs              # Automated database seeder (demo users, courses, batches)
-│
-├── src/                          # Next.js App Router (Single-Hosting Route Layer)
-│   ├── app/
-│   │   ├── (public)/             # /, /about, /contact, /courses, /courses/[slug], /book-session, /verify-certificate
-│   │   ├── (auth)/               # /login
-│   │   ├── admin/                # Executive Academy Administration (21 dashboards & APIs)
-│   │   ├── manager/              # Operations & Batch Management (11 dashboards & APIs)
-│   │   ├── trainer/              # Faculty & Classroom Attendance / Grading (16 dashboards & APIs)
-│   │   ├── student/              # Student Portal, LMS, Quizzes, Fees (18 dashboards & APIs)
-│   │   ├── financier/            # Tuition Fees, Invoices, Ledger, Payroll (14 dashboards & APIs)
-│   │   └── api/                  # 58+ REST API Route Handlers
-│   └── middleware.ts             # Edge Middleware for instantaneous role redirections
-│
-├── tests/                        # 180 Unit, Integration, and Acceptance Tests (Vitest)
-├── Dockerfile                    # Production Multi-Stage Docker Container
-├── docker-compose.yml            # 1-Command Local / VPS Deployment
-├── vercel.json                   # 1-Click Vercel Deployment Configuration
-├── railway.json                  # 1-Click Railway Deployment Configuration
-├── render.yaml                   # 1-Click Render Deployment Blueprint
-└── package.json                  # Unified Dependencies & Build Scripts
+├── frontend/                     # Tier 1: Vite + React SPA (public site, booking, admin/student/financier panels)
+│   ├── src/                      # App code: components, pages, data, utils, styles
+│   ├── public/                   # Static assets served as-is (favicon, logo, headers)
+│   ├── utils/supabase/           # Supabase client/server helpers
+│   └── index.html                # SPA entry document
+├── backend/                      # Tier 2: API servers, route handlers and domain services
+│   ├── server/                   # Node API: app, db, security, judge, worker, manage, migrations/
+│   ├── api/                      # Route handlers: booking, enquiry, notify, learning, admin, financier, manager, student, trainer
+│   ├── functions/                # Pages-style edge handlers: booking, enquiry, notify
+│   ├── worker/                   # Cloudflare Worker entry (wrangler.toml main)
+│   └── services/                 # Domain services: auth, booking, finance, payroll, PDFs, Brevo mail, rate limiting
+├── db/                           # Tier 3: Database schemas, seeds and local SQLite
+│   ├── supabase/                 # Supabase schema with RLS policies
+│   ├── schema.prisma             # Prisma schema
+│   ├── prisma.ts                 # Prisma client singleton
+│   ├── unified_production_schema.sql
+│   ├── dev.db                    # Local SQLite database
+│   └── seeds/                    # Seed scripts
+├── crm/                          # Separate Next.js CRM app (own frontend/, backend/, db/, tests/)
+├── tests/                        # Vitest unit/integration tests and Playwright browser suites
+├── scripts/                      # Build, start, prerender, seed and maintenance scripts
+├── docs/                         # Project documentation and audits
+├── Dockerfile                    # Production container (build + start)
+├── docker-compose.yml            # Local / VPS deployment
+├── vercel.json, railway.json, render.yaml, wrangler.toml   # Platform deployment configs
+└── package.json                  # Dependencies and build scripts
 ```
 
 ---

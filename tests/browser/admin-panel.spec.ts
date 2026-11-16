@@ -14,7 +14,7 @@ import type {
   AdminCommand,
   AdminSession,
   Operation,
-} from "../../src/components/admin-panel/contracts";
+} from "../../frontend/src/components/admin-panel/contracts";
 
 async function mockAdmin(
   page: Page,

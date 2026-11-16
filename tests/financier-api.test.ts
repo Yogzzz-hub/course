@@ -4,9 +4,9 @@ import {
   handleFinancierRequest,
   type NodeReqLike,
   type NodeResLike,
-} from "../api/financier/index";
+} from "../backend/api/financier/index";
 import { createFinancierStore } from "../backend/services/financier/store";
-import { createInitialFinancierState } from "../src/data/financierSeedData";
+import { createInitialFinancierState } from "../frontend/src/data/financierSeedData";
 import { enforceFinancierRateLimit } from "../backend/services/rate-limit";
 
 function makeSessionHeader(role: string, email: string, userId = `usr-${role.toLowerCase()}`) {

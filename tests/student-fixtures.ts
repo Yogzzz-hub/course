@@ -5,7 +5,7 @@ import type {
   Mentorship,
   Payments,
   StudentSession,
-} from "../src/components/student-panel/contracts";
+} from "../frontend/src/components/student-panel/contracts";
 
 export const future = (days: number) =>
   new Date(Date.now() + days * 86400000).toISOString();

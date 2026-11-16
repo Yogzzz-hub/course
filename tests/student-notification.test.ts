@@ -5,8 +5,8 @@ import {
   sendStudentNotification,
   type EnrolmentNotification,
   type ConsultationNotification,
-} from '../src/utils/studentNotification';
-import { academy } from '../src/config/academy';
+} from '../frontend/src/utils/studentNotification';
+import { academy } from '../frontend/src/config/academy';
 
 describe('Student and Consultation Notification Configuration', () => {
   it('has the receiver mail configured to aintrixacademy2026@gmail.com', () => {

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { challenges, publicChallenge } from '../../server/challenges';
+import { challenges, publicChallenge } from '../../backend/server/challenges';
 
 // UI contract fixtures only: these tests do not claim to execute candidate code.
 test('unavailable judge explains disabled actions and recovery preserves the draft',async({page})=>{

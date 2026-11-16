@@ -2,11 +2,11 @@ import { beforeAll,afterAll,describe,it,expect } from 'vitest';
 import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import pg from 'pg';
-import { bank } from '../server/bank';
-import { createApp } from '../server/app';
-import { passwordHash } from '../server/security';
-import { hash } from '../server/security';
-import { recordPoints } from '../server/ranking';
+import { bank } from '../backend/server/bank';
+import { createApp } from '../backend/server/app';
+import { passwordHash } from '../backend/server/security';
+import { hash } from '../backend/server/security';
+import { recordPoints } from '../backend/server/ranking';
 const enabled=Boolean(process.env.TEST_DATABASE_URL);
 describe.skipIf(!enabled)('Learning API against PostgreSQL',()=>{
   const schema='learning_test_'+randomUUID().replaceAll('-','');
@@ -19,7 +19,7 @@ describe.skipIf(!enabled)('Learning API against PostgreSQL',()=>{
   beforeAll(async()=>{
     root=new pg.Pool({connectionString:process.env.TEST_DATABASE_URL,connectionTimeoutMillis:5000});await root.query(`CREATE SCHEMA ${schema}`);schemaCreated=true;
     db=new pg.Pool({connectionString:process.env.TEST_DATABASE_URL,options:`-c search_path=${schema}`});
-    for(const name of ['001_learning.sql','002_judging.sql','003_score_reviews.sql','004_roadmaps.sql','005_learners.sql','006_engagement.sql','007_judge_operations.sql'])await db.query(await readFile(new URL('../server/migrations/'+name,import.meta.url),'utf8'));
+    for(const name of ['001_learning.sql','002_judging.sql','003_score_reviews.sql','004_roadmaps.sql','005_learners.sql','006_engagement.sql','007_judge_operations.sql'])await db.query(await readFile(new URL('../backend/server/migrations/'+name,import.meta.url),'utf8'));
     for(const q of bank)await db.query("INSERT INTO learning_questions(id,version,content,status) VALUES($1,$2,$3,'published')",[q.id,q.version,JSON.stringify(q)]);
     app=createApp(db,origin,false);
   },30000);
@@ -113,7 +113,7 @@ describe.skipIf(!enabled)('Learning API against PostgreSQL',()=>{
     s.cookie=registered.headers.get('set-cookie')!.split(';')[0];
     expect((await call('/account/register','POST',{...credentials,handle:'second_learner',invite,publicName:'Second'},await session())).status).toBe(400);
     const owner=(await db.query('SELECT id,user_id FROM learning_sessions WHERE token_hash=$1',[hash(s.cookie.split('=')[1])])).rows[0];
-    const {challenges}=await import('../server/challenges');const sid=randomUUID();
+    const {challenges}=await import('../backend/server/challenges');const sid=randomUUID();
     await db.query("INSERT INTO learning_submissions(id,session_id,request_id,fingerprint,challenge,mode,assisted,state,result,understanding_order,understanding_answer) VALUES($1,$2,$3,'test',$4,'independent',false,'graded',$5,'[0,1,2,3]',0)",[sid,owner.id,randomUUID(),JSON.stringify(challenges[0]),JSON.stringify({correctness:60,edgeCases:20,outcomes:[],graderVersion:'test'})]);
     // A stored rubric must drive both the learner's report and ranked points.
     await db.query("UPDATE learning_submissions SET challenge=jsonb_set(challenge,'{rubric}',$2::jsonb),result=$3 WHERE id=$1",[sid,JSON.stringify({sampleCorrectness:40,edgeCases:35,understanding:25}),JSON.stringify({correctness:40,edgeCases:35,outcomes:[],graderVersion:'test-custom-rubric'})]);

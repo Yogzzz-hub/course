@@ -1,6 +1,6 @@
 import { test,expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { bank } from '../../server/bank';
+import { bank } from '../../backend/server/bank';
 test('home → assessment → honest result → roadmap → course and counselling',async({page})=>{
   test.setTimeout(90000);
   await page.goto('/');await page.getByRole('link',{name:'Take the Free Skill Test',exact:true}).click();

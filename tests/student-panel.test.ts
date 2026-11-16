@@ -3,7 +3,7 @@ import {
   createHostedPaymentGateway,
   createHttpStudentApi,
   StudentApiError,
-} from "../src/components/student-panel/api";
+} from "../frontend/src/components/student-panel/api";
 import {
   assignmentSchema,
   dashboardSchema,
@@ -12,13 +12,13 @@ import {
   safeLink,
   sessionSchema,
   type PaymentOrder,
-} from "../src/components/student-panel/contracts";
+} from "../frontend/src/components/student-panel/contracts";
 import {
   dayKey,
   money,
   nextStep,
   submissionError,
-} from "../src/components/student-panel/utils";
+} from "../frontend/src/components/student-panel/utils";
 import {
   enrolledSession,
   future,

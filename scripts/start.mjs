@@ -27,16 +27,16 @@ const [
   { dispatchNodeAdminRequest },
   { pool },
 ] = await Promise.all([
-  import('../api/booking.ts'),
-  import('../api/enquiry.ts'),
-  import('../api/notify.ts'),
-  import('../api/learning.ts'),
-  import('../api/financier/index.ts'),
-  import('../api/manager/index.ts'),
-  import('../api/trainer/index.ts'),
-  import('../api/student/index.ts'),
-  import('../api/admin/index.ts'),
-  import('../server/db.ts'),
+  import('../backend/api/booking.ts'),
+  import('../backend/api/enquiry.ts'),
+  import('../backend/api/notify.ts'),
+  import('../backend/api/learning.ts'),
+  import('../backend/api/financier/index.ts'),
+  import('../backend/api/manager/index.ts'),
+  import('../backend/api/trainer/index.ts'),
+  import('../backend/api/student/index.ts'),
+  import('../backend/api/admin/index.ts'),
+  import('../backend/server/db.ts'),
 ]);
 
 const port = Number(process.env.PORT || 10000);

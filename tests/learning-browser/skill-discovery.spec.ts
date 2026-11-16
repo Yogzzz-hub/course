@@ -1,6 +1,6 @@
 import {test,expect} from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import {bank} from '../../server/bank';
+import {bank} from '../../backend/server/bank';
 
 test('mobile discovery filters 12 skills and a focused check shows honest untested areas',async({page})=>{
   test.setTimeout(90000);

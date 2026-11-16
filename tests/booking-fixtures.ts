@@ -1,4 +1,4 @@
-import type { AboutYou, BookingReceipt, EmailChallenge, PreSessionBrief, Programme, SlotHold, VerifiedEmail } from '../src/components/public-booking/types';
+import type { AboutYou, BookingReceipt, EmailChallenge, PreSessionBrief, Programme, SlotHold, VerifiedEmail } from '../frontend/src/components/public-booking/types';
 
 export const bookingProgramme: Programme = {
   id: 'python-full-stack', title: 'Python Full-Stack Engineering', summary: 'Learn Python, interfaces, databases and deployment.', duration: '7 months', currency: 'INR', technologies: ['Python', 'React'], feeDisclosure: 'Test catalogue. Taxes included; package terms apply.',

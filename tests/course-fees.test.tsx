@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { CourseFeesComparison, academyFeeCatalogue, formatFee, individualTotal, packageSelection, savingsLabel, validateCatalogue } from '../src/components/course-fees';
-import { checkoutHref, requestedCheckoutPackage } from '../src/utils/checkoutIntent';
+import { CourseFeesComparison, academyFeeCatalogue, formatFee, individualTotal, packageSelection, savingsLabel, validateCatalogue } from '../frontend/src/components/course-fees';
+import { checkoutHref, requestedCheckoutPackage } from '../frontend/src/utils/checkoutIntent';
 
 describe('official supplied course pricing', () => {
   it('contains all eleven published fees and calculates the exact total', () => {

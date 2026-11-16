@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { learningApi } from '../src/components/learning/client';
+import { learningApi } from '../frontend/src/components/learning/client';
 afterEach(()=>vi.unstubAllGlobals());
 describe('Learning service recovery messages',()=>{
   it('reports connection loss without claiming a submitted answer failed',async()=>{

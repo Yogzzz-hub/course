@@ -1,8 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { academyFeeCatalogue, formatFee } from '../../src/components/course-fees/pricing';
+import { academyFeeCatalogue, formatFee } from '../../frontend/src/components/course-fees/pricing';
 import { prospectSession, studentPlan } from '../student-fixtures';
-import { themes } from '../../src/components/ThemeSwitcher';
+import { themes } from '../../frontend/src/components/ThemeSwitcher';
 
 const pricingPath = '/programmes/python-full-stack#pricing';
 async function studentApi(page: Page, anonymous = false) {

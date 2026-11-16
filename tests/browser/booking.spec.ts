@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { bookingAbout, bookingProgramme } from '../booking-fixtures';
-import type { BookingSubmission } from '../../src/components/public-booking/types';
+import type { BookingSubmission } from '../../frontend/src/components/public-booking/types';
 // Flow tests do not measure animation; dedicated motion.spec.ts covers motion.
 test.use({ reducedMotion: 'reduce' });
 

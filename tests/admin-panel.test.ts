@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createHttpAdminApi } from "../src/components/admin-panel/api";
+import { createHttpAdminApi } from "../frontend/src/components/admin-panel/api";
 import {
   adminSessionSchema,
   adminCommandSchema,
@@ -7,21 +7,21 @@ import {
   offersSchema,
   programmesSchema,
   secureLink,
-} from "../src/components/admin-panel/contracts";
+} from "../frontend/src/components/admin-panel/contracts";
 import {
   canReviewProof,
   commandPermissions,
   hasPermission,
-} from "../src/components/admin-panel/permissions";
+} from "../frontend/src/components/admin-panel/permissions";
 import {
   commandFingerprint,
   OperationRegistry,
-} from "../src/components/admin-panel/operations";
+} from "../frontend/src/components/admin-panel/operations";
 import {
   parseMinor,
   amountInput,
   money,
-} from "../src/components/admin-panel/utils";
+} from "../frontend/src/components/admin-panel/utils";
 import {
   adminFinance,
   adminOffers,

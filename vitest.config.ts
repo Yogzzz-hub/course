@@ -17,7 +17,7 @@ export default defineConfig({
       "@/db": path.resolve(__dirname, "./db"),
       "@/lib": path.resolve(__dirname, "./backend/services"),
       "@/components": path.resolve(__dirname, "./frontend/components"),
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(__dirname, "./frontend/src"),
     },
   },
 });

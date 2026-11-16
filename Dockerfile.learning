@@ -5,7 +5,7 @@ COPY package.json package-lock.json ./
 RUN --mount=type=secret,id=npm_ca \
     if [ -f /run/secrets/npm_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/npm_ca; fi; \
     npm ci --omit=dev --ignore-scripts && npm cache clean --force
-COPY --chown=node:node server ./server
+COPY --chown=node:node backend/server ./backend/server
 USER node
 EXPOSE 8787
-CMD ["node", "server/index.ts"]
+CMD ["node", "backend/server/index.ts"]

@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
-import { CourseFeesComparison, type PackageSelection } from '../../../src/components/course-fees';
-import '../../../src/styles/global.css';
+import { CourseFeesComparison, type PackageSelection } from '../../../frontend/src/components/course-fees';
+import '../../../frontend/src/styles/global.css';
 
 /** Browser-only fixture for asynchronous host callback failures and double clicks. */
 export function mount(target: HTMLElement) {
