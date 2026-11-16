@@ -59,17 +59,9 @@ export default {
       return Response.redirect(loginTarget, 302);
     }
 
-    // 1. CRM Single Domain Proxy Routes (Login, Portals, Auth & Internal Assets)
+    // 1. CRM Single Domain Proxy Routes (Next.js Internal Assets & Backend APIs)
     const isCrmRoute =
-      pathname === '/login' || pathname.startsWith('/login/') ||
-      pathname === '/student' || pathname.startsWith('/student/') ||
-      pathname === '/trainer' || pathname.startsWith('/trainer/') ||
-      pathname === '/admin' || pathname.startsWith('/admin/') ||
-      pathname === '/financier' || pathname.startsWith('/financier/') ||
-      pathname === '/manager' || pathname.startsWith('/manager/') ||
-      pathname === '/verify-certificate' || pathname.startsWith('/verify-certificate/') ||
       pathname === '/crm' || pathname.startsWith('/crm/') ||
-      pathname === '/portal' || pathname.startsWith('/portal/') ||
       pathname.startsWith('/_next/') ||
       pathname.startsWith('/api/auth') ||
       pathname.startsWith('/api/admin') ||

@@ -253,7 +253,7 @@ export function DashboardView({ summary, onOpenPaymentDrawer }: DashboardViewPro
                   to={`/financier/ledger/${acct.accountCode}`}
                   className="fin-kv-box"
                 >
-                  <span className="fin-kv-label">{LEDGER_ACCOUNT_META[acct.accountCode].name}</span>
+                  <span className="fin-kv-label">{LEDGER_ACCOUNT_META[acct.accountCode]?.name || acct.accountCode}</span>
                   <span className="fin-kv-value">{formatMoney(acct.netBalancePaise)}</span>
                   <span className="fin-sub-text">
                     {acct.accountCode} · {acct.accountType}

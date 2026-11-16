@@ -336,7 +336,7 @@ export function LedgerView({ students, onSummaryRefresh }: LedgerViewProps) {
               <option value="">All Accounts</option>
               {ALL_ACCOUNTS.map((code) => (
                 <option key={code} value={code}>
-                  {LEDGER_ACCOUNT_META[code].name} ({code})
+                  {LEDGER_ACCOUNT_META[code]?.name || code} ({code})
                 </option>
               ))}
             </select>
