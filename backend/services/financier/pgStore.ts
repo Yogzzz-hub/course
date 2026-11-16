@@ -26,9 +26,8 @@ import type {
   StudentFeeAccountRecord,
   TrackRecord,
   TrainerPayoutRecord,
-  TrainerProfileMock,
+  TrainerProfileRecord,
 } from "./types.ts";
-import { seedFinancierDb } from "../../../scripts/seed-financier-db.ts";
 
 let pgPoolInstance: pg.Pool | null = null;
 
@@ -53,22 +52,8 @@ export async function closePgPool(): Promise<void> {
   }
 }
 
-export async function ensureDatabaseSeeded(pool: pg.Pool = getPgPool()): Promise<void> {
-  try {
-    const res = await pool.query('SELECT count(*) FROM "Course"');
-    const courseCount = parseInt(res.rows[0].count, 10);
-    if (courseCount === 0) {
-      console.log("[PostgreSQL Financier] Database is empty. Seeding initial records...");
-      await seedFinancierDb(true);
-    }
-  } catch (err) {
-    console.warn("[PostgreSQL Financier] Table check encountered error, attempting seed:", err);
-    try {
-      await seedFinancierDb(true);
-    } catch (seedErr) {
-      console.error("[PostgreSQL Financier] Seed failed:", seedErr);
-    }
-  }
+export async function ensureDatabaseSeeded(_pool: pg.Pool = getPgPool()): Promise<void> {
+  // Mock seeding removed. Real database schema and data are used.
 }
 
 export async function loadStateFromPostgres(pool: pg.Pool = getPgPool()): Promise<FinancierDatabaseState> {
@@ -121,7 +106,7 @@ export async function loadStateFromPostgres(pool: pg.Pool = getPgPool()): Promis
     JOIN "User" u ON u."id" = tp."userId"
     ORDER BY tp."employeeCode"
   `);
-  const trainers: TrainerProfileMock[] = trainersRes.rows.map((r, idx) => ({
+  const trainers: TrainerProfileRecord[] = trainersRes.rows.map((r, idx) => ({
     id: r.id,
     userId: r.userId,
     name: r.name,

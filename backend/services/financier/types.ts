@@ -349,7 +349,7 @@ export interface BatchRecord {
   status: "ACTIVE" | "UPCOMING" | "CLOSED";
 }
 
-export interface TrainerProfileMock {
+export interface TrainerProfileRecord {
   id: string;
   userId: string;
   name: string;
@@ -389,7 +389,7 @@ export interface FinancierDatabaseState {
   actors: ActorIdentity[];
   tracks: TrackRecord[];
   batches: BatchRecord[];
-  trainers: TrainerProfileMock[];
+  trainers: TrainerProfileRecord[];
   students: StudentFeeAccountRecord[];
   installments: InstallmentRecord[];
   invoices: InvoiceRecord[];

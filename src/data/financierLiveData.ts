@@ -2,7 +2,58 @@
 // students) from the real database via financierApi. No mock/seed data.
 import { financierApi } from "../components/financier/api";
 import type { LedgerAccountCode } from "../../backend/services/financier/types";
-import type { FinancierAccount, FinancierStudentDebt, LedgerLine } from "./financierSeedData";
+
+export interface LedgerLine {
+  id: string;
+  date: string;
+  transactionNumber: string;
+  description: string;
+  category: "Tuition Collection" | "Refund Disbursement" | "Trainer Payout" | "Bank Charge" | "Operating Expense" | "Settlement Transfer";
+  debitMinor: number;
+  creditMinor: number;
+  balanceMinor: number;
+  reference?: string;
+  studentName?: string;
+  paymentMethod?: string;
+  status: "Verified" | "Cleared" | "Pending Reconciliation";
+}
+
+export interface FinancierAccount {
+  id: string;
+  code: string;
+  name: string;
+  accountNumber: string;
+  bankName: string;
+  type: "BANK" | "GATEWAY" | "CASH" | "ESCROW";
+  currency: string;
+  netBalanceMinor: number;
+  totalInflowMinor: number;
+  totalOutflowMinor: number;
+  pendingReconciliationCount: number;
+  lastReconciledAt: string;
+}
+
+export interface FinancierStudentDebt {
+  id: string;
+  registrationNumber: string;
+  name: string;
+  email: string;
+  phone: string;
+  courseTitle: string;
+  batchCode: string;
+  contractedFeeMinor: number;
+  paidAmountMinor: number;
+  remainingDueMinor: number;
+  overdueMinor: number;
+  nextDueDate: string;
+  status: "CURRENT" | "OVERDUE" | "PAID_IN_FULL" | "DEFERRED";
+  installments: {
+    number: number;
+    amountMinor: number;
+    dueDate: string;
+    status: "PAID" | "DUE" | "OVERDUE";
+  }[];
+}
 
 const CASH_LIKE: LedgerAccountCode[] = ["BANK", "CASH", "PAYMENT_GATEWAY"];
 

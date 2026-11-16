@@ -36,11 +36,11 @@ import {
   PanelLeftClose,
 } from "lucide-react";
 import {
+  loadFinancierLiveData,
   type LedgerLine,
   type FinancierAccount,
   type FinancierStudentDebt,
-} from "../data/financierSeedData";
-import { loadFinancierLiveData } from "../data/financierLiveData";
+} from "../data/financierLiveData";
 
 export type FinancierTab = "ledger" | "students" | "reconciliation" | "accounts";
 
