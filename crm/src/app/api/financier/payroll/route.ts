@@ -124,6 +124,7 @@ export async function GET(req: NextRequest) {
         collectedPaise: 0,
         outstandingPaise: 0,
         payrollCostPaise,
+        netContributionPaise: -payrollCostPaise,
         marginPaise: -payrollCostPaise,
         marginPercent: 0,
       };

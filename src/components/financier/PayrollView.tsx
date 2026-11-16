@@ -124,12 +124,15 @@ export function PayrollView({ runs, batchCosts, onRefresh }: PayrollViewProps) {
       id: "contribution",
       label: "Contribution",
       numeric: true,
-      sortValue: (r) => r.netContributionPaise,
-      render: (r) => (
-        <span className={statusBadgeClass(r.netContributionPaise >= 0 ? "CONFIRMED" : "OVERDUE")}>
-          {formatMoney(r.netContributionPaise)}
-        </span>
-      ),
+      sortValue: (r) => r.netContributionPaise ?? (r as any).marginPaise ?? 0,
+      render: (r) => {
+        const val = r.netContributionPaise ?? (r as any).marginPaise ?? 0;
+        return (
+          <span className={statusBadgeClass(val >= 0 ? "CONFIRMED" : "OVERDUE")}>
+            {formatMoney(val)}
+          </span>
+        );
+      },
     },
   ];
 

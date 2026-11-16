@@ -6,7 +6,7 @@ function getSeedPool(): pg.Pool {
   if (!poolInstance) {
     const connectionString = process.env.DATABASE_URL;
     if (!connectionString) throw new Error('DATABASE_URL is required to connect to PostgreSQL.');
-    poolInstance = new pg.Pool({ connectionString });
+    poolInstance = new pg.Pool({ connectionString, ssl: { rejectUnauthorized: false } });
   }
   return poolInstance;
 }
@@ -49,18 +49,34 @@ export async function seedFinancierDb(force = false) {
     ];
 
     for (const u of allUsers) {
+      let pwdHash = '$2a$10$jU2IDrASNdQiCbq1fAHlF.zOPTe3zpGOpLFfTQqJ4ChCfzvkpAZpi'; // password123
+      if (u.role === 'FINANCIER') pwdHash = '$2a$10$wwxwvLO2Saq52RybLjENj.08KyvmuDDd2tfHdQIOoSISSJp6uDF2C'; // Financier@123456
+      else if (u.role === 'ADMIN') pwdHash = '$2a$10$33h1/t/rC/resKqa00tMqObWucW8.B/p5hJy8qm.aU8nF40LUoACm'; // Admin@123456
+      else if (u.role === 'TRAINER') pwdHash = '$2a$10$DVgXhKFtiV4cvN0YsrfEE.BRWUg7zeTOU7k8ndEEnJcw3Sl1MMcz6'; // Trainer@123456
+      else if (u.role === 'STUDENT') pwdHash = '$2a$10$e.WztG3XREKZ79JMuhN0IOiwYoOz1YWxE9Rm9q1XCNgIbm4ZY0fq.'; // Student@123456
+
       const existingUser = await client.query('SELECT id FROM "User" WHERE "email" = $1', [u.email]);
       if (existingUser.rows.length > 0) {
         await client.query(
-          'UPDATE "User" SET "id" = $1, "name" = $2, "role" = $3::"Role", "isActive" = true WHERE "email" = $4',
-          [u.id, u.name, u.role, u.email]
+          'UPDATE "User" SET "name" = $1, "role" = $2::"Role", "isActive" = true, "mustChangePassword" = false WHERE "email" = $3',
+          [u.name, u.role, u.email]
         );
       } else {
         await client.query(
-          `INSERT INTO "User" ("id", "name", "email", "role", "passwordHash", "isActive", "createdAt", "updatedAt")
-           VALUES ($1, $2, $3, $4::"Role", 'pbkdf2_sha256_seeded_hash', true, NOW(), NOW())
-           ON CONFLICT ("id") DO UPDATE SET "name" = EXCLUDED."name", "email" = EXCLUDED."email", "role" = EXCLUDED."role"`,
-          [u.id, u.name, u.email, u.role]
+          `INSERT INTO "User" ("id", "name", "email", "role", "passwordHash", "isActive", "mustChangePassword", "createdAt", "updatedAt")
+           VALUES ($1, $2, $3, $4::"Role", $5, true, false, NOW(), NOW())
+           ON CONFLICT ("id") DO UPDATE SET "name" = EXCLUDED."name", "email" = EXCLUDED."email", "role" = EXCLUDED."role", "mustChangePassword" = false`,
+          [u.id, u.name, u.email, u.role, pwdHash]
+        );
+      }
+
+      if (u.role === 'FINANCIER') {
+        const fpId = `fp-${u.id}`;
+        await client.query(
+          `INSERT INTO "FinancierProfile" ("id", "userId", "updatedAt")
+           VALUES ($1, $2, NOW())
+           ON CONFLICT ("id") DO NOTHING`,
+          [fpId, u.id]
         );
       }
     }
@@ -255,6 +271,22 @@ export async function seedFinancierDb(force = false) {
         ]
       );
 
+      const receiptId = `rec-${pay.id}`;
+      await client.query(
+        `INSERT INTO "Receipt" ("id", "receiptNumber", "studentPaymentId", "studentProfileId", "receiptDate", "totalPaid", "balanceRemaining", "isVoid", "issuedById", "createdAt")
+         VALUES ($1, $2, $3, $4, $5, $6, 0, false, $7, NOW())
+         ON CONFLICT ("id") DO UPDATE SET "receiptNumber" = EXCLUDED."receiptNumber", "totalPaid" = EXCLUDED."totalPaid"`,
+        [
+          receiptId,
+          pay.receiptNumber,
+          pay.id,
+          pay.studentProfileId,
+          pay.paymentDate,
+          pay.amountPaise / 100,
+          pay.collectedById,
+        ]
+      );
+
       for (const alloc of (pay.allocations || [])) {
         await client.query(
           `INSERT INTO "PaymentAllocation" ("id", "paymentId", "installmentId", "allocatedAmount", "allocatedAt")
@@ -377,8 +409,8 @@ export async function seedFinancierDb(force = false) {
 
       for (const payout of pr.payouts) {
         await client.query(
-          `INSERT INTO "TrainerPayout" ("id", "payrollPeriodId", "trainerProfileId", "compensationPolicyType", "applicableRate", "eligibleSessionsCount", "verifiedHours", "baseAmount", "bonusAmount", "deductionAmount", "totalPayable", "adminApprovalStatus", "adminApprovedById", "adminApprovedAt", "paymentStatus", "paidAmount", "paidAt", "paymentReference", "createdAt", "updatedAt")
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW(), NOW())
+          `INSERT INTO "TrainerPayout" ("id", "payrollPeriodId", "trainerProfileId", "compensationPolicyType", "applicableRate", "eligibleSessionsCount", "verifiedHours", "baseAmount", "bonusAmount", "deductionAmount", "totalPayable", "adminApprovalStatus", "adminApprovedById", "adminApprovedAt", "paymentStatus", "paidAmount", "paidAt", "paymentMethod", "paymentReference", "createdAt", "updatedAt")
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW(), NOW())
            ON CONFLICT ("id") DO UPDATE SET "totalPayable" = EXCLUDED."totalPayable", "paymentStatus" = EXCLUDED."paymentStatus"`,
           [
             payout.id,
@@ -398,6 +430,7 @@ export async function seedFinancierDb(force = false) {
             payout.paidAt ? 'PAID' : 'DRAFT',
             payout.paidAt ? payout.totalPayablePaise / 100 : 0,
             payout.paidAt,
+            'BANK_TRANSFER',
             payout.payslipNumber,
           ]
         );
@@ -476,10 +509,11 @@ export async function seedFinancierDb(force = false) {
   }
 }
 
-if (process.argv[1]?.endsWith('seed-financier-db.mjs')) {
-  seedFinancierDb(process.argv.includes('--force'))
+if (process.argv[1]?.includes('seed-financier-db')) {
+  seedFinancierDb(true)
     .then(() => poolInstance?.end())
-    .catch(() => {
+    .catch((err) => {
+      console.error(err);
       poolInstance?.end();
       process.exit(1);
     });
