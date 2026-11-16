@@ -20,22 +20,12 @@ const [
   { handleRequest: handleEnquiry },
   { handleRequest: handleNotify },
   { default: learningAdapter },
-  { dispatchNodeFinancierRequest },
-  { dispatchNodeManagerRequest },
-  { dispatchNodeTrainerRequest },
-  { dispatchNodeStudentRequest },
-  { dispatchNodeAdminRequest },
   { pool },
 ] = await Promise.all([
   import('../api/booking.ts'),
   import('../api/enquiry.ts'),
   import('../api/notify.ts'),
   import('../api/learning.ts'),
-  import('../api/financier/index.ts'),
-  import('../api/manager/index.ts'),
-  import('../api/trainer/index.ts'),
-  import('../api/student/index.ts'),
-  import('../api/admin/index.ts'),
   import('../server/db.ts'),
 ]);
 
@@ -76,12 +66,6 @@ const COMPRESSIBLE_EXTS = new Set([
 const SPA_ROUTES = new Set([
   '/',
   '/admin',
-  '/admin-panel',
-  '/student-panel',
-  '/login',
-  '/trainer',
-  '/manager',
-  '/financier',
   '/assessment',
   '/leaderboard',
   '/shared-roadmap',
@@ -104,14 +88,8 @@ const SPA_ROUTES = new Set([
 
 const SPA_PREFIXES = [
   '/admin/',
-  '/financier/',
   '/shared-roadmap/',
   '/programmes/',
-  '/auth/',
-  '/student-panel/',
-  '/admin-panel/',
-  '/trainer/',
-  '/manager/',
 ];
 
 const HOP_BY_HOP_HEADERS = new Set([
@@ -271,26 +249,6 @@ async function handleApiRequest(req, res, pathname, rawUrl, method) {
     );
   }
 
-  if (pathname === '/api/financier' || pathname.startsWith('/api/financier/')) {
-    return dispatchNodeFinancierRequest(req, res);
-  }
-
-  if (pathname === '/api/manager' || pathname.startsWith('/api/manager/')) {
-    return dispatchNodeManagerRequest(req, res);
-  }
-
-  if (pathname === '/api/trainer' || pathname.startsWith('/api/trainer/')) {
-    return dispatchNodeTrainerRequest(req, res);
-  }
-
-  if (pathname === '/api/student' || pathname.startsWith('/api/student/')) {
-    return dispatchNodeStudentRequest(req, res);
-  }
-
-  if (pathname === '/api/admin' || pathname.startsWith('/api/admin/')) {
-    return dispatchNodeAdminRequest(req, res);
-  }
-
   if (pathname === '/api/booking' || pathname.startsWith('/api/booking/')) {
     const webRes = await handleBooking(await toWebRequest(req, rawUrl));
     return sendWebResponse(res, webRes, method);
@@ -364,15 +322,6 @@ async function handleStaticRequest(req, res, pathname, method) {
   if (method !== 'GET' && method !== 'HEAD') {
     res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Method not allowed');
-    return;
-  }
-
-  if (pathname === '/crm' || pathname.startsWith('/crm/')) {
-    res.writeHead(302, {
-      Location: '/login',
-      'Cache-Control': 'no-store',
-    });
-    res.end();
     return;
   }
 

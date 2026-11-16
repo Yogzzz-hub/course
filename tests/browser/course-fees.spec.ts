@@ -1,19 +1,9 @@
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { academyFeeCatalogue, formatFee } from '../../src/components/course-fees/pricing';
-import { prospectSession, studentPlan } from '../student-fixtures';
 import { themes } from '../../src/components/ThemeSwitcher';
 
 const pricingPath = '/programmes/python-full-stack#pricing';
-async function studentApi(page: Page, anonymous = false) {
-  const writes: string[] = [];
-  await page.route('**/api/student/**', route => {
-    if (route.request().method() !== 'GET') writes.push(route.request().url());
-    const path = new URL(route.request().url()).pathname;
-    return route.fulfill({ json: path.endsWith('/session') ? { session: anonymous ? null : prospectSession } : path.endsWith('/learning-plan') ? studentPlan : { currency: 'INR', instalments: [] } });
-  });
-  return writes;
-}
 
 test('renders all eleven individual fees, package inclusions and exact comparative savings', async ({ page }) => {
   await page.goto(pricingPath);
@@ -49,36 +39,10 @@ test('keyboard tabs wrap correctly and preserve the selected package', async ({ 
   await expect(module.getByRole('tab', { name: 'Individual Courses' })).toBeFocused();
   await expect(module.getByRole('tabpanel')).toHaveCount(1);
 });
-test('selection reaches authenticated checkout using server pricing without automatically creating an order', async ({ page }) => {
-  const writes = await studentApi(page);
+test('selection reaches direct booking with package selection', async ({ page }) => {
   await page.goto(pricingPath);
   await page.getByRole('button', { name: 'Select Premium package and proceed to checkout', exact: true }).click();
-  await expect(page).toHaveURL('/student-panel?package=premium&checkout=1');
-  await expect(page.getByRole('heading', { name: 'Your billing details' })).toBeVisible();
-  const summary = page.getByRole('heading', { name: 'Order summary' }).locator('..');
-  await expect(summary).toContainText('Premium');
-  // The server's personalised plan has a discount; the public catalogue price is never trusted.
-  await expect(summary).toContainText('₹74,999.00');
-  expect(writes).toEqual([]);
-});
-test('unavailable packages require an explicit review before showing an alternative', async ({ page }) => {
-  const writes = await studentApi(page);
-  await page.goto('/student-panel?package=elite&checkout=1&priceMinor=1');
-  await expect(page.getByRole('heading', { name: 'The selected package is unavailable' })).toBeVisible();
-  await expect(page.getByLabel('Billing address', { exact: true })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Review recommended package' }).click();
-  await expect(page.getByRole('heading', { name: 'Your billing details' })).toBeVisible();
-  expect(writes).toEqual([]);
-});
-test('anonymous checkout keeps package intent through the sign-in destination', async ({ page }) => {
-  await studentApi(page, true);
-  await page.goto(pricingPath);
-  await page.getByRole('button', { name: 'Select Standard package and proceed to checkout', exact: true }).click();
-  await page.getByRole('link', { name: 'Sign in securely' }).click();
-  await expect(page.getByRole('heading', { name: 'Student sign-in' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Return to workspace' })).toHaveAttribute('href', '/student-panel?package=standard&checkout=1');
-  await page.goto('/auth/sign-in?returnTo=https%3A%2F%2Fevil.test%2Fstudent-panel%3Fpackage%3Dpremium%26checkout%3D1');
-  await expect(page.getByRole('link', { name: 'Return to workspace' })).toHaveAttribute('href', '/student-panel');
+  await expect(page).toHaveURL(/\/direct-booking\?package=premium/);
 });
 test('every palette and fee view is accessible and responsive', async ({ page }) => {
   test.setTimeout(60000);

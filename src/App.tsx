@@ -34,14 +34,6 @@ const pageLoaders: Record<string, () => Promise<{ default: ComponentType }>> = {
  '/about': () => import('./pages/About'),
  '/book-session': () => import('./pages/BookSession'),
  '/direct-booking': () => import('./pages/DirectBooking'),
- '/login': () => import('./pages/Login'),
- '/trainer': () => import('./pages/TrainerPanel'),
- '/manager': () => import('./pages/ManagerPanel'),
- '/financier': () => import('./pages/FinancierPanel'),
- '/student-panel': () => import('./pages/StudentPanel'),
- '/admin-panel': () => import('./pages/AdminPanel'),
- '/auth/sign-in': () => import('./pages/SignIn'),
- '/auth/admin/sign-in': () => import('./pages/SignIn'),
  '/contact': () => import('./pages/Contact'),
  '/privacy-policy': () => import('./pages/Legal'),
  '/terms-and-conditions': () => import('./pages/Legal'),
@@ -59,9 +51,7 @@ function RouteEffects() {
   const firstRender = useRef(true);
   useEffect(() => {
     if(!isPrivatePath(pathname))trackLearningPage(pathname);
-    const route =
-      routes.find(route=>route.path===pathname) ||
-      (pathname.startsWith('/financier/') ? routes.find(r=>r.path==='/financier') : undefined);
+    const route = routes.find(route=>route.path===pathname);
     const titleBrand = academy.name;
     document.title = `${route?.title || 'Page not found'} | ${titleBrand}`;
     const meta = (name:string, value:string, property = false) => {
@@ -96,15 +86,6 @@ class PageErrorBoundary extends Component<{children:ReactNode},{failed:boolean}>
 }
 export default function App({initialPage: InitialPage, initialPath}: {initialPage?: ComponentType; initialPath?: string}) {
  const { pathname } = useLocation();
- const isPanelRoute =
-   ['/student-panel', '/admin-panel', '/trainer', '/manager', '/login'].includes(pathname) ||
-   pathname === '/financier' ||
-   pathname.startsWith('/financier/');
- if (isPanelRoute) {
-   const resolvedPath = pathname === '/financier' || pathname.startsWith('/financier/') ? '/financier' : pathname;
-   const Page = pageComponents.find(page => page.path === resolvedPath)!.Page;
-   return <PageErrorBoundary><Suspense fallback={<main className="container page-hero" role="status">Loading your workspace…</main>}>{InitialPage && initialPath === resolvedPath ? <InitialPage/> : <Page/>}<RouteEffects/></Suspense></PageErrorBoundary>;
- }
  // The homepage and booking routes render their own header so the call-to-action can scroll in-page.
  if (['/', '/book-session', '/direct-booking'].includes(pathname)) {
    const Page = pageComponents.find(page => page.path === pathname)!.Page;

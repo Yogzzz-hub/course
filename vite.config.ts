@@ -26,51 +26,6 @@ export default defineConfig(({ mode }) => {
         if (!request.url?.startsWith('/api/')) return next();
         if (request.url.startsWith('/api/learning/')) return next();
         if (target) return next();
-        if (request.url === '/api/financier' || request.url.startsWith('/api/financier/')) {
-          void import('./api/financier/index.ts')
-            .then(({ dispatchNodeFinancierRequest }) => dispatchNodeFinancierRequest(request, response))
-            .catch((err) => {
-              response.writeHead(500, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
-              response.end(JSON.stringify({ error: err instanceof Error ? err.message : 'Financier API error' }));
-            });
-          return;
-        }
-        if (request.url === '/api/manager' || request.url.startsWith('/api/manager/')) {
-          void import('./api/manager/index.ts')
-            .then(({ dispatchNodeManagerRequest }) => dispatchNodeManagerRequest(request, response))
-            .catch((err) => {
-              response.writeHead(500, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
-              response.end(JSON.stringify({ error: err instanceof Error ? err.message : 'Manager API error' }));
-            });
-          return;
-        }
-        if (request.url === '/api/trainer' || request.url.startsWith('/api/trainer/')) {
-          void import('./api/trainer/index.ts')
-            .then(({ dispatchNodeTrainerRequest }) => dispatchNodeTrainerRequest(request, response))
-            .catch((err) => {
-              response.writeHead(500, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
-              response.end(JSON.stringify({ error: err instanceof Error ? err.message : 'Trainer API error' }));
-            });
-          return;
-        }
-        if (request.url === '/api/student' || request.url.startsWith('/api/student/')) {
-          void import('./api/student/index.ts')
-            .then(({ dispatchNodeStudentRequest }) => dispatchNodeStudentRequest(request, response))
-            .catch((err) => {
-              response.writeHead(500, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
-              response.end(JSON.stringify({ error: err instanceof Error ? err.message : 'Student API error' }));
-            });
-          return;
-        }
-        if (request.url === '/api/admin' || request.url.startsWith('/api/admin/')) {
-          void import('./api/admin/index.ts')
-            .then(({ dispatchNodeAdminRequest }) => dispatchNodeAdminRequest(request, response))
-            .catch((err) => {
-              response.writeHead(500, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
-              response.end(JSON.stringify({ error: err instanceof Error ? err.message : 'Admin API error' }));
-            });
-          return;
-        }
         if (request.url?.startsWith('/api/booking/programmes')) {
           response.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
           response.end(JSON.stringify({ programmes: allBookingProgrammes }));

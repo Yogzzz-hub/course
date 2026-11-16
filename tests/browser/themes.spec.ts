@@ -1,26 +1,15 @@
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { themes } from '../../src/components/ThemeSwitcher';
-import { enrolledSession, studentDashboard, studentPayments } from '../student-fixtures';
-import { adminSession, adminLeads } from '../admin-fixtures';
 
-async function panels(page: Page) {
-  await page.route('**/api/student/**', route => {
-    const path = new URL(route.request().url()).pathname;
-    const json = path.endsWith('/session') ? { session: enrolledSession } : path.endsWith('/dashboard') ? studentDashboard : studentPayments;
-    return route.fulfill({ json });
-  });
-  await page.route('**/api/admin/**', route => route.fulfill({ json: new URL(route.request().url()).pathname.endsWith('/session') ? adminSession : adminLeads }));
-}
 async function choose(page: Page, name: string) {
   await page.getByRole('button', { name: 'Choose colour palette' }).click();
   await page.getByRole('region', { name: 'Colour palettes' }).getByRole('button', { name, exact: true }).click();
   await page.keyboard.press('Escape');
 }
 for (const theme of themes) {
-  test(`${theme.name}: persists across public, student and admin pages`, async ({ page }) => {
+  test(`${theme.name}: persists across public pages`, async ({ page }) => {
     test.setTimeout(120000);
-    await panels(page);
     await page.goto('/');
     await choose(page, theme.name);
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme.id);
@@ -28,7 +17,7 @@ for (const theme of themes) {
     await expect(page.locator('.ss-header-cta')).toHaveCSS('background-color', `rgb(${rgb.join(', ')})`);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([]);
-    for (const path of ['/contact', '/student-panel', '/admin-panel']) {
+    for (const path of ['/contact', '/about', '/programmes']) {
       await page.goto(path);
       await expect(page.locator('h1')).toBeVisible();
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme.id);
@@ -43,10 +32,9 @@ for (const theme of themes) {
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme.id);
   });
 }
-test('all routes expose palettes and fit narrow screens, including sign-in and 404', async ({ page }) => {
+test('all routes expose palettes and fit narrow screens, including 404', async ({ page }) => {
   test.setTimeout(120000);
-  await panels(page);
-  for (const path of ['/', '/book-session', '/direct-booking', '/programmes', '/programmes/python-full-stack', '/learning-experience', '/career-support', '/about', '/contact', '/privacy-policy', '/terms-and-conditions', '/student-panel', '/admin-panel', '/auth/sign-in', '/auth/admin/sign-in', '/unknown-path']) {
+  for (const path of ['/', '/book-session', '/direct-booking', '/programmes', '/programmes/python-full-stack', '/learning-experience', '/career-support', '/about', '/contact', '/privacy-policy', '/terms-and-conditions', '/unknown-path']) {
     const response = await page.goto(path);
     expect(response?.status()).toBe(path === '/unknown-path' ? 404 : 200);
     await expect(page.getByRole('button', { name: 'Choose colour palette' })).toBeVisible();
@@ -64,26 +52,4 @@ test('theme selection survives component remounts when storage is blocked', asyn
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'theme-3');
   await page.getByRole('link', { name: 'Aintrix Academy home', exact: true }).first().click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'theme-3');
-});
-test('local demo is explicit, read-only, themed and absent from production', async ({ page }) => {
-  test.setTimeout(60000);
-  await page.goto('/student-panel');
-  await expect(page.getByRole('button', { name: 'Retry session' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Open local demo' })).toHaveCount(0);
-  await page.goto('http://127.0.0.1:5173/student-panel');
-  await page.getByRole('button', { name: 'Open local demo' }).click();
-  await expect(page.getByRole('region', { name: 'Local demo controls' })).toContainText('No real enrolment');
-  await expect(page.locator('h1')).toContainText('Demo');
-  const networkWrites: string[] = [];
-  page.on('request', request => { if (request.method() === 'POST') networkWrites.push(request.url()); });
-  await page.getByRole('button', { name: 'Mark complete' }).click();
-  await expect(page.getByRole('alert')).toContainText('read-only local demo');
-  await choose(page, 'Burgundy + Soft Copper');
-  await page.getByRole('button', { name: 'Prospect demo', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Prospect demo', exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'theme-2');
-  await expect(page.getByText('Your next chapter starts here.', { exact: true })).toBeVisible();
-  expect(networkWrites).toEqual([]);
-  await page.getByRole('button', { name: 'Exit demo' }).click();
-  await expect(page.getByRole('button', { name: 'Retry session' })).toBeVisible();
 });

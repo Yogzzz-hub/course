@@ -5,7 +5,6 @@ import '@fontsource-variable/space-grotesk';
 import './styles/global.css';
 import './styles/animations.css';
 import './styles/experience.css';
-import './styles/portal.css';
 // Keep discovery layouts and animated selects available before lazy route hydration and navigation.
 import './components/learning/learning.css';
 import './components/learning/assessment.css';
