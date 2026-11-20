@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev:frontend": "vite --host 127.0.0.1",
-    "dev:backend": "cd backend; .\\.venv\\Scripts\\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000",
+    "dev:backend": "cd backend && py -3 -m uvicorn app.main:app --host 127.0.0.1 --port 8000",
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
     "dev:learning": "node scripts/dev-learning.mjs",
     "api:dev": "node --env-file-if-exists=.env.learning.local server/index.ts",
