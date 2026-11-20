@@ -1,0 +1,4 @@
+id,user_id,batch_id,programme_id,fee_total_inr,status,enrolled_by,created_at,completed_at
+1,1,1,1,45000,active,3,2026-11-20 14:08:26.877804,
+2,7,1,1,45000,active,3,2026-11-20 14:08:26.877804,
+3,8,2,2,50000,awaiting_payment,3,2026-11-20 14:08:26.877804,

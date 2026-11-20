@@ -1,0 +1,3 @@
+id,programme_id,name,start_date,days,start_time,duration_minutes,classes_total,capacity,created_by,created_at
+1,1,FSWD - Jan 2027 Evening,2026-10-31,"Mon,Wed,Fri",19:00,90,12,25,3,2026-11-20 14:08:26.867501
+2,2,AI Backend - Feb 2027 Weekend,2026-11-25,"Sat,Sun",10:00,120,16,20,3,2026-11-20 14:08:26.868055

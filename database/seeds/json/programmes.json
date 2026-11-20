@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1,
+    "name": "Full Stack Web Development",
+    "fee_inr": 45000,
+    "duration_weeks": 16,
+    "description": "Master React, TypeScript, Node.js, and modern cloud deployment.",
+    "created_at": "2026-11-20 14:08:26.864684"
+  },
+  {
+    "id": 2,
+    "name": "Python Backend & AI Engineering",
+    "fee_inr": 50000,
+    "duration_weeks": 20,
+    "description": "FastAPI, PostgreSQL, Docker, and AI-driven backend systems.",
+    "created_at": "2026-11-20 14:08:26.864684"
+  }
+]

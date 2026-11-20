@@ -1,0 +1,9 @@
+id,user_id,role
+1,1,student
+2,2,trainer
+3,3,manager
+4,4,financier
+5,5,admin
+6,6,super_admin
+7,7,student
+8,8,student

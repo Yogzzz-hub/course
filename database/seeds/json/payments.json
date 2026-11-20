@@ -1,0 +1,58 @@
+[
+  {
+    "id": 1,
+    "enrolment_id": 1,
+    "user_id": 1,
+    "amount_inr": 25000,
+    "method": "UPI",
+    "reference": "UPI9823471029",
+    "paid_on": "2026-10-29",
+    "status": "verified",
+    "note": "First installment verified",
+    "submitted_at": "2026-11-20 14:08:26.901717",
+    "decided_by": 4,
+    "decided_at": "2026-10-30 14:08:26.872919"
+  },
+  {
+    "id": 2,
+    "enrolment_id": 1,
+    "user_id": 1,
+    "amount_inr": 20000,
+    "method": "NEFT",
+    "reference": "NEFT8837192039",
+    "paid_on": "2026-11-18",
+    "status": "submitted",
+    "note": "",
+    "submitted_at": "2026-11-20 14:08:26.901717",
+    "decided_by": null,
+    "decided_at": null
+  },
+  {
+    "id": 3,
+    "enrolment_id": 2,
+    "user_id": 7,
+    "amount_inr": 45000,
+    "method": "Card",
+    "reference": "CARD7719283011",
+    "paid_on": "2026-10-31",
+    "status": "verified",
+    "note": "Full fee paid",
+    "submitted_at": "2026-11-20 14:08:26.901717",
+    "decided_by": 4,
+    "decided_at": "2026-11-01 14:08:26.872919"
+  },
+  {
+    "id": 4,
+    "enrolment_id": 3,
+    "user_id": 8,
+    "amount_inr": 25000,
+    "method": "UPI",
+    "reference": "UPI1192837465",
+    "paid_on": "2026-11-19",
+    "status": "submitted",
+    "note": "",
+    "submitted_at": "2026-11-20 14:08:26.901717",
+    "decided_by": null,
+    "decided_at": null
+  }
+]

@@ -1,0 +1,7 @@
+key,value
+attendance_threshold_percent,60
+require_fees_cleared,true
+academy_name,Aintrix Academy
+payment_instructions,"Please transfer fees via UPI or NEFT.
+UPI ID: payments@aintrix
+After payment, enter transaction UTR here."

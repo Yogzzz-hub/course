@@ -1,0 +1,9 @@
+id,name,email,phone,password_hash,status,is_dev_account,created_at
+1,Dev Student,dev-student@local.test,,"$argon2id$v=19$m=65536,t=3,p=4$DpiIxK7f+O8wLntKvTMrKw$g0PyI1TjeKztsOKqOaRiuIDYPGDXAph7YcbnzUbf8oM",active,1,2026-11-20 13:16:27.412966
+2,Dev Trainer,dev-trainer@local.test,,"$argon2id$v=19$m=65536,t=3,p=4$g7/6fNGH2MLvDPKJ41NmJg$E3AleuJe1s8RA+0yifraEzt6ten39dh9kICSAQhmdnE",active,1,2026-11-20 13:16:32.588701
+3,Dev Manager,dev-manager@local.test,,"$argon2id$v=19$m=65536,t=3,p=4$myt2BZGYz9chbow1qAs5hw$zqaZuL1gTqXGsb/XFp6UCto3qcF9B7v9fibnqyEr0tU",active,1,2026-11-20 13:16:37.142589
+4,Dev Financier,dev-financier@local.test,,"$argon2id$v=19$m=65536,t=3,p=4$nVeF3CpKfDyUQrlRm5c24Q$pGCX3I2uVMEmW6T5qEzfRVWuq2wA2Agf6ZHTg9Ga6Fw",active,1,2026-11-20 13:16:40.187538
+5,Dev Admin,dev-admin@local.test,,"$argon2id$v=19$m=65536,t=3,p=4$mzkClmMRyV/MxT+MuO5VRw$WdIYXQxKqhJpZ4OXGxUbtEFIBWoh7sfa0f57kbsQGy8",active,1,2026-11-20 13:16:43.449426
+6,Dev Super Admin,dev-super_admin@local.test,,"$argon2id$v=19$m=65536,t=3,p=4$u4ObqXhvtDp7Y1rgfrypjg$Qi1Uv3Uc0sM+BnO6v7E4+HxJHAs2VPYRXCk+8ZXK99Q",active,1,2026-11-20 13:16:46.385988
+7,Aarav Sharma,aarav.sharma@aintrix.com,+91 98765 43210,"$argon2id$v=19$m=65536,t=3,p=4$pSM00E8M6cHYLMHUE+hTkA$gqnokDZT25/hoS+2c7LuZGrd89fC6M2jEmbKZKrC2eM",active,0,2026-11-20 14:08:26.797829
+8,Priya Patel,priya.patel@aintrix.com,+91 98765 43211,"$argon2id$v=19$m=65536,t=3,p=4$FpXE8dwkezB/Cwy/Rpp7/g$rxY4a5w7XDU3k7RjLmCiB9tEt42h28vy97CS/6u6Myg",active,0,2026-11-20 14:08:26.859117

@@ -1,0 +1,12 @@
+[
+  {
+    "id": 1,
+    "batch_id": 1,
+    "user_id": 2
+  },
+  {
+    "id": 2,
+    "batch_id": 2,
+    "user_id": 2
+  }
+]

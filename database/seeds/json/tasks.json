@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "batch_id": 1,
+    "user_id": null,
+    "title": "Configure Git and create personal fork",
+    "detail": "Fork the repository and clone it to your local machine.",
+    "due_at": "2026-11-23 14:08:26.872919",
+    "created_by": 2,
+    "created_at": "2026-11-20 14:08:26.910605"
+  },
+  {
+    "id": 2,
+    "batch_id": 1,
+    "user_id": null,
+    "title": "Install Node.js 24 and Vite dev server",
+    "detail": "Run npm install and ensure your environment is clean.",
+    "due_at": "2026-11-24 14:08:26.872919",
+    "created_by": 2,
+    "created_at": "2026-11-20 14:08:26.911120"
+  }
+]
