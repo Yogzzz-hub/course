@@ -47,8 +47,8 @@ export function Card({ title, children, actions }: { title?: string; children: R
 export function Stat({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="p-stat">
-      <span>{label}</span>
-      <strong>{value === null || value === undefined ? '—' : value}</strong>
+      <span className="p-stat-label">{label}</span>
+      <strong className="p-stat-value">{value === null || value === undefined || value === '' ? '—' : value}</strong>
     </div>
   );
 }
@@ -59,7 +59,7 @@ export function Table({ head, rows, empty }: { head: string[]; rows: ReactNode[]
     <div className="p-table-wrap">
       <table className="p-table">
         <thead>
-          <tr>{head.map(h => <th key={h}>{h}</th>)}</tr>
+          <tr>{head.map((h, index) => <th key={`${index}-${h}`} scope="col">{h}</th>)}</tr>
         </thead>
         <tbody>
           {rows.map((cells, rowIndex) => (

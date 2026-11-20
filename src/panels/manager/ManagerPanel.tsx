@@ -189,7 +189,7 @@ function Batches() {
             `${b.seats_taken} / ${b.capacity}`,
             b.trainers,
             <StatusChip key="s" text={b.status} />,
-            <Link key="l" className="p-link" to={`/manager/batches/${b.id}`}>Open</Link>,
+            <Link key="l" className="p-btn p-btn-ghost p-btn-small" to={`/manager/batches/${b.id}`}>Open</Link>,
           ])}
           empty="No batches yet. Create the first one above."
         />

@@ -52,9 +52,9 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
     throw new ApiError('NETWORK', 'The academy service is not reachable. Start the backend and try again.', 0);
   }
 
-  if (response.headers.get('content-type')?.includes('text/html')) {
-    return (await response.text()) as T;
-  }
+  // Panels only ever expect JSON. An HTML page here means the request did not reach the academy backend
+  // (for example, a dev server that has not loaded the /v1 proxy yet).
+  const isHtml = response.headers.get('content-type')?.includes('text/html') ?? false;
 
   let data: unknown = null;
   try {
@@ -63,14 +63,22 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
     data = null;
   }
 
-  if (!response.ok) {
+  if (!response.ok || isHtml) {
     const error = (data as { error?: { code?: string; message?: string; fields?: Record<string, string>; details?: Record<string, boolean> } } | null)?.error;
+    if (error) {
+      throw new ApiError(error.code ?? `HTTP_${response.status}`, error.message ?? 'Something went wrong.', response.status, error.fields ?? undefined, error.details);
+    }
+    // No academy error body: the proxy could not reach the backend, or the reply came from somewhere else.
+    if ([502, 503, 504].includes(response.status)) {
+      throw new ApiError('UNREACHABLE', 'The academy backend is not running. In the backend folder, start it with: uvicorn app.main:app --port 8000 — then try again.', response.status);
+    }
+    if (response.status === 500) {
+      throw new ApiError('SERVER_ERROR', 'The academy backend hit an error. Check the terminal running the backend, then try again.', response.status);
+    }
     throw new ApiError(
-      error?.code ?? `HTTP_${response.status}`,
-      error?.message ?? 'Something went wrong. Please try again.',
+      'UNEXPECTED_REPLY',
+      `The academy service replied in an unexpected way (HTTP ${response.status}). Restart the frontend (npm run dev) so it picks up the backend proxy, then try again.`,
       response.status,
-      error?.fields ?? undefined,
-      error?.details,
     );
   }
   return data as T;
