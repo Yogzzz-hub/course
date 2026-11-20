@@ -85,7 +85,7 @@ export function LoginPage() {
             <label htmlFor="login-password">Password</label>
             <input id="login-password" className="p-input" type="password" autoComplete="current-password" required value={password} onChange={event => setPassword(event.target.value)} />
           </div>
-          <button className="p-btn" type="submit" disabled={busy} style={{ width: '100%' }}>
+          <button className="p-btn p-btn-danger" type="submit" disabled={busy} style={{ width: '100%' }}>
             {busy ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
