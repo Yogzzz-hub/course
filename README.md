@@ -25,24 +25,31 @@ D:\intern\course\
 │   ├── start-backend.bat          # Windows batch runner for backend
 │   └── .env.example               # Example backend environment variables
 │
-├── src/                           # Frontend Client Application (React 19 + Vite)
-│   ├── pages/                     # Public marketing, course & booking pages
-│   ├── panels/                    # 6 Authenticated Role Portals:
-│   │   ├── student/               # Student panel (classes, recordings, payments, certificates)
-│   │   ├── trainer/               # Trainer panel (live timetable, attendance, grading)
-│   │   ├── manager/               # Manager panel (programmes, batches, enrollments)
-│   │   ├── finance/               # Finance panel (ledger, expense tracking, fee verification)
-│   │   ├── admin/                 # Admin panel (user accounts & system audit log)
-│   │   ├── superadmin/            # Super admin panel (roles, settings, global override)
-│   │   ├── auth/                  # Login page & development role chooser
-│   │   ├── PanelShell.tsx         # Unified responsive shell with sidebar & mobile menu
-│   │   └── ui.tsx                 # Shared UI components (tables, stat cards, notices)
-│   ├── components/                # Reusable design system components
-│   ├── config/                    # Academy settings & public URLs
-│   ├── data/                      # Route maps & static program catalogues
-│   ├── styles/                    # Global CSS & Tailwind stylesheets
-│   ├── App.tsx                    # Client-side router & route security guards
-│   └── main.tsx                   # React DOM root entrypoint
+├── frontend/                      # Frontend Client Application (React 19 + Vite)
+│   ├── src/                       # Application Source Code
+│   │   ├── pages/                 # Public marketing, course & booking pages
+│   │   ├── panels/                # 6 Authenticated Role Portals:
+│   │   │   ├── student/           # Student panel (classes, recordings, payments, certificates)
+│   │   │   ├── trainer/           # Trainer panel (live timetable, attendance, grading)
+│   │   │   ├── manager/           # Manager panel (programmes, batches, enrollments)
+│   │   │   ├── finance/           # Finance panel (ledger, expense tracking, fee verification)
+│   │   │   ├── admin/             # Admin panel (user accounts & system audit log)
+│   │   │   ├── superadmin/        # Super admin panel (roles, settings, global override)
+│   │   │   ├── auth/              # Login page & development role chooser
+│   │   │   ├── PanelShell.tsx     # Unified responsive shell with sidebar & mobile menu
+│   │   │   └── ui.tsx             # Shared UI components (tables, stat cards, notices)
+│   │   ├── components/            # Reusable design system components
+│   │   ├── config/                # Academy settings & public URLs
+│   │   ├── data/                  # Route maps & static program catalogues
+│   │   ├── styles/                # Global CSS & Tailwind stylesheets
+│   │   ├── App.tsx                # Client-side router & route security guards
+│   │   └── main.tsx               # React DOM root entrypoint
+│   ├── public/                    # Static browser assets (favicons, robots.txt)
+│   ├── package.json               # Frontend dependencies & npm scripts
+│   ├── vite.config.ts             # Vite bundler & development proxy settings
+│   ├── tsconfig.json              # TypeScript compiler options
+│   ├── .env                       # (Local only) Frontend Supabase public keys
+│   └── .env.example
 │
 ├── database/                      # Database Schemas, Migrations & Seeds
 │   ├── schemas/                   # Complete PostgreSQL DDL (academy_schema.sql)
@@ -63,11 +70,11 @@ D:\intern\course\
 │   ├── Dockerfile.frontend        # Dockerfile for React frontend
 │   └── README.md                  # Step-by-step cloud deployment runbook
 │
-├── public/                        # Static browser assets (favicons, robots.txt)
+├── package.json                   # Root orchestrator scripts (npm run dev, npm run build)
 ├── start-academy.bat              # One-click launcher for both Frontend & Backend
-├── package.json                   # Node.js dependencies & npm scripts
-├── vite.config.ts                 # Vite bundler & development proxy settings
-└── tsconfig.json                  # TypeScript compiler options
+├── .gitignore                     # Git exclusions (.env, node_modules, cache)
+├── .dockerignore                  # Docker exclusions
+└── README.md                      # Project documentation
 ```
 
 ---
@@ -117,11 +124,12 @@ cd course
 ```
 
 ### Step 2: Download Frontend Dependencies
-Run this in the project root:
 ```bash
+cd frontend
 npm install
+cd ..
 ```
-*This reads `package.json` and downloads all 410 packages into `node_modules/`.*
+*This reads `frontend/package.json` and downloads all packages into `frontend/node_modules/`.*
 
 ### Step 3: Download Backend Dependencies
 Open your terminal in the `backend/` directory:
@@ -162,8 +170,8 @@ SESSION_HOURS=12
 ATTENDANCE_THRESHOLD_PERCENT=60
 ```
 
-### Frontend Environment ([.env](file:///D:/intern/course/.env))
-Create a file named `.env` in the root folder:
+### Frontend Environment ([frontend/.env](file:///D:/intern/course/frontend/.env))
+Create a file named `.env` in the `frontend/` folder (or copy [frontend/.env.example](file:///D:/intern/course/frontend/.env.example)):
 ```ini
 VITE_SUPABASE_URL=https://<your-project>.supabase.co
 NEXT_PUBLIC_SUPABASE_URL=https://<your-project>.supabase.co
@@ -222,5 +230,6 @@ In development mode (`APP_ENV=development`), click any role button to sign in in
 pytest backend/tests
 
 # 2. Run Frontend Production Build
-npx vite build
+npm run build
+# (or from the frontend directory: cd frontend && npm run vite:build)
 ```
