@@ -71,10 +71,41 @@ function useLiveHeartbeat(classId: number | null) {
 
 function Home() {
   const overview = useApi<{ items: Enrolment[]; payment_instructions: string; attendance_threshold_percent: number }>('/student/overview');
+  const assignments = useApi<{ items: { id: number; submission: unknown }[] }>('/student/assignments');
+  const tasks = useApi<{ items: { id: number; done: boolean }[] }>('/student/tasks');
+  const enrolments = overview.data?.items ?? [];
+  const toSubmit = (assignments.data?.items ?? []).filter(a => !a.submission).length;
+  const toTick = (tasks.data?.items ?? []).filter(t => !t.done).length;
+  const nextClass = enrolments.find(e => e.next_class_at)?.next_class_at ?? null;
+  const todo: { label: string; to: string }[] = [];
+  for (const e of enrolments) {
+    if (e.status === 'awaiting_payment') todo.push({ label: `Pay your fee for ${e.batch} (${fmtInr(e.fees.balance_inr)})`, to: '/app/payments' });
+    else if (e.fees.balance_inr > 0) todo.push({ label: `Clear the balance of ${fmtInr(e.fees.balance_inr)}`, to: '/app/payments' });
+  }
+  if (toSubmit) todo.push({ label: `Submit ${toSubmit} assignment${toSubmit === 1 ? '' : 's'}`, to: '/app/assignments' });
+  if (toTick) todo.push({ label: `Tick off ${toTick} task${toTick === 1 ? '' : 's'}`, to: '/app/tasks' });
+  if (nextClass) todo.push({ label: `Next class: ${fmtDateTime(nextClass)}`, to: '/app/classes' });
+
   return (
     <>
       <PageHead title="Your learning" text="Where you stand in each course: fees, classes and your certificate." />
       <ErrorNotice error={overview.error} />
+      {enrolments.length > 0 && (
+        <Card title="What's next">
+          {todo.length === 0 ? (
+            <Empty>You are all caught up. Nothing is waiting for you right now.</Empty>
+          ) : (
+            <ul className="p-checks">
+              {todo.map(item => (
+                <li key={item.label}>
+                  <span aria-hidden="true">→</span>
+                  <Link className="p-link" to={item.to}>{item.label}</Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      )}
       {(overview.data?.items ?? []).length === 0 && overview.data && (
         <Empty>You are not enrolled in a batch yet. Your academy manager adds you once your place is confirmed.</Empty>
       )}

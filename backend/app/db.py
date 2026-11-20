@@ -18,6 +18,20 @@ engine = create_engine(
     connect_args={"check_same_thread": False} if _is_sqlite else {},
     pool_pre_ping=True,
 )
+
+if not _is_sqlite:
+    from sqlalchemy import event
+
+    @event.listens_for(engine, "connect")
+    def on_connect(dbapi_connection, connection_record):
+        with dbapi_connection.cursor() as cursor:
+            cursor.execute("SET search_path TO academy, public;")
+
+    @event.listens_for(engine, "checkout")
+    def on_checkout(dbapi_connection, connection_record, connection_proxy):
+        with dbapi_connection.cursor() as cursor:
+            cursor.execute("SET search_path TO academy, public;")
+
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 

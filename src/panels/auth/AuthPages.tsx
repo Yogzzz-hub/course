@@ -1,8 +1,30 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api, ApiError } from '../api';
-import { ErrorNotice } from '../ui';
+import { ErrorNotice, Notice } from '../ui';
 import '../panels.css';
+
+type BackendState = 'checking' | 'up' | 'down';
+
+/** Asks the academy backend (through /v1/health) whether it is running, so the page can say so before anyone clicks. */
+function useBackendState(): BackendState {
+  const [state, setState] = useState<BackendState>('checking');
+  useEffect(() => {
+    let alive = true;
+    fetch('/v1/health', { cache: 'no-store', signal: AbortSignal.timeout(4000) })
+      .then(response => {
+        const isJson = response.headers.get('content-type')?.includes('application/json') ?? false;
+        if (alive) setState(response.ok && isJson ? 'up' : 'down');
+      })
+      .catch(() => {
+        if (alive) setState('down');
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return state;
+}
 
 /** Roles offered by the development quick sign-in. Shown only in the development build, never in production. */
 const DEV_ROLES = [
@@ -22,6 +44,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
+  const backend = useBackendState();
 
   function goNext(redirect?: string) {
     const next = params.get('next');
@@ -60,6 +83,12 @@ export function LoginPage() {
       <div className="p-card" style={{ padding: 28 }}>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, margin: '0 0 6px' }}>Sign in</h1>
         <p className="p-muted" style={{ margin: '0 0 22px' }}>Learners and staff use the same sign-in.</p>
+        {backend === 'down' && (
+          <Notice tone="danger">
+            The academy backend is not running, so nobody can sign in yet. In the backend folder, double-click <strong>start-backend.bat</strong> (or run <strong>uvicorn app.main:app --port 8000</strong>), keep that window open, then refresh this page.
+          </Notice>
+        )}
+        {backend === 'up' && <p className="p-hint" role="status" style={{ marginBottom: 12 }}>● Backend connected</p>}
         <ErrorNotice error={error} />
 
         {import.meta.env.DEV && (
@@ -85,7 +114,7 @@ export function LoginPage() {
             <label htmlFor="login-password">Password</label>
             <input id="login-password" className="p-input" type="password" autoComplete="current-password" required value={password} onChange={event => setPassword(event.target.value)} />
           </div>
-          <button className="p-btn p-btn-danger" type="submit" disabled={busy} style={{ width: '100%' }}>
+          <button className="p-btn" type="submit" disabled={busy} style={{ width: '100%' }}>
             {busy ? 'Signing in…' : 'Sign in'}
           </button>
         </form>

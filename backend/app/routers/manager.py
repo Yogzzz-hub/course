@@ -28,6 +28,7 @@ from ..services import (
     attendance_summary,
     audit,
     batch_last_class_date,
+    batch_status,
     certificate_checks,
     fee_summary,
     generate_class_sessions,
@@ -127,6 +128,7 @@ def list_batches(_: User = MANAGER, db: Session = Depends(get_db)):
     for batch in batches:
         programme = db.get(Programme, batch.programme_id)
         trainers = db.scalar(select(func.count(BatchTrainer.id)).where(BatchTrainer.batch_id == batch.id)) or 0
+        last_date = batch_last_class_date(db, batch.id)
         items.append(
             {
                 "id": batch.id,
@@ -140,8 +142,8 @@ def list_batches(_: User = MANAGER, db: Session = Depends(get_db)):
                 "capacity": batch.capacity,
                 "seats_taken": seats_taken(db, batch.id),
                 "trainers": trainers,
-                "last_class_date": (batch_last_class_date(db, batch.id) or None) and batch_last_class_date(db, batch.id).isoformat(),
-                "status": batch.status,
+                "last_class_date": last_date.isoformat() if last_date else None,
+                "status": batch_status(db, batch.id),
             }
         )
     return {"items": items}
@@ -216,7 +218,7 @@ def batch_detail(batch_id: int, _: User = MANAGER, db: Session = Depends(get_db)
         "classes_total": batch.classes_total,
         "capacity": batch.capacity,
         "seats_taken": seats_taken(db, batch.id),
-        "status": batch.status,
+        "status": batch_status(db, batch.id),
         "attendance_threshold_percent": threshold,
         "trainers": [{"user_id": t.id, "name": t.name, "email": t.email} for t in trainer_rows],
         "students": students,

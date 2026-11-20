@@ -84,6 +84,18 @@ def batch_last_class_date(db: Session, batch_id: int) -> date | None:
     return last.date() if last else None
 
 
+def batch_status(db: Session, batch_id: int) -> str:
+    """Derived from the classes: upcoming before the first class starts, running while classes run, completed when all have ended."""
+    total = db.scalar(select(func.count(ClassSession.id)).where(ClassSession.batch_id == batch_id)) or 0
+    ended = db.scalar(select(func.count(ClassSession.id)).where(ClassSession.batch_id == batch_id, ClassSession.status == "ended")) or 0
+    live = db.scalar(select(func.count(ClassSession.id)).where(ClassSession.batch_id == batch_id, ClassSession.status == "live")) or 0
+    if total and ended == total:
+        return "completed"
+    if live or ended:
+        return "running"
+    return "upcoming"
+
+
 # ---- money ----------------------------------------------------------------------------------
 
 def verified_total(db: Session, enrolment_id: int) -> int:
