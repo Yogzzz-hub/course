@@ -1,0 +1,29 @@
+[
+  {
+    "id": 1,
+    "actor_id": 5,
+    "action": "user.create",
+    "entity": "user",
+    "entity_id": "7",
+    "detail": "{\"roles\": [\"student\"]}",
+    "at": "2026-10-30 14:08:26.872919"
+  },
+  {
+    "id": 2,
+    "actor_id": 3,
+    "action": "batch.create",
+    "entity": "batch",
+    "entity_id": "1",
+    "detail": "{\"name\": \"FSWD - Jan 2027 Evening\"}",
+    "at": "2026-10-31 14:08:26.872919"
+  },
+  {
+    "id": 3,
+    "actor_id": 4,
+    "action": "payment.verify",
+    "entity": "payment",
+    "entity_id": "1",
+    "detail": "{\"amount_inr\": 25000}",
+    "at": "2026-10-30 14:08:26.872919"
+  }
+]

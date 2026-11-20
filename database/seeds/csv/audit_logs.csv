@@ -1,0 +1,4 @@
+id,actor_id,action,entity,entity_id,detail,at
+1,5,user.create,user,7,"{""roles"": [""student""]}",2026-10-30 14:08:26.872919
+2,3,batch.create,batch,1,"{""name"": ""FSWD - Jan 2027 Evening""}",2026-10-31 14:08:26.872919
+3,4,payment.verify,payment,1,"{""amount_inr"": 25000}",2026-10-30 14:08:26.872919

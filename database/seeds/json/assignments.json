@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "batch_id": 1,
+    "title": "Responsive Layout with Tailwind CSS",
+    "brief": "Build a responsive landing page following mobile-first principles.",
+    "due_at": "2026-11-25 14:08:26.872919",
+    "created_by": 2,
+    "created_at": "2026-11-20 14:08:26.900611"
+  },
+  {
+    "id": 2,
+    "batch_id": 1,
+    "title": "React State Management & Hooks",
+    "brief": "Implement a shopping cart with React Context and useReducer.",
+    "due_at": "2026-12-02 14:08:26.872919",
+    "created_by": 2,
+    "created_at": "2026-11-20 14:08:26.903368"
+  }
+]

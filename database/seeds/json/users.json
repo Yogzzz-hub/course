@@ -1,0 +1,82 @@
+[
+  {
+    "id": 1,
+    "name": "Dev Student",
+    "email": "dev-student@local.test",
+    "phone": "",
+    "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$DpiIxK7f+O8wLntKvTMrKw$g0PyI1TjeKztsOKqOaRiuIDYPGDXAph7YcbnzUbf8oM",
+    "status": "active",
+    "is_dev_account": 1,
+    "created_at": "2026-11-20 13:16:27.412966"
+  },
+  {
+    "id": 2,
+    "name": "Dev Trainer",
+    "email": "dev-trainer@local.test",
+    "phone": "",
+    "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$g7/6fNGH2MLvDPKJ41NmJg$E3AleuJe1s8RA+0yifraEzt6ten39dh9kICSAQhmdnE",
+    "status": "active",
+    "is_dev_account": 1,
+    "created_at": "2026-11-20 13:16:32.588701"
+  },
+  {
+    "id": 3,
+    "name": "Dev Manager",
+    "email": "dev-manager@local.test",
+    "phone": "",
+    "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$myt2BZGYz9chbow1qAs5hw$zqaZuL1gTqXGsb/XFp6UCto3qcF9B7v9fibnqyEr0tU",
+    "status": "active",
+    "is_dev_account": 1,
+    "created_at": "2026-11-20 13:16:37.142589"
+  },
+  {
+    "id": 4,
+    "name": "Dev Financier",
+    "email": "dev-financier@local.test",
+    "phone": "",
+    "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$nVeF3CpKfDyUQrlRm5c24Q$pGCX3I2uVMEmW6T5qEzfRVWuq2wA2Agf6ZHTg9Ga6Fw",
+    "status": "active",
+    "is_dev_account": 1,
+    "created_at": "2026-11-20 13:16:40.187538"
+  },
+  {
+    "id": 5,
+    "name": "Dev Admin",
+    "email": "dev-admin@local.test",
+    "phone": "",
+    "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$mzkClmMRyV/MxT+MuO5VRw$WdIYXQxKqhJpZ4OXGxUbtEFIBWoh7sfa0f57kbsQGy8",
+    "status": "active",
+    "is_dev_account": 1,
+    "created_at": "2026-11-20 13:16:43.449426"
+  },
+  {
+    "id": 6,
+    "name": "Dev Super Admin",
+    "email": "dev-super_admin@local.test",
+    "phone": "",
+    "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$u4ObqXhvtDp7Y1rgfrypjg$Qi1Uv3Uc0sM+BnO6v7E4+HxJHAs2VPYRXCk+8ZXK99Q",
+    "status": "active",
+    "is_dev_account": 1,
+    "created_at": "2026-11-20 13:16:46.385988"
+  },
+  {
+    "id": 7,
+    "name": "Aarav Sharma",
+    "email": "aarav.sharma@aintrix.com",
+    "phone": "+91 98765 43210",
+    "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$pSM00E8M6cHYLMHUE+hTkA$gqnokDZT25/hoS+2c7LuZGrd89fC6M2jEmbKZKrC2eM",
+    "status": "active",
+    "is_dev_account": 0,
+    "created_at": "2026-11-20 14:08:26.797829"
+  },
+  {
+    "id": 8,
+    "name": "Priya Patel",
+    "email": "priya.patel@aintrix.com",
+    "phone": "+91 98765 43211",
+    "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$FpXE8dwkezB/Cwy/Rpp7/g$rxY4a5w7XDU3k7RjLmCiB9tEt42h28vy97CS/6u6Myg",
+    "status": "active",
+    "is_dev_account": 0,
+    "created_at": "2026-11-20 14:08:26.859117"
+  }
+]

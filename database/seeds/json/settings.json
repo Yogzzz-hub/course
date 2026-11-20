@@ -1,0 +1,18 @@
+[
+  {
+    "key": "attendance_threshold_percent",
+    "value": "60"
+  },
+  {
+    "key": "require_fees_cleared",
+    "value": "true"
+  },
+  {
+    "key": "academy_name",
+    "value": "Aintrix Academy"
+  },
+  {
+    "key": "payment_instructions",
+    "value": "Please transfer fees via UPI or NEFT.\nUPI ID: payments@aintrix\nAfter payment, enter transaction UTR here."
+  }
+]

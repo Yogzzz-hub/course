@@ -1,0 +1,5 @@
+id,enrolment_id,user_id,amount_inr,method,reference,paid_on,status,note,submitted_at,decided_by,decided_at
+1,1,1,25000,UPI,UPI9823471029,2026-10-29,verified,First installment verified,2026-11-20 14:08:26.901717,4,2026-10-30 14:08:26.872919
+2,1,1,20000,NEFT,NEFT8837192039,2026-11-18,submitted,,2026-11-20 14:08:26.901717,,
+3,2,7,45000,Card,CARD7719283011,2026-10-31,verified,Full fee paid,2026-11-20 14:08:26.901717,4,2026-11-01 14:08:26.872919
+4,3,8,25000,UPI,UPI1192837465,2026-11-19,submitted,,2026-11-20 14:08:26.901717,,

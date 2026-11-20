@@ -1,0 +1,4 @@
+id,category,description,amount_inr,spent_on,recorded_by,created_at
+1,Infrastructure,AWS Cloud Server Hosting for Student Labs,8500,2026-11-05,4,2026-11-20 14:08:26.901165
+2,Software,Zoom Education Licences for Live Sessions,3600,2026-11-10,4,2026-11-20 14:08:26.901165
+3,Trainer Payout,Advance stipend for weekend workshops,25000,2026-11-15,4,2026-11-20 14:08:26.901165

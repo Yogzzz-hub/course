@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "assignment_id": 1,
+    "user_id": 1,
+    "kind": "git",
+    "link": "https://github.com/aintrix-dev/responsive-landing",
+    "file_name": "",
+    "file_path": "",
+    "note": "Completed with Tailwind v4",
+    "submitted_at": "2026-11-20 14:08:26.907146",
+    "score": 92,
+    "feedback": "Excellent layout structure and clean CSS tokens.",
+    "graded_by": 2,
+    "graded_at": "2026-11-19 14:08:26.872919"
+  },
+  {
+    "id": 2,
+    "assignment_id": 1,
+    "user_id": 7,
+    "kind": "url",
+    "link": "https://aarav-landing-preview.vercel.app",
+    "file_name": "",
+    "file_path": "",
+    "note": "Check out the preview",
+    "submitted_at": "2026-11-20 14:08:26.907146",
+    "score": 88,
+    "feedback": "Good design, check contrast on secondary buttons.",
+    "graded_by": 2,
+    "graded_at": "2026-11-19 14:08:26.872919"
+  }
+]

@@ -1,0 +1,29 @@
+[
+  {
+    "id": 1,
+    "category": "Infrastructure",
+    "description": "AWS Cloud Server Hosting for Student Labs",
+    "amount_inr": 8500,
+    "spent_on": "2026-11-05",
+    "recorded_by": 4,
+    "created_at": "2026-11-20 14:08:26.901165"
+  },
+  {
+    "id": 2,
+    "category": "Software",
+    "description": "Zoom Education Licences for Live Sessions",
+    "amount_inr": 3600,
+    "spent_on": "2026-11-10",
+    "recorded_by": 4,
+    "created_at": "2026-11-20 14:08:26.901165"
+  },
+  {
+    "id": 3,
+    "category": "Trainer Payout",
+    "description": "Advance stipend for weekend workshops",
+    "amount_inr": 25000,
+    "spent_on": "2026-11-15",
+    "recorded_by": 4,
+    "created_at": "2026-11-20 14:08:26.901165"
+  }
+]

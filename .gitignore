@@ -18,3 +18,15 @@ backups/*.db
 backups/*.json
 crm/db/*.db
 crm/db/*.db-*
+jar_*.txt
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+backend/.venv/
+backend/data/uploads/*
+!backend/data/uploads/.gitkeep
+

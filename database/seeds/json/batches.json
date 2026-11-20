@@ -1,0 +1,28 @@
+[
+  {
+    "id": 1,
+    "programme_id": 1,
+    "name": "FSWD - Jan 2027 Evening",
+    "start_date": "2026-10-31",
+    "days": "Mon,Wed,Fri",
+    "start_time": "19:00",
+    "duration_minutes": 90,
+    "classes_total": 12,
+    "capacity": 25,
+    "created_by": 3,
+    "created_at": "2026-11-20 14:08:26.867501"
+  },
+  {
+    "id": 2,
+    "programme_id": 2,
+    "name": "AI Backend - Feb 2027 Weekend",
+    "start_date": "2026-11-25",
+    "days": "Sat,Sun",
+    "start_time": "10:00",
+    "duration_minutes": 120,
+    "classes_total": 16,
+    "capacity": 20,
+    "created_by": 3,
+    "created_at": "2026-11-20 14:08:26.868055"
+  }
+]
