@@ -1,4 +1,5 @@
 export const routes = [
+  { path: '/login', title: 'Sign in', description: 'Sign in to your Aintrix Academy workspace. Learners and staff use the same sign-in.' },
   { path:'/leaderboard',title:'Optional Learner Leaderboard',description:'Browse opted-in pseudonymous challenge results with transparent scoring, difficulty filters and weekly or monthly periods.' },
   { path:'/shared-roadmap',title:'Shared Private Roadmap',description:'An explicitly shared, expiring learning roadmap. Access can be revoked by its owner.' },
   { path: '/assessment', title: 'Your Private Skill Assessment', description: 'A private adaptive skill assessment with server-calculated results and a personal learning roadmap.' },
