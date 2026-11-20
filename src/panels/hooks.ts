@@ -1,25 +1,29 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from './api';
 
-/** Loads one API resource. Pass null to skip loading. */
+/** Loads one screen's data. Pass null to wait. reload() fetches again after a change. */
 export function useApi<T>(path: string | null) {
-  const [state, setState] = useState<{ data: T | null; error: ApiError | null; loading: boolean }>({
-    data: null,
-    error: null,
-    loading: path !== null,
-  });
+  const [data, setData] = useState<T | null>(null);
+  const [error, setError] = useState<ApiError | null>(null);
+  const [loading, setLoading] = useState(false);
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
-    if (path === null) return;
+    if (!path) return;
     let alive = true;
-    setState(previous => ({ ...previous, loading: true, error: null }));
+    setLoading(true);
     api<T>(path)
-      .then(data => {
-        if (alive) setState({ data, error: null, loading: false });
+      .then(result => {
+        if (alive) {
+          setData(result);
+          setError(null);
+        }
       })
-      .catch((error: ApiError) => {
-        if (alive) setState({ data: null, error, loading: false });
+      .catch(caught => {
+        if (alive) setError(caught as ApiError);
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
       });
     return () => {
       alive = false;
@@ -27,5 +31,5 @@ export function useApi<T>(path: string | null) {
   }, [path, tick]);
 
   const reload = useCallback(() => setTick(value => value + 1), []);
-  return { ...state, reload };
+  return { data, error, loading, reload };
 }

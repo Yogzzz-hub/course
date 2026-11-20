@@ -1,344 +1,510 @@
-import { useState, type ReactNode } from 'react';
-import { Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom';
-import { api } from '../api';
+import { useEffect, useState, type FormEvent } from 'react';
+import { Link, Route, Routes } from 'react-router-dom';
+import { api, ApiError } from '../api';
 import { useApi } from '../hooks';
-import { Card, Empty, ErrorNotice, Loading, PageHead, StatusChip, fmtDate, fmtInr } from '../ui';
-import { PanelShell, useMe, type Me } from '../PanelShell';
+import { PanelFrame, type NavItem } from '../PanelShell';
+import { Card, Empty, ErrorNotice, Field, Notice, PageHead, Stat, StatusChip, Table, fmtDate, fmtDateTime, fmtInr } from '../ui';
 
-export interface SessionItem { id: string; type: string; startsAt: string; mode: string; status: string; rescheduleCount: number }
-export interface PlanItem { id: string; counsellor: string; summary: string; validUntil: string; offers: { id: string; packageName: string; finalPrice: number; inclusions: string[]; paymentPlans: string[] }[] }
-export interface ScheduleItem { id: string; title: string; startsAt: string; kind: string }
-export interface PaymentItem { id: string; label: string; amount: number; status: string; dueDate: string | null }
-
-const prospectNav = [
+const NAV: NavItem[] = [
   { to: '/app', label: 'Home' },
-  { to: '/app/sessions', label: 'My sessions' },
-  { to: '/app/book', label: 'Book a session' },
-  { to: '/app/plan', label: 'My learning plan' },
-  { to: '/app/profile', label: 'Profile & settings' },
-];
-const enrolledNav = [
-  { to: '/app', label: 'Dashboard' },
-  { to: '/app/schedule', label: 'Schedule' },
+  { to: '/app/payments', label: 'Fees & payments' },
+  { to: '/app/classes', label: 'Classes' },
+  { to: '/app/recordings', label: 'Recordings' },
+  { to: '/app/attendance', label: 'Attendance' },
   { to: '/app/assignments', label: 'Assignments' },
-  { to: '/app/payments', label: 'Payments & invoices' },
-  { to: '/app/profile', label: 'Profile & settings' },
+  { to: '/app/tasks', label: 'Tasks' },
+  { to: '/app/quizzes', label: 'Quizzes' },
+  { to: '/app/certificates', label: 'Certificates' },
 ];
+const METHODS = ['UPI', 'NEFT', 'IMPS', 'Bank transfer', 'Card', 'Cash'];
+const HEARTBEAT_SECONDS = 30;
 
-/** One panel, two modes (spec §17): Prospect before purchase, Enrolled after. */
-export default function StudentPanel() {
-  const { data: me, error, unauthorised, loading } = useMe();
-  if (unauthorised) return <Navigate to="/login?next=/app" replace />;
-  const enrolled = me?.mode === 'enrolled' || me?.mode === 'alumni';
-  return (
-    <PanelShell brand="My Academy" items={enrolled ? enrolledNav : prospectNav} me={me}>
-      {loading && <Loading />}
-      {error && !unauthorised && <ErrorNotice error={error} />}
-      <Routes>
-        <Route index element={<Home me={me ?? null} />} />
-        <Route path="sessions" element={<Sessions />} />
-        <Route path="book" element={<BookSession />} />
-        <Route path="plan" element={<LearningPlan />} />
-        <Route path="checkout/:offerId" element={<Checkout />} />
-        <Route path="schedule" element={<Schedule />} />
-        <Route path="assignments" element={<Assignments />} />
-        <Route path="payments" element={<Payments />} />
-        <Route path="profile" element={<Profile me={me ?? null} />} />
-        <Route path="*" element={<Navigate to="/app" replace />} />
-      </Routes>
-    </PanelShell>
-  );
+interface Enrolment {
+  enrolment_id: number;
+  programme: string;
+  batch: string;
+  status: string;
+  fees: { fee_total_inr: number; paid_inr: number; balance_inr: number };
+  attendance: { ended_classes: number; attended_classes: number; rate_percent: number | null };
+  next_class_at: string | null;
+  certificate_id: number | null;
 }
 
-const steps = ['Register', 'Session', 'Learning plan', 'Enrol'];
-
-function stepStates(status?: string): ('done' | 'current' | 'todo')[] {
-  const position: Record<string, number> = { REGISTERED: 0, SESSION_BOOKED: 1, PENDING_APPROVAL: 1, NO_SHOW: 1, SESSION_COMPLETED: 2, OFFER_SENT: 2, PAYMENT_PENDING: 3, WON: 4 };
-  const current = status ? position[status] ?? 0 : 0;
-  return steps.map((_, index) => (index < current ? 'done' : index === current ? 'current' : 'todo'));
+interface ClassRow {
+  id: number;
+  sequence: number;
+  starts_at: string;
+  ends_at: string;
+  status: string;
+  meeting_url: string;
+  recording_url: string;
+  attendance: { seconds: number; percent: number; attended: boolean } | null;
 }
 
-function Home({ me }: { me: Me | null }) {
-  const states = stepStates(me?.status);
-  const enrolled = me?.mode === 'enrolled';
+/** Sends a heartbeat every 30 seconds while a class is live, so connected time is recorded automatically. */
+function useLiveHeartbeat(classId: number | null) {
+  const [percent, setPercent] = useState<number | null>(null);
+  const [problem, setProblem] = useState('');
+  useEffect(() => {
+    if (!classId) return;
+    let alive = true;
+    const beat = async () => {
+      try {
+        const result = await api<{ percent: number }>(`/student/classes/${classId}/presence`, { method: 'POST' });
+        if (alive) {
+          setPercent(result.percent);
+          setProblem('');
+        }
+      } catch (caught) {
+        if (alive) setProblem((caught as ApiError).message);
+      }
+    };
+    beat();
+    const timer = window.setInterval(beat, HEARTBEAT_SECONDS * 1000);
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+    };
+  }, [classId]);
+  return { percent, problem };
+}
+
+function Home() {
+  const overview = useApi<{ items: Enrolment[]; payment_instructions: string; attendance_threshold_percent: number }>('/student/overview');
   return (
     <>
-      <PageHead title={me ? `Hello, ${me.name.split(' ')[0]}` : 'Your home'} description={enrolled ? 'Your classes, assignments and payments in one place.' : 'Here is your next step. There is no obligation to enrol.'} />
-      <div className="p-grid">
-        <Card className="p-next" title={enrolled ? 'Next class' : 'Your next step'}>
-          {me?.status === 'SESSION_BOOKED' || me?.status === 'REGISTERED' || !me?.status ? (
+      <PageHead title="Your learning" text="Where you stand in each course: fees, classes and your certificate." />
+      <ErrorNotice error={overview.error} />
+      {(overview.data?.items ?? []).length === 0 && overview.data && (
+        <Empty>You are not enrolled in a batch yet. Your academy manager adds you once your place is confirmed.</Empty>
+      )}
+      {(overview.data?.items ?? []).map(e => (
+        <Card key={e.enrolment_id} title={`${e.programme} · ${e.batch}`} actions={<StatusChip text={e.status.replace('_', ' ')} tone={e.status === 'awaiting_payment' ? 'warn' : 'good'} />}>
+          {e.status === 'awaiting_payment' && (
             <>
-              <p>{me?.status === 'SESSION_BOOKED' ? 'Your one-on-one session is booked. The join button opens 10 minutes before the start.' : 'Book a 20-minute one-on-one call. We will talk about your goals and the options that fit.'}</p>
-              <a className="p-btn" href="/app/book">{me?.status === 'SESSION_BOOKED' ? 'View my session' : 'Book my session'}</a>
+              <p>Pay your fee to unlock classes, recordings and assignments for this batch.</p>
+              <div className="p-stats">
+                <Stat label="Course fee" value={fmtInr(e.fees.fee_total_inr)} />
+                <Stat label="Paid so far" value={fmtInr(e.fees.paid_inr)} />
+                <Stat label="Balance" value={fmtInr(e.fees.balance_inr)} />
+              </div>
+              {overview.data?.payment_instructions ? (
+                <p className="p-hint" style={{ whiteSpace: 'pre-line' }}>{overview.data.payment_instructions}</p>
+              ) : (
+                <p className="p-hint">Payment details will be shared by the finance team. You can tell us about your payment as soon as you make it.</p>
+              )}
+              <Link className="p-btn" to="/app/payments">Tell us about a payment</Link>
             </>
-          ) : (
-            <p>Your counsellor is preparing your learning plan. It usually arrives within 24 hours of your session.</p>
+          )}
+          {e.status !== 'awaiting_payment' && (
+            <>
+              <div className="p-stats">
+                <Stat label="Balance" value={fmtInr(e.fees.balance_inr)} />
+                <Stat label="Next class" value={e.next_class_at ? fmtDateTime(e.next_class_at) : '—'} />
+                <Stat label="Attendance" value={e.attendance.rate_percent === null ? '—' : `${e.attendance.rate_percent}%`} />
+                <Stat label="Classes attended" value={`${e.attendance.attended_classes} of ${e.attendance.ended_classes}`} />
+              </div>
+              {e.certificate_id ? <Link className="p-btn" to="/app/certificates">View your certificate</Link> : <p className="p-hint">Your certificate appears here once your academy issues it.</p>}
+            </>
           )}
         </Card>
-        <Card title="What happens next">
-          <ol className="p-steps" aria-label="Your progress">
-            {steps.map((label, index) => <li key={label} data-state={states[index]}>{label}</li>)}
-          </ol>
-        </Card>
-        <Card title="Before your call">
-          <ul className="p-muted" style={{ paddingLeft: 18, lineHeight: 1.7, margin: 0 }}>
-            <li>Do I need prior programming experience?</li>
-            <li>How are classes delivered?</li>
-            <li>Can I pay in instalments?</li>
-          </ul>
-        </Card>
-      </div>
+      ))}
     </>
   );
-}
-
-function Sessions() {
-  const { data, error, loading, reload } = useApi<SessionItem[]>('/me/sessions');
-  const [busy, setBusy] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
-
-  async function cancel(id: string) {
-    setBusy(id);
-    setNotice(null);
-    try {
-      await api(`/sessions/${id}`, { method: 'PATCH', body: { action: 'cancel' } });
-      setNotice('Your session has been cancelled. You can book a new time whenever you like.');
-      reload();
-    } catch (caught) {
-      setNotice((caught as Error).message);
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  return (
-    <>
-      <PageHead title="My sessions" description="Upcoming and past one-on-one calls. You can reschedule up to two times, until two hours before the start." actions={<a className="p-btn" href="/app/book">Book a session</a>} />
-      {notice && <p className="p-alert p-alert-info" role="status">{notice}</p>}
-      {loading && <Loading />}
-      {error && <ErrorNotice error={error} onRetry={reload} />}
-      {data && data.length === 0 && <Empty title="No sessions yet">Book a one-on-one call to talk through your options.</Empty>}
-      {data && data.length > 0 && (
-        <ul className="p-list">
-          {data.map(item => (
-            <li key={item.id}>
-              <div>
-                <strong>{item.type}</strong>
-                <small>{fmtDate(item.startsAt)} · {item.mode}</small>
-              </div>
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                <StatusChip status={item.status} />
-                {(item.status === 'BOOKED' || item.status === 'PENDING_APPROVAL') && (
-                  <button type="button" className="p-btn p-btn-ghost" disabled={busy === item.id} onClick={() => cancel(item.id)}>Cancel</button>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </>
-  );
-}
-
-const levels = ['Beginner', 'Some coding', 'Working developer', 'Not sure'];
-const goals = ['Change careers into tech', 'Upskill in my current role', 'Build projects for my portfolio', 'Prepare for interviews'];
-const starts = ['As soon as possible', 'Next month', 'In 2–3 months', 'Just exploring'];
-
-/** Booking in four short steps (spec §13.6). Times are shown in the learner's zone, with IST alongside. */
-function BookSession() {
-  const [step, setStep] = useState(0);
-  const [slot, setSlot] = useState<string | null>(null);
-  const [answers, setAnswers] = useState({ level: '', goal: '', hours: '', start: '', question: '' });
-  const [holdId, setHoldId] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState<SessionItem | null>(null);
-  const slots = useApi<{ starts: string[] }>('/public/availability?type=counselling&days=14');
-  const navigate = useNavigate();
-
-  async function hold(startsAt: string) {
-    setSlot(startsAt);
-    setError(null);
-    try {
-      const result = await api<{ holdId: string }>('/sessions/hold', { body: { type: 'counselling', startsAt } });
-      setHoldId(result.holdId);
-      setStep(1);
-    } catch (caught) {
-      setError((caught as Error).message);
-      slots.reload();
-    }
-  }
-
-  async function confirm() {
-    if (!holdId) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const result = await api<SessionItem>('/sessions', { body: { holdId, answers }, idempotencyKey: holdId });
-      setDone(result);
-    } catch (caught) {
-      setError((caught as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  if (done) {
-    return (
-      <>
-        <PageHead title="Your session is booked" />
-        <Card>
-          <p>{fmtDate(done.startsAt)} · 20-minute video call. We'll send a calendar invite and reminders 24 hours and 1 hour before.</p>
-          <p className="p-muted">There is no obligation to enrol.</p>
-          <button className="p-btn" onClick={() => navigate('/app/sessions')}>See my sessions</button>
-        </Card>
-      </>
-    );
-  }
-
-  return (
-    <>
-      <PageHead title="Let's find the right learning path for you" description="Tell us a little about your goals and book a one-on-one conversation with our team. We'll help you understand programme options, learning expectations, fees and available support." />
-      <ol className="p-steps" aria-label="Booking steps" style={{ marginBottom: 22 }}>
-        {['Pick a time', 'Four questions and confirm'].map((label, index) => <li key={label} data-state={index === step ? 'current' : index < step ? 'done' : 'todo'}>{label}</li>)}
-      </ol>
-      {error && <p className="p-alert p-alert-danger" role="alert">{error}</p>}
-
-      {step === 0 && (
-        <Card title="Pick a time">
-          {slots.loading && <Loading label="Finding free times…" />}
-          {slots.error && <ErrorNotice error={slots.error} onRetry={slots.reload} />}
-          {slots.data && slots.data.starts.length === 0 && <Empty title="No free times in the next 14 days">Leave your preferred times and our team will reach out.</Empty>}
-          {slots.data && slots.data.starts.length > 0 && (
-            <div className="p-slots" role="group" aria-label="Available times">
-              {slots.data.starts.map(startsAt => (
-                <button key={startsAt} type="button" aria-pressed={slot === startsAt} onClick={() => hold(startsAt)}>{fmtDate(startsAt)}</button>
-              ))}
-            </div>
-          )}
-        </Card>
-      )}
-
-      {step === 1 && (
-        <Card title="Four short questions">
-          <div className="p-field"><label htmlFor="q-level">Your current level</label><select id="q-level" className="p-select" value={answers.level} onChange={e => setAnswers({ ...answers, level: e.target.value })}><option value="">Choose one</option>{levels.map(v => <option key={v}>{v}</option>)}</select></div>
-          <div className="p-field"><label htmlFor="q-goal">Your main goal</label><select id="q-goal" className="p-select" value={answers.goal} onChange={e => setAnswers({ ...answers, goal: e.target.value })}><option value="">Choose one</option>{goals.map(v => <option key={v}>{v}</option>)}</select></div>
-          <div className="p-field"><label htmlFor="q-hours">Hours per week you can give</label><input id="q-hours" className="p-input" inputMode="numeric" value={answers.hours} onChange={e => setAnswers({ ...answers, hours: e.target.value.replace(/\D/g, '').slice(0, 2) })} /></div>
-          <div className="p-field"><label htmlFor="q-start">When would you like to start?</label><select id="q-start" className="p-select" value={answers.start} onChange={e => setAnswers({ ...answers, start: e.target.value })}><option value="">Choose one</option>{starts.map(v => <option key={v}>{v}</option>)}</select></div>
-          <div className="p-field"><label htmlFor="q-question">Anything else you'd like us to know? (optional)</label><textarea id="q-question" className="p-textarea" maxLength={1000} value={answers.question} onChange={e => setAnswers({ ...answers, question: e.target.value })} /></div>
-          <button className="p-btn" disabled={busy || !answers.level || !answers.goal || !answers.start} onClick={confirm}>{busy ? 'Confirming…' : 'Confirm my session'}</button>
-        </Card>
-      )}
-
-    </>
-  );
-}
-
-function LearningPlan() {
-  const { data, error, loading, reload } = useApi<PlanItem>('/me/plan');
-  return (
-    <>
-      <PageHead title="My learning plan" description="A written recommendation from your counsellor, with the packages, fee and the date the offer is valid until." />
-      {loading && <Loading />}
-      {error && <ErrorNotice error={error} onRetry={reload} />}
-      {!loading && !error && !data && <Empty title="Your plan arrives after your session">Your counsellor publishes it within 24 hours of your call.</Empty>}
-      {data && (
-        <>
-          <Card title="Summary"><p>{data.summary}</p><small className="p-muted">Prepared by {data.counsellor} · Valid until {fmtDate(data.validUntil)}</small></Card>
-          <div className="p-grid" style={{ marginTop: 18 }}>
-            {data.offers.map(offer => (
-              <Card key={offer.id} title={offer.packageName}>
-                <p><strong style={{ fontSize: 22 }}>{fmtInr(offer.finalPrice)}</strong> <span className="p-muted">incl. taxes as shown at checkout</span></p>
-                <ul className="p-muted" style={{ paddingLeft: 18, lineHeight: 1.7 }}>{offer.inclusions.map(i => <li key={i}>{i}</li>)}</ul>
-                <p className="p-hint">Payment plans: {offer.paymentPlans.join(' · ') || 'Full payment'}</p>
-                <a className="p-btn" href={`/app/checkout/${offer.id}`}>Enrol now</a>
-              </Card>
-            ))}
-          </div>
-        </>
-      )}
-    </>
-  );
-}
-
-function Checkout() {
-  const { offerId } = useParams();
-  const { data, error, loading, reload } = useApi<PlanItem['offers'][number]>(offerId ? `/offers/${offerId}` : null);
-  const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
-  const [agree, setAgree] = useState(false);
-
-  async function pay() {
-    if (!offerId) return;
-    setBusy(true);
-    setNotice(null);
-    try {
-      const result = await api<{ checkoutUrl?: string }>('/checkout', { body: { offerId, paymentPlan: 'full', termsAccepted: agree }, idempotencyKey: `checkout-${offerId}` });
-      if (result.checkoutUrl) window.location.assign(result.checkoutUrl);
-      else setNotice('Your payment window is not available right now. Please try again shortly.');
-    } catch (caught) {
-      setNotice((caught as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <>
-      <PageHead title="Checkout" description="Review your plan, agree to the terms and pay through our secure gateway. We never see your card details." />
-      {loading && <Loading />}
-      {error && <ErrorNotice error={error} onRetry={reload} />}
-      {notice && <p className="p-alert p-alert-danger" role="alert">{notice}</p>}
-      {data && (
-        <Card title={data.packageName}>
-          <p><strong style={{ fontSize: 22 }}>{fmtInr(data.finalPrice)}</strong></p>
-          <label className="p-check"><input type="checkbox" checked={agree} onChange={e => setAgree(e.target.checked)} /> I agree to the Terms & Conditions, Refund & Cancellation Policy and Internship & Placement Terms.</label>
-          <button className="p-btn" disabled={!agree || busy} onClick={pay}>{busy ? 'Opening secure payment…' : 'Pay securely'}</button>
-        </Card>
-      )}
-    </>
-  );
-}
-
-function ListPage<T>({ title, description, path, render, empty }: { title: string; description: string; path: string; render: (items: T[]) => ReactNode; empty: string }) {
-  const { data, error, loading, reload } = useApi<T[]>(path);
-  return (
-    <>
-      <PageHead title={title} description={description} />
-      {loading && <Loading />}
-      {error && <ErrorNotice error={error} onRetry={reload} />}
-      {data && data.length === 0 && <Empty title={empty} />}
-      {data && data.length > 0 && render(data)}
-    </>
-  );
-}
-
-function Schedule() {
-  return <ListPage<ScheduleItem> title="Schedule" description="Your classes, mentorship and deadlines in one calendar." path="/me/schedule" empty="Nothing scheduled yet" render={items => <ul className="p-list">{items.map(i => <li key={i.id}><div><strong>{i.title}</strong><small>{i.kind}</small></div><small>{fmtDate(i.startsAt)}</small></li>)}</ul>} />;
-}
-
-function Assignments() {
-  return <ListPage<{ id: string; title: string; dueAt: string; status: string }> title="Assignments" description="To do, submitted and reviewed work for your batch." path="/me/assignments" empty="No assignments yet" render={items => <ul className="p-list">{items.map(i => <li key={i.id}><div><strong>{i.title}</strong><small>Due {fmtDate(i.dueAt)}</small></div><StatusChip status={i.status} /></li>)}</ul>} />;
 }
 
 function Payments() {
-  return <ListPage<PaymentItem> title="Payments & invoices" description="Your plan, instalments and receipts." path="/me/payments" empty="No payments yet" render={items => <ul className="p-list">{items.map(i => <li key={i.id}><div><strong>{i.label}</strong><small>{i.dueDate ? `Due ${fmtDate(i.dueDate)}` : 'Paid on verification'}</small></div><div style={{ display: 'flex', gap: 10, alignItems: 'center' }}><strong>{fmtInr(i.amount)}</strong><StatusChip status={i.status} /></div></li>)}</ul>} />;
-}
+  const overview = useApi<{ items: Enrolment[] }>('/student/overview');
+  const history = useApi<{ items: { id: number; amount_inr: number; method: string; reference: string; paid_on: string; status: string; note: string }[] }>('/student/payments');
+  const open = (overview.data?.items ?? []).filter(e => e.fees.balance_inr > 0);
+  const [form, setForm] = useState({ enrolment_id: '', amount_inr: '', method: 'UPI', reference: '', paid_on: '' });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<ApiError | null>(null);
+  const [message, setMessage] = useState('');
+  const selected = open.find(e => String(e.enrolment_id) === form.enrolment_id) ?? open[0];
 
-function Profile({ me }: { me: Me | null }) {
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    setError(null);
+    setMessage('');
+    try {
+      await api('/student/payments', {
+        body: {
+          enrolment_id: Number(form.enrolment_id || selected?.enrolment_id),
+          amount_inr: Number(form.amount_inr),
+          method: form.method,
+          reference: form.reference,
+          paid_on: form.paid_on,
+        },
+      });
+      setMessage('Thank you. The finance team will check your payment and confirm it here.');
+      setForm({ enrolment_id: '', amount_inr: '', method: 'UPI', reference: '', paid_on: '' });
+      history.reload();
+      overview.reload();
+    } catch (caught) {
+      setError(caught as ApiError);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const fe = error?.fields ?? {};
   return (
     <>
-      <PageHead title="Profile & settings" description="Your details, sign-in methods and your data." />
-      <div className="p-grid">
-        <Card title="Your details">
-          <p>{me?.name ?? '—'}</p>
-          <p className="p-muted">{me?.email ?? '—'}</p>
+      <PageHead title="Fees & payments" text="Tell us about each payment with its reference. Your course opens as soon as the first payment is confirmed." />
+      <ErrorNotice error={overview.error} />
+      {open.length === 0 ? (
+        <Empty>Your fees are fully paid. Thank you.</Empty>
+      ) : (
+        <Card title="Record a payment">
+          <ErrorNotice error={error} />
+          {message && <Notice tone="success">{message}</Notice>}
+          <form onSubmit={submit} className="p-form-grid">
+            <Field label="Course">
+              <select className="p-select" value={form.enrolment_id || String(selected?.enrolment_id ?? '')} onChange={e => setForm({ ...form, enrolment_id: e.target.value })}>
+                {open.map(e => <option key={e.enrolment_id} value={e.enrolment_id}>{e.programme} · {e.batch} (balance {fmtInr(e.fees.balance_inr)})</option>)}
+              </select>
+            </Field>
+            <Field label="Amount paid (₹)" error={fe.amount_inr} hint={selected ? `Balance due: ${fmtInr(selected.fees.balance_inr)}` : undefined}>
+              <input className="p-input" type="number" min={1} required value={form.amount_inr} onChange={e => setForm({ ...form, amount_inr: e.target.value })} />
+            </Field>
+            <Field label="How you paid">
+              <select className="p-select" value={form.method} onChange={e => setForm({ ...form, method: e.target.value })}>
+                {METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </Field>
+            <Field label="Transaction reference (UTR / receipt number)" error={fe.reference}>
+              <input className="p-input" required value={form.reference} onChange={e => setForm({ ...form, reference: e.target.value })} />
+            </Field>
+            <Field label="Date you paid" error={fe.paid_on}>
+              <input className="p-input" type="date" required value={form.paid_on} onChange={e => setForm({ ...form, paid_on: e.target.value })} />
+            </Field>
+            <div className="span-2"><button className="p-btn" type="submit" disabled={busy}>{busy ? 'Sending…' : 'Send payment details'}</button></div>
+          </form>
         </Card>
-        <Card title="Your data">
-          <p>Download a copy of your data or ask us to delete your account. Invoices are kept for the period the law requires.</p>
-          <button type="button" className="p-btn p-btn-ghost" onClick={() => api('/me/export', { method: 'POST' }).catch(() => undefined)}>Request my data</button>
-        </Card>
-      </div>
+      )}
+      <Card title="Your payments">
+        <ErrorNotice error={history.error} />
+        <Table
+          head={['Date', 'Amount', 'Method', 'Reference', 'Status', 'Note']}
+          rows={(history.data?.items ?? []).map(p => [
+            fmtDate(p.paid_on),
+            fmtInr(p.amount_inr),
+            p.method,
+            p.reference,
+            <StatusChip key="s" text={p.status} tone={p.status === 'verified' ? 'good' : p.status === 'rejected' ? 'bad' : 'warn'} />,
+            p.note || '—',
+          ])}
+          empty="No payments recorded yet."
+        />
+      </Card>
     </>
+  );
+}
+
+function Classes() {
+  const classes = useApi<{ items: { enrolment_id: number; batch: string; access: boolean; classes: ClassRow[] }[] }>('/student/classes');
+
+  return (
+    <>
+      <PageHead title="Classes" text="Your timetable. Join a live class from here. Time you stay connected is recorded automatically." />
+      <ErrorNotice error={classes.error} />
+      {(classes.data?.items ?? []).map(b => (
+        <Card key={b.enrolment_id} title={b.batch}>
+          {!b.access ? (
+            <Notice tone="info">Your timetable opens once your first fee payment is confirmed.</Notice>
+          ) : (
+            <Table
+              head={['#', 'Starts', 'Status', 'Your attendance', 'Meeting']}
+              rows={b.classes.map(c => [
+                c.sequence,
+                fmtDateTime(c.starts_at),
+                <StatusChip key="s" text={c.status} tone={c.status === 'live' ? 'warn' : c.status === 'ended' ? 'good' : 'neutral'} />,
+                c.attendance ? `${c.attendance.percent}% · ${c.attendance.attended ? 'attended' : 'not yet enough'}` : '—',
+                c.status === 'live' && c.meeting_url ? <a key="m" className="p-link" href={c.meeting_url} target="_blank" rel="noreferrer">Join</a> : '—',
+              ])}
+              empty="No classes scheduled yet."
+            />
+          )}
+        </Card>
+      ))}
+    </>
+  );
+}
+
+function Recordings() {
+  const list = useApi<{ items: { id: number; sequence: number; starts_at: string; recording_url: string }[] }>('/student/recordings');
+  return (
+    <>
+      <PageHead title="Recordings" text="Watch past classes whenever you need to." />
+      <Card>
+        <ErrorNotice error={list.error} />
+        <Table
+          head={['Class', 'Date', 'Recording']}
+          rows={(list.data?.items ?? []).map(r => [`Class ${r.sequence}`, fmtDateTime(r.starts_at), <a key="l" className="p-link" href={r.recording_url} target="_blank" rel="noreferrer">Watch</a>])}
+          empty="Recordings appear here after each class."
+        />
+      </Card>
+    </>
+  );
+}
+
+function Attendance() {
+  const list = useApi<{ threshold_percent: number; items: { batch: string; ended_classes: number; attended_classes: number; rate_percent: number | null }[] }>('/student/attendance');
+  return (
+    <>
+      <PageHead title="Attendance" text={`A class counts as attended when you stay connected for at least ${list.data?.threshold_percent ?? '—'}% of it. It is recorded automatically; there is nothing to mark.`} />
+      <Card>
+        <ErrorNotice error={list.error} />
+        <Table
+          head={['Batch', 'Classes finished', 'Attended', 'Attendance']}
+          rows={(list.data?.items ?? []).map(a => [a.batch, a.ended_classes, a.attended_classes, a.rate_percent === null ? '—' : `${a.rate_percent}%`])}
+          empty="Attendance appears after your first class."
+        />
+      </Card>
+    </>
+  );
+}
+
+interface AssignmentRowData {
+  id: number; batch: string; title: string; brief: string; due_at: string | null;
+  submission: { kind: string; link: string; file_name: string; submitted_at: string; score: number | null; feedback: string } | null;
+}
+
+function SubmitForm({ assignment, onDone }: { assignment: AssignmentRowData; onDone: () => void }) {
+  const [kind, setKind] = useState('url');
+  const [link, setLink] = useState('');
+  const [note, setNote] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<ApiError | null>(null);
+  const graded = assignment.submission?.score !== null && assignment.submission?.score !== undefined;
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const body = new FormData();
+      body.append('kind', kind);
+      body.append('link', link);
+      body.append('note', note);
+      if (kind === 'file' && file) body.append('file', file);
+      await api(`/student/assignments/${assignment.id}/submit`, { method: 'POST', body });
+      onDone();
+    } catch (caught) {
+      setError(caught as ApiError);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (graded) return <p className="p-hint">Graded. This submission can no longer be changed.</p>;
+  return (
+    <form onSubmit={submit} className="p-form-grid">
+      <ErrorNotice error={error} />
+      <Field label="How are you submitting?">
+        <select className="p-select" value={kind} onChange={e => setKind(e.target.value)}>
+          <option value="url">Link (project or website)</option>
+          <option value="git">Git repository link</option>
+          <option value="file">Upload a file</option>
+        </select>
+      </Field>
+      {kind === 'file' ? (
+        <Field label="File" hint="PDF, ZIP, DOCX, text, code, notebook or image. Up to 10 MB." error={error?.fields?.file}>
+          <input type="file" onChange={e => setFile(e.target.files?.[0] ?? null)} required />
+        </Field>
+      ) : (
+        <Field label="Link" error={error?.fields?.link}>
+          <input className="p-input" type="url" required value={link} onChange={e => setLink(e.target.value)} placeholder="https://" />
+        </Field>
+      )}
+      <Field label="Note for your trainer (optional)"><input className="p-input" value={note} onChange={e => setNote(e.target.value)} /></Field>
+      <div className="span-2"><button className="p-btn" type="submit" disabled={busy}>{busy ? 'Submitting…' : assignment.submission ? 'Replace my submission' : 'Submit'}</button></div>
+    </form>
+  );
+}
+
+function Assignments() {
+  const list = useApi<{ items: AssignmentRowData[] }>('/student/assignments');
+  const [openId, setOpenId] = useState<number | null>(null);
+  return (
+    <>
+      <PageHead title="Assignments" text="Submit your work as a file, a link or a Git repository. Your trainer grades it and writes feedback here." />
+      <ErrorNotice error={list.error} />
+      {(list.data?.items ?? []).length === 0 && list.data && <Empty>No assignments yet.</Empty>}
+      {(list.data?.items ?? []).map(a => (
+        <Card key={a.id} title={a.title} actions={a.submission ? <StatusChip text={a.submission.score === null ? 'Submitted' : `Graded ${a.submission.score}/100`} tone={a.submission.score === null ? 'warn' : 'good'} /> : <StatusChip text="Not submitted" />}>
+          <p className="p-muted">{a.batch}{a.due_at ? ` · due ${fmtDateTime(a.due_at)}` : ''}</p>
+          {a.brief && <p style={{ whiteSpace: 'pre-line' }}>{a.brief}</p>}
+          {a.submission?.feedback && <Notice tone="info">Feedback: {a.submission.feedback}</Notice>}
+          <button type="button" className="p-btn p-btn-ghost p-btn-small" onClick={() => setOpenId(openId === a.id ? null : a.id)}>{openId === a.id ? 'Close' : a.submission ? 'Change my submission' : 'Submit work'}</button>
+          {openId === a.id && <div style={{ marginTop: 12 }}><SubmitForm assignment={a} onDone={() => { setOpenId(null); list.reload(); }} /></div>}
+        </Card>
+      ))}
+    </>
+  );
+}
+
+function Tasks() {
+  const list = useApi<{ items: { id: number; title: string; detail: string; due_at: string | null; done: boolean }[] }>('/student/tasks');
+  const [error, setError] = useState<ApiError | null>(null);
+  async function markDone(id: number) {
+    setError(null);
+    try {
+      await api(`/student/tasks/${id}/done`, { method: 'POST' });
+      list.reload();
+    } catch (caught) {
+      setError(caught as ApiError);
+    }
+  }
+  return (
+    <>
+      <PageHead title="Tasks" text="Practical tasks from your trainer. Tick them off as you finish." />
+      <ErrorNotice error={error} />
+      <ErrorNotice error={list.error} />
+      <Table
+        head={['Task', 'Due', 'Details', 'Done']}
+        rows={(list.data?.items ?? []).map(t => [
+          t.title,
+          fmtDate(t.due_at?.slice(0, 10)),
+          t.detail || '—',
+          t.done ? <StatusChip key="d" text="Done" tone="good" /> : <button key="b" type="button" className="p-btn p-btn-small" onClick={() => markDone(t.id)}>Mark done</button>,
+        ])}
+        empty="No tasks yet."
+      />
+    </>
+  );
+}
+
+interface QuizRowData { id: number; title: string; due_at: string | null; questions: { q: string; options: string[] }[]; attempt: { score: number; total: number } | null }
+
+function QuizCard({ quiz, onDone }: { quiz: QuizRowData; onDone: () => void }) {
+  const [answers, setAnswers] = useState<(number | null)[]>(() => quiz.questions.map(() => null));
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<ApiError | null>(null);
+  const [result, setResult] = useState<{ score: number; total: number } | null>(null);
+  const attempt = quiz.attempt ?? result;
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const response = await api<{ score: number; total: number }>(`/student/quizzes/${quiz.id}/attempt`, { body: { answers: answers.map(a => a ?? 0) } });
+      setResult(response);
+      onDone();
+    } catch (caught) {
+      setError(caught as ApiError);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card title={quiz.title} actions={attempt ? <StatusChip text={`Score ${attempt.score} / ${attempt.total}`} tone="good" /> : <StatusChip text="Open" tone="warn" />}>
+      {quiz.due_at && <p className="p-muted">Due {fmtDateTime(quiz.due_at)}</p>}
+      {attempt ? (
+        <p>You scored {attempt.score} out of {attempt.total}. Your trainer can see your attempt.</p>
+      ) : (
+        <form onSubmit={submit}>
+          <ErrorNotice error={error} />
+          {quiz.questions.map((question, qIndex) => (
+            <fieldset key={qIndex} className="p-card" style={{ margin: '10px 0', padding: 12 }}>
+              <legend><strong>{qIndex + 1}. {question.q}</strong></legend>
+              {question.options.map((option, oIndex) => (
+                <label key={oIndex} className="p-row" style={{ margin: '4px 0' }}>
+                  <input type="radio" name={`q-${quiz.id}-${qIndex}`} checked={answers[qIndex] === oIndex} onChange={() => setAnswers(current => current.map((v, i) => (i === qIndex ? oIndex : v)))} />
+                  {option}
+                </label>
+              ))}
+            </fieldset>
+          ))}
+          <button className="p-btn" type="submit" disabled={busy || answers.some(a => a === null)}>{busy ? 'Submitting…' : 'Submit answers'}</button>
+          <p className="p-hint">You can submit once, so check your answers first.</p>
+        </form>
+      )}
+    </Card>
+  );
+}
+
+function Quizzes() {
+  const list = useApi<{ items: QuizRowData[] }>('/student/quizzes');
+  return (
+    <>
+      <PageHead title="Quizzes" text="Short multiple-choice checks from your trainer. You can submit each quiz once." />
+      <ErrorNotice error={list.error} />
+      {(list.data?.items ?? []).length === 0 && list.data && <Empty>No quizzes yet.</Empty>}
+      {(list.data?.items ?? []).map(q => <QuizCard key={q.id} quiz={q} onDone={list.reload} />)}
+    </>
+  );
+}
+
+function Certificates() {
+  const list = useApi<{ items: { id: number; number: string; programme: string; batch: string; issued_at: string }[] }>('/student/certificates');
+  return (
+    <>
+      <PageHead title="Certificates" text="Your certificate is issued by the academy once you complete the course. You can view and print it from here." />
+      <ErrorNotice error={list.error} />
+      {(list.data?.items ?? []).length === 0 && list.data && <Empty>No certificate yet. Finish every class and clear your fees, and the academy will issue it here.</Empty>}
+      {(list.data?.items ?? []).map(c => (
+        <Card key={c.id} title={c.programme} actions={<StatusChip text={c.number} tone="good" />}>
+          <p className="p-muted">{c.batch} · issued {fmtDateTime(c.issued_at)}</p>
+          <a className="p-btn" href={`/v1/student/certificates/${c.id}`} target="_blank" rel="noreferrer">View and print</a>
+        </Card>
+      ))}
+    </>
+  );
+}
+
+/**
+ * Watches for a live class on every student page, so the Join button shows wherever the student is
+ * and connected time keeps counting when they move between pages.
+ */
+function LiveClassWatcher() {
+  const classes = useApi<{ items: { enrolment_id: number; batch: string; access: boolean; classes: ClassRow[] }[] }>('/student/classes');
+  const { reload } = classes;
+  useEffect(() => {
+    const timer = window.setInterval(reload, HEARTBEAT_SECONDS * 1000);
+    return () => window.clearInterval(timer);
+  }, [reload]);
+  const liveRow = (classes.data?.items ?? []).flatMap(b => b.classes).find(c => c.status === 'live') ?? null;
+  const heartbeat = useLiveHeartbeat(liveRow ? liveRow.id : null);
+  if (!liveRow) return null;
+  return (
+    <Card title="Live now">
+      <p>Class {liveRow.sequence} is live. {heartbeat.percent !== null && `Your attendance so far: ${heartbeat.percent}% of this class.`}</p>
+      {heartbeat.problem && <Notice tone="danger">{heartbeat.problem}</Notice>}
+      {liveRow.meeting_url ? (
+        <a className="p-btn" href={liveRow.meeting_url} target="_blank" rel="noreferrer">Join class</a>
+      ) : (
+        <p className="p-hint">The trainer has not added the meeting link yet. Please wait a moment.</p>
+      )}
+    </Card>
+  );
+}
+
+export default function StudentPanel() {
+  return (
+    <PanelFrame role="student" brand="Student" items={NAV}>
+      {() => (
+        <>
+          <LiveClassWatcher />
+          <Routes>
+            <Route index element={<Home />} />
+            <Route path="payments" element={<Payments />} />
+            <Route path="classes" element={<Classes />} />
+            <Route path="recordings" element={<Recordings />} />
+            <Route path="attendance" element={<Attendance />} />
+            <Route path="assignments" element={<Assignments />} />
+            <Route path="tasks" element={<Tasks />} />
+            <Route path="quizzes" element={<Quizzes />} />
+            <Route path="certificates" element={<Certificates />} />
+            <Route path="*" element={<Empty>This page does not exist.</Empty>} />
+          </Routes>
+        </>
+      )}
+    </PanelFrame>
   );
 }

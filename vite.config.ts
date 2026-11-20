@@ -54,6 +54,7 @@ export default defineConfig(({ mode }) => {
       watch: { ignored: ['**/.local/**', '**/test-results*/**', '**/playwright-report/**', '**/.build/**', '**/dist/**'] },
       proxy: {
         '/api/learning': { target: env.VITE_LEARNING_PROXY_TARGET || 'http://127.0.0.1:8787' },
+        '/v1': { target: env.VITE_ACADEMY_API_TARGET || 'http://127.0.0.1:8000', changeOrigin: false },
         ...(target ? { '/api': { target, changeOrigin: true } } : {}),
       },
     },

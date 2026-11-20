@@ -1,40 +1,38 @@
 import type { ReactNode } from 'react';
 import { ApiError } from './api';
 
-export type Tone = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
+const IST = 'Asia/Kolkata';
 
-const toneByStatus: Record<string, Tone> = {
-  PAID: 'success', ACTIVE: 'success', WON: 'success', ATTENDED: 'success', COMPLETED: 'success', ACCEPTED: 'success', ENROLLED: 'success',
-  DUE: 'warning', OVERDUE: 'danger', PENDING_APPROVAL: 'warning', PENDING_PAYMENT: 'warning', PAYMENT_PENDING: 'warning', NURTURE: 'warning',
-  NO_SHOW: 'danger', LOST: 'danger', FAILED: 'danger', CANCELLED: 'danger', SUSPENDED: 'danger',
-  BOOKED: 'info', SESSION_BOOKED: 'info', NEW: 'info', CONTACTED: 'info', REGISTERED: 'info', OFFER_SENT: 'info', UPCOMING: 'info',
-};
-
-export function toneFor(status: string): Tone {
-  return toneByStatus[status] ?? 'neutral';
+export function fmtDate(value?: string | null): string {
+  if (!value) return '—';
+  return new Date(value.length === 10 ? `${value}T00:00:00` : value).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: IST });
 }
 
-/** Status is always shown as text next to its colour, never colour alone (spec §3.2). */
-export function StatusChip({ status, label }: { status: string; label?: string }) {
-  const tone = toneFor(status);
-  return <span className={`p-chip p-chip-${tone}`}><span className="p-chip-dot" aria-hidden="true" />{label ?? status.replace(/_/g, ' ').toLowerCase()}</span>;
+export function fmtDateTime(value?: string | null): string {
+  if (!value) return '—';
+  return `${new Date(value).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: IST })} IST`;
 }
 
-export function PageHead({ title, description, actions }: { title: string; description?: string; actions?: ReactNode }) {
+export function fmtInr(value?: number | null): string {
+  if (value === null || value === undefined) return '—';
+  return `₹${value.toLocaleString('en-IN')}`;
+}
+
+export function PageHead({ title, text, action }: { title: string; text?: string; action?: ReactNode }) {
   return (
-    <header className="p-page-head">
+    <header className="p-head">
       <div>
-        <h1 tabIndex={-1}>{title}</h1>
-        {description && <p>{description}</p>}
+        <h1>{title}</h1>
+        {text && <p className="p-muted">{text}</p>}
       </div>
-      {actions && <div className="p-page-actions">{actions}</div>}
+      {action}
     </header>
   );
 }
 
-export function Card({ title, children, actions, className = '' }: { title?: string; children: ReactNode; actions?: ReactNode; className?: string }) {
+export function Card({ title, children, actions }: { title?: string; children: ReactNode; actions?: ReactNode }) {
   return (
-    <section className={`p-card ${className}`}>
+    <section className="p-card">
       {(title || actions) && (
         <div className="p-card-head">
           {title && <h2>{title}</h2>}
@@ -46,53 +44,69 @@ export function Card({ title, children, actions, className = '' }: { title?: str
   );
 }
 
-export function Empty({ title, children }: { title: string; children?: ReactNode }) {
-  return (
-    <div className="p-empty">
-      <strong>{title}</strong>
-      {children && <p>{children}</p>}
-    </div>
-  );
-}
-
-/** Shown when the backend is not reachable yet, so screens still render and explain themselves. */
-export function ErrorNotice({ error, onRetry }: { error: ApiError; onRetry?: () => void }) {
-  const notConnected = error.code === 'NETWORK';
-  return (
-    <div className="p-alert p-alert-danger" role="alert">
-      <p>
-        {notConnected
-          ? 'The academy service is not connected yet. This screen fills in once it is running.'
-          : error.message}
-      </p>
-      {onRetry && <button type="button" className="p-btn p-btn-ghost" onClick={onRetry}>Try again</button>}
-    </div>
-  );
-}
-
-export function Loading({ label = 'Loading…' }: { label?: string }) {
-  return <p className="p-muted" role="status">{label}</p>;
-}
-
-export function Stat({ label, value, note }: { label: string; value: number | string | null | undefined; note?: string }) {
-  const shown = value === null || value === undefined ? '—' : value;
+export function Stat({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="p-stat">
-      <span className="p-stat-label">{label}</span>
-      <span className="p-stat-value">{shown}</span>
-      {note && <span className="p-stat-note">{note}</span>}
+      <span>{label}</span>
+      <strong>{value === null || value === undefined ? '—' : value}</strong>
     </div>
   );
 }
 
-export function fmtDate(value: string | null | undefined): string {
-  if (!value) return '—';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '—';
-  return date.toLocaleString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' }) + ' IST';
+export function Table({ head, rows, empty }: { head: string[]; rows: ReactNode[][]; empty: string }) {
+  if (rows.length === 0) return <Empty>{empty}</Empty>;
+  return (
+    <div className="p-table-wrap">
+      <table className="p-table">
+        <thead>
+          <tr>{head.map(h => <th key={h}>{h}</th>)}</tr>
+        </thead>
+        <tbody>
+          {rows.map((cells, rowIndex) => (
+            <tr key={rowIndex}>
+              {cells.map((cell, cellIndex) => <td key={cellIndex} data-label={head[cellIndex]}>{cell}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
-export function fmtInr(amount: number | null | undefined): string {
-  if (amount === null || amount === undefined) return '—';
-  return '₹' + amount.toLocaleString('en-IN');
+export function Empty({ children }: { children: ReactNode }) {
+  return <p className="p-empty">{children}</p>;
+}
+
+export function Loading() {
+  return <p className="p-muted" role="status">Loading…</p>;
+}
+
+export function Notice({ tone = 'info', children }: { tone?: 'info' | 'success' | 'danger'; children: ReactNode }) {
+  return <p className={`p-alert p-alert-${tone}`} role={tone === 'danger' ? 'alert' : 'status'}>{children}</p>;
+}
+
+export function ErrorNotice({ error }: { error: unknown }) {
+  if (!error) return null;
+  const apiError = error as ApiError;
+  return <Notice tone="danger">{apiError.message ?? 'Something went wrong.'}</Notice>;
+}
+
+export function Field({ label, error, hint, children }: { label: string; error?: string; hint?: string; children: ReactNode }) {
+  return (
+    <div className="p-field">
+      <label>{label}</label>
+      {children}
+      {hint && <p className="p-hint">{hint}</p>}
+      {error && <p className="p-error" role="alert">{error}</p>}
+    </div>
+  );
+}
+
+export function fieldErrors(error: unknown): Record<string, string> {
+  const apiError = error as ApiError;
+  return apiError?.fields ?? {};
+}
+
+export function StatusChip({ text, tone = 'neutral' }: { text: string; tone?: 'good' | 'warn' | 'bad' | 'neutral' }) {
+  return <span className={`p-chip p-chip-${tone}`}>{text}</span>;
 }

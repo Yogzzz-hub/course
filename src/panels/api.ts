@@ -1,42 +1,59 @@
-/** Client for the Technical Academy API (spec §26). Every panel screen goes through this one function. */
+/** Client for the Academy API. Every panel screen goes through this one function. */
 export const API_BASE = '/v1';
 
 export class ApiError extends Error {
   code: string;
   status: number;
   fields?: Record<string, string>;
-  constructor(code: string, message: string, status: number, fields?: Record<string, string>) {
+  details?: Record<string, boolean>;
+  constructor(code: string, message: string, status: number, fields?: Record<string, string>, details?: Record<string, boolean>) {
     super(message);
     this.code = code;
     this.status = status;
     this.fields = fields;
+    this.details = details;
   }
 }
 
 export interface ApiOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
-  idempotencyKey?: string;
+}
+
+/** The CSRF cookie is readable by the page; the server checks it against the X-CSRF-Token header. */
+function csrfToken(): string {
+  const match = document.cookie.match(/(?:^|; )academy_csrf=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : '';
 }
 
 export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
   const method = options.method ?? (options.body === undefined ? 'GET' : 'POST');
   const headers: Record<string, string> = { Accept: 'application/json' };
-  if (options.body !== undefined) headers['Content-Type'] = 'application/json';
-  if (options.idempotencyKey) headers['Idempotency-Key'] = options.idempotencyKey;
+  let body: BodyInit | undefined;
+  if (options.body instanceof FormData) {
+    body = options.body;
+  } else if (options.body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+    body = JSON.stringify(options.body);
+  }
+  if (method !== 'GET') headers['X-CSRF-Token'] = csrfToken();
 
   let response: Response;
   try {
     response = await fetch(API_BASE + path, {
       method,
       headers,
+      body,
       credentials: 'include',
       cache: 'no-store',
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(20000),
     });
   } catch {
-    throw new ApiError('NETWORK', 'The academy service is not reachable right now. Please try again shortly.', 0);
+    throw new ApiError('NETWORK', 'The academy service is not reachable. Start the backend and try again.', 0);
+  }
+
+  if (response.headers.get('content-type')?.includes('text/html')) {
+    return (await response.text()) as T;
   }
 
   let data: unknown = null;
@@ -47,12 +64,13 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
   }
 
   if (!response.ok) {
-    const error = (data as { error?: { code?: string; message?: string; fields?: Record<string, string> } } | null)?.error;
+    const error = (data as { error?: { code?: string; message?: string; fields?: Record<string, string>; details?: Record<string, boolean> } } | null)?.error;
     throw new ApiError(
       error?.code ?? `HTTP_${response.status}`,
       error?.message ?? 'Something went wrong. Please try again.',
       response.status,
-      error?.fields,
+      error?.fields ?? undefined,
+      error?.details,
     );
   }
   return data as T;

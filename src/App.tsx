@@ -6,12 +6,12 @@ import { MotionProvider, MotionDirector } from './components/MotionSystem';
 import { AmbientLayer, InteractionDirector } from './components/fx';
 const pageLoaders: Record<string, () => Promise<{ default: ComponentType }>> = {
  '/login': () => import('./panels/auth/AuthPages').then(m => ({ default: m.LoginPage })),
- '/register': () => import('./panels/auth/AuthPages').then(m => ({ default: m.RegisterPage })),
- '/verify': () => import('./panels/auth/AuthPages').then(m => ({ default: m.VerifyPage })),
- '/forgot-password': () => import('./panels/auth/AuthPages').then(m => ({ default: m.ForgotPasswordPage })),
  '/app/*': () => import('./panels/student/StudentPanel'),
- '/teach/*': () => import('./panels/teacher/TeacherPanel'),
+ '/trainer/*': () => import('./panels/trainer/TrainerPanel'),
+ '/manager/*': () => import('./panels/manager/ManagerPanel'),
+ '/finance/*': () => import('./panels/finance/FinancePanel'),
  '/admin/*': () => import('./panels/admin/AdminPanel'),
+ '/superadmin/*': () => import('./panels/superadmin/SuperAdminPanel'),
  '/assessment': () => import('./pages/Assessment'),
  '/leaderboard': () => import('./pages/Leaderboard'),
  '/shared-roadmap': () => import('./pages/SharedRoadmap'),
@@ -93,9 +93,9 @@ class PageErrorBoundary extends Component<{children:ReactNode},{failed:boolean}>
 }
 export default function App({initialPage: InitialPage, initialPath}: {initialPage?: ComponentType; initialPath?: string}) {
  const { pathname } = useLocation();
- // Panels (student, teacher, admin) draw their own navigation, so they skip the public header and footer.
- if (/^\/(app|teach)(\/|$)|^\/admin\/(overview|leads|payments|audit-log)(\/|$)/.test(pathname)) {
-   return <MotionConfig reducedMotion="user"><MotionProvider><InteractionDirector/><main id="main" tabIndex={-1}><PageErrorBoundary><Suspense fallback={<div className="container page-hero" role="status">Loading…</div>}><Routes>{pageComponents.map(({path, Page}) => <Route key={path} path={path} element={<Page/>}/>)}</Routes><RouteEffects/></Suspense></PageErrorBoundary></main></MotionProvider></MotionConfig>;
+ // Panels (student, trainer, admin) draw their own navigation, so they skip the public header and footer.
+ if (/^\/(app|trainer|manager|finance|superadmin)(\/|$)|^\/admin\//.test(pathname)) {
+   return <MotionConfig reducedMotion="user"><MotionProvider><InteractionDirector/><main id="main" tabIndex={-1} className="panel-main"><PageErrorBoundary><Suspense fallback={<div className="container page-hero" role="status">Loading…</div>}><Routes>{pageComponents.map(({path, Page}) => <Route key={path} path={path} element={<Page/>}/>)}</Routes><RouteEffects/></Suspense></PageErrorBoundary></main></MotionProvider></MotionConfig>;
  }
  // The homepage and booking routes render their own header so the call-to-action can scroll in-page.
  if (['/', '/book-session', '/direct-booking'].includes(pathname)) {
