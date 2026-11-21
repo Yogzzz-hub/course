@@ -68,10 +68,10 @@ main#main.panel-main { padding-top: 0; }
 .p-cards { display: grid; gap: 12px; }
 
 /* ---- Tables ----------------------------------------------------------------------------------- */
-.p-table-wrap { overflow-x: auto; border-radius: 12px; }
+.p-table-wrap { overflow-x: hidden; border-radius: 12px; }
 .p-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-.p-table th { text-align: left; font-weight: 700; font-size: 13px; color: var(--muted); padding: 10px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-.p-table td { text-align: left; padding: 12px; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--text); }
+.p-table th { text-align: left; font-weight: 700; font-size: 13px; color: var(--muted); padding: 10px 12px; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
+.p-table td { overflow-wrap: anywhere; min-width: 0; text-align: left; padding: 12px; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--text); }
 .p-table tbody tr:last-child td { border-bottom: 0; }
 .p-table tbody tr:hover td { background: var(--surface-alt); }
 .p-table .p-muted { font-size: 13px; }
@@ -145,3 +145,26 @@ main#main.panel-main { padding-top: 0; }
 
 /* Visually hidden, still read by screen readers (page headings the sidebar already shows). */
 .p-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* ---- Phone polish (below 900px only; desktop rules above are untouched) ---------------------- */
+@media (max-width: 900px) {
+  /* Keep the top bar at its natural height; spare screen height goes to the page, not the menu. */
+  .panel-root { grid-template-rows: auto minmax(0, 1fr); align-content: start; }
+  .p-side { align-content: start; align-self: start; }
+  .p-side-brand { align-self: center; }
+  .p-nav { align-items: center; }
+  /* Theme picker: one compact row that scrolls sideways, instead of a tall stacked list. */
+  .p-side-foot .theme-options { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .p-side-foot .theme-options::-webkit-scrollbar { display: none; }
+  .p-side-foot .theme-btn { flex: 0 0 auto; width: auto; }
+  .p-side-foot .theme-switcher { padding: 6px 8px; }
+  /* Menu: fade the right edge so the cut-off tabs read as scrollable. */
+  .p-nav { -webkit-mask-image: linear-gradient(to right, #000 84%, transparent); mask-image: linear-gradient(to right, #000 84%, transparent); padding-right: 24px; }
+  /* Checkbox groups (class days, roles) become a tidy grid instead of a ragged wrap. */
+  .p-row:has(> label > input[type="checkbox"]) { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 8px; width: 100%; }
+  .p-row:has(> label > input[type="checkbox"]) > label { min-height: 36px; }
+  /* Inside table cards, put the label above checkbox groups, left-aligned. */
+  .p-table td:has(> .p-row > label > input[type="checkbox"]) { flex-direction: column; align-items: flex-start; text-align: left; gap: 8px; }
+  .p-table td:has(> .p-row > label > input[type="checkbox"]) > .p-row { width: 100%; justify-content: flex-start; }
+  .p-table td > .p-row:has(> label > input[type="checkbox"]) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

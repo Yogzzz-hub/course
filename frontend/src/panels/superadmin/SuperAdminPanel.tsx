@@ -5,6 +5,7 @@ import { useApi } from '../hooks';
 import { PanelFrame, type NavItem } from '../PanelShell';
 import { AuditLogView } from '../AuditLogView';
 import { RolesAccess } from './RolesAccess';
+import './superadmin-mobile.css';
 import { SettingsPage } from './SettingsPage';
 import { Card, Empty, ErrorNotice, Field, Notice, PageHead, Stat, Table, fmtDateTime } from '../ui';
 
@@ -48,7 +49,7 @@ function Panels() {
     <>
       <PageHead title="Open any panel" text="As super admin you can open every panel to check exactly what each role sees." />
       <Card>
-        <div className="p-row">
+        <div className="p-row sa-panels">
           {links.map(link => <Link key={link.to} className="p-btn" to={link.to}>{link.label}</Link>)}
         </div>
       </Card>

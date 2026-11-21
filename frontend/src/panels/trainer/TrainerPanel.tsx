@@ -4,6 +4,7 @@ import { api, ApiError } from '../api';
 import { useApi } from '../hooks';
 import { PanelFrame, type NavItem } from '../PanelShell';
 import { Card, Empty, ErrorNotice, Field, Notice, PageHead, StatusChip, Table, fieldErrors, fmtDate, fmtDateTime } from '../ui';
+import { AnimatedSelect } from '../../components/public-booking/AnimatedSelect';
 
 const NAV: NavItem[] = [
   { to: '/trainer', label: 'Classes' },
@@ -45,10 +46,13 @@ function useChange(reload: () => void) {
 function BatchPicker({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   const batches = useApi<{ items: BatchRow[] }>('/trainer/batches');
   return (
-    <select className="p-select" value={value} onChange={e => onChange(e.target.value)} aria-label="Batch">
-      <option value="">Choose a batch</option>
-      {(batches.data?.items ?? []).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-    </select>
+    <AnimatedSelect
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      aria-label="Batch"
+      placeholder="Choose a batch"
+      options={(batches.data?.items ?? []).map(b => ({ value: String(b.id), label: b.name }))}
+    />
   );
 }
 
