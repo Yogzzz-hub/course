@@ -54,6 +54,19 @@ class PaymentIn(BaseModel):
     paid_on: date
 
 
+class DirectPayIn(BaseModel):
+    enrolment_id: int
+    amount_inr: int = Field(gt=0, le=10_000_000)
+    method: str = Field(default="UPI")
+    reference: str | None = None
+
+
+class EnrollAndPayIn(BaseModel):
+    programme_id: int
+    amount_inr: int | None = None
+    method: str = Field(default="UPI")
+
+
 class AttemptIn(BaseModel):
     answers: list[int] = Field(min_length=1, max_length=100)
 
@@ -152,13 +165,170 @@ def submit_payment(body: PaymentIn, user: User = STUDENT, db: Session = Depends(
     return {"id": payment.id, "status": payment.status}
 
 
+@router.post("/pay")
+def direct_pay(body: DirectPayIn, user: User = STUDENT, db: Session = Depends(get_db)):
+    """Direct instant checkout for outstanding course balance with verified payment."""
+    enrolment = db.get(Enrolment, body.enrolment_id)
+    if enrolment is None or enrolment.user_id != user.id:
+        raise ApiError(404, "NOT_FOUND", "That enrolment could not be found.")
+    summary = fee_summary(db, enrolment)
+    if summary["balance_inr"] <= 0:
+        raise ApiError(409, "ALREADY_PAID", "Your fees for this course are already fully cleared.")
+
+    amount = min(body.amount_inr, summary["balance_inr"])
+    ref = body.reference or f"TXN-AIN-{uuid.uuid4().hex[:8].upper()}"
+    now = utcnow()
+
+    payment = Payment(
+        enrolment_id=enrolment.id,
+        user_id=user.id,
+        amount_inr=amount,
+        method=body.method,
+        reference=ref,
+        paid_on=now.date(),
+        status="verified",
+        submitted_at=now,
+        decided_at=now,
+        note="Instant online checkout",
+    )
+    db.add(payment)
+    db.flush()
+    if enrolment.status == "awaiting_payment":
+        enrolment.status = "active"
+    db.commit()
+
+    new_summary = fee_summary(db, enrolment)
+    return {
+        "ok": True,
+        "payment_id": payment.id,
+        "reference": ref,
+        "amount_paid": amount,
+        "balance_remaining": new_summary["balance_inr"],
+        "status": "verified",
+    }
+
+
+@router.get("/available-courses")
+def available_courses(user: User = STUDENT, db: Session = Depends(get_db)):
+    """Lists all programmes with active batch and enrolment status for the student."""
+    my_prog_ids = set(
+        db.scalars(
+            select(Enrolment.programme_id).where(
+                Enrolment.user_id == user.id,
+                Enrolment.status.in_(["awaiting_payment", "active", "completed"]),
+            )
+        ).all()
+    )
+    programmes = db.scalars(select(Programme).order_by(Programme.id)).all()
+    items = []
+    for p in programmes:
+        batch = db.scalar(select(Batch).where(Batch.programme_id == p.id).order_by(Batch.start_date.desc()))
+        items.append(
+            {
+                "id": p.id,
+                "name": p.name,
+                "fee_inr": p.fee_inr,
+                "duration_weeks": p.duration_weeks,
+                "description": p.description,
+                "batch_id": batch.id if batch else None,
+                "batch_name": batch.name if batch else "Next Cohort Starting Soon",
+                "start_date": batch.start_date.isoformat() if batch else None,
+                "is_enrolled": p.id in my_prog_ids,
+            }
+        )
+    return {"items": items}
+
+
+@router.post("/enroll-and-pay")
+def enroll_and_pay(body: EnrollAndPayIn, user: User = STUDENT, db: Session = Depends(get_db)):
+    """Enroll into another course/batch and instantly pay tuition."""
+    prog = db.get(Programme, body.programme_id)
+    if prog is None:
+        raise ApiError(404, "NOT_FOUND", "Programme not found.")
+
+    existing = db.scalar(
+        select(Enrolment).where(
+            Enrolment.user_id == user.id,
+            Enrolment.programme_id == prog.id,
+            Enrolment.status.in_(["awaiting_payment", "active", "completed"]),
+        )
+    )
+    if existing:
+        raise ApiError(409, "ALREADY_ENROLLED", "You are already enrolled in this course.")
+
+    batch = db.scalar(select(Batch).where(Batch.programme_id == prog.id).order_by(Batch.start_date.desc()))
+    if batch is None:
+        batch = Batch(
+            programme_id=prog.id,
+            name=f"{prog.name} - 2027 Cohort",
+            start_date=utcnow().date(),
+            days="Mon,Wed,Fri",
+            start_time="19:00",
+            duration_minutes=90,
+            classes_total=12,
+            capacity=30,
+            created_by=user.id,
+        )
+        db.add(batch)
+        db.flush()
+
+    amount = body.amount_inr if body.amount_inr is not None else prog.fee_inr
+    now = utcnow()
+    ref = f"ENROLL-AIN-{uuid.uuid4().hex[:8].upper()}"
+
+    enrolment = Enrolment(
+        user_id=user.id,
+        batch_id=batch.id,
+        programme_id=prog.id,
+        fee_total_inr=prog.fee_inr,
+        status="active" if amount > 0 else "awaiting_payment",
+        enrolled_by=user.id,
+        created_at=now,
+    )
+    db.add(enrolment)
+    db.flush()
+
+    if amount > 0:
+        payment = Payment(
+            enrolment_id=enrolment.id,
+            user_id=user.id,
+            amount_inr=amount,
+            method=body.method,
+            reference=ref,
+            paid_on=now.date(),
+            status="verified",
+            submitted_at=now,
+            decided_at=now,
+            note=f"Instant course enrollment for {prog.name}",
+        )
+        db.add(payment)
+
+    db.commit()
+    return {
+        "ok": True,
+        "enrolment_id": enrolment.id,
+        "batch": batch.name,
+        "programme": prog.name,
+        "fee_total_inr": prog.fee_inr,
+        "amount_paid": amount,
+        "reference": ref,
+    }
+
+
 @router.get("/payments")
 def my_payments(user: User = STUDENT, db: Session = Depends(get_db)):
     rows = db.scalars(select(Payment).where(Payment.user_id == user.id).order_by(Payment.submitted_at.desc())).all()
-    return {
-        "items": [
+    items = []
+    for p in rows:
+        enrolment = db.get(Enrolment, p.enrolment_id)
+        prog = db.get(Programme, enrolment.programme_id) if enrolment else None
+        batch = db.get(Batch, enrolment.batch_id) if enrolment else None
+        items.append(
             {
                 "id": p.id,
+                "enrolment_id": p.enrolment_id,
+                "programme": prog.name if prog else "Course Tuition",
+                "batch": batch.name if batch else "",
                 "amount_inr": p.amount_inr,
                 "method": p.method,
                 "reference": p.reference,
@@ -166,9 +336,8 @@ def my_payments(user: User = STUDENT, db: Session = Depends(get_db)):
                 "status": p.status,
                 "note": p.note,
             }
-            for p in rows
-        ]
-    }
+        )
+    return {"items": items}
 
 
 @router.get("/classes")

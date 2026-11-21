@@ -19,6 +19,14 @@ import {
   Download,
   ExternalLink,
   Edit3,
+  CreditCard,
+  QrCode,
+  Building2,
+  ShieldCheck,
+  Check,
+  Zap,
+  PlusCircle,
+  X,
 } from 'lucide-react';
 import { api, ApiError } from '../api';
 import { useApi } from '../hooks';
@@ -319,35 +327,100 @@ function Home({ me }: { me: Me }) {
   );
 }
 
+interface AvailableCourse {
+  id: number;
+  name: string;
+  fee_inr: number;
+  duration_weeks: number;
+  description: string;
+  batch_id: number | null;
+  batch_name: string;
+  start_date: string | null;
+  is_enrolled: boolean;
+}
+
+interface PaymentHistoryRow {
+  id: number;
+  enrolment_id: number;
+  programme: string;
+  batch: string;
+  amount_inr: number;
+  method: string;
+  reference: string;
+  paid_on: string;
+  status: string;
+  note: string;
+}
+
 function Payments() {
   const overview = useApi<{ items: Enrolment[] }>('/student/overview');
-  const history = useApi<{ items: { id: number; amount_inr: number; method: string; reference: string; paid_on: string; status: string; note: string }[] }>('/student/payments');
-  const open = (overview.data?.items ?? []).filter(e => e.fees.balance_inr > 0);
-  const [form, setForm] = useState({ enrolment_id: '', amount_inr: '', method: 'UPI', reference: '', paid_on: '' });
+  const history = useApi<{ items: PaymentHistoryRow[] }>('/student/payments');
+  const available = useApi<{ items: AvailableCourse[] }>('/student/available-courses');
+
+  const enrolments = overview.data?.items ?? [];
+  const openEnrolments = enrolments.filter(e => e.fees.balance_inr > 0);
+  const paidEnrolments = enrolments.filter(e => e.fees.paid_inr > 0);
+
+  const totalFee = enrolments.reduce((acc, e) => acc + (e.fees?.fee_total_inr || 0), 0);
+  const totalPaid = enrolments.reduce((acc, e) => acc + (e.fees?.paid_inr || 0), 0);
+  const totalBalance = enrolments.reduce((acc, e) => acc + (e.fees?.balance_inr || 0), 0);
+
+  // Checkout modal states
+  const [payTarget, setPayTarget] = useState<Enrolment | null>(null);
+  const [enrollTarget, setEnrollTarget] = useState<AvailableCourse | null>(null);
+  const [payAmount, setPayAmount] = useState<string>('');
+  const [payMethod, setPayMethod] = useState<'UPI' | 'Card' | 'Netbanking'>('UPI');
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardExpiry, setCardExpiry] = useState('');
+  const [cardCvv, setCardCvv] = useState('');
+  const [bankName, setBankName] = useState('HDFC Bank');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
-  const [message, setMessage] = useState('');
-  const selected = open.find(e => String(e.enrolment_id) === form.enrolment_id) ?? open[0];
+  const [successNotice, setSuccessNotice] = useState<string>('');
 
-  async function submit(event: FormEvent) {
-    event.preventDefault();
+  function openPayModal(enrolment: Enrolment) {
+    setPayTarget(enrolment);
+    setEnrollTarget(null);
+    setPayAmount(String(enrolment.fees.balance_inr));
+    setPayMethod('UPI');
+    setError(null);
+  }
+
+  function openEnrollModal(course: AvailableCourse) {
+    setEnrollTarget(course);
+    setPayTarget(null);
+    setPayAmount(String(course.fee_inr));
+    setPayMethod('UPI');
+    setError(null);
+  }
+
+  function closeModal() {
+    setPayTarget(null);
+    setEnrollTarget(null);
+    setError(null);
+    setCardNumber('');
+    setCardExpiry('');
+    setCardCvv('');
+  }
+
+  async function handleDirectPay(e: FormEvent) {
+    e.preventDefault();
+    if (!payTarget) return;
     setBusy(true);
     setError(null);
-    setMessage('');
     try {
-      await api('/student/payments', {
+      const amt = Number(payAmount);
+      await api('/student/pay', {
         body: {
-          enrolment_id: Number(form.enrolment_id || selected?.enrolment_id),
-          amount_inr: Number(form.amount_inr),
-          method: form.method,
-          reference: form.reference,
-          paid_on: form.paid_on,
+          enrolment_id: payTarget.enrolment_id,
+          amount_inr: amt,
+          method: payMethod === 'UPI' ? 'UPI (Instant)' : payMethod === 'Card' ? 'Debit/Credit Card' : `Netbanking (${bankName})`,
         },
       });
-      setMessage('Thank you. The finance team will check your payment and confirm it here.');
-      setForm({ enrolment_id: '', amount_inr: '', method: 'UPI', reference: '', paid_on: '' });
-      history.reload();
+      setSuccessNotice(`Payment of ${fmtInr(amt)} processed successfully. Your fees have been credited!`);
+      closeModal();
       overview.reload();
+      history.reload();
     } catch (caught) {
       setError(caught as ApiError);
     } finally {
@@ -355,56 +428,496 @@ function Payments() {
     }
   }
 
-  const fe = error?.fields ?? {};
+  async function handleEnrollAndPay(e: FormEvent) {
+    e.preventDefault();
+    if (!enrollTarget) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const amt = Number(payAmount);
+      await api('/student/enroll-and-pay', {
+        body: {
+          programme_id: enrollTarget.id,
+          amount_inr: amt,
+          method: payMethod === 'UPI' ? 'UPI (Instant)' : payMethod === 'Card' ? 'Debit/Credit Card' : `Netbanking (${bankName})`,
+        },
+      });
+      setSuccessNotice(`Enrolled in ${enrollTarget.name} successfully! You can now view your class timetable.`);
+      closeModal();
+      overview.reload();
+      history.reload();
+      available.reload();
+    } catch (caught) {
+      setError(caught as ApiError);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <>
-      <PageHead title="Fees & payments" text="Tell us about each payment with its reference. Your course opens as soon as the first payment is confirmed." />
-      <ErrorNotice error={overview.error} />
-      {open.length === 0 ? (
-        <Empty>Your fees are fully paid. Thank you.</Empty>
-      ) : (
-        <Card title="Record a payment">
-          <ErrorNotice error={error} />
-          {message && <Notice tone="success">{message}</Notice>}
-          <form onSubmit={submit} className="p-form-grid">
-            <Field label="Course">
-              <select className="p-select" value={form.enrolment_id || String(selected?.enrolment_id ?? '')} onChange={e => setForm({ ...form, enrolment_id: e.target.value })}>
-                {open.map(e => <option key={e.enrolment_id} value={e.enrolment_id}>{e.programme} · {e.batch} (balance {fmtInr(e.fees.balance_inr)})</option>)}
-              </select>
-            </Field>
-            <Field label="Amount paid (₹)" error={fe.amount_inr} hint={selected ? `Balance due: ${fmtInr(selected.fees.balance_inr)}` : undefined}>
-              <input className="p-input" type="number" min={1} required value={form.amount_inr} onChange={e => setForm({ ...form, amount_inr: e.target.value })} />
-            </Field>
-            <Field label="How you paid">
-              <select className="p-select" value={form.method} onChange={e => setForm({ ...form, method: e.target.value })}>
-                {METHODS.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </Field>
-            <Field label="Transaction reference (UTR / receipt number)" error={fe.reference}>
-              <input className="p-input" required value={form.reference} onChange={e => setForm({ ...form, reference: e.target.value })} />
-            </Field>
-            <Field label="Date you paid" error={fe.paid_on}>
-              <input className="p-input" type="date" required value={form.paid_on} onChange={e => setForm({ ...form, paid_on: e.target.value })} />
-            </Field>
-            <div className="span-2"><button className="p-btn" type="submit" disabled={busy}>{busy ? 'Sending…' : 'Send payment details'}</button></div>
-          </form>
-        </Card>
+      <PageHead
+        title="Fees & Billing"
+        text="Review your paid and unpaid course fees, make secure instant payments, and browse other available courses with direct enrollment."
+      />
+
+      {successNotice && (
+        <Notice tone="success">
+          <div className="flex items-center justify-between">
+            <span>{successNotice}</span>
+            <button type="button" className="underline ml-4 text-xs" onClick={() => setSuccessNotice('')}>Dismiss</button>
+          </div>
+        </Notice>
       )}
-      <Card title="Your payments">
+
+      {/* Top 3 Metric Summary Cards */}
+      <div className="p-fee-metrics-row">
+        <div className="p-fee-metric-card">
+          <span className="p-fee-metric-label">
+            <BookOpen size={16} /> Total Course Fees
+          </span>
+          <span className="p-fee-metric-value">{fmtInr(totalFee)}</span>
+          <span className="text-xs text-muted">{enrolments.length} enrolled program{enrolments.length === 1 ? '' : 's'}</span>
+        </div>
+
+        <div className="p-fee-metric-card p-fee-metric-card--paid">
+          <span className="p-fee-metric-label">
+            <CheckCircle2 size={16} className="text-emerald-500" /> Total Paid Fees
+          </span>
+          <span className="p-fee-metric-value">{fmtInr(totalPaid)}</span>
+          <span className="text-xs text-emerald-600 font-medium">Verified & Settled</span>
+        </div>
+
+        <div className={`p-fee-metric-card ${totalBalance > 0 ? 'p-fee-metric-card--due' : ''}`}>
+          <span className="p-fee-metric-label">
+            <AlertTriangle size={16} /> Unpaid Balance Due
+          </span>
+          <span className="p-fee-metric-value">{fmtInr(totalBalance)}</span>
+          <span className={`text-xs font-semibold ${totalBalance > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+            {totalBalance > 0 ? 'Payment Outstanding' : 'All Dues Cleared'}
+          </span>
+        </div>
+      </div>
+
+      {/* Unpaid / Pending Fees Section */}
+      <Card title="Unpaid Fees & Direct Pay">
+        {openEnrolments.length === 0 ? (
+          <div className="p-empty-banner">
+            <CheckCircle2 size={32} className="text-emerald-500 mb-2" />
+            <h3 className="font-semibold text-text mb-1">No Unpaid Fees</h3>
+            <p className="text-sm text-muted">All fees for your currently enrolled courses have been fully cleared.</p>
+          </div>
+        ) : (
+          <div className="p-pending-fees-list">
+            {openEnrolments.map(e => {
+              const pctPaid = e.fees.fee_total_inr > 0 ? Math.round((e.fees.paid_inr / e.fees.fee_total_inr) * 100) : 0;
+              return (
+                <div key={e.enrolment_id} className="p-pending-fee-card">
+                  <div className="p-pending-fee-head">
+                    <div className="p-pending-fee-info">
+                      <h3 className="p-pending-fee-title">{e.programme}</h3>
+                      <span className="p-pending-fee-batch">Batch: {e.batch}</span>
+                    </div>
+                    <span className="p-chip p-chip-warn">Unpaid Balance</span>
+                  </div>
+
+                  <ProgressBar label={`Fee Clearance Progress (${pctPaid}% paid)`} percent={pctPaid} />
+
+                  <div className="p-pending-fee-amounts">
+                    <div className="p-pending-fee-amount-item">
+                      <span className="p-pending-fee-amount-label">Total Fee</span>
+                      <span className="p-pending-fee-amount-val">{fmtInr(e.fees.fee_total_inr)}</span>
+                    </div>
+                    <div className="p-pending-fee-amount-item">
+                      <span className="p-pending-fee-amount-label">Paid So Far</span>
+                      <span className="p-pending-fee-amount-val text-emerald-600">{fmtInr(e.fees.paid_inr)}</span>
+                    </div>
+                    <div className="p-pending-fee-amount-item">
+                      <span className="p-pending-fee-amount-label">Balance Due</span>
+                      <span className="p-pending-fee-amount-val p-pending-fee-amount-val--highlight">
+                        {fmtInr(e.fees.balance_inr)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="p-pending-fee-action-bar">
+                    <span className="text-xs text-muted">
+                      Pay online via UPI, Credit/Debit Card or Net Banking for instant verification.
+                    </span>
+                    <button
+                      type="button"
+                      className="p-btn p-btn-primary"
+                      onClick={() => openPayModal(e)}
+                    >
+                      <CreditCard size={15} />
+                      Pay Fees Now ({fmtInr(e.fees.balance_inr)})
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Card>
+
+      {/* Other Courses Available & Direct Payment Section */}
+      <Card title="Other Courses Available & Enrollment">
+        <p className="p-hint mb-4">
+          Expand your skillset with our industry-led engineering programs. Choose a program below to review its pricing and pay directly.
+        </p>
+        <ErrorNotice error={available.error} />
+        <div className="p-available-courses-grid">
+          {(available.data?.items ?? []).map(c => (
+            <div key={c.id} className="p-course-card">
+              <div className="p-course-card-top">
+                <div className="p-course-card-badges">
+                  <span className="p-course-duration-badge">{c.duration_weeks > 0 ? `${c.duration_weeks} Weeks` : 'Self-Paced'}</span>
+                  {c.is_enrolled && <span className="p-chip p-chip-good">Enrolled</span>}
+                </div>
+                <h3 className="p-course-card-title">{c.name}</h3>
+                <p className="p-course-card-desc">{c.description || 'Comprehensive curriculum with hands-on projects, automated assessments, and live mentorship.'}</p>
+                <span className="p-course-batch-pill">Cohort: {c.batch_name}</span>
+              </div>
+
+              <div className="p-course-card-foot">
+                <div className="p-course-price-wrap">
+                  <span className="p-course-price-label">Program Fee</span>
+                  <span className="p-course-price-tag">{fmtInr(c.fee_inr)}</span>
+                </div>
+                {c.is_enrolled ? (
+                  <span className="p-chip p-chip-neutral">Active Course</span>
+                ) : (
+                  <button
+                    type="button"
+                    className="p-btn p-btn-primary text-xs"
+                    onClick={() => openEnrollModal(c)}
+                  >
+                    <Zap size={14} />
+                    Enroll & Pay
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Paid Fees & Transaction History Section */}
+      <Card title="Paid Fees & Transaction History">
         <ErrorNotice error={history.error} />
         <Table
-          head={['Date', 'Amount', 'Method', 'Reference', 'Status', 'Note']}
+          head={['Date', 'Course', 'Amount Paid', 'Method', 'Reference Code', 'Status']}
           rows={(history.data?.items ?? []).map(p => [
             fmtDate(p.paid_on),
+            p.programme || 'Course Tuition',
             fmtInr(p.amount_inr),
             p.method,
-            p.reference,
-            <StatusChip key="s" text={p.status} tone={p.status === 'verified' ? 'good' : p.status === 'rejected' ? 'bad' : 'warn'} />,
-            p.note || '—',
+            <code key="ref" className="text-xs font-mono">{p.reference}</code>,
+            <StatusChip
+              key="s"
+              text={p.status === 'verified' ? 'Verified & Paid' : p.status === 'rejected' ? 'Rejected' : 'Submitted'}
+              tone={p.status === 'verified' ? 'good' : p.status === 'rejected' ? 'bad' : 'warn'}
+            />,
           ])}
-          empty="No payments recorded yet."
+          empty="No payment transactions recorded yet."
         />
       </Card>
+
+      {/* Direct Payment / Checkout Modal for Unpaid Course Fees */}
+      {payTarget && (
+        <div className="p-modal-backdrop" onClick={closeModal} role="dialog" aria-modal="true">
+          <div className="p-checkout-modal" onClick={e => e.stopPropagation()}>
+            <div className="p-checkout-modal-head">
+              <h3 className="p-checkout-modal-title">
+                <CreditCard size={20} className="text-primary" />
+                Pay Course Fees
+              </h3>
+              <button type="button" className="p-checkout-close-btn" onClick={closeModal} title="Close">
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleDirectPay} className="p-checkout-modal-body">
+              <ErrorNotice error={error} />
+
+              <div className="p-checkout-summary-box">
+                <div>
+                  <h4 className="font-semibold text-text text-sm">{payTarget.programme}</h4>
+                  <span className="text-xs text-muted">{payTarget.batch}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs text-muted block">Balance Due</span>
+                  <strong className="text-accent text-base">{fmtInr(payTarget.fees.balance_inr)}</strong>
+                </div>
+              </div>
+
+              <Field label="Amount to Pay (₹)">
+                <input
+                  className="p-input"
+                  type="number"
+                  min={1}
+                  max={payTarget.fees.balance_inr}
+                  required
+                  value={payAmount}
+                  onChange={e => setPayAmount(e.target.value)}
+                />
+              </Field>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-semibold text-muted uppercase tracking-wider">Select Payment Method</label>
+                <div className="p-checkout-method-tabs">
+                  <button
+                    type="button"
+                    className={`p-checkout-method-tab ${payMethod === 'UPI' ? 'p-checkout-method-tab--active' : ''}`}
+                    onClick={() => setPayMethod('UPI')}
+                  >
+                    <QrCode size={18} />
+                    <span>UPI / QR</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`p-checkout-method-tab ${payMethod === 'Card' ? 'p-checkout-method-tab--active' : ''}`}
+                    onClick={() => setPayMethod('Card')}
+                  >
+                    <CreditCard size={18} />
+                    <span>Card</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`p-checkout-method-tab ${payMethod === 'Netbanking' ? 'p-checkout-method-tab--active' : ''}`}
+                    onClick={() => setPayMethod('Netbanking')}
+                  >
+                    <Building2 size={18} />
+                    <span>Net Banking</span>
+                  </button>
+                </div>
+              </div>
+
+              {payMethod === 'UPI' && (
+                <div className="p-checkout-upi-box">
+                  <div className="p-checkout-qr-placeholder">
+                    <QrCode size={80} className="text-slate-800" />
+                  </div>
+                  <div className="text-xs text-muted">
+                    Scan with GPay, PhonePe, Paytm, or enter UPI ID:<br />
+                    <code className="font-mono font-bold text-accent">aintrixacademy@upi</code>
+                  </div>
+                </div>
+              )}
+
+              {payMethod === 'Card' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2">
+                    <Field label="Card Number">
+                      <input
+                        className="p-input"
+                        placeholder="4532 •••• •••• 8892"
+                        required
+                        value={cardNumber}
+                        onChange={e => setCardNumber(e.target.value)}
+                      />
+                    </Field>
+                  </div>
+                  <Field label="Valid Thru (MM/YY)">
+                    <input
+                      className="p-input"
+                      placeholder="12/28"
+                      required
+                      value={cardExpiry}
+                      onChange={e => setCardExpiry(e.target.value)}
+                    />
+                  </Field>
+                  <Field label="CVV">
+                    <input
+                      className="p-input"
+                      type="password"
+                      maxLength={4}
+                      placeholder="•••"
+                      required
+                      value={cardCvv}
+                      onChange={e => setCardCvv(e.target.value)}
+                    />
+                  </Field>
+                </div>
+              )}
+
+              {payMethod === 'Netbanking' && (
+                <Field label="Select Your Bank">
+                  <select className="p-select" value={bankName} onChange={e => setBankName(e.target.value)}>
+                    <option value="HDFC Bank">HDFC Bank</option>
+                    <option value="ICICI Bank">ICICI Bank</option>
+                    <option value="State Bank of India">State Bank of India</option>
+                    <option value="Axis Bank">Axis Bank</option>
+                    <option value="Kotak Mahindra Bank">Kotak Mahindra Bank</option>
+                  </select>
+                </Field>
+              )}
+
+              <button
+                type="submit"
+                className="p-btn p-btn-primary p-checkout-submit-btn"
+                disabled={busy || !payAmount || Number(payAmount) <= 0}
+              >
+                <ShieldCheck size={18} />
+                {busy ? 'Processing Payment…' : `Pay ${fmtInr(Number(payAmount) || 0)} Securely`}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Enrollment & Direct Payment Modal for Other Courses */}
+      {enrollTarget && (
+        <div className="p-modal-backdrop" onClick={closeModal} role="dialog" aria-modal="true">
+          <div className="p-checkout-modal" onClick={e => e.stopPropagation()}>
+            <div className="p-checkout-modal-head">
+              <h3 className="p-checkout-modal-title">
+                <Zap size={20} className="text-accent" />
+                Enroll & Pay Course Tuition
+              </h3>
+              <button type="button" className="p-checkout-close-btn" onClick={closeModal} title="Close">
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleEnrollAndPay} className="p-checkout-modal-body">
+              <ErrorNotice error={error} />
+
+              <div className="p-checkout-summary-box">
+                <div>
+                  <h4 className="font-semibold text-text text-sm">{enrollTarget.name}</h4>
+                  <span className="text-xs text-muted">Cohort: {enrollTarget.batch_name}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs text-muted block">Tuition Fee</span>
+                  <strong className="text-accent text-base">{fmtInr(enrollTarget.fee_inr)}</strong>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-semibold text-muted uppercase tracking-wider">Payment Option</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    className={`p-checkout-method-tab ${Number(payAmount) === enrollTarget.fee_inr ? 'p-checkout-method-tab--active' : ''}`}
+                    onClick={() => setPayAmount(String(enrollTarget.fee_inr))}
+                  >
+                    <span className="font-bold">Full Payment</span>
+                    <span className="text-xs">{fmtInr(enrollTarget.fee_inr)}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`p-checkout-method-tab ${Number(payAmount) === Math.round(enrollTarget.fee_inr / 2) ? 'p-checkout-method-tab--active' : ''}`}
+                    onClick={() => setPayAmount(String(Math.round(enrollTarget.fee_inr / 2)))}
+                  >
+                    <span className="font-bold">50% Initial Instalment</span>
+                    <span className="text-xs">{fmtInr(Math.round(enrollTarget.fee_inr / 2))}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-semibold text-muted uppercase tracking-wider">Select Payment Method</label>
+                <div className="p-checkout-method-tabs">
+                  <button
+                    type="button"
+                    className={`p-checkout-method-tab ${payMethod === 'UPI' ? 'p-checkout-method-tab--active' : ''}`}
+                    onClick={() => setPayMethod('UPI')}
+                  >
+                    <QrCode size={18} />
+                    <span>UPI / QR</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`p-checkout-method-tab ${payMethod === 'Card' ? 'p-checkout-method-tab--active' : ''}`}
+                    onClick={() => setPayMethod('Card')}
+                  >
+                    <CreditCard size={18} />
+                    <span>Card</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`p-checkout-method-tab ${payMethod === 'Netbanking' ? 'p-checkout-method-tab--active' : ''}`}
+                    onClick={() => setPayMethod('Netbanking')}
+                  >
+                    <Building2 size={18} />
+                    <span>Net Banking</span>
+                  </button>
+                </div>
+              </div>
+
+              {payMethod === 'UPI' && (
+                <div className="p-checkout-upi-box">
+                  <div className="p-checkout-qr-placeholder">
+                    <QrCode size={80} className="text-slate-800" />
+                  </div>
+                  <div className="text-xs text-muted">
+                    Scan with any UPI app to complete enrollment:<br />
+                    <code className="font-mono font-bold text-accent">aintrixacademy@upi</code>
+                  </div>
+                </div>
+              )}
+
+              {payMethod === 'Card' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2">
+                    <Field label="Card Number">
+                      <input
+                        className="p-input"
+                        placeholder="4532 •••• •••• 8892"
+                        required
+                        value={cardNumber}
+                        onChange={e => setCardNumber(e.target.value)}
+                      />
+                    </Field>
+                  </div>
+                  <Field label="Valid Thru (MM/YY)">
+                    <input
+                      className="p-input"
+                      placeholder="12/28"
+                      required
+                      value={cardExpiry}
+                      onChange={e => setCardExpiry(e.target.value)}
+                    />
+                  </Field>
+                  <Field label="CVV">
+                    <input
+                      className="p-input"
+                      type="password"
+                      maxLength={4}
+                      placeholder="•••"
+                      required
+                      value={cardCvv}
+                      onChange={e => setCardCvv(e.target.value)}
+                    />
+                  </Field>
+                </div>
+              )}
+
+              {payMethod === 'Netbanking' && (
+                <Field label="Select Your Bank">
+                  <select className="p-select" value={bankName} onChange={e => setBankName(e.target.value)}>
+                    <option value="HDFC Bank">HDFC Bank</option>
+                    <option value="ICICI Bank">ICICI Bank</option>
+                    <option value="State Bank of India">State Bank of India</option>
+                    <option value="Axis Bank">Axis Bank</option>
+                    <option value="Kotak Mahindra Bank">Kotak Mahindra Bank</option>
+                  </select>
+                </Field>
+              )}
+
+              <button
+                type="submit"
+                className="p-btn p-btn-primary p-checkout-submit-btn"
+                disabled={busy || !payAmount || Number(payAmount) <= 0}
+              >
+                <ShieldCheck size={18} />
+                {busy ? 'Enrolling & Processing…' : `Enroll & Pay ${fmtInr(Number(payAmount) || 0)}`}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 }
