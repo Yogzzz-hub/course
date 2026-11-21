@@ -471,7 +471,7 @@ function BatchDetail() {
                 fmtDateTime(c.starts_at),
                 fmtDateTime(c.ends_at),
                 <StatusChip key="s" text={c.status} tone={c.status === 'ended' ? 'good' : c.status === 'live' ? 'warn' : 'neutral'} />,
-                c.recording_url ? <a key="r" className="p-link" href={c.recording_url} target="_blank" rel="noreferrer">Watch</a> : '—',
+                c.recording_url ? <a key="r" className="p-link" href={c.recording_url} target="_blank" rel="noreferrer">View recording</a> : '—',
               ])}
               empty="No classes scheduled."
             />

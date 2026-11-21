@@ -443,12 +443,18 @@ function Recordings() {
   const list = useApi<{ items: { id: number; sequence: number; starts_at: string; recording_url: string }[] }>('/student/recordings');
   return (
     <>
-      <PageHead title="Recordings" text="Watch past classes whenever you need to." />
+      <PageHead title="Recordings" text="View past class recordings whenever you need to." />
       <Card>
         <ErrorNotice error={list.error} />
         <Table
           head={['Class', 'Date', 'Recording']}
-          rows={(list.data?.items ?? []).map(r => [`Class ${r.sequence}`, fmtDateTime(r.starts_at), <a key="l" className="p-link" href={r.recording_url} target="_blank" rel="noreferrer">Watch</a>])}
+          rows={(list.data?.items ?? []).map(r => [
+            `Class ${r.sequence}`,
+            fmtDateTime(r.starts_at),
+            <a key="l" className="p-link" href={r.recording_url} target="_blank" rel="noreferrer">
+              View recording
+            </a>,
+          ])}
           empty="Recordings appear here after each class."
         />
       </Card>
