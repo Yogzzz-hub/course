@@ -54,18 +54,15 @@ export function PageHead({
   text,
   action,
 }: {
-  title: string;
+  title?: string;
   text?: string;
   action?: ReactNode;
 }) {
+  if (!action) return null;
   return (
-    <header className="p-head">
-      <div>
-        <h1>{title}</h1>
-        {text && <p className="p-muted">{text}</p>}
-      </div>
+    <div className="p-head-action-only">
       {action}
-    </header>
+    </div>
   );
 }
 

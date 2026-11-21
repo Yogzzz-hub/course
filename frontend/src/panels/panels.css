@@ -742,22 +742,11 @@ main#main.panel-main {
   padding-bottom: 4px;
 }
 
-.p-head h1 {
-  margin: 0 0 6px;
-  font-family: var(--font-display);
-  font-size: clamp(26px, 2.8vw, 32px);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--text);
-  line-height: 1.15;
-}
-
-.p-head p {
-  margin: 0;
-  max-width: 65ch;
-  line-height: 1.6;
-  color: var(--muted);
-  font-size: 15px;
+.p-head-action-only {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 8px;
 }
 
 /* Modern Elevated Cards */
