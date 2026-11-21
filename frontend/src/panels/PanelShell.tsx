@@ -92,6 +92,20 @@ export function PanelShell({ brand, items, me, children }: { brand: string; item
   const [search, setSearch] = useState('');
   const [themePickerOpen, setThemePickerOpen] = useState(false);
   const [currentTheme, setCurrentTheme] = useState(() => document.documentElement.dataset.theme || 'theme-1');
+  const [navStyle, setNavStyle] = useState<'brand' | 'light'>(() => {
+    try {
+      return (localStorage.getItem('academy-nav-style') as 'brand' | 'light') || 'brand';
+    } catch {
+      return 'brand';
+    }
+  });
+
+  useEffect(() => {
+    document.documentElement.dataset.navStyle = navStyle;
+    try {
+      localStorage.setItem('academy-nav-style', navStyle);
+    } catch {}
+  }, [navStyle]);
 
   useEffect(() => {
     const handleThemeChange = () => {
@@ -270,6 +284,26 @@ export function PanelShell({ brand, items, me, children }: { brand: string; item
                       </div>
                     </button>
                   ))}
+                </div>
+
+                <div className="p-nav-style-wrap">
+                  <div className="p-theme-popover-title">Sidebar Tone</div>
+                  <div className="p-nav-style-toggle">
+                    <button
+                      type="button"
+                      className={`p-nav-style-btn ${navStyle === 'brand' ? 'p-nav-style-btn--active' : ''}`}
+                      onClick={() => setNavStyle('brand')}
+                    >
+                      Brand Theme
+                    </button>
+                    <button
+                      type="button"
+                      className={`p-nav-style-btn ${navStyle === 'light' ? 'p-nav-style-btn--active' : ''}`}
+                      onClick={() => setNavStyle('light')}
+                    >
+                      Clean Light
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

@@ -42,14 +42,14 @@
   --code-bg: #F0F4F8;
   --code-color: #241921;
 
-  --side-bg: #11151A;
-  --side-surface: #181E24;
-  --side-border: rgba(169, 201, 220, 0.12);
-  --side-text: #EEF4F9;
-  --side-muted: #8E9BA6;
-  --side-active-bg: #681C35;
+  --side-bg: #521528;
+  --side-surface: #421020;
+  --side-border: rgba(169, 201, 220, 0.28);
+  --side-text: #FFFFFF;
+  --side-muted: rgba(255, 255, 255, 0.75);
+  --side-active-bg: rgba(255, 255, 255, 0.18);
   --side-active-text: #FFFFFF;
-  --side-active-glow: rgba(104, 28, 53, 0.45);
+  --side-active-glow: rgba(169, 201, 220, 0.45);
   --side-accent: #A9C9DC;
 
   --font-body: "Manrope Variable", ui-sans-serif, system-ui, sans-serif;
@@ -105,14 +105,14 @@
   --code-bg: #F7EFE9;
   --code-color: #2A171E;
 
-  --side-bg: #171211;
-  --side-surface: #1F1917;
-  --side-border: rgba(218, 161, 123, 0.12);
-  --side-text: #F7EFE9;
-  --side-muted: #A39690;
-  --side-active-bg: #701F38;
+  --side-bg: #5A162B;
+  --side-surface: #481122;
+  --side-border: rgba(218, 161, 123, 0.32);
+  --side-text: #FFFFFF;
+  --side-muted: rgba(255, 255, 255, 0.75);
+  --side-active-bg: rgba(255, 255, 255, 0.18);
   --side-active-text: #FFFFFF;
-  --side-active-glow: rgba(112, 31, 56, 0.45);
+  --side-active-glow: rgba(218, 161, 123, 0.45);
   --side-accent: #DAA17B;
 }
 
@@ -159,14 +159,14 @@
   --code-bg: #F5EFF9;
   --code-color: #261622;
 
-  --side-bg: #141018;
-  --side-surface: #1D1722;
-  --side-border: rgba(194, 172, 216, 0.14);
-  --side-text: #F4EEF8;
-  --side-muted: #9E8FAA;
-  --side-active-bg: #681B37;
+  --side-bg: #521429;
+  --side-surface: #410F20;
+  --side-border: rgba(194, 172, 216, 0.32);
+  --side-text: #FFFFFF;
+  --side-muted: rgba(255, 255, 255, 0.75);
+  --side-active-bg: rgba(255, 255, 255, 0.18);
   --side-active-text: #FFFFFF;
-  --side-active-glow: rgba(104, 27, 55, 0.45);
+  --side-active-glow: rgba(194, 172, 216, 0.45);
   --side-accent: #C2ACD8;
 }
 
@@ -213,15 +213,27 @@
   --code-bg: #F5EAEF;
   --code-color: #201A1E;
 
-  --side-bg: #161114;
-  --side-surface: #1E171B;
-  --side-border: rgba(215, 167, 181, 0.12);
-  --side-text: #F7EEF2;
-  --side-muted: #A39299;
-  --side-active-bg: #581F32;
+  --side-bg: #461726;
+  --side-surface: #38101D;
+  --side-border: rgba(215, 167, 181, 0.32);
+  --side-text: #FFFFFF;
+  --side-muted: rgba(255, 255, 255, 0.75);
+  --side-active-bg: rgba(255, 255, 255, 0.18);
   --side-active-text: #FFFFFF;
-  --side-active-glow: rgba(88, 31, 50, 0.45);
+  --side-active-glow: rgba(215, 167, 181, 0.45);
   --side-accent: #D7A7B5;
+}
+
+[data-nav-style="light"] {
+  --side-bg: var(--surface);
+  --side-surface: var(--surface-alt);
+  --side-border: var(--border);
+  --side-text: var(--text);
+  --side-muted: var(--muted);
+  --side-active-bg: var(--accent);
+  --side-active-text: #FFFFFF;
+  --side-active-glow: rgba(104, 28, 53, 0.25);
+  --side-accent: var(--accent);
 }
 
 :root {

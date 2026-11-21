@@ -33,10 +33,10 @@ main#main.panel-main {
   min-width: 0;
 }
 
-/* ---- Modern Dark Sidebar (Ottertag aesthetic) ------------------------------------------------ */
+/* ---- Modern Themed Sidebar (Using theme colors, never black) ----------------- */
 .p-side {
-  background: var(--side-bg, #11151A);
-  border-right: 1px solid var(--side-border, rgba(255, 255, 255, 0.08));
+  background: linear-gradient(180deg, var(--side-bg, #521528) 0%, var(--side-surface, #421020) 100%);
+  border-right: 1px solid var(--side-border, rgba(255, 255, 255, 0.15));
   padding: 20px 14px 18px;
   display: flex;
   flex-direction: column;
@@ -484,6 +484,173 @@ main#main.panel-main {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Sidebar Nav Tone Switcher (Brand vs Light) */
+.p-nav-style-wrap {
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.p-nav-style-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.15);
+  padding: 3px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.p-nav-style-btn {
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--side-muted, rgba(255, 255, 255, 0.7));
+  padding: 5px 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.p-nav-style-btn:hover {
+  color: #FFFFFF;
+}
+
+.p-nav-style-btn--active {
+  background: var(--side-surface, rgba(255, 255, 255, 0.2)) !important;
+  color: #FFFFFF !important;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Light Nav Style (When user chooses Clean Light) */
+[data-nav-style="light"] .p-side {
+  background: var(--surface) !important;
+  border-right: 1px solid var(--border) !important;
+  box-shadow: 2px 0 16px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-nav-style="light"] .p-side-title {
+  color: var(--text) !important;
+}
+
+[data-nav-style="light"] .p-side-role-badge {
+  color: var(--accent) !important;
+  background: var(--accent-tint) !important;
+}
+
+[data-nav-style="light"] .p-side-collapse-btn {
+  background: var(--surface-alt) !important;
+  border-color: var(--border) !important;
+  color: var(--muted) !important;
+}
+
+[data-nav-style="light"] .p-side-collapse-btn:hover {
+  background: var(--border) !important;
+  color: var(--text) !important;
+}
+
+[data-nav-style="light"] .p-side-search {
+  background: var(--surface-alt) !important;
+  border-color: var(--border-strong) !important;
+  color: var(--text) !important;
+}
+
+[data-nav-style="light"] .p-search-input {
+  color: var(--text) !important;
+}
+
+[data-nav-style="light"] .p-search-input::placeholder {
+  color: var(--muted) !important;
+}
+
+[data-nav-style="light"] .p-nav-item {
+  color: var(--muted) !important;
+}
+
+[data-nav-style="light"] .p-nav-item:hover {
+  background: var(--surface-alt) !important;
+  color: var(--text) !important;
+}
+
+[data-nav-style="light"] .p-nav-item--active,
+[data-nav-style="light"] .p-nav-item[aria-current="page"] {
+  background: var(--accent) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 14px var(--accent-tint-strong) !important;
+  border: 1px solid transparent !important;
+}
+
+[data-nav-style="light"] .p-nav-badge {
+  background: rgba(0, 0, 0, 0.08) !important;
+  color: var(--text) !important;
+}
+
+[data-nav-style="light"] .p-side-foot {
+  border-top-color: var(--border) !important;
+}
+
+[data-nav-style="light"] .p-theme-trigger-btn {
+  background: var(--surface-alt) !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+}
+
+[data-nav-style="light"] .p-theme-name-text {
+  color: var(--text) !important;
+}
+
+[data-nav-style="light"] .p-user-card {
+  background: var(--surface-alt) !important;
+  border-color: var(--border) !important;
+}
+
+[data-nav-style="light"] .p-user-name {
+  color: var(--text) !important;
+}
+
+[data-nav-style="light"] .p-user-email {
+  color: var(--muted) !important;
+}
+
+[data-nav-style="light"] .p-theme-popover {
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.12) !important;
+}
+
+[data-nav-style="light"] .p-theme-option {
+  color: var(--text) !important;
+}
+
+[data-nav-style="light"] .p-theme-option:hover {
+  background: var(--surface-alt) !important;
+}
+
+[data-nav-style="light"] .p-nav-style-toggle {
+  background: var(--surface-alt);
+  border-color: var(--border);
+}
+
+[data-nav-style="light"] .p-nav-style-btn {
+  color: var(--muted);
+}
+
+[data-nav-style="light"] .p-nav-style-btn:hover {
+  color: var(--text);
+}
+
+[data-nav-style="light"] .p-nav-style-btn--active {
+  background: var(--surface) !important;
+  color: var(--accent) !important;
 }
 
 /* User Profile Card */
