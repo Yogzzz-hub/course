@@ -96,9 +96,18 @@ def overview(user: User = STUDENT, db: Session = Depends(get_db)):
             .order_by(ClassSession.starts_at)
             .limit(1)
         )
-        certificate = db.scalar(
-            select(Certificate).where(Certificate.enrolment_id == enrolment.id, Certificate.revoked.is_(False))
-        )
+        total_classes = db.scalar(select(func.count(ClassSession.id)).where(ClassSession.batch_id == enrolment.batch_id)) or 0
+        ended_classes = db.scalar(
+            select(func.count(ClassSession.id)).where(
+                ClassSession.batch_id == enrolment.batch_id, ClassSession.status == "ended"
+            )
+        ) or 0
+        course_completed = (enrolment.status == "completed") or (total_classes > 0 and ended_classes == total_classes)
+        certificate = None
+        if course_completed:
+            certificate = db.scalar(
+                select(Certificate).where(Certificate.enrolment_id == enrolment.id, Certificate.revoked.is_(False))
+            )
         items.append(
             {
                 "enrolment_id": enrolment.id,
@@ -109,6 +118,9 @@ def overview(user: User = STUDENT, db: Session = Depends(get_db)):
                 "attendance": attendance,
                 "next_class_at": upcoming.starts_at.isoformat() + "Z" if upcoming else None,
                 "certificate_id": certificate.id if certificate else None,
+                "course_completed": course_completed,
+                "classes_ended": ended_classes,
+                "classes_total": total_classes,
             }
         )
     return {
@@ -450,11 +462,22 @@ def quiz_solutions(quiz_id: int, user: User = STUDENT, db: Session = Depends(get
 
 @router.get("/certificates")
 def certificates(user: User = STUDENT, db: Session = Depends(get_db)):
+    threshold = threshold_percent(db)
     items = []
+    in_progress = []
     for enrolment in my_enrolments(db, user):
-        for cert in db.scalars(select(Certificate).where(Certificate.enrolment_id == enrolment.id, Certificate.revoked.is_(False))).all():
-            batch = db.get(Batch, enrolment.batch_id)
-            programme = db.get(Programme, enrolment.programme_id)
+        batch = db.get(Batch, enrolment.batch_id)
+        programme = db.get(Programme, enrolment.programme_id)
+        total_classes = db.scalar(select(func.count(ClassSession.id)).where(ClassSession.batch_id == enrolment.batch_id)) or 0
+        ended_classes = db.scalar(
+            select(func.count(ClassSession.id)).where(
+                ClassSession.batch_id == enrolment.batch_id, ClassSession.status == "ended"
+            )
+        ) or 0
+        course_completed = (enrolment.status == "completed") or (total_classes > 0 and ended_classes == total_classes)
+
+        cert = db.scalar(select(Certificate).where(Certificate.enrolment_id == enrolment.id, Certificate.revoked.is_(False)))
+        if course_completed and cert:
             items.append(
                 {
                     "id": cert.id,
@@ -464,7 +487,24 @@ def certificates(user: User = STUDENT, db: Session = Depends(get_db)):
                     "issued_at": cert.issued_at.isoformat() + "Z",
                 }
             )
-    return {"items": items}
+        else:
+            att = attendance_summary(db, user.id, enrolment.batch_id, threshold)
+            fee = fee_summary(db, enrolment)
+            in_progress.append(
+                {
+                    "enrolment_id": enrolment.id,
+                    "programme": programme.name if programme else "",
+                    "batch": batch.name if batch else "",
+                    "classes_ended": ended_classes,
+                    "classes_total": total_classes,
+                    "attendance_rate": att["rate_percent"],
+                    "attendance_threshold": threshold,
+                    "fee_balance_inr": fee["balance_inr"],
+                    "fees_cleared": fee["balance_inr"] == 0,
+                    "status": "In Progress",
+                }
+            )
+    return {"items": items, "in_progress": in_progress}
 
 
 @router.get("/certificates/{certificate_id}", response_class=HTMLResponse)
@@ -479,6 +519,16 @@ def certificate_view(certificate_id: int, user: User = Depends(require_roles("st
     if "student" in roles and not ("manager" in roles or "admin" in roles or "super_admin" in roles):
         if enrolment.user_id != user.id:
             raise ApiError(404, "NOT_FOUND", "That certificate could not be found.")
+        # Ensure student has completed the course fully
+        total_classes = db.scalar(select(func.count(ClassSession.id)).where(ClassSession.batch_id == enrolment.batch_id)) or 0
+        ended_classes = db.scalar(
+            select(func.count(ClassSession.id)).where(
+                ClassSession.batch_id == enrolment.batch_id, ClassSession.status == "ended"
+            )
+        ) or 0
+        course_completed = (enrolment.status == "completed") or (total_classes > 0 and ended_classes == total_classes)
+        if not course_completed:
+            raise ApiError(403, "COURSE_NOT_COMPLETED", "Certificates are only available after completing the course fully.")
     student = db.get(User, enrolment.user_id)
     batch = db.get(Batch, enrolment.batch_id)
     programme = db.get(Programme, enrolment.programme_id)

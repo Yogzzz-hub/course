@@ -49,7 +49,6 @@ const NAV: NavItem[] = [
   { to: '/app/recordings', label: 'Recordings' },
   { to: '/app/attendance', label: 'Attendance' },
   { to: '/app/assignments', label: 'Assignments' },
-  { to: '/app/tasks', label: 'Tasks' },
   { to: '/app/quizzes', label: 'Quizzes' },
   { to: '/app/certificates', label: 'Certificates' },
 ];
@@ -109,10 +108,8 @@ function useLiveHeartbeat(classId: number | null) {
 function Home({ me }: { me: Me }) {
   const overview = useApi<{ items: Enrolment[]; payment_instructions: string; attendance_threshold_percent: number }>('/student/overview');
   const assignments = useApi<{ items: { id: number; submission: unknown }[] }>('/student/assignments');
-  const tasks = useApi<{ items: { id: number; done: boolean }[] }>('/student/tasks');
   const enrolments = overview.data?.items ?? [];
   const toSubmit = (assignments.data?.items ?? []).filter(a => !a.submission).length;
-  const toTick = (tasks.data?.items ?? []).filter(t => !t.done).length;
   const nextClass = enrolments.find(e => e.next_class_at)?.next_class_at ?? null;
 
   const totalBalance = enrolments.reduce((acc, e) => acc + (e.fees?.balance_inr || 0), 0);
@@ -126,7 +123,6 @@ function Home({ me }: { me: Me }) {
     else if (e.fees.balance_inr > 0) todo.push({ label: `Clear the balance of ${fmtInr(e.fees.balance_inr)}`, to: '/app/payments' });
   }
   if (toSubmit) todo.push({ label: `Submit ${toSubmit} assignment${toSubmit === 1 ? '' : 's'}`, to: '/app/assignments' });
-  if (toTick) todo.push({ label: `Tick off ${toTick} task${toTick === 1 ? '' : 's'}`, to: '/app/tasks' });
   if (nextClass) todo.push({ label: `Next class: ${fmtDateTime(nextClass)}`, to: '/app/classes' });
 
   const chartData = enrolments.length > 0
@@ -209,17 +205,17 @@ function Home({ me }: { me: Me }) {
         <MetricCard
           icon={FileText}
           variant={3}
-          label="Pending Tasks"
-          value={`${toSubmit + toTick} Tasks`}
-          trend={toSubmit > 0 ? `${toSubmit} assignments` : 'All completed'}
+          label="Pending Assignments"
+          value={`${toSubmit} Due`}
+          trend={toSubmit > 0 ? `${toSubmit} submissions due` : 'All completed'}
           trendPositive={toSubmit === 0}
         />
         <MetricCard
           icon={Award}
           variant={4}
           label="Certification & Fees"
-          value={totalBalance === 0 ? 'Clear' : fmtInr(totalBalance)}
-          trend={totalBalance === 0 ? 'Certificate eligible' : 'Payment pending'}
+          value={totalBalance === 0 ? (enrolments.some(e => e.certificate_id) ? 'Awarded' : 'In Progress') : fmtInr(totalBalance)}
+          trend={totalBalance === 0 ? (enrolments.some(e => e.certificate_id) ? 'Certificate Issued' : 'Course ongoing') : 'Payment pending'}
           trendPositive={totalBalance === 0}
         />
       </div>
@@ -558,37 +554,6 @@ function Assignments() {
           {openId === a.id && <div style={{ marginTop: 12 }}><SubmitForm assignment={a} onDone={() => { setOpenId(null); list.reload(); }} /></div>}
         </Card>
       ))}
-    </>
-  );
-}
-
-function Tasks() {
-  const list = useApi<{ items: { id: number; title: string; detail: string; due_at: string | null; done: boolean }[] }>('/student/tasks');
-  const [error, setError] = useState<ApiError | null>(null);
-  async function markDone(id: number) {
-    setError(null);
-    try {
-      await api(`/student/tasks/${id}/done`, { method: 'POST' });
-      list.reload();
-    } catch (caught) {
-      setError(caught as ApiError);
-    }
-  }
-  return (
-    <>
-      <PageHead title="Tasks" text="Practical tasks from your trainer. Tick them off as you finish." />
-      <ErrorNotice error={error} />
-      <ErrorNotice error={list.error} />
-      <Table
-        head={['Task', 'Due', 'Details', 'Done']}
-        rows={(list.data?.items ?? []).map(t => [
-          t.title,
-          fmtDate(t.due_at?.slice(0, 10)),
-          t.detail || '—',
-          t.done ? <StatusChip key="d" text="Done" tone="good" /> : <button key="b" type="button" className="p-btn p-btn-small" onClick={() => markDone(t.id)}>Mark done</button>,
-        ])}
-        empty="No tasks yet."
-      />
     </>
   );
 }
@@ -1001,19 +966,112 @@ function Quizzes() {
   );
 }
 
+interface InProgressCourse {
+  enrolment_id: number;
+  programme: string;
+  batch: string;
+  classes_ended: number;
+  classes_total: number;
+  attendance_rate: number | null;
+  attendance_threshold: number;
+  fee_balance_inr: number;
+  fees_cleared: boolean;
+  status: string;
+}
+
 function Certificates() {
-  const list = useApi<{ items: { id: number; number: string; programme: string; batch: string; issued_at: string }[] }>('/student/certificates');
+  const list = useApi<{
+    items: { id: number; number: string; programme: string; batch: string; issued_at: string }[];
+    in_progress?: InProgressCourse[];
+  }>('/student/certificates');
+
+  const earned = list.data?.items ?? [];
+  const inProgress = list.data?.in_progress ?? [];
+
   return (
     <>
-      <PageHead title="Certificates" text="Your certificate is issued by the academy once you complete the course. You can view and print it from here." />
+      <PageHead
+        title="Certificates"
+        text="Official Certificates of Completion are issued once you fully complete all scheduled classes of your course and satisfy attendance & fee criteria."
+      />
       <ErrorNotice error={list.error} />
-      {(list.data?.items ?? []).length === 0 && list.data && <Empty>No certificate yet. Finish every class and clear your fees, and the academy will issue it here.</Empty>}
-      {(list.data?.items ?? []).map(c => (
-        <Card key={c.id} title={c.programme} actions={<StatusChip text={c.number} tone="good" />}>
-          <p className="p-muted">{c.batch} · issued {fmtDateTime(c.issued_at)}</p>
-          <a className="p-btn" href={`/v1/student/certificates/${c.id}`} target="_blank" rel="noreferrer">View and print</a>
-        </Card>
-      ))}
+
+      {/* Earned & Verified Certificates */}
+      {earned.length > 0 && (
+        <div className="p-cert-grid">
+          {earned.map(c => (
+            <Card
+              key={c.id}
+              title={c.programme}
+              actions={<StatusChip text={c.number} tone="good" />}
+            >
+              <p className="p-muted">{c.batch} · Issued {fmtDateTime(c.issued_at)}</p>
+              <div style={{ marginTop: 14 }}>
+                <a className="p-btn" href={`/v1/student/certificates/${c.id}`} target="_blank" rel="noreferrer">
+                  View and print
+                </a>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Courses in progress where certificate is locked until full course completion */}
+      {inProgress.map(p => {
+        const progressPct = p.classes_total > 0 ? Math.round((p.classes_ended / p.classes_total) * 100) : 0;
+        return (
+          <div key={p.enrolment_id} className="p-card p-cert-locked-card">
+            <div className="p-course-header">
+              <div>
+                <h3 className="p-course-title">{p.programme}</h3>
+                <p className="p-course-batch">{p.batch}</p>
+              </div>
+              <StatusChip text="Course In Progress" tone="warn" />
+            </div>
+
+            <div className="p-cert-lock-banner">
+              <div className="p-cert-lock-icon">🔒</div>
+              <div className="p-cert-lock-text">
+                <strong>Certificate Locked: Available only after completing the course fully</strong>
+                <p>
+                  Your certificate of completion will be unlocked and available here once all <strong>{p.classes_total}</strong> scheduled classes are concluded.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-course-progress-section">
+              <ProgressBar
+                value={progressPct}
+                max={100}
+                label={`Class Completion Progress (${p.classes_ended} of ${p.classes_total} classes concluded)`}
+              />
+            </div>
+
+            <div className="p-stats">
+              <Stat label="Classes Finished" value={`${p.classes_ended} / ${p.classes_total}`} />
+              <Stat
+                label="Attendance Rate"
+                value={p.attendance_rate === null ? '—' : `${p.attendance_rate}% (min ${p.attendance_threshold}%)`}
+              />
+              <Stat
+                label="Fee Clearance"
+                value={p.fees_cleared ? 'Cleared in full' : fmtInr(p.fee_balance_inr)}
+              />
+              <Stat label="Certification Status" value="Locked (Pending classes)" />
+            </div>
+
+            <div className="p-course-footer">
+              <Link className="p-btn p-btn-ghost" to="/app/classes">
+                View Class Schedule <ArrowRight size={14} className="inline ml-1" />
+              </Link>
+            </div>
+          </div>
+        );
+      })}
+
+      {earned.length === 0 && inProgress.length === 0 && list.data && (
+        <Empty>No certificate yet. Finish every class and clear your fees, and the academy will issue it here.</Empty>
+      )}
     </>
   );
 }
@@ -1081,7 +1139,6 @@ export default function StudentPanel() {
             <Route path="recordings" element={<Recordings />} />
             <Route path="attendance" element={<Attendance />} />
             <Route path="assignments" element={<Assignments />} />
-            <Route path="tasks" element={<Tasks />} />
             <Route path="quizzes" element={<Quizzes />} />
             <Route path="certificates" element={<Certificates />} />
             <Route path="*" element={<Empty>This page does not exist.</Empty>} />
