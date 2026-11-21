@@ -4,6 +4,7 @@ import { api, ApiError } from '../api';
 import { useApi } from '../hooks';
 import { PanelFrame, type NavItem } from '../PanelShell';
 import { Card, Empty, ErrorNotice, Field, Notice, PageHead, Stat, StatusChip, Table, fieldErrors, fmtDate, fmtDateTime, fmtInr } from '../ui';
+import { Spinner } from '../../components/loading/Loaders';
 
 const NAV: NavItem[] = [
   { to: '/manager', label: 'Overview' },
@@ -165,7 +166,7 @@ function BatchCreate({ onCreated }: { onCreated: (id: number) => void }) {
         <Field label="Length of each class (minutes)" error={fe.duration_minutes}><input className="p-input" type="number" min={15} max={480} required value={form.duration_minutes} onChange={e => set('duration_minutes', e.target.value)} /></Field>
         <Field label="Number of classes" error={fe.classes_total}><input className="p-input" type="number" min={1} max={200} required value={form.classes_total} onChange={e => set('classes_total', e.target.value)} /></Field>
         <Field label="Seats" error={fe.capacity}><input className="p-input" type="number" min={1} max={500} required value={form.capacity} onChange={e => set('capacity', e.target.value)} /></Field>
-        <div className="span-2"><button className="p-btn" type="submit" disabled={busy || days.length === 0}>{busy ? 'Creating…' : 'Create batch and schedule classes'}</button></div>
+        <div className="span-2"><button className="p-btn" type="submit" disabled={busy || days.length === 0}>{busy ? <><Spinner />Creating…</> : 'Create batch and schedule classes'}</button></div>
       </form>
     </Card>
   );
@@ -340,7 +341,7 @@ function Students() {
               {(batches.data?.items ?? []).map(b => <option key={b.id} value={b.id}>{b.name} ({b.seats_taken}/{b.capacity})</option>)}
             </select>
           </Field>
-          <div className="span-2"><button className="p-btn" type="submit" disabled={busy}>{busy ? 'Creating…' : 'Create student account'}</button></div>
+          <div className="span-2"><button className="p-btn" type="submit" disabled={busy}>{busy ? <><Spinner />Creating…</> : 'Create student account'}</button></div>
         </form>
       </Card>
       <Card title="All students">

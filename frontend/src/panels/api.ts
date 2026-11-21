@@ -1,3 +1,4 @@
+import { trackRequest } from '../components/loading/loadingStore';
 /** Client for the Academy API. Every panel screen goes through this one function. */
 export const API_BASE = '/v1';
 
@@ -26,7 +27,7 @@ function csrfToken(): string {
   return match ? decodeURIComponent(match[1]) : '';
 }
 
-export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
+async function request<T>(path: string, options: ApiOptions = {}): Promise<T> {
   const method = options.method ?? (options.body === undefined ? 'GET' : 'POST');
   const headers: Record<string, string> = { Accept: 'application/json' };
   let body: BodyInit | undefined;
@@ -82,4 +83,14 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
     );
   }
   return data as T;
+}
+
+/** Every call is counted so the thin loading bar at the top of the screen knows work is in flight. */
+export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
+  const finish = trackRequest();
+  try {
+    return await request<T>(path, options);
+  } finally {
+    finish();
+  }
 }
