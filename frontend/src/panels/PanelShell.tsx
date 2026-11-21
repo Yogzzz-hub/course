@@ -1,5 +1,5 @@
 import { useState, useEffect, type ReactNode } from 'react';
-import { NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import {
   LogOut,
   LayoutDashboard,
@@ -25,6 +25,7 @@ import {
   ChevronRight,
   BookOpen,
 } from 'lucide-react';
+import { LogoMark } from '../components/LogoMark';
 import { api } from './api';
 import { useApi } from './hooks';
 import { themes } from '../components/ThemeSwitcher';
@@ -155,17 +156,17 @@ export function PanelShell({ brand, items, me, children }: { brand: string; item
       <aside className={`p-side ${collapsed ? 'p-side--collapsed' : ''}`} aria-label={`${brand} navigation`}>
         {/* Brand / Logo Header */}
         <div className="p-side-header">
-          <div className="p-side-logo-group">
-            <div className="p-side-logo" title="Aintrix Academy">
-              <Sparkles size={18} className="p-logo-icon" />
+          <Link to="/" className="p-side-brand-link" title="Aintrix Academy Home">
+            <div className={`aintrix-pill-badge ${collapsed ? 'aintrix-pill-badge--collapsed' : ''}`}>
+              <LogoMark size={collapsed ? 22 : 24} surface="light" className="aintrix-pill-mark" />
+              {!collapsed && (
+                <div className="aintrix-pill-words">
+                  <span className="aintrix-pill-name">Aintrix</span>
+                  <span className="aintrix-pill-sub">ACADEMY</span>
+                </div>
+              )}
             </div>
-            {!collapsed && (
-              <div className="p-side-brand-info">
-                <div className="p-side-title">{brand}</div>
-                <div className="p-side-role-badge">{roleLabel(primaryRole)}</div>
-              </div>
-            )}
-          </div>
+          </Link>
           <button
             type="button"
             className="p-side-collapse-btn"
@@ -173,9 +174,17 @@ export function PanelShell({ brand, items, me, children }: { brand: string; item
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
-            {collapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
+            {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
           </button>
         </div>
+
+        {!collapsed && (
+          <div className="p-side-portal-bar">
+            <span className="p-side-portal-brand">{brand}</span>
+            <span className="p-side-portal-sep">/</span>
+            <span className="p-side-portal-role">{roleLabel(primaryRole)}</span>
+          </div>
+        )}
 
         {/* Navigation list with Lucide icons */}
         <nav className="p-nav" aria-label={`${brand} sections`}>

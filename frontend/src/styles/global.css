@@ -71,11 +71,11 @@
 
 .no-script-notice{padding:100px 20px 20px;background:#eef2ff;color:#312e81;font-size:14px}
 
-.logo { display: inline-flex !important; flex-direction: row !important; align-items: center !important; flex-wrap: nowrap !important; gap: 12px !important; text-decoration: none; color: var(--text); flex-shrink: 0; }
+.logo { display: inline-flex !important; flex-direction: row !important; align-items: center !important; flex-wrap: nowrap !important; gap: 10px !important; text-decoration: none; color: var(--text); flex-shrink: 0; }
 .logo svg { flex-shrink: 0 !important; display: block; }
-.logo .logo-wordmark { display: inline-flex !important; flex-direction: column !important; justify-content: center !important; gap: 2px !important; line-height: 1.15 !important; white-space: nowrap !important; text-align: left !important; padding-right: 4px !important; }
-.logo .logo-name { font-family: var(--font-display) !important; font-size: 18px !important; font-weight: 700 !important; letter-spacing: -.03em !important; line-height: 1.1 !important; color: var(--text) !important; white-space: nowrap !important; }
-.logo .logo-subtitle { font-family: var(--font-body) !important; font-size: 8.5px !important; font-weight: 500 !important; letter-spacing: .28em !important; text-transform: uppercase !important; color: var(--muted) !important; line-height: 1 !important; white-space: nowrap !important; }
+.logo .logo-wordmark { display: inline-flex !important; flex-direction: column !important; justify-content: center !important; gap: 1.5px !important; line-height: 1.1 !important; white-space: nowrap !important; text-align: left !important; padding-right: 4px !important; }
+.logo .logo-name { font-family: var(--font-display) !important; font-size: 17px !important; font-weight: 700 !important; letter-spacing: -.025em !important; line-height: 1.1 !important; color: var(--text) !important; white-space: nowrap !important; }
+.logo .logo-subtitle { font-family: var(--font-body) !important; font-size: 7.5px !important; font-weight: 700 !important; letter-spacing: .22em !important; text-transform: uppercase !important; color: var(--muted) !important; line-height: 1 !important; white-space: nowrap !important; }
 @media (max-width: 359px) { .logo .logo-name { font-size: 14px !important; } .header-inner { gap: 8px; } .header-cta { display: none; } }
 @media (max-width: 768px) { html { scroll-padding-top: 64px; } }
 

@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { LogoMark } from '../../components/LogoMark';
 import { api, ApiError } from '../api';
 import { ErrorNotice, Notice } from '../ui';
 import '../panels.css';
@@ -81,8 +82,17 @@ export function LoginPage() {
   return (
     <section className="container page-hero" style={{ maxWidth: 560 }}>
       <div className="p-card" style={{ padding: 28 }}>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, margin: '0 0 6px' }}>Sign in</h1>
-        <p className="p-muted" style={{ margin: '0 0 22px' }}>Learners and staff use the same sign-in.</p>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+          <div className="aintrix-pill-badge" title="Aintrix Academy">
+            <LogoMark size={28} surface="light" className="aintrix-pill-mark" />
+            <div className="aintrix-pill-words">
+              <span className="aintrix-pill-name">Aintrix</span>
+              <span className="aintrix-pill-sub">ACADEMY</span>
+            </div>
+          </div>
+        </div>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 26, margin: '0 0 6px', textAlign: 'center' }}>Sign in</h1>
+        <p className="p-muted" style={{ margin: '0 0 22px', textAlign: 'center' }}>Learners and staff use the same sign-in.</p>
         {backend === 'down' && (
           <Notice tone="danger">
             The academy backend is not running, so nobody can sign in yet. In the backend folder, double-click <strong>start-backend.bat</strong> (or run <strong>uvicorn app.main:app --port 8000</strong>), keep that window open, then refresh this page.
