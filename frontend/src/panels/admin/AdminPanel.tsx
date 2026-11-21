@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router-dom';
 import { api, ApiError } from '../api';
 import { useApi } from '../hooks';
 import { PanelFrame, type NavItem } from '../PanelShell';
+import { AuditLogView } from '../AuditLogView';
 import { Card, Empty, ErrorNotice, Field, Notice, PageHead, Stat, StatusChip, Table, fieldErrors, fmtDateTime } from '../ui';
 import { Spinner } from '../../components/loading/Loaders';
 
@@ -128,20 +129,7 @@ function Users() {
 }
 
 function AuditLog() {
-  const list = useApi<{ items: { at: string; actor: string; action: string; entity: string; entity_id: string }[] }>('/admin/audit-log?limit=200');
-  return (
-    <>
-      <PageHead title="Audit log" text="Who changed what, and when. Nothing here can be edited." />
-      <Card>
-        <ErrorNotice error={list.error} />
-        <Table
-          head={['When', 'Who', 'Action', 'Record']}
-          rows={(list.data?.items ?? []).map(a => [fmtDateTime(a.at), a.actor, a.action, `${a.entity} #${a.entity_id}`])}
-          empty="No activity yet."
-        />
-      </Card>
-    </>
-  );
+  return <AuditLogView endpoint="/admin/audit-log?limit=200" text="Who changed what, and when. Nothing here can be edited." />;
 }
 
 export default function AdminPanel() {

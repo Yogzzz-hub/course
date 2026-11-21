@@ -18,11 +18,12 @@ export function fmtInr(value?: number | null): string {
   return `₹${value.toLocaleString('en-IN')}`;
 }
 
-export function PageHead({ title, text, action }: { title: string; text?: string; action?: ReactNode }) {
+export function PageHead({ title, text, action, showTitle = false }: { title: string; text?: string; action?: ReactNode; showTitle?: boolean }) {
+  // The sidebar already names the page, so the heading is hidden visually but kept for screen readers.
   return (
     <header className="p-head">
       <div>
-        <h1>{title}</h1>
+        <h1 className={showTitle ? undefined : 'p-sr'}>{title}</h1>
         {text && <p className="p-muted">{text}</p>}
       </div>
       {action}
