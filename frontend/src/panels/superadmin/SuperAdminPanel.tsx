@@ -15,6 +15,10 @@ import {
 import { api, ApiError } from '../api';
 import { useApi } from '../hooks';
 import { PanelFrame, type NavItem, type Me } from '../PanelShell';
+import { AuditLogView } from '../AuditLogView';
+import { RolesAccess } from './RolesAccess';
+import './superadmin-mobile.css';
+import { SettingsPage } from './SettingsPage';
 import {
   Card,
   Empty,
@@ -396,9 +400,9 @@ export default function SuperAdminPanel() {
       {me => (
         <Routes>
           <Route index element={<Overview me={me} />} />
-          <Route path="roles" element={<Roles />} />
-          <Route path="settings" element={<Settings />} />
-          <Route path="audit-log" element={<AuditLog />} />
+          <Route path="roles" element={<RolesAccess />} />
+          <Route path="settings" element={<SettingsPage />} />
+          <Route path="audit-log" element={<AuditLogView />} />
           <Route path="panels" element={<Panels />} />
           <Route path="*" element={<Empty>This page does not exist.</Empty>} />
         </Routes>

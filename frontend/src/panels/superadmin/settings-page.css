@@ -67,7 +67,7 @@
 
 /* Payment preview */
 .st-pay { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px; }
-.st-preview { align-self: stretch; display: grid; align-content: start; gap: 8px; padding: 14px; overflow: auto; border: 1px dashed var(--border-strong); border-radius: 16px; background: var(--surface-alt); }
+.st-preview { align-self: stretch; display: grid; align-content: start; gap: 8px; padding: 14px; overflow-x: hidden; overflow-y: auto; border: 1px dashed var(--border-strong); border-radius: 16px; background: var(--surface-alt); }
 .st-preview-tag { margin: 0; font: 700 11px/1 var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .st-preview-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; line-height: 1.6; color: var(--text); }
 .st-preview-empty { margin: 0; font-size: 14px; font-style: italic; color: var(--muted); }
@@ -86,11 +86,26 @@
 @keyframes st-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
 @media (max-width: 1000px) {
-  .st-attendance, .st-certificates, .st-name, .st-payment { grid-column: 1 / -1; }
+  .st-attendance, .st-payment { grid-column: 1 / -1; }
+  .st-certificates, .st-name { grid-column: span 6; }
+}
+@media (max-width: 700px) {
+  .st-certificates, .st-name { grid-column: 1 / -1; }
 }
 @media (max-width: 640px) {
+  .st { gap: 12px; }
+  .st-grid { gap: 10px; }
   .st-att, .st-pay { grid-template-columns: minmax(0, 1fr); }
-  .st-card { padding: 18px 16px; }
+  .st-card { padding: 14px; gap: 10px; border-radius: 18px; }
+  .st-icon { width: 36px; height: 36px; border-radius: 11px; }
+  .st-head { gap: 10px; }
+  .st-head p { display: none; }
+  .st-card .st-brand { display: none; }
+  .st-note { padding: 10px 12px; }
+  .st-example { padding: 10px 12px; font-size: 13px; }
+  .st-preview { max-height: 130px; }
+  .st-pay { gap: 10px; }
+  .st-top { min-height: 0; }
   .st-number { min-width: 116px; }
   .st-number input { font-size: 38px; }
   .st-bar { flex-basis: 100%; border-radius: 22px; flex-wrap: wrap; padding: 12px 12px 12px 16px; }

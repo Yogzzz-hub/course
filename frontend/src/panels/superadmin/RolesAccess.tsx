@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ComponentType } from 'react'
 import { BookOpen, Briefcase, Check, Crown, GraduationCap, Lock, Search, ShieldCheck, Undo2, Wallet, X } from 'lucide-react';
 import { api, ApiError } from '../api';
 import { useApi } from '../hooks';
+import { useInfiniteList } from '../useInfinite';
 import { roleLabel } from '../PanelShell';
 import { Empty, ErrorNotice, PageHead, StatusChip } from '../ui';
 import './roles-access.css';
@@ -60,6 +61,9 @@ export function RolesAccess() {
       return !needle || user.name.toLowerCase().includes(needle) || user.email.toLowerCase().includes(needle);
     });
   }, [users, query, filter]);
+
+  const { count, more, sentinel, loadMore } = useInfiniteList(visible.length, `${query}|${filter}`);
+  const shown = visible.slice(0, count);
 
   // The confirmation dialog follows the pending change.
   useEffect(() => {
@@ -188,7 +192,7 @@ export function RolesAccess() {
       )}
 
       <ul className="rx-list">
-        {visible.map(user => {
+        {shown.map(user => {
           const roles = rolesFor(user);
           const dirty = Boolean(draft[user.id]);
           const top = byStrength(roles)[0];
@@ -227,7 +231,7 @@ export function RolesAccess() {
                       >
                         <Icon size={15} aria-hidden={true} />
                         {roleLabel(role)}
-                        {on && lock && !lock.startsWith('Everyone') ? <Lock size={12} aria-hidden={true} /> : on ? <Check size={13} aria-hidden={true} /> : null}
+                        {on && lock && !lock.startsWith('Everyone') ? <Lock size={12} aria-hidden={true} /> : on ? <Check className="rx-check" size={13} aria-hidden={true} /> : null}
                       </button>
                     );
                   })}
@@ -251,6 +255,12 @@ export function RolesAccess() {
           );
         })}
       </ul>
+
+      {more && (
+        <div className="rx-more" ref={sentinel}>
+          <button type="button" className="p-btn p-btn-ghost p-btn-small" onClick={loadMore}>Loading more… ({visible.length - count} left)</button>
+        </div>
+      )}
 
       <dialog ref={dialog} className="rx-dialog" aria-labelledby="rx-dialog-title" onCancel={event => { event.preventDefault(); setPending(null); }}>
         {pending && (
