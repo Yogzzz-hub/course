@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
 import { api } from './api';
@@ -7,6 +7,7 @@ import { ThemeSwitcher } from '../components/ThemeSwitcher';
 import { ErrorNotice, Notice } from './ui';
 import { PageLoader, PanelLoader } from '../components/loading/Loaders';
 import { useLoadingState } from '../components/loading/loadingStore';
+import { academy } from '../config/academy';
 import './panels.css';
 
 export interface Me {
@@ -34,7 +35,16 @@ export function roleLabel(role: string): string {
 /** Shell for every panel: side navigation on desktop, a top bar with a menu on phones. */
 export function PanelShell({ brand, items, me, children }: { brand: string; items: NavItem[]; me: Me; children: ReactNode }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { initial } = useLoadingState();
+
+  const currentItem = items.find(item => item.to === location.pathname || (item.to.length > 5 && location.pathname.startsWith(item.to)));
+
+  useEffect(() => {
+    const pageName = currentItem?.label || brand;
+    const cleanBrand = brand.toLowerCase().includes('admin') || brand.toLowerCase().includes('portal') ? brand : `${brand} portal`;
+    document.title = `${pageName} · ${cleanBrand} | ${academy.name}`;
+  }, [location.pathname, currentItem, brand]);
 
   async function signOut() {
     try {

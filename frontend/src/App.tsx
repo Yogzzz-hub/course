@@ -24,7 +24,6 @@ const pageLoaders: Record<string, () => Promise<{ default: ComponentType }>> = {
  '/full-stack-developer-roadmap': () => import('./pages/LearningLanding'),
  '/python-interview-practice': () => import('./pages/LearningLanding'),
  '/python-coding-challenge': () => import('./pages/CodingArena'),
- '/admin': () => import('./pages/LearningAdmin'),
  '/': () => import('./pages/Home'),
  '/programmes': () => import('./pages/Programmes'),
  '/programmes/python-full-stack': () => import('./pages/ProgrammeDetails'),
@@ -53,7 +52,7 @@ const pageLoaders: Record<string, () => Promise<{ default: ComponentType }>> = {
 const pageComponents = Object.entries(pageLoaders).map(([path, loader]) => ({path, Page: lazy(() => trackPage(loader()))}));
 export async function loadInitialPage(path: string) { return (await (pageLoaders[path] || pageLoaders['*'])()).default; }
 import { academy } from './config/academy';
-import { routes } from './data/routes';
+import { routes, resolveRoute } from './data/routes';
 import { isPrivatePath } from './utils/seo';
 import { trackLearningPage } from './components/learning/client';
 
@@ -62,16 +61,16 @@ function RouteEffects() {
   const firstRender = useRef(true);
   useEffect(() => {
     if(!isPrivatePath(pathname))trackLearningPage(pathname);
-    const route = routes.find(route=>route.path===pathname);
+    const route = resolveRoute(pathname);
     const titleBrand = academy.name;
-    document.title = `${route?.title || 'Page not found'} | ${titleBrand}`;
+    document.title = `${route.title} | ${titleBrand}`;
     const meta = (name:string, value:string, property = false) => {
       const attr = property ? 'property' : 'name';
       let element = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${name}"]`);
       if (!element) {element=document.createElement('meta');element.setAttribute(attr,name);document.head.append(element);}
       element.content=value;
     };
-    const description=route?.description || 'Find your way back to programme information and academy guidance.';
+    const description=route.description || 'Find your way back to programme information and academy guidance.';
     meta('description',description);meta('og:title',document.title,true);meta('og:description',description,true);meta('og:type','website',true);
     meta('robots',isPrivatePath(pathname) || !academy.siteUrl || !academy.legalApproved || !academy.brandApproved || !route || pathname.includes('policy') || pathname.includes('terms') ? 'noindex, nofollow' : 'index, follow');
     let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
@@ -97,8 +96,8 @@ class PageErrorBoundary extends Component<{children:ReactNode},{failed:boolean}>
 }
 export default function App({initialPage: InitialPage, initialPath}: {initialPage?: ComponentType; initialPath?: string}) {
  const { pathname } = useLocation();
- // Panels (student, trainer, admin) draw their own navigation, so they skip the public header and footer.
- if (/^\/(app|trainer|manager|finance|superadmin)(\/|$)|^\/admin\//.test(pathname)) {
+ // Panels (student, trainer, manager, finance, admin, superadmin) draw their own navigation, so they skip the public header and footer.
+ if (/^\/(app|trainer|manager|finance|admin|superadmin)(\/|$)/.test(pathname)) {
    return <MotionConfig reducedMotion="user"><MotionProvider><InteractionDirector/><TopLoadingBar/><NavigationLoader/><main id="main" tabIndex={-1} className="panel-main"><PageErrorBoundary><Suspense fallback={<PageLoader/>}><Routes>{pageComponents.map(({path, Page}) => <Route key={path} path={path} element={<Page/>}/>)}</Routes><RouteEffects/></Suspense></PageErrorBoundary></main></MotionProvider></MotionConfig>;
  }
  // Sign-in and sign-up are standalone screens: no site header, footer or ambient layer.

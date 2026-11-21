@@ -1,0 +1,86 @@
+/* Roles & access. Everything uses the site theme tokens, so all four themes recolour it. */
+.rx { display: grid; gap: 18px; }
+.rx-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Filters double as the summary: one chip per role with how many people hold it. */
+.rx-filters { display: flex; flex-wrap: wrap; gap: 8px; }
+.rx-filter { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 6px 8px 6px 14px; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--surface); color: var(--text); font: 700 13px/1 var(--font-body); cursor: pointer; transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease; }
+.rx-filter b { display: inline-grid; place-items: center; min-width: 24px; height: 24px; padding: 0 6px; border-radius: 999px; background: var(--accent-tint-strong); color: var(--accent); font-size: 12px; font-variant-numeric: tabular-nums; }
+.rx-filter:hover { border-color: var(--accent); }
+.rx-filter[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); }
+.rx-filter[aria-pressed="true"] b { background: rgba(255, 255, 255, 0.2); color: var(--accent-contrast); }
+
+.rx-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+.rx-search { position: relative; display: block; flex: 1 1 280px; max-width: 420px; }
+.rx-search svg { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.rx-search input { width: 100%; box-sizing: border-box; min-height: 46px; padding: 0 16px 0 44px; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--surface); color: var(--text); font: 600 14px/1 var(--font-body); }
+.rx-search input:focus { outline: 3px solid var(--accent-soft-dark); outline-offset: 2px; border-color: var(--accent); }
+.rx-count { margin: 0; font-size: 13px; color: var(--muted); }
+
+/* One card per person */
+.rx-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.rx-card { display: grid; grid-template-columns: minmax(240px, 0.8fr) minmax(0, 1.6fr); gap: 14px 24px; align-items: start; padding: 18px 20px; border: 1px solid var(--border); border-radius: 20px; background: var(--surface); box-shadow: var(--card-shadow); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+.rx-card:hover { box-shadow: var(--card-shadow-hover); }
+.rx-card.is-dirty { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent); }
+
+.rx-who { display: flex; align-items: center; gap: 14px; min-width: 0; flex-wrap: wrap; }
+.rx-avatar { flex-shrink: 0; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: var(--accent-tint-strong); color: var(--accent); border: 1px solid var(--accent-border); font: 700 15px/1 var(--font-display); letter-spacing: 0.02em; }
+.rx-id { min-width: 0; flex: 1 1 140px; }
+.rx-name { margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font: 700 15px/1.3 var(--font-display); color: var(--text); }
+.rx-email { margin: 2px 0 0; font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.rx-you, .rx-recent { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font: 700 11px/1.4 var(--font-body); }
+.rx-you { background: var(--accent); color: var(--accent-contrast); }
+.rx-recent { background: #E8F5EE; color: #1f7a4d; }
+
+.rx-roles { min-width: 0; display: grid; gap: 10px; }
+.rx-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.rx-chip { --rx-bg: var(--accent-tint-strong); --rx-ink: var(--accent); display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 6px 14px; border: 1.5px solid var(--border-strong); border-radius: 999px; background: var(--surface); color: var(--muted); font: 700 13px/1 var(--font-body); cursor: pointer; transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.12s ease; }
+.rx-chip:hover { border-color: var(--accent); color: var(--text); }
+.rx-chip:active { transform: translateY(1px); }
+.rx-chip[aria-pressed="true"] { background: var(--rx-bg); border-color: var(--rx-bg); color: var(--rx-ink); }
+.rx-chip.is-locked { cursor: not-allowed; }
+/* Stronger roles read stronger: the filled colour deepens from student up to super admin. */
+.rx-chip[data-role="super_admin"] { --rx-bg: var(--accent); --rx-ink: var(--accent-contrast); }
+.rx-chip[data-role="admin"] { --rx-bg: color-mix(in srgb, var(--accent) 86%, var(--surface)); --rx-ink: var(--accent-contrast); }
+.rx-chip[data-role="manager"] { --rx-bg: color-mix(in srgb, var(--accent) 70%, var(--surface)); --rx-ink: var(--accent-contrast); }
+.rx-chip[data-role="financier"] { --rx-bg: color-mix(in srgb, var(--accent) 22%, var(--surface)); --rx-ink: var(--accent); }
+.rx-chip[data-role="trainer"] { --rx-bg: color-mix(in srgb, var(--accent-soft) 70%, var(--surface)); --rx-ink: var(--text); }
+.rx-chip[data-role="student"] { --rx-bg: var(--accent-tint-strong); --rx-ink: var(--accent); }
+.rx-chip:focus-visible, .rx-filter:focus-visible, .rx-toast button:focus-visible { outline: 3px solid var(--accent-soft-dark); outline-offset: 2px; }
+
+.rx-blurb { margin: 0; font-size: 13px; line-height: 1.5; color: var(--muted); max-width: 64ch; }
+.rx-hint { margin: 0; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #8a5a00; }
+
+.rx-actions { grid-column: 1 / -1; display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 10px; padding-top: 12px; border-top: 1px dashed var(--border-strong); }
+.rx-unsaved { margin-right: auto; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--accent); }
+.rx-unsaved::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+
+.rx-none { display: grid; justify-items: start; gap: 10px; padding: 22px; border: 1px dashed var(--border-strong); border-radius: 18px; background: var(--surface-alt); }
+.rx-none p { margin: 0; color: var(--muted); }
+
+/* Confirmation for risky changes */
+.rx-dialog { width: min(440px, calc(100vw - 32px)); padding: 0; border: 1px solid var(--border); border-radius: 22px; background: var(--surface); color: var(--text); box-shadow: 0 30px 70px rgba(0, 0, 0, 0.35); }
+.rx-dialog::backdrop { background: color-mix(in srgb, var(--ink) 55%, transparent); backdrop-filter: blur(3px); }
+.rx-dialog-body { display: grid; gap: 12px; padding: 26px; }
+.rx-dialog-icon { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--accent-tint-strong); color: var(--accent); }
+.rx-dialog-icon.is-remove { background: #FCE9E7; color: #b42318; }
+.rx-dialog h2 { margin: 0; font: 700 20px/1.25 var(--font-display); }
+.rx-dialog p { margin: 0; line-height: 1.6; color: var(--muted); }
+.rx-dialog-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+
+/* Undo toast */
+.rx-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 50; display: flex; align-items: center; gap: 14px; padding: 12px 14px 12px 20px; border-radius: 999px; background: var(--ink); color: #fff; font-size: 14px; font-weight: 600; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3); animation: rx-toast-in 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
+.rx-toast button { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, 0.16); color: #fff; font: 700 13px/1 var(--font-body); cursor: pointer; }
+.rx-toast button:hover { background: rgba(255, 255, 255, 0.26); }
+.rx-toast .rx-toast-close { padding: 6px; }
+@keyframes rx-toast-in { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+@media (max-width: 900px) {
+  .rx-card { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 520px) {
+  .rx-toast { width: calc(100vw - 24px); border-radius: 20px; flex-wrap: wrap; }
+  .rx-actions { justify-content: stretch; }
+  .rx-unsaved { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .rx-toast { animation: none; } .rx-card, .rx-chip, .rx-filter { transition: none; } }

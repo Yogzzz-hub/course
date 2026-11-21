@@ -3,6 +3,7 @@ import { Link, Route, Routes } from 'react-router-dom';
 import { api, ApiError } from '../api';
 import { useApi } from '../hooks';
 import { PanelFrame, type NavItem } from '../PanelShell';
+import { RolesAccess } from './RolesAccess';
 import { Card, Empty, ErrorNotice, Field, Notice, PageHead, Stat, Table, fmtDateTime } from '../ui';
 
 const NAV: NavItem[] = [
@@ -12,9 +13,6 @@ const NAV: NavItem[] = [
   { to: '/superadmin/audit-log', label: 'Audit log' },
   { to: '/superadmin/panels', label: 'Open any panel' },
 ];
-const ROLE_OPTIONS = ['super_admin', 'admin', 'manager', 'financier', 'trainer', 'student'];
-
-interface UserRow { id: number; name: string; email: string; status: string; roles: string[] }
 
 function Overview() {
   const { data, error } = useApi<{ users: number; batches: number; enrolments: number; verified_income_inr: number }>('/superadmin/overview');
@@ -28,63 +26,6 @@ function Overview() {
         <Stat label="Enrolments" value={data?.enrolments} />
         <Stat label="Verified income" value={data ? `₹${data.verified_income_inr.toLocaleString('en-IN')}` : null} />
       </div>
-    </>
-  );
-}
-
-function Roles() {
-  const list = useApi<{ items: UserRow[] }>('/superadmin/users');
-  const [draft, setDraft] = useState<Record<number, string[]>>({});
-  const [error, setError] = useState<ApiError | null>(null);
-  const [message, setMessage] = useState('');
-
-  function rolesFor(user: UserRow): string[] {
-    return draft[user.id] ?? user.roles;
-  }
-
-  function toggle(user: UserRow, role: string, checked: boolean) {
-    const current = rolesFor(user);
-    setDraft({ ...draft, [user.id]: checked ? [...current, role] : current.filter(r => r !== role) });
-  }
-
-  async function save(user: UserRow) {
-    setError(null);
-    setMessage('');
-    try {
-      await api(`/superadmin/users/${user.id}/roles`, { method: 'PUT', body: { roles: rolesFor(user) } });
-      setMessage(`Roles saved for ${user.name}.`);
-      setDraft(({ [user.id]: _saved, ...rest }) => rest);
-      list.reload();
-    } catch (caught) {
-      setError(caught as ApiError);
-    }
-  }
-
-  return (
-    <>
-      <PageHead title="Roles & access" text="Grant or remove roles. A person can hold several roles at once." />
-      <ErrorNotice error={error} />
-      {message && <Notice tone="success">{message}</Notice>}
-      <Card>
-        <ErrorNotice error={list.error} />
-        <Table
-          head={['Name', 'Email', 'Roles', '']}
-          rows={(list.data?.items ?? []).map(u => [
-            u.name,
-            u.email,
-            <div key="r" className="p-row">
-              {ROLE_OPTIONS.map(role => (
-                <label key={role} className="p-row" style={{ gap: 4 }}>
-                  <input type="checkbox" checked={rolesFor(u).includes(role)} onChange={e => toggle(u, role, e.target.checked)} />
-                  {role.replace('_', ' ')}
-                </label>
-              ))}
-            </div>,
-            draft[u.id] ? <button key="b" type="button" className="p-btn p-btn-small" onClick={() => save(u)}>Save</button> : '',
-          ])}
-          empty="No accounts yet."
-        />
-      </Card>
     </>
   );
 }
@@ -179,7 +120,7 @@ export default function SuperAdminPanel() {
       {() => (
         <Routes>
           <Route index element={<Overview />} />
-          <Route path="roles" element={<Roles />} />
+          <Route path="roles" element={<RolesAccess />} />
           <Route path="settings" element={<Settings />} />
           <Route path="audit-log" element={<AuditLog />} />
           <Route path="panels" element={<Panels />} />
