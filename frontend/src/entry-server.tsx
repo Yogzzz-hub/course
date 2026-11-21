@@ -2,14 +2,14 @@ import { renderToString } from 'react-dom/server';
 import { StaticRouter } from 'react-router-dom';
 import App, { loadInitialPage } from './App';
 import { academy } from './config/academy';
-import { routes } from './data/routes';
+import { routes, resolveRoute } from './data/routes';
 import { isPrivatePath } from './utils/seo';
 export { routes, academy, isPrivatePath };
 const escape=(text:string)=>text.replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]!));
 export async function render(path:string){
- const route=routes.find(r=>r.path===path);
+ const route=resolveRoute(path);
   const titleBrand = academy.name;
- const title=`${route?.title || 'Page not found'} | ${titleBrand}`;
+ const title=`${route.title} | ${titleBrand}`;
  const description=route?.description || 'Find your way back to the academy.';
  const launchReady=academy.siteUrl && academy.brandApproved && academy.legalApproved;
  const noindex=isPrivatePath(path) || !launchReady || !route || path.includes('policy') || path.includes('terms');
