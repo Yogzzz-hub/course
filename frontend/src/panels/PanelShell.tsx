@@ -30,6 +30,8 @@ import { api } from './api';
 import { useApi } from './hooks';
 import { themes } from '../components/ThemeSwitcher';
 import { Loading, ErrorNotice, Notice } from './ui';
+import { PageLoader, PanelLoader } from '../components/loading/Loaders';
+import { useLoadingState } from '../components/loading/loadingStore';
 import './panels.css';
 
 export interface Me {
@@ -82,6 +84,7 @@ function getNavIcon(label: string, to: string) {
 /** Modern shell matching the sleek Ottertag dock layout across the 4 color themes */
 export function PanelShell({ brand, items, me, children }: { brand: string; items: NavItem[]; me: Me; children: ReactNode }) {
   const navigate = useNavigate();
+  const { initial } = useLoadingState();
   const [collapsed, setCollapsed] = useState(() => {
     try {
       return localStorage.getItem('academy-sidebar-collapsed') === 'true';
@@ -319,8 +322,9 @@ export function PanelShell({ brand, items, me, children }: { brand: string; item
         </div>
       </aside>
 
-      <div className="p-main" tabIndex={-1}>
+      <div className="p-main" tabIndex={-1} aria-busy={initial > 0}>
         {children}
+        {initial > 0 && <PanelLoader />}
       </div>
     </div>
   );
@@ -352,7 +356,7 @@ export function PanelFrame({
   const location = useLocation();
   if (me.unauthorised) return <Navigate to={`/login?next=${encodeURIComponent(location.pathname)}`} replace />;
   if (me.error) return <section className="container page-hero"><ErrorNotice error={me.error} /></section>;
-  if (!me.data) return <section className="container page-hero"><Loading /></section>;
+  if (!me.data) return <PageLoader />;
   const allowed = me.data.roles.includes(role) || me.data.roles.includes('super_admin');
   if (!allowed) {
     return (

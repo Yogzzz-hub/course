@@ -402,7 +402,7 @@ export default function SuperAdminPanel() {
           <Route index element={<Overview me={me} />} />
           <Route path="roles" element={<RolesAccess />} />
           <Route path="settings" element={<SettingsPage />} />
-          <Route path="audit-log" element={<AuditLogView />} />
+          <Route path="audit-log" element={<AuditLogView endpoint="/superadmin/audit-log?limit=300" text="Every change on the platform, in order." />} />
           <Route path="panels" element={<Panels />} />
           <Route path="*" element={<Empty>This page does not exist.</Empty>} />
         </Routes>
