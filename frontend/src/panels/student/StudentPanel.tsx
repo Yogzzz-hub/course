@@ -294,55 +294,10 @@ function Home({ me }: { me: Me }) {
             trendText="+10.3% Last 30 Days"
           />
 
-          {/* Enrolled Courses Cards */}
+          {/* Enrolled status notice when not enrolled */}
           {(overview.data?.items ?? []).length === 0 && overview.data && (
             <Empty>You are not enrolled in a batch yet. Your academy manager adds you once your place is confirmed.</Empty>
           )}
-
-          {(overview.data?.items ?? []).map(e => {
-            const attRate = e.attendance.rate_percent ?? 100;
-            return (
-              <div key={e.enrolment_id} className="p-course-card">
-                <div className="p-course-header">
-                  <div>
-                    <h3 className="p-course-title">{e.programme}</h3>
-                    <p className="p-course-batch">{e.batch}</p>
-                  </div>
-                  <StatusChip
-                    text={e.status.replace('_', ' ')}
-                    tone={e.status === 'awaiting_payment' ? 'warn' : 'good'}
-                  />
-                </div>
-
-                <div className="p-course-progress-section">
-                  <ProgressBar
-                    value={attRate}
-                    max={100}
-                    label={`Attendance Performance (${e.attendance.attended_classes} of ${e.attendance.ended_classes} classes)`}
-                  />
-                </div>
-
-                <div className="p-stats">
-                  <Stat label="Fee Balance" value={fmtInr(e.fees.balance_inr)} />
-                  <Stat label="Next Live Class" value={e.next_class_at ? fmtDateTime(e.next_class_at) : '—'} />
-                  <Stat label="Attendance Rate" value={e.attendance.rate_percent === null ? '—' : `${e.attendance.rate_percent}%`} />
-                  <Stat label="Classes Attended" value={`${e.attendance.attended_classes} / ${e.attendance.ended_classes}`} />
-                </div>
-
-                <div className="p-course-footer">
-                  {e.fees.balance_inr > 0 ? (
-                    <Link className="p-btn" to="/app/payments">
-                      Make Payment ({fmtInr(e.fees.balance_inr)})
-                    </Link>
-                  ) : (
-                    <Link className="p-btn p-btn-ghost" to="/app/classes">
-                      View Class Schedule <ArrowRight size={14} className="inline ml-1" />
-                    </Link>
-                  )}
-                </div>
-              </div>
-            );
-          })}
         </div>
 
         <div className="p-dashboard-side">
@@ -992,7 +947,21 @@ function Classes() {
                 fmtDateTime(c.starts_at),
                 <StatusChip key="s" text={c.status} tone={c.status === 'live' ? 'warn' : c.status === 'ended' ? 'good' : 'neutral'} />,
                 c.attendance ? `${c.attendance.percent}% · ${c.attendance.attended ? 'attended' : 'not yet enough'}` : '—',
-                c.status === 'live' && c.meeting_url ? <a key="m" className="p-link" href={c.meeting_url} target="_blank" rel="noreferrer">Join</a> : '—',
+                c.status === 'live' && c.meeting_url ? (
+                  <a
+                    key="m"
+                    className="p-btn p-btn-small"
+                    href={c.meeting_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                  >
+                    <Video size={14} />
+                    <span>Join</span>
+                  </a>
+                ) : (
+                  '—'
+                ),
               ])}
               empty="No classes scheduled yet."
             />
