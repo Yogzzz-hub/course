@@ -31,6 +31,7 @@ import {
   ActivityTimeline,
   type ActivityItem,
   ProgressBar,
+  CurvedSelect,
 } from '../ui';
 
 const NAV: NavItem[] = [
