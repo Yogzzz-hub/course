@@ -31,6 +31,7 @@ import {
   CourseEngagementChart,
   ActivityTimeline,
   ProgressBar,
+  FileUploadZone,
   type ActivityItem,
 } from '../ui';
 
@@ -515,8 +516,12 @@ function SubmitForm({ assignment, onDone }: { assignment: AssignmentRowData; onD
         </select>
       </Field>
       {kind === 'file' ? (
-        <Field label="File" hint="PDF, ZIP, DOCX, text, code, notebook or image. Up to 10 MB." error={error?.fields?.file}>
-          <input type="file" onChange={e => setFile(e.target.files?.[0] ?? null)} required />
+        <Field label="Assignment File" error={error?.fields?.file}>
+          <FileUploadZone
+            file={file}
+            onChange={setFile}
+            hint="PDF, ZIP, DOCX, text, code, notebook or image. Up to 10 MB."
+          />
         </Field>
       ) : (
         <Field label="Link" error={error?.fields?.link}>

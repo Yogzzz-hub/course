@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useState, useRef, type ReactNode } from 'react';
 import {
   TrendingUp,
   Clock,
@@ -7,6 +7,9 @@ import {
   Sparkles,
   ChevronDown,
   BookOpen,
+  UploadCloud,
+  FileText,
+  X,
   type LucideIcon,
 } from 'lucide-react';
 import {
@@ -499,4 +502,109 @@ export function StatusChip({
   tone?: 'good' | 'warn' | 'bad' | 'neutral';
 }) {
   return <span className={`p-chip p-chip-${tone}`}>{text}</span>;
+}
+
+/**
+ * Modern drag-and-drop / click-to-upload file dropzone matching the design system
+ */
+export function FileUploadZone({
+  file,
+  onChange,
+  accept = '.pdf,.zip,.docx,.txt,.py,.ipynb,image/*',
+  maxSizeMb = 10,
+  hint = 'PDF, ZIP, DOCX, text, code, notebook or image. Up to 10 MB.',
+  disabled = false,
+}: {
+  file: File | null;
+  onChange: (file: File | null) => void;
+  accept?: string;
+  maxSizeMb?: number;
+  hint?: string;
+  disabled?: boolean;
+}) {
+  const [dragOver, setDragOver] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    if (disabled) return;
+    const droppedFile = e.dataTransfer.files?.[0];
+    if (droppedFile) onChange(droppedFile);
+  };
+
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
+
+  return (
+    <div
+      className={`p-dropzone ${dragOver ? 'p-dropzone--active' : ''} ${file ? 'p-dropzone--has-file' : ''}`}
+      onDragOver={e => {
+        e.preventDefault();
+        setDragOver(true);
+      }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={handleDrop}
+      onClick={() => inputRef.current?.click()}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          inputRef.current?.click();
+        }
+      }}
+    >
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        style={{ display: 'none' }}
+        onChange={e => onChange(e.target.files?.[0] ?? null)}
+        disabled={disabled}
+      />
+
+      {file ? (
+        <div className="p-dropzone-file">
+          <div className="p-dropzone-file-icon">
+            <FileText size={22} />
+          </div>
+          <div className="p-dropzone-file-details">
+            <span className="p-dropzone-filename">{file.name}</span>
+            <span className="p-dropzone-filesize">{formatBytes(file.size)}</span>
+          </div>
+          <button
+            type="button"
+            className="p-dropzone-remove"
+            onClick={e => {
+              e.stopPropagation();
+              onChange(null);
+              if (inputRef.current) inputRef.current.value = '';
+            }}
+            title="Remove file"
+            aria-label="Remove file"
+          >
+            <X size={15} />
+          </button>
+        </div>
+      ) : (
+        <div className="p-dropzone-content">
+          <div className="p-dropzone-icon">
+            <UploadCloud size={24} />
+          </div>
+          <div className="p-dropzone-text">
+            <p className="p-dropzone-title">
+              <strong>Click to upload</strong> or drag and drop
+            </p>
+            <p className="p-dropzone-hint">{hint}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
