@@ -34,6 +34,7 @@ import {
   ActivityTimeline,
   type ActivityItem,
   ProgressBar,
+  CurvedSelect,
 } from '../ui';
 
 const NAV: NavItem[] = [
@@ -248,12 +249,17 @@ function Payments() {
       <PageHead title="Payments" text="Check each payment against your bank statement, then verify it. Verified payments count towards the student's fees." />
       <Card>
         <div className="p-row" style={{ marginBottom: 12 }}>
-          <select className="p-select" value={status} onChange={e => setStatus(e.target.value)} aria-label="Filter by status">
-            <option value="submitted">To verify</option>
-            <option value="verified">Verified</option>
-            <option value="rejected">Rejected</option>
-            <option value="all">All</option>
-          </select>
+          <CurvedSelect
+            value={status}
+            onChange={setStatus}
+            options={[
+              { value: 'submitted', label: 'To verify' },
+              { value: 'verified', label: 'Verified' },
+              { value: 'rejected', label: 'Rejected' },
+              { value: 'all', label: 'All' },
+            ]}
+            placeholder="Filter by status"
+          />
         </div>
         <ErrorNotice error={list.error} />
         <ErrorNotice error={change.error} />

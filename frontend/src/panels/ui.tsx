@@ -1,4 +1,4 @@
-import { useState, useRef, type ReactNode } from 'react';
+import { useState, useRef, useEffect, type ReactNode } from 'react';
 import {
   TrendingUp,
   Clock,
@@ -10,16 +10,18 @@ import {
   UploadCloud,
   FileText,
   X,
+  Check,
   type LucideIcon,
 } from 'lucide-react';
 import {
-  BarChart,
-  Bar,
+  AreaChart,
+  Area,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  Cell,
 } from 'recharts';
 import { ApiError } from './api';
 
@@ -166,35 +168,69 @@ export function CourseEngagementChart({
   totalValue?: string;
   trendText?: string;
 }) {
-  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const [rangeOpen, setRangeOpen] = useState(false);
   const [range, setRange] = useState('This Month');
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setRangeOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const RANGES = ['This Week', 'This Month', 'All Time'];
 
   return (
     <div className="p-chart-card">
       <div className="p-chart-header">
         <h2 className="p-chart-title">{title}</h2>
-        <div className="p-chart-dropdown">
-          <span>{range}</span>
-          <ChevronDown size={14} />
+        <div className="p-chart-dropdown-wrap" ref={dropdownRef}>
+          <button
+            type="button"
+            className="p-chart-dropdown"
+            onClick={() => setRangeOpen(prev => !prev)}
+            aria-expanded={rangeOpen}
+          >
+            <span>{range}</span>
+            <ChevronDown size={14} className={`p-chart-dropdown-chevron ${rangeOpen ? 'rotate-180' : ''}`} />
+          </button>
+          {rangeOpen && (
+            <div className="p-chart-dropdown-menu">
+              {RANGES.map(r => (
+                <button
+                  key={r}
+                  type="button"
+                  className={`p-chart-dropdown-item ${range === r ? 'p-chart-dropdown-item--active' : ''}`}
+                  onClick={() => {
+                    setRange(r);
+                    setRangeOpen(false);
+                  }}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
       <div className="p-chart-body">
         <div style={{ width: '100%', height: 260 }}>
           <ResponsiveContainer>
-            <BarChart
+            <AreaChart
               data={data}
-              margin={{ top: 20, right: 10, left: -20, bottom: 20 }}
-              onMouseMove={state => {
-                if (state && state.activeTooltipIndex !== undefined) {
-                  const idx = typeof state.activeTooltipIndex === 'number' ? state.activeTooltipIndex : Number(state.activeTooltipIndex);
-                  if (!Number.isNaN(idx)) {
-                    setHoverIndex(idx);
-                  }
-                }
-              }}
-              onMouseLeave={() => setHoverIndex(null)}
+              margin={{ top: 20, right: 15, left: -20, bottom: 20 }}
             >
+              <defs>
+                <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="var(--accent, #681C35)" stopOpacity={0.35} />
+                  <stop offset="95%" stopColor="var(--accent, #681C35)" stopOpacity={0.0} />
+                </linearGradient>
+              </defs>
               <XAxis
                 dataKey="name"
                 axisLine={false}
@@ -203,13 +239,13 @@ export function CourseEngagementChart({
                 dy={8}
               />
               <YAxis
+                domain={[0, 100]}
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: 'var(--muted)', fontSize: 11 }}
                 allowDecimals={false}
               />
               <Tooltip
-                cursor={{ fill: 'rgba(0,0,0,0.03)', radius: 8 }}
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
                     const item = payload[0].payload;
@@ -226,20 +262,18 @@ export function CourseEngagementChart({
                   return null;
                 }}
               />
-              <Bar dataKey="value" radius={[8, 8, 0, 0]} isAnimationActive={true}>
-                {data.map((_, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={
-                      hoverIndex === index
-                        ? 'var(--accent, #681C35)'
-                        : 'color-mix(in srgb, var(--accent, #681C35) 28%, var(--surface-alt, #EEF3F7))'
-                    }
-                    className="transition-colors duration-200"
-                  />
-                ))}
-              </Bar>
-            </BarChart>
+              <Area
+                type="monotone"
+                dataKey="value"
+                stroke="var(--accent, #681C35)"
+                strokeWidth={3}
+                fillOpacity={1}
+                fill="url(#chartGradient)"
+                activeDot={{ r: 6, fill: 'var(--accent, #681C35)', stroke: '#ffffff', strokeWidth: 2 }}
+                dot={{ r: 4, fill: '#ffffff', stroke: 'var(--accent, #681C35)', strokeWidth: 2 }}
+                isAnimationActive={true}
+              />
+            </AreaChart>
           </ResponsiveContainer>
         </div>
 
@@ -256,6 +290,87 @@ export function CourseEngagementChart({
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Custom curved rectangle dropdown with website theme colors and icons
+ */
+export function CurvedSelect({
+  value,
+  onChange,
+  options,
+  placeholder,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string; icon?: LucideIcon }[];
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selected = options.find(o => o.value === value);
+
+  return (
+    <div className="p-curved-select" ref={ref}>
+      <button
+        type="button"
+        className={`p-curved-select-trigger ${open ? 'p-curved-select-trigger--open' : ''}`}
+        onClick={() => setOpen(prev => !prev)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span className="p-curved-select-label">
+          {selected ? (
+            <span className="flex items-center gap-2">
+              {selected.icon && <selected.icon size={16} className="text-[var(--accent)]" />}
+              <span>{selected.label}</span>
+            </span>
+          ) : (
+            placeholder || 'Select option'
+          )}
+        </span>
+        <ChevronDown size={16} className={`p-curved-select-chevron ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="p-curved-select-menu" role="listbox">
+          {options.map(opt => {
+            const isSelected = opt.value === value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                role="option"
+                aria-selected={isSelected}
+                className={`p-curved-select-item ${isSelected ? 'p-curved-select-item--active' : ''}`}
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  {opt.icon && <opt.icon size={16} />}
+                  <span>{opt.label}</span>
+                </div>
+                {isSelected && <Check size={15} className="p-curved-select-check" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

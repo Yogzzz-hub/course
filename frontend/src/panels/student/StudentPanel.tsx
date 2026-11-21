@@ -18,6 +18,7 @@ import {
   Calendar,
   Download,
   ExternalLink,
+  UploadCloud,
   Edit3,
   CreditCard,
   QrCode,
@@ -37,7 +38,6 @@ import {
   ErrorNotice,
   Field,
   Notice,
-  PageHead,
   Stat,
   StatusChip,
   Table,
@@ -50,6 +50,7 @@ import {
   ActivityTimeline,
   ProgressBar,
   FileUploadZone,
+  CurvedSelect,
   type ActivityItem,
 } from '../ui';
 
@@ -462,11 +463,6 @@ function Payments() {
 
   return (
     <>
-      <PageHead
-        title="Fees & Billing"
-        text="Review your paid and unpaid course fees, make secure instant payments, and browse other available courses with direct enrollment."
-      />
-
       {successNotice && (
         <Notice tone="success">
           <div className="flex items-center justify-between">
@@ -749,13 +745,18 @@ function Payments() {
 
               {payMethod === 'Netbanking' && (
                 <Field label="Select Your Bank">
-                  <select className="p-select" value={bankName} onChange={e => setBankName(e.target.value)}>
-                    <option value="HDFC Bank">HDFC Bank</option>
-                    <option value="ICICI Bank">ICICI Bank</option>
-                    <option value="State Bank of India">State Bank of India</option>
-                    <option value="Axis Bank">Axis Bank</option>
-                    <option value="Kotak Mahindra Bank">Kotak Mahindra Bank</option>
-                  </select>
+                  <CurvedSelect
+                    value={bankName}
+                    onChange={setBankName}
+                    options={[
+                      { value: 'HDFC Bank', label: 'HDFC Bank' },
+                      { value: 'ICICI Bank', label: 'ICICI Bank' },
+                      { value: 'State Bank of India', label: 'State Bank of India' },
+                      { value: 'Axis Bank', label: 'Axis Bank' },
+                      { value: 'Kotak Mahindra Bank', label: 'Kotak Mahindra Bank' },
+                    ]}
+                    placeholder="Select your bank"
+                  />
                 </Field>
               )}
 
@@ -902,13 +903,18 @@ function Payments() {
 
               {payMethod === 'Netbanking' && (
                 <Field label="Select Your Bank">
-                  <select className="p-select" value={bankName} onChange={e => setBankName(e.target.value)}>
-                    <option value="HDFC Bank">HDFC Bank</option>
-                    <option value="ICICI Bank">ICICI Bank</option>
-                    <option value="State Bank of India">State Bank of India</option>
-                    <option value="Axis Bank">Axis Bank</option>
-                    <option value="Kotak Mahindra Bank">Kotak Mahindra Bank</option>
-                  </select>
+                  <CurvedSelect
+                    value={bankName}
+                    onChange={setBankName}
+                    options={[
+                      { value: 'HDFC Bank', label: 'HDFC Bank' },
+                      { value: 'ICICI Bank', label: 'ICICI Bank' },
+                      { value: 'State Bank of India', label: 'State Bank of India' },
+                      { value: 'Axis Bank', label: 'Axis Bank' },
+                      { value: 'Kotak Mahindra Bank', label: 'Kotak Mahindra Bank' },
+                    ]}
+                    placeholder="Select your bank"
+                  />
                 </Field>
               )}
 
@@ -933,7 +939,6 @@ function Classes() {
 
   return (
     <>
-      <PageHead title="Classes" text="Your timetable. Join a live class from here. Time you stay connected is recorded automatically." />
       <ErrorNotice error={classes.error} />
       {(classes.data?.items ?? []).map(b => (
         <Card key={b.enrolment_id} title={b.batch}>
@@ -976,7 +981,6 @@ function Recordings() {
   const list = useApi<{ items: { id: number; sequence: number; starts_at: string; recording_url: string }[] }>('/student/recordings');
   return (
     <>
-      <PageHead title="Recordings" text="View past class recordings whenever you need to." />
       <Card>
         <ErrorNotice error={list.error} />
         <Table
@@ -1011,7 +1015,6 @@ function Attendance() {
   const list = useApi<{ threshold_percent: number; items: { batch: string; ended_classes: number; attended_classes: number; rate_percent: number | null }[] }>('/student/attendance');
   return (
     <>
-      <PageHead title="Attendance" text={`A class counts as attended when you stay connected for at least ${list.data?.threshold_percent ?? '—'}% of it. It is recorded automatically; there is nothing to mark.`} />
       <Card>
         <ErrorNotice error={list.error} />
         <Table
@@ -1071,16 +1074,22 @@ function SubmitForm({ assignment, onDone }: { assignment: AssignmentRowData; onD
     }
   }
 
+  const SUBMISSION_OPTIONS = [
+    { value: 'url', label: 'Link (project or website)', icon: ExternalLink },
+    { value: 'git', label: 'Git repository link', icon: BookOpen },
+    { value: 'file', label: 'Upload a file', icon: UploadCloud },
+  ];
+
   if (graded) return <p className="p-hint">Graded. This submission can no longer be changed.</p>;
   return (
     <form onSubmit={submit} className="p-form-grid">
       <ErrorNotice error={error} />
       <Field label="How are you submitting?">
-        <select className="p-select" value={kind} onChange={e => setKind(e.target.value)}>
-          <option value="url">Link (project or website)</option>
-          <option value="git">Git repository link</option>
-          <option value="file">Upload a file</option>
-        </select>
+        <CurvedSelect
+          value={kind}
+          onChange={setKind}
+          options={SUBMISSION_OPTIONS}
+        />
       </Field>
       {kind === 'file' ? (
         <Field label="Assignment File" error={error?.fields?.file}>
@@ -1108,10 +1117,6 @@ function Assignments() {
 
   return (
     <>
-      <PageHead
-        title="Assignments"
-        text="Submit your work as a file, link or Git repository. View deadlines fixed by your trainer and review your submissions & grades here."
-      />
       <ErrorNotice error={list.error} />
       {(list.data?.items ?? []).length === 0 && list.data && <Empty>No assignments published yet.</Empty>}
       {(list.data?.items ?? []).map(a => {
@@ -1640,11 +1645,6 @@ function Quizzes() {
   return (
     <>
       <div className="p-quiz-page-head">
-        <h1 className="p-quiz-page-title">Quizzes & Knowledge Checks</h1>
-        <p className="p-quiz-page-desc">
-          Short multiple-choice checks from your trainer. Filter by upcoming, completed, or missed, and review solutions after submission.
-        </p>
-
         {/* Status Filter Tabs Bar */}
         <div className="p-tabs-bar" role="tablist" aria-label="Quiz status filters">
           <button
@@ -1725,10 +1725,6 @@ function Certificates() {
 
   return (
     <>
-      <PageHead
-        title="Certificates"
-        text="Official Certificates of Completion are issued once you fully complete all scheduled classes of your course and satisfy attendance & fee criteria."
-      />
       <ErrorNotice error={list.error} />
 
       {/* Earned & Verified Certificates */}

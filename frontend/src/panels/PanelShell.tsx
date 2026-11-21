@@ -180,9 +180,15 @@ export function PanelShell({ brand, items, me, children }: { brand: string; item
 
         {!collapsed && (
           <div className="p-side-portal-bar">
-            <span className="p-side-portal-brand">{brand}</span>
-            <span className="p-side-portal-sep">/</span>
-            <span className="p-side-portal-role">{roleLabel(primaryRole)}</span>
+            {brand.toLowerCase() === roleLabel(primaryRole).toLowerCase() ? (
+              <span className="p-side-portal-role">{roleLabel(primaryRole)} Portal</span>
+            ) : (
+              <>
+                <span className="p-side-portal-brand">{brand}</span>
+                <span className="p-side-portal-sep">/</span>
+                <span className="p-side-portal-role">{roleLabel(primaryRole)}</span>
+              </>
+            )}
           </div>
         )}
 

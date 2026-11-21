@@ -34,6 +34,7 @@ import {
   ActivityTimeline,
   type ActivityItem,
   ProgressBar,
+  CurvedSelect,
 } from '../ui';
 
 const NAV: NavItem[] = [
@@ -77,10 +78,12 @@ function useChange(reload: () => void) {
 function BatchPicker({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   const batches = useApi<{ items: BatchRow[] }>('/trainer/batches');
   return (
-    <select className="p-select" value={value} onChange={e => onChange(e.target.value)} aria-label="Batch">
-      <option value="">Choose a batch</option>
-      {(batches.data?.items ?? []).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-    </select>
+    <CurvedSelect
+      value={value}
+      onChange={onChange}
+      options={(batches.data?.items ?? []).map(b => ({ value: String(b.id), label: b.name }))}
+      placeholder="Choose a batch"
+    />
   );
 }
 

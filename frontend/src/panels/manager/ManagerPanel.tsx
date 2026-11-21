@@ -37,6 +37,7 @@ import {
   ActivityTimeline,
   type ActivityItem,
   ProgressBar,
+  CurvedSelect,
 } from '../ui';
 
 const NAV: NavItem[] = [
@@ -333,10 +334,12 @@ function BatchCreate({ onCreated }: { onCreated: (id: number) => void }) {
       <ErrorNotice error={error} />
       <form onSubmit={submit} className="p-form-grid">
         <Field label="Programme" error={fe.programme_id}>
-          <select className="p-select" required value={form.programme_id} onChange={e => set('programme_id', e.target.value)}>
-            <option value="">Choose a programme</option>
-            {(programmes.data?.items ?? []).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
+          <CurvedSelect
+            value={form.programme_id}
+            onChange={v => set('programme_id', v)}
+            options={(programmes.data?.items ?? []).map(p => ({ value: String(p.id), label: p.name }))}
+            placeholder="Choose a programme"
+          />
         </Field>
         <Field label="Batch name"><input className="p-input" required value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Jan 2027 evening" /></Field>
         <Field label="First class date" error={fe.start_date}><input className="p-input" type="date" required value={form.start_date} onChange={e => set('start_date', e.target.value)} /></Field>
@@ -430,10 +433,12 @@ function BatchDetail() {
 
           <Card title="Trainers">
             <div className="p-row" style={{ marginBottom: 12 }}>
-              <select className="p-select" value={trainerId} onChange={e => setTrainerId(e.target.value)}>
-                <option value="">Choose a trainer</option>
-                {(staff.data?.items ?? []).map(s => <option key={s.id} value={s.id}>{s.name} · {s.email}</option>)}
-              </select>
+              <CurvedSelect
+                value={trainerId}
+                onChange={setTrainerId}
+                options={(staff.data?.items ?? []).map(s => ({ value: String(s.id), label: `${s.name} · ${s.email}` }))}
+                placeholder="Choose a trainer"
+              />
               <button className="p-btn" type="button" disabled={!trainerId || change.busy} onClick={() => change.run(() => api(`/manager/batches/${batch.id}/trainers`, { body: { user_id: Number(trainerId) } }), 'Trainer assigned.')}>Assign trainer</button>
             </div>
             <ErrorNotice error={change.error} />
@@ -538,10 +543,12 @@ function Students() {
           <Field label="Email" error={fe.email}><input className="p-input" type="email" required value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></Field>
           <Field label="Phone"><input className="p-input" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} /></Field>
           <Field label="Batch" error={fe.batch_id}>
-            <select className="p-select" required value={form.batch_id} onChange={e => setForm({ ...form, batch_id: e.target.value })}>
-              <option value="">Choose a batch</option>
-              {(batches.data?.items ?? []).map(b => <option key={b.id} value={b.id}>{b.name} ({b.seats_taken}/{b.capacity})</option>)}
-            </select>
+            <CurvedSelect
+              value={form.batch_id}
+              onChange={v => setForm({ ...form, batch_id: v })}
+              options={(batches.data?.items ?? []).map(b => ({ value: String(b.id), label: `${b.name} (${b.seats_taken}/${b.capacity})` }))}
+              placeholder="Choose a batch"
+            />
           </Field>
           <div className="span-2"><button className="p-btn" type="submit" disabled={busy}>{busy ? 'Creating…' : 'Create student account'}</button></div>
         </form>

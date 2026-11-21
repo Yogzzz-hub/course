@@ -280,10 +280,12 @@ function Users() {
       </Card>
       <Card title="Everyone">
         <div className="p-row" style={{ marginBottom: 12 }}>
-          <select className="p-select" value={role} onChange={e => setRole(e.target.value)} aria-label="Filter by role">
-            <option value="">All roles</option>
-            {ROLE_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
+          <CurvedSelect
+            value={role}
+            onChange={setRole}
+            options={[{ value: '', label: 'All roles' }, ...ROLE_OPTIONS]}
+            placeholder="All roles"
+          />
           <input className="p-input" placeholder="Search name or email" value={q} onChange={e => setQ(e.target.value)} aria-label="Search" />
         </div>
         <ErrorNotice error={list.error} />

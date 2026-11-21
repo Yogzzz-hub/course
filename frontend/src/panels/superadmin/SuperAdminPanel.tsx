@@ -330,18 +330,60 @@ function AuditLog() {
 
 function Panels() {
   const links = [
-    { to: '/manager', label: 'Manager' },
-    { to: '/trainer', label: 'Trainer' },
-    { to: '/finance', label: 'Financier' },
-    { to: '/admin/overview', label: 'Admin' },
-    { to: '/app', label: 'Student' },
+    { to: '/manager', label: 'Manager', icon: Layers, desc: 'Programmes, batches, students & certificates', color: '#4f46e5' },
+    { to: '/trainer', label: 'Trainer', icon: Users, desc: 'Classes, assignments, quizzes & tasks', color: '#0891b2' },
+    { to: '/finance', label: 'Financier', icon: CreditCard, desc: 'Fee verification, expenses & ledger', color: '#059669' },
+    { to: '/admin/overview', label: 'Admin', icon: ShieldCheck, desc: 'User accounts, roles & audit log', color: '#d97706' },
+    { to: '/app', label: 'Student', icon: GraduationCap, desc: 'Student view: classes, fees & grades', color: '#7c3aed' },
   ];
   return (
     <>
       <PageHead title="Open any panel" text="As super admin you can open every panel to check exactly what each role sees." />
       <Card>
-        <div className="p-row">
-          {links.map(link => <Link key={link.to} className="p-btn" to={link.to}>{link.label}</Link>)}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
+          {links.map(link => (
+            <Link
+              key={link.to}
+              to={link.to}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 10,
+                padding: '24px 16px',
+                borderRadius: 14,
+                background: 'var(--bg)',
+                border: '1px solid var(--border)',
+                textDecoration: 'none',
+                transition: 'all 0.2s ease',
+                cursor: 'pointer',
+              }}
+              className="p-panel-link-card"
+            >
+              <div
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 12,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: `${link.color}18`,
+                  color: link.color,
+                }}
+              >
+                <link.icon size={24} />
+              </div>
+              <strong style={{ fontSize: 15, color: 'var(--text)' }}>{link.label} Portal</strong>
+              <span style={{ fontSize: 12, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.4 }}>{link.desc}</span>
+              <span
+                className="p-btn p-btn-small"
+                style={{ marginTop: 4 }}
+              >
+                Open portal <ArrowRight size={12} style={{ marginLeft: 4 }} />
+              </span>
+            </Link>
+          ))}
         </div>
       </Card>
     </>
