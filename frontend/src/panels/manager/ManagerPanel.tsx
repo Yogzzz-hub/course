@@ -228,7 +228,7 @@ function BatchDetail() {
 
   return (
     <>
-      <PageHead title={batch?.name ?? 'Batch'} text={batch ? `${batch.programme?.name ?? ''} · ${batch.days} · ${batch.start_time} IST · ${batch.duration_minutes} min per class` : ''} action={<Link className="p-btn p-btn-ghost" to="/manager/batches">All batches</Link>} />
+      <PageHead showTitle title={batch?.name ?? 'Batch'} text={batch ? `${batch.programme?.name ?? ''} · ${batch.days} · ${batch.start_time} IST · ${batch.duration_minutes} min per class` : ''} action={<Link className="p-btn p-btn-ghost" to="/manager/batches">All batches</Link>} />
       <ErrorNotice error={detail.error} />
       {batch && (
         <>
