@@ -158,7 +158,7 @@ export function PanelShell({ brand, items, me, children }: { brand: string; item
         <div className="p-side-header">
           <Link to="/" className="p-side-brand-link" title="Aintrix Academy Home">
             <div className={`aintrix-pill-badge ${collapsed ? 'aintrix-pill-badge--collapsed' : ''}`}>
-              <LogoMark size={collapsed ? 22 : 24} surface="light" className="aintrix-pill-mark" />
+              <LogoMark size={collapsed ? 24 : 26} surface="dark" className="aintrix-pill-mark" />
               {!collapsed && (
                 <div className="aintrix-pill-words">
                   <span className="aintrix-pill-name">Aintrix</span>

@@ -115,7 +115,7 @@ main#main.panel-main {
   padding: 6px 15px 6px 11px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.9);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
   user-select: none;
   flex-shrink: 0;
 }
@@ -164,6 +164,37 @@ main#main.panel-main {
   color: #78716c;
   line-height: 1;
   margin-top: 1.5px;
+}
+
+/* Sidebar Brand Header: blends directly into sidebar background with NO separate container */
+.p-side-header .aintrix-pill-badge {
+  background: transparent !important;
+  border-radius: 0 !important;
+  padding: 4px 2px !important;
+  box-shadow: none !important;
+  border: 0 !important;
+}
+
+.p-side-header .aintrix-pill-badge:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  opacity: 0.88;
+}
+
+.p-side-header .aintrix-pill-badge--collapsed {
+  width: auto !important;
+  height: auto !important;
+  padding: 0 !important;
+  justify-content: center;
+}
+
+.p-side-header .aintrix-pill-name {
+  font-size: 16.5px;
+  color: #ffffff !important;
+}
+
+.p-side-header .aintrix-pill-sub {
+  color: rgba(255, 255, 255, 0.72) !important;
 }
 
 .p-side-brand-link {

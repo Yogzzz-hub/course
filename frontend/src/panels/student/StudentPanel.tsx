@@ -116,6 +116,56 @@ function useLiveHeartbeat(classId: number | null) {
   return { percent, problem };
 }
 
+/**
+ * Live Class banner: only shown in Overview and only when an active class is currently in progress.
+ */
+function LiveClassWatcher() {
+  const classes = useApi<{ items: { enrolment_id: number; batch: string; access: boolean; classes: ClassRow[] }[] }>('/student/classes');
+  const { reload } = classes;
+  useEffect(() => {
+    const timer = window.setInterval(reload, HEARTBEAT_SECONDS * 1000);
+    return () => window.clearInterval(timer);
+  }, [reload]);
+  const liveRow = (classes.data?.items ?? []).flatMap(b => b.classes).find(c => c.status === 'live') ?? null;
+  const heartbeat = useLiveHeartbeat(liveRow ? liveRow.id : null);
+  if (!liveRow) return null;
+  return (
+    <div className="p-live-card">
+      <div className="p-live-header">
+        <div className="p-live-tag">
+          <span className="p-beacon-ping" />
+          <span className="p-beacon-dot" />
+          <span>LIVE CLASS IN PROGRESS</span>
+        </div>
+        <span className="p-live-seq">Session #{liveRow.sequence}</span>
+      </div>
+      <div className="p-live-content">
+        <div className="p-live-info">
+          <h2 className="p-live-title">Class {liveRow.sequence} is live right now</h2>
+          <p className="p-live-desc">
+            {heartbeat.percent !== null
+              ? `Connected session: ${heartbeat.percent}% attendance tracked automatically.`
+              : 'Interactive class session is active. Connected time is logged in real-time.'}
+          </p>
+          {heartbeat.percent !== null && (
+            <ProgressBar value={heartbeat.percent} max={100} label="Current Connected Presence" />
+          )}
+        </div>
+        <div className="p-live-action">
+          {liveRow.meeting_url ? (
+            <a className="p-btn p-btn-live" href={liveRow.meeting_url} target="_blank" rel="noreferrer">
+              <Video size={16} className="inline mr-1" /> Join Live Classroom
+            </a>
+          ) : (
+            <p className="p-hint">The trainer is connecting... link will appear here.</p>
+          )}
+        </div>
+      </div>
+      {heartbeat.problem && <Notice tone="danger">{heartbeat.problem}</Notice>}
+    </div>
+  );
+}
+
 function Home({ me }: { me: Me }) {
   const overview = useApi<{ items: Enrolment[]; payment_instructions: string; attendance_threshold_percent: number }>('/student/overview');
   const assignments = useApi<{ items: { id: number; submission: unknown }[] }>('/student/assignments');
@@ -192,6 +242,7 @@ function Home({ me }: { me: Me }) {
 
   return (
     <>
+      <LiveClassWatcher />
       <WelcomeBanner name={me.name} role="Student" />
       <ErrorNotice error={overview.error} />
 
@@ -521,7 +572,7 @@ function Payments() {
                     <span className="p-chip p-chip-warn">Unpaid Balance</span>
                   </div>
 
-                  <ProgressBar label={`Fee Clearance Progress (${pctPaid}% paid)`} percent={pctPaid} />
+                  <ProgressBar label={`Fee Clearance Progress (${pctPaid}% paid)`} value={pctPaid} />
 
                   <div className="p-pending-fee-amounts">
                     <div className="p-pending-fee-amount-item">
@@ -1779,74 +1830,21 @@ function Certificates() {
   );
 }
 
-/**
- * Watches for a live class on every student page with pulsing beacon and real-time attendance meter
- */
-function LiveClassWatcher() {
-  const classes = useApi<{ items: { enrolment_id: number; batch: string; access: boolean; classes: ClassRow[] }[] }>('/student/classes');
-  const { reload } = classes;
-  useEffect(() => {
-    const timer = window.setInterval(reload, HEARTBEAT_SECONDS * 1000);
-    return () => window.clearInterval(timer);
-  }, [reload]);
-  const liveRow = (classes.data?.items ?? []).flatMap(b => b.classes).find(c => c.status === 'live') ?? null;
-  const heartbeat = useLiveHeartbeat(liveRow ? liveRow.id : null);
-  if (!liveRow) return null;
-  return (
-    <div className="p-live-card">
-      <div className="p-live-header">
-        <div className="p-live-tag">
-          <span className="p-beacon-ping" />
-          <span className="p-beacon-dot" />
-          <span>LIVE CLASS IN PROGRESS</span>
-        </div>
-        <span className="p-live-seq">Session #{liveRow.sequence}</span>
-      </div>
-      <div className="p-live-content">
-        <div className="p-live-info">
-          <h2 className="p-live-title">Class {liveRow.sequence} is live right now</h2>
-          <p className="p-live-desc">
-            {heartbeat.percent !== null
-              ? `Connected session: ${heartbeat.percent}% attendance tracked automatically.`
-              : 'Interactive class session is active. Connected time is logged in real-time.'}
-          </p>
-          {heartbeat.percent !== null && (
-            <ProgressBar value={heartbeat.percent} max={100} label="Current Connected Presence" />
-          )}
-        </div>
-        <div className="p-live-action">
-          {liveRow.meeting_url ? (
-            <a className="p-btn p-btn-live" href={liveRow.meeting_url} target="_blank" rel="noreferrer">
-              <Video size={16} className="inline mr-1" /> Join Live Classroom
-            </a>
-          ) : (
-            <p className="p-hint">The trainer is connecting... link will appear here.</p>
-          )}
-        </div>
-      </div>
-      {heartbeat.problem && <Notice tone="danger">{heartbeat.problem}</Notice>}
-    </div>
-  );
-}
-
 export default function StudentPanel() {
   return (
     <PanelFrame role="student" brand="Student" items={NAV}>
       {(me) => (
-        <>
-          <LiveClassWatcher />
-          <Routes>
-            <Route index element={<Home me={me} />} />
-            <Route path="payments" element={<Payments />} />
-            <Route path="classes" element={<Classes />} />
-            <Route path="recordings" element={<Recordings />} />
-            <Route path="attendance" element={<Attendance />} />
-            <Route path="assignments" element={<Assignments />} />
-            <Route path="quizzes" element={<Quizzes />} />
-            <Route path="certificates" element={<Certificates />} />
-            <Route path="*" element={<Empty>This page does not exist.</Empty>} />
-          </Routes>
-        </>
+        <Routes>
+          <Route index element={<Home me={me} />} />
+          <Route path="payments" element={<Payments />} />
+          <Route path="classes" element={<Classes />} />
+          <Route path="recordings" element={<Recordings />} />
+          <Route path="attendance" element={<Attendance />} />
+          <Route path="assignments" element={<Assignments />} />
+          <Route path="quizzes" element={<Quizzes />} />
+          <Route path="certificates" element={<Certificates />} />
+          <Route path="*" element={<Empty>This page does not exist.</Empty>} />
+        </Routes>
       )}
     </PanelFrame>
   );
