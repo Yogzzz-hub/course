@@ -4,8 +4,11 @@ import { MotionConfig } from 'motion/react';
 import { Header, Footer } from './components/layout';
 import { MotionProvider, MotionDirector } from './components/MotionSystem';
 import { AmbientLayer, InteractionDirector } from './components/fx';
+import { PageLoader, TopLoadingBar, NavigationLoader } from './components/loading/Loaders';
+import { trackPage } from './components/loading/loadingStore';
 const pageLoaders: Record<string, () => Promise<{ default: ComponentType }>> = {
  '/login': () => import('./panels/auth/AuthPages').then(m => ({ default: m.LoginPage })),
+ '/signup': () => import('./panels/auth/SignUpPage').then(m => ({ default: m.SignUpPage })),
  '/app/*': () => import('./panels/student/StudentPanel'),
  '/trainer/*': () => import('./panels/trainer/TrainerPanel'),
  '/manager/*': () => import('./panels/manager/ManagerPanel'),
@@ -21,7 +24,6 @@ const pageLoaders: Record<string, () => Promise<{ default: ComponentType }>> = {
  '/full-stack-developer-roadmap': () => import('./pages/LearningLanding'),
  '/python-interview-practice': () => import('./pages/LearningLanding'),
  '/python-coding-challenge': () => import('./pages/CodingArena'),
- '/admin': () => import('./pages/LearningAdmin'),
  '/': () => import('./pages/Home'),
  '/programmes': () => import('./pages/Programmes'),
  '/programmes/python-full-stack': () => import('./pages/ProgrammeDetails'),
@@ -46,10 +48,11 @@ const pageLoaders: Record<string, () => Promise<{ default: ComponentType }>> = {
  '/terms-and-conditions': () => import('./pages/Legal'),
  '*': () => import('./pages/NotFound'),
 };
-const pageComponents = Object.entries(pageLoaders).map(([path, loader]) => ({path, Page: lazy(loader)}));
+// Each page download is counted so the loader can appear only when a navigation drags on (see NavigationLoader).
+const pageComponents = Object.entries(pageLoaders).map(([path, loader]) => ({path, Page: lazy(() => trackPage(loader()))}));
 export async function loadInitialPage(path: string) { return (await (pageLoaders[path] || pageLoaders['*'])()).default; }
 import { academy } from './config/academy';
-import { routes } from './data/routes';
+import { routes, resolveRoute } from './data/routes';
 import { isPrivatePath } from './utils/seo';
 import { trackLearningPage } from './components/learning/client';
 
@@ -58,16 +61,16 @@ function RouteEffects() {
   const firstRender = useRef(true);
   useEffect(() => {
     if(!isPrivatePath(pathname))trackLearningPage(pathname);
-    const route = routes.find(route=>route.path===pathname);
+    const route = resolveRoute(pathname);
     const titleBrand = academy.name;
-    document.title = `${route?.title || 'Page not found'} | ${titleBrand}`;
+    document.title = `${route.title} | ${titleBrand}`;
     const meta = (name:string, value:string, property = false) => {
       const attr = property ? 'property' : 'name';
       let element = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${name}"]`);
       if (!element) {element=document.createElement('meta');element.setAttribute(attr,name);document.head.append(element);}
       element.content=value;
     };
-    const description=route?.description || 'Find your way back to programme information and academy guidance.';
+    const description=route.description || 'Find your way back to programme information and academy guidance.';
     meta('description',description);meta('og:title',document.title,true);meta('og:description',description,true);meta('og:type','website',true);
     meta('robots',isPrivatePath(pathname) || !academy.siteUrl || !academy.legalApproved || !academy.brandApproved || !route || pathname.includes('policy') || pathname.includes('terms') ? 'noindex, nofollow' : 'index, follow');
     let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
@@ -93,14 +96,19 @@ class PageErrorBoundary extends Component<{children:ReactNode},{failed:boolean}>
 }
 export default function App({initialPage: InitialPage, initialPath}: {initialPage?: ComponentType; initialPath?: string}) {
  const { pathname } = useLocation();
- // Panels (student, trainer, admin) draw their own navigation, so they skip the public header and footer.
- if (/^\/(app|trainer|manager|finance|superadmin)(\/|$)|^\/admin\//.test(pathname)) {
-   return <MotionConfig reducedMotion="user"><MotionProvider><InteractionDirector/><main id="main" tabIndex={-1} className="panel-main"><PageErrorBoundary><Suspense fallback={<div className="container page-hero" role="status">Loading…</div>}><Routes>{pageComponents.map(({path, Page}) => <Route key={path} path={path} element={<Page/>}/>)}</Routes><RouteEffects/></Suspense></PageErrorBoundary></main></MotionProvider></MotionConfig>;
+ // Panels (student, trainer, manager, finance, admin, superadmin) draw their own navigation, so they skip the public header and footer.
+ if (/^\/(app|trainer|manager|finance|admin|superadmin)(\/|$)/.test(pathname)) {
+   return <MotionConfig reducedMotion="user"><MotionProvider><InteractionDirector/><TopLoadingBar/><NavigationLoader/><main id="main" tabIndex={-1} className="panel-main"><PageErrorBoundary><Suspense fallback={<PageLoader/>}><Routes>{pageComponents.map(({path, Page}) => <Route key={path} path={path} element={<Page/>}/>)}</Routes><RouteEffects/></Suspense></PageErrorBoundary></main></MotionProvider></MotionConfig>;
+ }
+ // Sign-in and sign-up are standalone screens: no site header, footer or ambient layer.
+ if (pathname === '/login' || pathname === '/signup') {
+   const Page = pageComponents.find(page => page.path === pathname)!.Page;
+   return <MotionConfig reducedMotion="user"><MotionProvider><InteractionDirector/><TopLoadingBar/><NavigationLoader/><main id="main" tabIndex={-1} className="panel-main auth-main"><PageErrorBoundary><Suspense fallback={<PageLoader/>}>{InitialPage && initialPath === pathname ? <InitialPage/> : <Page/>}<RouteEffects/></Suspense></PageErrorBoundary></main></MotionProvider></MotionConfig>;
  }
  // The homepage and booking routes render their own header so the call-to-action can scroll in-page.
  if (['/', '/book-session', '/direct-booking'].includes(pathname)) {
    const Page = pageComponents.find(page => page.path === pathname)!.Page;
-   return <MotionConfig reducedMotion="user"><MotionProvider><AmbientLayer/><InteractionDirector/><PageErrorBoundary><Suspense fallback={<main className="container page-hero" role="status">Loading counselling…</main>}>{InitialPage && initialPath === pathname ? <InitialPage/> : <Page/>}<RouteEffects/></Suspense></PageErrorBoundary></MotionProvider></MotionConfig>;
+   return <MotionConfig reducedMotion="user"><MotionProvider><AmbientLayer/><InteractionDirector/><TopLoadingBar/><NavigationLoader/><PageErrorBoundary><Suspense fallback={<PageLoader/>}>{InitialPage && initialPath === pathname ? <InitialPage/> : <Page/>}<RouteEffects/></Suspense></PageErrorBoundary></MotionProvider></MotionConfig>;
  }
- return <MotionConfig reducedMotion="user"><MotionProvider><AmbientLayer/><InteractionDirector/><Header/><main id="main" tabIndex={-1}><PageErrorBoundary><Suspense fallback={<div className="container page-hero" role="status">Loading your next step…</div>}><Routes>{pageComponents.map(({path, Page}) => <Route key={path} path={path} element={InitialPage && (path === initialPath || (path === '*' && initialPath && !pageLoaders[initialPath])) ? <InitialPage/> : <Page/>}/>)}</Routes><RouteEffects/></Suspense></PageErrorBoundary></main><Footer/></MotionProvider></MotionConfig>;
+ return <MotionConfig reducedMotion="user"><MotionProvider><AmbientLayer/><InteractionDirector/><TopLoadingBar/><NavigationLoader/><Header/><main id="main" tabIndex={-1}><PageErrorBoundary><Suspense fallback={<PageLoader/>}><Routes>{pageComponents.map(({path, Page}) => <Route key={path} path={path} element={InitialPage && (path === initialPath || (path === '*' && initialPath && !pageLoaders[initialPath])) ? <InitialPage/> : <Page/>}/>)}</Routes><RouteEffects/></Suspense></PageErrorBoundary></main><Footer/></MotionProvider></MotionConfig>;
 }
