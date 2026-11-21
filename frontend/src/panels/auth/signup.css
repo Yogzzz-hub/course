@@ -1,0 +1,409 @@
+/* Sign-up page. Every colour comes from the site theme tokens (styles/tokens.css), so the
+   theme picker on the page recolours the whole layout and the mascot.
+   Rules start with "#main" so they outrank the site-wide "#main :where(p, label ...)" typography. */
+
+.su-page {
+  --su-bg: color-mix(in srgb, var(--accent) 34%, #0d080b);
+  --su-field: color-mix(in srgb, var(--su-bg) 82%, #fff);
+  --su-field-hover: color-mix(in srgb, var(--su-bg) 74%, #fff);
+  --su-muted: color-mix(in srgb, var(--su-bg) 30%, #fff);
+  --su-hi: var(--accent-soft);
+  --su-hi-ink: #1a0f14;
+  --su-error: #ffb4bb;
+  --mascot-line: #1b1117;
+  --mascot-white: #f6f3f4;
+  padding: clamp(14px, 3vw, 36px) clamp(12px, 3vw, 32px) clamp(40px, 6vw, 72px);
+}
+
+#main .su-page .su-shell {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(20px, 4vw, 56px);
+  align-items: center;
+  box-sizing: border-box;
+  padding: clamp(26px, 5vw, 64px);
+  min-height: 640px;
+  border-radius: 36px;
+  background: var(--su-bg);
+  color: #fff;
+  box-shadow: 0 24px 60px rgba(13, 8, 11, 0.22);
+  overflow: hidden;
+}
+
+#main .su-page .su-main { min-width: 0; max-width: 520px; }
+
+#main .su-page .su-eyebrow {
+  margin: 0 0 14px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+#main .su-page .su-title {
+  margin: 0 0 18px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2.1rem, 4.4vw, 3.4rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: #fff;
+  text-wrap: balance;
+}
+#main .su-page .su-title span { color: var(--su-hi); }
+
+#main .su-page .su-member { margin: 0 0 30px; font-size: 0.95rem; font-weight: 700; color: #fff; }
+#main .su-page .su-member a { color: var(--su-hi); text-decoration: none; }
+#main .su-page .su-member a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---- Form -------------------------------------------------------------------------------------- */
+#main .su-page .su-form { display: grid; gap: 14px; }
+#main .su-page .su-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+#main .su-page .su-field { position: relative; min-width: 0; }
+
+#main .su-page .su-input {
+  width: 100%;
+  box-sizing: border-box;
+  height: 60px;
+  padding: 24px 18px 8px;
+  border: 1.5px solid transparent;
+  border-radius: 20px;
+  background: var(--su-field);
+  color: #fff;
+  font: 600 0.95rem/1.2 var(--font-body);
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+#main .su-page .su-input:hover { background: var(--su-field-hover); }
+#main .su-page .su-input:focus { outline: none; border-color: var(--su-hi); background: var(--su-field); }
+#main .su-page .su-input:-webkit-autofill {
+  -webkit-text-fill-color: #fff;
+  box-shadow: 0 0 0 40px var(--su-field) inset;
+}
+
+#main .su-page .su-field label {
+  position: absolute;
+  left: 19px;
+  top: 20px;
+  margin: 0;
+  max-width: calc(100% - 38px);
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--su-muted);
+  pointer-events: none;
+  transition: top 0.16s ease, font-size 0.16s ease, color 0.16s ease;
+}
+#main .su-page .su-input:focus + label,
+#main .su-page .su-input:not(:placeholder-shown) + label { top: 11px; font-size: 0.72rem; }
+#main .su-page .su-input:focus + label { color: var(--su-hi); }
+
+#main .su-page .su-field.has-error .su-input { border-color: var(--su-error); }
+#main .su-page .su-error { margin: 6px 6px 0; font-size: 0.8rem; font-weight: 600; color: var(--su-error); }
+
+#main .su-page .su-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 8px; }
+#main .su-page .su-btn {
+  min-height: 58px;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 20px;
+  font: 700 0.95rem/1.2 var(--font-body);
+  cursor: pointer;
+  transition: background-color 0.18s ease, transform 0.12s ease;
+}
+#main .su-page .su-btn:active { transform: translateY(1px); }
+#main .su-page .su-btn:focus-visible,
+#main .su-page .su-member a:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+#main .su-page .su-btn-quiet { background: var(--su-field); color: #fff; }
+#main .su-page .su-btn-quiet:hover { background: var(--su-field-hover); }
+#main .su-page .su-btn-primary { background: var(--su-hi); color: var(--su-hi-ink); }
+#main .su-page .su-btn-primary:hover { background: color-mix(in srgb, var(--su-hi) 84%, #fff); }
+
+#main .su-page .su-status { min-height: 1.5em; margin: 2px 4px 0; font-size: 0.85rem; line-height: 1.5; color: var(--su-muted); }
+
+/* ---- Theme picker (re-skinned for the dark panel) ---------------------------------------------- */
+#main .su-page .su-theme { margin-top: 26px; }
+#main .su-page .theme-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 22px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: none;
+}
+#main .su-page .theme-switcher-label { color: var(--su-hi); font-size: 0.75rem; }
+#main .su-page .theme-options { flex-wrap: wrap; gap: 4px; }
+#main .su-page .theme-btn { color: rgba(255, 255, 255, 0.8); }
+#main .su-page .theme-btn:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+#main .su-page .theme-btn.active { background: rgba(255, 255, 255, 0.16); border-color: var(--su-hi); color: #fff; box-shadow: none; }
+#main .su-page .theme-number, #main .su-page .theme-check { color: var(--su-hi); }
+#main .su-page .theme-swatch { border-color: rgba(255, 255, 255, 0.35); }
+#main .su-page .theme-btn:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+
+/* ---- Mascot ------------------------------------------------------------------------------------ */
+#main .su-page .su-art { display: grid; place-items: center; min-width: 0; }
+#main .su-page .mascot { width: 100%; max-width: 520px; height: auto; overflow: visible; }
+
+.mascot-cloud { fill: var(--mascot-white); }
+.mascot-cloud-curl { fill: none; stroke: var(--mascot-line); stroke-width: 2; stroke-linecap: round; opacity: 0.55; }
+.mascot-spark { fill: var(--su-hi); }
+.mascot-spark-soft { fill: color-mix(in srgb, var(--su-bg) 55%, #fff); }
+.mascot-dot { fill: var(--mascot-white); }
+.mascot-dot-faint { fill: color-mix(in srgb, var(--su-bg) 55%, #fff); }
+
+.mascot-bob { animation: mascot-bob 5.5s ease-in-out infinite; }
+@keyframes mascot-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+
+.mascot-petal { fill: var(--su-hi); }
+.mascot-vein { fill: none; stroke: color-mix(in srgb, var(--su-hi) 50%, #000); stroke-width: 1.3; stroke-linecap: round; opacity: 0.8; }
+
+.mascot-limb-edge { fill: none; stroke: var(--mascot-line); stroke-width: 30; stroke-linecap: round; stroke-linejoin: round; }
+.mascot-limb { fill: none; stroke: var(--mascot-white); stroke-width: 26; stroke-linecap: round; stroke-linejoin: round; }
+.mascot-foot, .mascot-hand { fill: var(--mascot-white); stroke: var(--mascot-line); stroke-width: 3; }
+
+.mascot-face { fill: var(--mascot-white); stroke: var(--mascot-line); stroke-width: 3; }
+.mascot-cheek { fill: var(--mascot-line); }
+.mascot-lash { fill: none; stroke: var(--mascot-line); stroke-width: 2.6; stroke-linecap: round; }
+.mascot-eye { fill: #fff; stroke: var(--mascot-line); stroke-width: 3.5; }
+.mascot-pupil { transition: transform 110ms ease-out; }
+.mascot-pupil-dot { fill: var(--mascot-line); }
+.mascot-glint { fill: #fff; }
+
+/* Lids: blink every few seconds, and stay shut while a password is being typed. */
+.mascot-lid {
+  fill: var(--mascot-white);
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: 50% 0;
+  transform: scaleY(0);
+  animation: mascot-blink 6s infinite;
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+.mascot-lid.is-closed { animation: none; opacity: 1; transform: scaleY(1); }
+@keyframes mascot-blink {
+  0%, 93%, 100% { opacity: 0; transform: scaleY(0); }
+  96.5% { opacity: 1; transform: scaleY(1); }
+}
+.mascot-closed-line { fill: none; stroke: var(--mascot-line); stroke-width: 3.2; stroke-linecap: round; opacity: 0; transition: opacity 160ms ease; }
+.mascot-closed-line.is-closed { opacity: 1; }
+
+.mascot-mouth { fill: #fff; stroke: var(--mascot-line); stroke-width: 3; stroke-linejoin: round; }
+.mascot-teeth { fill: none; stroke: var(--mascot-line); stroke-width: 2; stroke-linecap: round; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mascot-bob, .mascot-lid { animation: none; }
+  .mascot-pupil, .mascot-lid, .mascot-closed-line { transition: none; }
+}
+
+/* ---- Small screens ----------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  #main .su-page .su-shell { grid-template-columns: minmax(0, 1fr); min-height: 0; border-radius: 28px; }
+  #main .su-page .su-art { order: -1; max-width: 340px; margin-inline: auto; width: 100%; }
+  #main .su-page .su-main { max-width: none; }
+}
+@media (max-width: 520px) {
+  #main .su-page .su-row, #main .su-page .su-actions { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---- Sign-in extras: notices, backend status, development quick sign-in --------------------------- */
+#main .su-page .su-btn-wide { width: 100%; margin-top: 8px; }
+#main .su-page .su-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+#main .su-page .su-alert { margin: 0 0 16px; padding: 12px 16px; border-radius: 16px; font-size: 0.85rem; line-height: 1.5; max-width: none; }
+#main .su-page .su-alert-danger { background: rgba(255, 180, 187, 0.14); border: 1px solid var(--su-error); color: #ffe3e6; }
+#main .su-page .su-backend { margin: 0 0 14px; font-size: 0.8rem; font-weight: 600; color: var(--su-muted); }
+
+#main .su-page .su-demo { margin-top: 22px; padding-top: 18px; border-top: 1px dashed rgba(255, 255, 255, 0.22); }
+#main .su-page .su-demo-title { margin: 0 0 10px; font-size: 0.85rem; font-weight: 700; color: #fff; }
+#main .su-page .su-demo-title span { font-weight: 400; color: var(--su-muted); }
+#main .su-page .su-demo-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+#main .su-page .su-demo-btn { display: grid; gap: 2px; text-align: left; padding: 10px 14px; border: 1.5px solid transparent; border-radius: 16px; background: var(--su-field); color: #fff; cursor: pointer; font: inherit; transition: background-color 0.18s ease, border-color 0.18s ease; }
+#main .su-page .su-demo-btn strong { font-size: 0.85rem; }
+#main .su-page .su-demo-btn span { font-size: 0.72rem; line-height: 1.35; color: var(--su-muted); overflow-wrap: anywhere; }
+#main .su-page .su-demo-btn:hover:not(:disabled) { background: var(--su-field-hover); border-color: var(--su-hi); }
+#main .su-page .su-demo-btn:disabled { opacity: 0.6; cursor: wait; }
+#main .su-page .su-demo-btn:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+@media (max-width: 520px) { #main .su-page .su-demo-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---- Standalone screen, Student / Staff switch and the staff look ------------------------------- */
+#main .su-page { min-height: 100vh; box-sizing: border-box; display: grid; place-items: center; }
+#main .su-page .su-shell { width: 100%; }
+
+#main .su-page .su-mode { position: relative; display: inline-grid; grid-template-columns: 1fr 1fr; padding: 4px; margin: 0 0 28px; border-radius: 999px; background: var(--su-field); }
+#main .su-page .su-mode-pill { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px); border-radius: 999px; background: var(--su-hi); transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+#main .su-page.is-staff .su-mode-pill { transform: translateX(100%); }
+#main .su-page .su-mode button { position: relative; z-index: 1; min-height: 40px; padding: 0 26px; border: 0; border-radius: 999px; background: transparent; color: var(--su-muted); font: 700 0.85rem/1 var(--font-body); cursor: pointer; transition: color 0.25s ease; }
+#main .su-page .su-mode button[aria-pressed="true"] { color: var(--su-hi-ink); }
+#main .su-page .su-mode button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+#main .su-page .su-demo-grid.is-single { grid-template-columns: minmax(0, 1fr); }
+
+/* Staff side: cooler, darker panel, the layout mirrors, and the mascot puts on glasses and a bow tie. */
+.su-page.is-staff { --su-bg: color-mix(in srgb, var(--accent) 12%, #070a12); }
+@media (min-width: 901px) {
+  #main .su-page.is-staff .su-main { order: 2; }
+  #main .su-page.is-staff .su-art { order: 1; }
+}
+.mascot-tie path, .mascot-tie rect { fill: var(--mascot-line); stroke: var(--mascot-white); stroke-width: 2; stroke-linejoin: round; }
+.mascot-glasses circle { fill: rgba(255, 255, 255, 0.16); stroke: var(--mascot-line); stroke-width: 3.5; }
+.mascot-glasses path { fill: none; stroke: var(--mascot-line); stroke-width: 3.5; stroke-linecap: round; }
+
+/* Circle wipe between Student and Staff (View Transitions API). Only the card is animated. */
+.su-vt .su-shell { view-transition-name: auth-shell; }
+.su-vt::view-transition-old(root), .su-vt::view-transition-new(root) { animation: none; }
+.su-vt::view-transition-group(auth-shell) { animation: none; }
+.su-vt::view-transition-old(auth-shell), .su-vt::view-transition-new(auth-shell) { animation: none; mix-blend-mode: normal; }
+@media (prefers-reduced-motion: reduce) { #main .su-page .su-mode-pill { transition: none; } }
+
+/* ---- Costumes: student (backpack, book, headphones) and staff (blazer, laptop, coffee) --------- */
+.mascot.is-hopping { animation: mascot-hop 0.85s cubic-bezier(0.34, 1.3, 0.64, 1); }
+@keyframes mascot-hop { 0%, 100% { transform: translateY(0) rotate(0); } 35% { transform: translateY(-34px) rotate(-4deg); } 62% { transform: translateY(0) rotate(2deg); } 80% { transform: translateY(-8px); } }
+
+.mascot-costume { transform-box: fill-box; transform-origin: 50% 60%; animation: mascot-pop 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+@keyframes mascot-pop { from { opacity: 0; transform: scale(0.55); } to { opacity: 1; transform: scale(1); } }
+
+.mascot-prop { fill: var(--mascot-white); stroke: var(--mascot-line); stroke-width: 3; stroke-linejoin: round; }
+.mascot-prop-line { fill: none; stroke: var(--su-hi-deep, var(--mascot-line)); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.mascot-prop-hi { stroke: var(--su-hi); }
+.mascot-prop-hi-fill { fill: var(--su-hi); stroke: var(--mascot-line); stroke-width: 3; }
+
+.mascot-backpack > rect:first-child { fill: color-mix(in srgb, var(--su-hi) 55%, #0b0709); stroke: var(--mascot-line); stroke-width: 3; }
+.mascot-backpack-pocket { fill: color-mix(in srgb, var(--su-hi) 75%, #0b0709); stroke: var(--mascot-line); stroke-width: 3; }
+.mascot-strap { fill: none; stroke: var(--mascot-line); stroke-width: 9; stroke-linecap: round; }
+.mascot-book-cover { fill: var(--su-hi); stroke: var(--mascot-line); stroke-width: 3; }
+.mascot-book-pages { fill: none; stroke: var(--mascot-white); stroke-width: 3; stroke-linecap: round; }
+.mascot-book-mark { fill: #fff; stroke: var(--mascot-line); stroke-width: 2; stroke-linejoin: round; }
+.mascot-blush { fill: #ff8fa3; opacity: 0.55; }
+.mascot-band { fill: none; stroke: var(--mascot-line); stroke-width: 7; stroke-linecap: round; }
+.mascot-cup-ear { fill: var(--su-hi); stroke: var(--mascot-line); stroke-width: 4; }
+
+.mascot-jacket { fill: color-mix(in srgb, var(--accent) 28%, #0b1020); stroke: var(--mascot-line); stroke-width: 3; stroke-linejoin: round; }
+.mascot-shirt { fill: #fff; stroke: var(--mascot-line); stroke-width: 2.5; stroke-linejoin: round; }
+.mascot-tie { fill: var(--su-hi); stroke: var(--mascot-line); stroke-width: 2.5; stroke-linejoin: round; }
+.mascot-lapel { fill: color-mix(in srgb, var(--accent) 38%, #0b1020); stroke: var(--mascot-line); stroke-width: 2.5; stroke-linejoin: round; }
+.mascot-smile { fill: none; stroke: var(--mascot-line); stroke-width: 3.5; stroke-linecap: round; }
+
+.mascot-laptop-screen { fill: #20242f; stroke: var(--mascot-line); stroke-width: 3; stroke-linejoin: round; }
+.mascot-laptop-glow { fill: color-mix(in srgb, var(--su-hi) 35%, #10131c); }
+.mascot-laptop-chart { fill: none; stroke: var(--su-hi); stroke-width: 5; stroke-linecap: round; }
+.mascot-laptop-base { fill: #c9ccd3; stroke: var(--mascot-line); stroke-width: 3; stroke-linejoin: round; }
+.mascot-cup { fill: #fff; stroke: var(--mascot-line); stroke-width: 3; stroke-linejoin: round; }
+.mascot-cup-band { fill: none; stroke: var(--su-hi); stroke-width: 6; }
+.mascot-cup-handle { fill: none; stroke: var(--mascot-line); stroke-width: 4; stroke-linecap: round; }
+.mascot-steam { fill: none; stroke: var(--mascot-white); stroke-width: 3; stroke-linecap: round; opacity: 0.8; }
+
+@media (prefers-reduced-motion: reduce) { .mascot.is-hopping, .mascot-costume { animation: none; } }
+
+/* ---- Top bar, palette icon and fit-to-screen sizing ---------------------------------------------- */
+#main .su-page { padding: clamp(8px, 2vh, 24px) clamp(8px, 2vw, 24px); min-height: 100dvh; }
+#main .su-page .su-shell {
+  min-height: calc(100dvh - 2 * clamp(8px, 2vh, 24px));
+  grid-template-rows: auto minmax(0, 1fr);
+  row-gap: clamp(4px, 1.4vh, 14px);
+  padding: clamp(16px, 2.6vh, 28px) clamp(20px, 3.6vw, 56px) clamp(18px, 3vh, 40px);
+  border-radius: clamp(22px, 3vw, 36px);
+}
+#main .su-page .su-bar { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+#main .su-page .su-brand { display: inline-flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; min-width: 0; }
+#main .su-page .su-brand:focus-visible { outline: 3px solid #fff; outline-offset: 4px; border-radius: 12px; }
+#main .su-page .su-brand-text { display: grid; gap: 3px; min-width: 0; }
+#main .su-page .su-brand-text strong { font-family: var(--font-display); font-size: 1.15rem; line-height: 1; letter-spacing: -0.01em; color: #fff; white-space: nowrap; }
+#main .su-page .su-brand-text strong span { font-weight: 500; color: var(--su-muted); }
+#main .su-page .su-brand-text small { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.14em; color: var(--su-hi); white-space: nowrap; }
+
+#main .su-page .palette-menu .palette-trigger { width: 46px; height: 46px; border-radius: 50%; border-color: transparent; background: var(--su-field); color: var(--su-hi); }
+#main .su-page .palette-menu .palette-trigger:hover { background: var(--su-field-hover); box-shadow: none; }
+#main .su-page .palette-menu .palette-trigger:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+
+#main .su-page .su-title { font-size: clamp(1.8rem, min(4vw, 6.4vh), 3.3rem); }
+#main .su-page .mascot { width: auto; height: min(62dvh, 520px); max-width: 100%; }
+
+/* Role shortcuts (development only) become compact chips. */
+#main .su-page .su-demo-grid { grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 8px; }
+#main .su-page .su-demo-grid.is-single { grid-template-columns: minmax(0, 1fr); }
+#main .su-page .su-demo-btn { padding: 9px 12px; border-radius: 14px; text-align: center; }
+#main .su-page .su-demo-btn span { display: none; }
+
+@media (min-width: 901px) and (max-height: 840px) {
+  #main .su-page .su-mode { margin-bottom: 14px; }
+  #main .su-page .su-mode button { min-height: 36px; }
+  #main .su-page .su-eyebrow { margin-bottom: 6px; }
+  #main .su-page .su-title { margin-bottom: 8px; }
+  #main .su-page .su-member { margin-bottom: 14px; }
+  #main .su-page .su-form { gap: 10px; }
+  #main .su-page .su-input { height: 54px; padding-top: 22px; }
+  #main .su-page .su-btn { min-height: 52px; }
+  #main .su-page .su-demo { margin-top: 14px; padding-top: 12px; }
+  #main .su-page .su-backend { display: none; }
+  #main .su-page .su-alert { padding: 8px 14px; margin-bottom: 10px; }
+}
+
+@media (max-width: 900px) {
+  #main .su-page .su-shell { min-height: calc(100dvh - 16px); align-content: start; }
+  #main .su-page .su-art { max-width: none; }
+  #main .su-page .mascot { height: min(26dvh, 230px); }
+  #main .su-page .su-main { margin-inline: auto; width: 100%; }
+}
+@media (max-width: 520px) {
+  #main .su-page .su-shell { padding-inline: 16px; }
+  #main .su-page .su-brand-text small { display: none; }
+  #main .su-page .su-mode { width: 100%; }
+  #main .su-page .su-mode button { padding: 0 12px; }
+}
+
+/* The palette popup is a light panel; undo the dark-card theme-button styling inside it. */
+#main .su-page .palette-menu .theme-switcher { display: block; width: auto; padding: 0; border: 0; border-radius: 0; background: transparent; }
+#main .su-page .palette-menu .theme-switcher-label { color: var(--muted); font-size: 13px; }
+#main .su-page .palette-menu .theme-options { display: grid; flex-wrap: nowrap; gap: 6px; }
+#main .su-page .palette-menu .theme-btn { color: var(--text); background: var(--surface); border-color: transparent; }
+#main .su-page .palette-menu .theme-btn:hover { background: var(--bg-secondary); border-color: var(--border); color: var(--text); }
+#main .su-page .palette-menu .theme-btn.active { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); border-color: var(--accent); color: var(--text); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent); }
+#main .su-page .palette-menu .theme-number, #main .su-page .palette-menu .theme-check { color: var(--accent); }
+#main .su-page .palette-menu .theme-swatch { border-color: var(--border); }
+#main .su-page .palette-menu .theme-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#main .su-page .palette-menu .palette-options { z-index: 200; }
+
+@media (max-width: 900px) {
+  #main .su-page .su-bar { order: -2; }
+  #main .su-page .su-mode { margin-bottom: 18px; }
+}
+
+@media (min-width: 521px) {
+  #main .su-page .su-demo-grid:not(.is-single) { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+  #main .su-page .su-demo-grid:not(.is-single) .su-demo-btn { padding: 9px 4px; }
+  #main .su-page .su-demo-grid:not(.is-single) .su-demo-btn strong { font-size: 0.74rem; white-space: nowrap; }
+}
+
+/* Blazer: a full jacket with sleeves over both arms. */
+.mascot-jacket { fill: color-mix(in srgb, var(--su-hi) 24%, #1b2030); stroke: var(--mascot-line); stroke-width: 3; stroke-linejoin: round; }
+.mascot-lapel { fill: color-mix(in srgb, var(--su-hi) 34%, #232a3d); stroke: var(--mascot-line); stroke-width: 2.5; stroke-linejoin: round; }
+.mascot-jacket-line { fill: none; stroke: var(--mascot-line); stroke-width: 2.5; stroke-linecap: round; opacity: 0.8; }
+.mascot-button { fill: var(--mascot-white); stroke: var(--mascot-line); stroke-width: 1.5; }
+.mascot-sleeve-edge { fill: none; stroke: var(--mascot-line); stroke-width: 36; stroke-linecap: round; stroke-linejoin: round; }
+.mascot-sleeve { fill: none; stroke: color-mix(in srgb, var(--su-hi) 24%, #1b2030); stroke-width: 30; stroke-linecap: round; stroke-linejoin: round; }
+.mascot-cuff { fill: none; stroke: #fff; stroke-width: 6; stroke-linecap: round; }
+
+/* ---- Ribbon: the Aintrix "A" mascot ---------------------------------------------------------------- */
+.mascot-body-a { fill: color-mix(in srgb, var(--accent) 52%, #E0457B); stroke: var(--mascot-line); stroke-width: 3.5; stroke-linejoin: round; }
+.mascot-body-b { fill: color-mix(in srgb, var(--su-hi) 78%, #fff); stroke: var(--mascot-line); stroke-width: 3.5; stroke-linejoin: round; }
+.mascot-fold { fill: color-mix(in srgb, var(--su-hi) 55%, #fff); opacity: 0.55; }
+.mascot-shoe { fill: var(--mascot-white); stroke: var(--mascot-line); stroke-width: 3; }
+.mascot-shoe.is-dark { fill: #1b1117; stroke: var(--mascot-line); }
+
+/* Staff: the body becomes the suit. */
+.mascot.is-staff .mascot-body-a { fill: color-mix(in srgb, var(--su-hi) 22%, #1a1f2e); }
+.mascot.is-staff .mascot-body-b { fill: color-mix(in srgb, var(--su-hi) 32%, #232a3d); }
+.mascot.is-staff .mascot-fold { opacity: 0; }
+
+.mascot-strap-line { fill: none; stroke: var(--mascot-line); stroke-width: 6; stroke-linecap: round; }
+.mascot-cap-board { fill: #1f1a24; stroke: var(--mascot-line); stroke-width: 3; stroke-linejoin: round; }
+.mascot-cap-band { fill: #2b2431; stroke: var(--mascot-line); stroke-width: 3; stroke-linejoin: round; }
+.mascot-cap-button { fill: var(--su-hi); stroke: var(--mascot-line); stroke-width: 2; }
+.mascot-tassel-cord { fill: none; stroke: var(--su-hi); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
+.mascot-tassel { fill: var(--su-hi); stroke: var(--mascot-line); stroke-width: 2; }
+
+.mascot.is-staff .mascot-body-a, .mascot.is-staff .mascot-body-b { stroke: color-mix(in srgb, var(--su-hi) 50%, #1a1f2e); }
+.mascot-shoe.is-dark { fill: #343a4d; stroke: color-mix(in srgb, var(--su-hi) 50%, #1a1f2e); }

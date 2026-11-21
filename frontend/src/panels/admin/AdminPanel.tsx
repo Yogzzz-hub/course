@@ -4,6 +4,7 @@ import { api, ApiError } from '../api';
 import { useApi } from '../hooks';
 import { PanelFrame, type NavItem } from '../PanelShell';
 import { Card, Empty, ErrorNotice, Field, Notice, PageHead, Stat, StatusChip, Table, fieldErrors, fmtDateTime } from '../ui';
+import { Spinner } from '../../components/loading/Loaders';
 
 const NAV: NavItem[] = [
   { to: '/admin/overview', label: 'Overview' },
@@ -94,7 +95,7 @@ function Users() {
               ))}
             </div>
           </Field>
-          <div className="span-2"><button className="p-btn" type="submit" disabled={busy || roles.length === 0}>{busy ? 'Creating…' : 'Create account'}</button></div>
+          <div className="span-2"><button className="p-btn" type="submit" disabled={busy || roles.length === 0}>{busy ? <><Spinner />Creating…</> : 'Create account'}</button></div>
         </form>
       </Card>
       <Card title="Everyone">

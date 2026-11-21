@@ -16,7 +16,8 @@ if (window.location.pathname.length > 1 && window.location.pathname.endsWith('/'
 const root=document.getElementById('root')!;
 // Resolve the initial route before hydration so a lazy boundary never replaces static content.
 loadInitialPage(window.location.pathname).then(initialPage => {
-  const app=<BrowserRouter><App initialPage={initialPage} initialPath={window.location.pathname}/></BrowserRouter>;
+  // useTransitions keeps the current page on screen while the next one loads, so navigation never flashes a blank screen.
+  const app=<BrowserRouter useTransitions><App initialPage={initialPage} initialPath={window.location.pathname}/></BrowserRouter>;
   if(root.querySelector('main')) hydrateRoot(root,app);else createRoot(root).render(app);
 }).catch(() => {
   const notice=document.createElement('p');

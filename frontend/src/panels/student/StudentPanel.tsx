@@ -4,6 +4,7 @@ import { api, ApiError } from '../api';
 import { useApi } from '../hooks';
 import { PanelFrame, type NavItem } from '../PanelShell';
 import { Card, Empty, ErrorNotice, Field, Notice, PageHead, Stat, StatusChip, Table, fmtDate, fmtDateTime, fmtInr } from '../ui';
+import { Spinner } from '../../components/loading/Loaders';
 
 const NAV: NavItem[] = [
   { to: '/app', label: 'Home' },
@@ -211,7 +212,7 @@ function Payments() {
             <Field label="Date you paid" error={fe.paid_on}>
               <input className="p-input" type="date" required value={form.paid_on} onChange={e => setForm({ ...form, paid_on: e.target.value })} />
             </Field>
-            <div className="span-2"><button className="p-btn" type="submit" disabled={busy}>{busy ? 'Sending…' : 'Send payment details'}</button></div>
+            <div className="span-2"><button className="p-btn" type="submit" disabled={busy}>{busy ? <><Spinner />Sending…</> : 'Send payment details'}</button></div>
           </form>
         </Card>
       )}
@@ -352,7 +353,7 @@ function SubmitForm({ assignment, onDone }: { assignment: AssignmentRowData; onD
         </Field>
       )}
       <Field label="Note for your trainer (optional)"><input className="p-input" value={note} onChange={e => setNote(e.target.value)} /></Field>
-      <div className="span-2"><button className="p-btn" type="submit" disabled={busy}>{busy ? 'Submitting…' : assignment.submission ? 'Replace my submission' : 'Submit'}</button></div>
+      <div className="span-2"><button className="p-btn" type="submit" disabled={busy}>{busy ? <><Spinner />Submitting…</> : assignment.submission ? 'Replace my submission' : 'Submit'}</button></div>
     </form>
   );
 }
@@ -452,7 +453,7 @@ function QuizCard({ quiz, onDone }: { quiz: QuizRowData; onDone: () => void }) {
               ))}
             </fieldset>
           ))}
-          <button className="p-btn" type="submit" disabled={busy || answers.some(a => a === null)}>{busy ? 'Submitting…' : 'Submit answers'}</button>
+          <button className="p-btn" type="submit" disabled={busy || answers.some(a => a === null)}>{busy ? <><Spinner />Submitting…</> : 'Submit answers'}</button>
           <p className="p-hint">You can submit once, so check your answers first.</p>
         </form>
       )}

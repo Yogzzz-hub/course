@@ -4,8 +4,11 @@ import { MotionConfig } from 'motion/react';
 import { Header, Footer } from './components/layout';
 import { MotionProvider, MotionDirector } from './components/MotionSystem';
 import { AmbientLayer, InteractionDirector } from './components/fx';
+import { PageLoader, TopLoadingBar, NavigationLoader } from './components/loading/Loaders';
+import { trackPage } from './components/loading/loadingStore';
 const pageLoaders: Record<string, () => Promise<{ default: ComponentType }>> = {
  '/login': () => import('./panels/auth/AuthPages').then(m => ({ default: m.LoginPage })),
+ '/signup': () => import('./panels/auth/SignUpPage').then(m => ({ default: m.SignUpPage })),
  '/app/*': () => import('./panels/student/StudentPanel'),
  '/trainer/*': () => import('./panels/trainer/TrainerPanel'),
  '/manager/*': () => import('./panels/manager/ManagerPanel'),
@@ -46,7 +49,8 @@ const pageLoaders: Record<string, () => Promise<{ default: ComponentType }>> = {
  '/terms-and-conditions': () => import('./pages/Legal'),
  '*': () => import('./pages/NotFound'),
 };
-const pageComponents = Object.entries(pageLoaders).map(([path, loader]) => ({path, Page: lazy(loader)}));
+// Each page download is counted so the loader can appear only when a navigation drags on (see NavigationLoader).
+const pageComponents = Object.entries(pageLoaders).map(([path, loader]) => ({path, Page: lazy(() => trackPage(loader()))}));
 export async function loadInitialPage(path: string) { return (await (pageLoaders[path] || pageLoaders['*'])()).default; }
 import { academy } from './config/academy';
 import { routes } from './data/routes';
@@ -95,12 +99,17 @@ export default function App({initialPage: InitialPage, initialPath}: {initialPag
  const { pathname } = useLocation();
  // Panels (student, trainer, admin) draw their own navigation, so they skip the public header and footer.
  if (/^\/(app|trainer|manager|finance|superadmin)(\/|$)|^\/admin\//.test(pathname)) {
-   return <MotionConfig reducedMotion="user"><MotionProvider><InteractionDirector/><main id="main" tabIndex={-1} className="panel-main"><PageErrorBoundary><Suspense fallback={<div className="container page-hero" role="status">Loading…</div>}><Routes>{pageComponents.map(({path, Page}) => <Route key={path} path={path} element={<Page/>}/>)}</Routes><RouteEffects/></Suspense></PageErrorBoundary></main></MotionProvider></MotionConfig>;
+   return <MotionConfig reducedMotion="user"><MotionProvider><InteractionDirector/><TopLoadingBar/><NavigationLoader/><main id="main" tabIndex={-1} className="panel-main"><PageErrorBoundary><Suspense fallback={<PageLoader/>}><Routes>{pageComponents.map(({path, Page}) => <Route key={path} path={path} element={<Page/>}/>)}</Routes><RouteEffects/></Suspense></PageErrorBoundary></main></MotionProvider></MotionConfig>;
+ }
+ // Sign-in and sign-up are standalone screens: no site header, footer or ambient layer.
+ if (pathname === '/login' || pathname === '/signup') {
+   const Page = pageComponents.find(page => page.path === pathname)!.Page;
+   return <MotionConfig reducedMotion="user"><MotionProvider><InteractionDirector/><TopLoadingBar/><NavigationLoader/><main id="main" tabIndex={-1} className="panel-main auth-main"><PageErrorBoundary><Suspense fallback={<PageLoader/>}>{InitialPage && initialPath === pathname ? <InitialPage/> : <Page/>}<RouteEffects/></Suspense></PageErrorBoundary></main></MotionProvider></MotionConfig>;
  }
  // The homepage and booking routes render their own header so the call-to-action can scroll in-page.
  if (['/', '/book-session', '/direct-booking'].includes(pathname)) {
    const Page = pageComponents.find(page => page.path === pathname)!.Page;
-   return <MotionConfig reducedMotion="user"><MotionProvider><AmbientLayer/><InteractionDirector/><PageErrorBoundary><Suspense fallback={<main className="container page-hero" role="status">Loading counselling…</main>}>{InitialPage && initialPath === pathname ? <InitialPage/> : <Page/>}<RouteEffects/></Suspense></PageErrorBoundary></MotionProvider></MotionConfig>;
+   return <MotionConfig reducedMotion="user"><MotionProvider><AmbientLayer/><InteractionDirector/><TopLoadingBar/><NavigationLoader/><PageErrorBoundary><Suspense fallback={<PageLoader/>}>{InitialPage && initialPath === pathname ? <InitialPage/> : <Page/>}<RouteEffects/></Suspense></PageErrorBoundary></MotionProvider></MotionConfig>;
  }
- return <MotionConfig reducedMotion="user"><MotionProvider><AmbientLayer/><InteractionDirector/><Header/><main id="main" tabIndex={-1}><PageErrorBoundary><Suspense fallback={<div className="container page-hero" role="status">Loading your next step…</div>}><Routes>{pageComponents.map(({path, Page}) => <Route key={path} path={path} element={InitialPage && (path === initialPath || (path === '*' && initialPath && !pageLoaders[initialPath])) ? <InitialPage/> : <Page/>}/>)}</Routes><RouteEffects/></Suspense></PageErrorBoundary></main><Footer/></MotionProvider></MotionConfig>;
+ return <MotionConfig reducedMotion="user"><MotionProvider><AmbientLayer/><InteractionDirector/><TopLoadingBar/><NavigationLoader/><Header/><main id="main" tabIndex={-1}><PageErrorBoundary><Suspense fallback={<PageLoader/>}><Routes>{pageComponents.map(({path, Page}) => <Route key={path} path={path} element={InitialPage && (path === initialPath || (path === '*' && initialPath && !pageLoaders[initialPath])) ? <InitialPage/> : <Page/>}/>)}</Routes><RouteEffects/></Suspense></PageErrorBoundary></main><Footer/></MotionProvider></MotionConfig>;
 }
