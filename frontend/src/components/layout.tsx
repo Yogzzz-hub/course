@@ -12,7 +12,7 @@ import { PaletteMenu } from './PaletteMenu';
 import { Marquee } from './fx';
 
 export { LogoMark };
-export function Logo({ surface = 'light' }: { surface?: 'light' | 'dark' }) { return <Link to="/" className="logo flex flex-row items-center flex-nowrap gap-3 shrink-0" aria-label={`${academy.name} home`}><span className="logo-mark"><LogoMark size={34} surface={surface} aria-hidden="true" className="shrink-0"/></span><span className="logo-wordmark flex flex-col justify-center leading-tight"><span className="logo-name whitespace-nowrap">{academy.name.replace(/\s+(Technical\s+)?Academy$/i, "")}</span><span className="logo-subtitle whitespace-nowrap">Academy</span></span></Link>; }
+export function Logo({ surface = 'light' }: { surface?: 'light' | 'dark' }) { return <Link to="/" className="logo flex flex-row items-center flex-nowrap gap-3 shrink-0" aria-label={`${academy.name} home`}><span className="logo-mark"><LogoMark size={28} surface={surface} aria-hidden="true" className="shrink-0"/></span><span className="logo-wordmark flex flex-col justify-center leading-tight"><span className="logo-name whitespace-nowrap">{academy.name.replace(/\s+(Technical\s+)?Academy$/i, "")}</span><span className="logo-subtitle whitespace-nowrap">ACADEMY</span></span></Link>; }
 
 const isCurrent = (to: string, pathname: string) => to === '/' ? pathname === '/' : pathname === to || pathname.startsWith(`${to}/`);
 

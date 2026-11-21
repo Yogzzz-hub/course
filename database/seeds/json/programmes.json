@@ -14,5 +14,21 @@
     "duration_weeks": 20,
     "description": "FastAPI, PostgreSQL, Docker, and AI-driven backend systems.",
     "created_at": "2026-11-20 14:08:26.864684"
+  },
+  {
+    "id": 3,
+    "name": "DevOps, Docker & Cloud Architecture",
+    "fee_inr": 35000,
+    "duration_weeks": 14,
+    "description": "Master Docker, Kubernetes, CI/CD pipelines, AWS cloud infrastructure, and modern site reliability engineering.",
+    "created_at": "2026-11-21 14:00:00.000000"
+  },
+  {
+    "id": 4,
+    "name": "Data Structures, Algorithms & System Design",
+    "fee_inr": 40000,
+    "duration_weeks": 16,
+    "description": "Conquer advanced algorithmic problem solving, scalable distributed system design, and high-performance engineering.",
+    "created_at": "2026-11-21 14:00:00.000000"
   }
 ]

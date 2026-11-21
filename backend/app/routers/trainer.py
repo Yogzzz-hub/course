@@ -55,6 +55,12 @@ class AssignmentIn(BaseModel):
     due_at: datetime | None = None
 
 
+class AssignmentUpdateIn(BaseModel):
+    title: str | None = None
+    brief: str | None = None
+    due_at: datetime | None = None
+
+
 class TaskIn(BaseModel):
     title: str = Field(min_length=2, max_length=200)
     detail: str = Field(default="", max_length=4000)
@@ -243,6 +249,28 @@ def create_assignment(batch_id: int, body: AssignmentIn, user: User = TRAINER, d
     audit(db, user.id, "assignment.create", "assignment", assignment.id, {"batch_id": batch_id})
     db.commit()
     return {"id": assignment.id}
+
+
+@router.patch("/assignments/{assignment_id}")
+def update_assignment(assignment_id: int, body: AssignmentUpdateIn, user: User = TRAINER, db: Session = Depends(get_db)):
+    assignment = db.get(Assignment, assignment_id)
+    if assignment is None:
+        raise ApiError(404, "NOT_FOUND", "That assignment could not be found.")
+    assert_batch_access(db, user, assignment.batch_id)
+    if body.title is not None:
+        assignment.title = body.title.strip()
+    if body.brief is not None:
+        assignment.brief = body.brief
+    if "due_at" in body.model_fields_set:
+        assignment.due_at = body.due_at
+    audit(db, user.id, "assignment.update", "assignment", assignment.id, {"due_at": str(assignment.due_at)})
+    db.commit()
+    return {
+        "id": assignment.id,
+        "title": assignment.title,
+        "brief": assignment.brief,
+        "due_at": assignment.due_at.isoformat() + "Z" if assignment.due_at else None,
+    }
 
 
 @router.get("/assignments/{assignment_id}/submissions")
