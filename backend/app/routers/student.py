@@ -3,7 +3,7 @@ from datetime import date
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -262,9 +262,12 @@ def assignments(user: User = STUDENT, db: Session = Depends(get_db)):
                     "brief": assignment.brief,
                     "due_at": assignment.due_at.isoformat() + "Z" if assignment.due_at else None,
                     "submission": {
+                        "id": sub.id,
                         "kind": sub.kind,
                         "link": sub.link,
                         "file_name": sub.file_name,
+                        "note": sub.note,
+                        "has_file": bool(sub.file_path and Path(sub.file_path).exists()),
                         "submitted_at": sub.submitted_at.isoformat() + "Z",
                         "score": sub.score,
                         "feedback": sub.feedback,
@@ -333,6 +336,14 @@ async def submit_assignment(
     existing.submitted_at = utcnow()
     db.commit()
     return {"ok": True}
+
+
+@router.get("/assignments/{assignment_id}/file")
+def download_my_submission_file(assignment_id: int, user: User = STUDENT, db: Session = Depends(get_db)):
+    sub = db.scalar(select(Submission).where(Submission.assignment_id == assignment_id, Submission.user_id == user.id))
+    if sub is None or not sub.file_path or not Path(sub.file_path).exists():
+        raise ApiError(404, "NOT_FOUND", "No submitted file found.")
+    return FileResponse(sub.file_path, filename=sub.file_name or "submission")
 
 
 @router.get("/tasks")

@@ -16,6 +16,9 @@ import {
   Clock,
   AlertTriangle,
   Calendar,
+  Download,
+  ExternalLink,
+  Edit3,
 } from 'lucide-react';
 import { api, ApiError } from '../api';
 import { useApi } from '../hooks';
@@ -471,8 +474,22 @@ function Attendance() {
 }
 
 interface AssignmentRowData {
-  id: number; batch: string; title: string; brief: string; due_at: string | null;
-  submission: { kind: string; link: string; file_name: string; submitted_at: string; score: number | null; feedback: string } | null;
+  id: number;
+  batch: string;
+  title: string;
+  brief: string;
+  due_at: string | null;
+  submission: {
+    id?: number;
+    kind: string;
+    link: string;
+    file_name: string;
+    note?: string;
+    has_file?: boolean;
+    submitted_at: string;
+    score: number | null;
+    feedback: string;
+  } | null;
 }
 
 function SubmitForm({ assignment, onDone }: { assignment: AssignmentRowData; onDone: () => void }) {
@@ -535,21 +552,192 @@ function SubmitForm({ assignment, onDone }: { assignment: AssignmentRowData; onD
 
 function Assignments() {
   const list = useApi<{ items: AssignmentRowData[] }>('/student/assignments');
-  const [openId, setOpenId] = useState<number | null>(null);
+  const [viewingSubId, setViewingSubId] = useState<number | null>(null);
+  const [submittingId, setSubmittingId] = useState<number | null>(null);
+
   return (
     <>
-      <PageHead title="Assignments" text="Submit your work as a file, a link or a Git repository. Your trainer grades it and writes feedback here." />
+      <PageHead
+        title="Assignments"
+        text="Submit your work as a file, link or Git repository. View deadlines fixed by your trainer and review your submissions & grades here."
+      />
       <ErrorNotice error={list.error} />
-      {(list.data?.items ?? []).length === 0 && list.data && <Empty>No assignments yet.</Empty>}
-      {(list.data?.items ?? []).map(a => (
-        <Card key={a.id} title={a.title} actions={a.submission ? <StatusChip text={a.submission.score === null ? 'Submitted' : `Graded ${a.submission.score}/100`} tone={a.submission.score === null ? 'warn' : 'good'} /> : <StatusChip text="Not submitted" />}>
-          <p className="p-muted">{a.batch}{a.due_at ? ` · due ${fmtDateTime(a.due_at)}` : ''}</p>
-          {a.brief && <p style={{ whiteSpace: 'pre-line' }}>{a.brief}</p>}
-          {a.submission?.feedback && <Notice tone="info">Feedback: {a.submission.feedback}</Notice>}
-          <button type="button" className="p-btn p-btn-ghost p-btn-small" onClick={() => setOpenId(openId === a.id ? null : a.id)}>{openId === a.id ? 'Close' : a.submission ? 'Change my submission' : 'Submit work'}</button>
-          {openId === a.id && <div style={{ marginTop: 12 }}><SubmitForm assignment={a} onDone={() => { setOpenId(null); list.reload(); }} /></div>}
-        </Card>
-      ))}
+      {(list.data?.items ?? []).length === 0 && list.data && <Empty>No assignments published yet.</Empty>}
+      {(list.data?.items ?? []).map(a => {
+        const isOverdue = a.due_at ? new Date(a.due_at).getTime() < Date.now() : false;
+        const isSubmitted = !!a.submission;
+        const isGraded = a.submission?.score !== null && a.submission?.score !== undefined;
+
+        let statusText = 'Pending Submission';
+        let statusTone: 'good' | 'warn' | 'bad' = 'warn';
+        if (isGraded) {
+          statusText = `Graded ${a.submission?.score}/100`;
+          statusTone = 'good';
+        } else if (isSubmitted) {
+          statusText = 'Submitted';
+          statusTone = 'good';
+        } else if (isOverdue) {
+          statusText = 'Past Deadline';
+          statusTone = 'bad';
+        }
+
+        return (
+          <div key={a.id} className="p-card p-assignment-card">
+            <div className="p-assignment-header">
+              <div className="p-assignment-title-group">
+                <div className="p-assignment-meta-row">
+                  <span className="p-assignment-batch-badge">{a.batch}</span>
+                  {a.due_at ? (
+                    <span className={`p-assignment-deadline-badge ${isOverdue && !isSubmitted ? 'p-assignment-deadline-badge--overdue' : ''}`}>
+                      <Clock size={12} className="inline mr-1" />
+                      Deadline: {fmtDateTime(a.due_at)}
+                      {isOverdue && !isSubmitted && ' (Overdue)'}
+                    </span>
+                  ) : (
+                    <span className="p-assignment-deadline-badge">
+                      <Clock size={12} className="inline mr-1" />
+                      No deadline set
+                    </span>
+                  )}
+                </div>
+                <h3 className="p-assignment-title">{a.title}</h3>
+              </div>
+              <StatusChip text={statusText} tone={statusTone} />
+            </div>
+
+            {a.brief && <p className="p-assignment-brief">{a.brief}</p>}
+
+            {/* Trainer Feedback when graded */}
+            {a.submission?.feedback && (
+              <div className="p-assignment-feedback-box">
+                <div className="p-assignment-feedback-head">
+                  <Award size={16} className="inline text-accent" />
+                  <strong>Trainer Feedback & Grade ({a.submission.score}/100)</strong>
+                </div>
+                <p className="p-assignment-feedback-body">{a.submission.feedback}</p>
+              </div>
+            )}
+
+            {/* Action Buttons Row */}
+            <div className="p-assignment-actions-bar">
+              {isSubmitted && (
+                <button
+                  type="button"
+                  className="p-btn p-btn-ghost p-btn-small"
+                  onClick={() => setViewingSubId(viewingSubId === a.id ? null : a.id)}
+                >
+                  {viewingSubId === a.id ? (
+                    <>
+                      <EyeOff size={14} className="inline mr-1" /> Hide Submission
+                    </>
+                  ) : (
+                    <>
+                      <Eye size={14} className="inline mr-1" /> View Submission
+                    </>
+                  )}
+                </button>
+              )}
+
+              {!isGraded && (
+                <button
+                  type="button"
+                  className={`p-btn p-btn-small ${isSubmitted ? 'p-btn-ghost' : ''}`}
+                  onClick={() => setSubmittingId(submittingId === a.id ? null : a.id)}
+                >
+                  {submittingId === a.id ? (
+                    'Cancel'
+                  ) : isSubmitted ? (
+                    <>
+                      <Edit3 size={14} className="inline mr-1" /> Change My Submission
+                    </>
+                  ) : (
+                    'Submit Work'
+                  )}
+                </button>
+              )}
+
+              {isGraded && (
+                <span className="p-assignment-final-hint">
+                  ✓ Graded by trainer. Submission is finalized.
+                </span>
+              )}
+            </div>
+
+            {/* View Submission Details Box */}
+            {viewingSubId === a.id && a.submission && (
+              <div className="p-submission-details-pane">
+                <div className="p-submission-details-head">
+                  <span className="p-submission-details-title">Your Submitted Work</span>
+                  <span className="p-submission-time">
+                    Submitted on {fmtDateTime(a.submission.submitted_at)}
+                  </span>
+                </div>
+
+                <div className="p-submission-content-row">
+                  {a.submission.kind === 'file' ? (
+                    <div className="p-submission-file-card">
+                      <FileText size={22} className="p-submission-file-icon" />
+                      <div className="p-submission-file-info">
+                        <span className="p-submission-file-name">
+                          {a.submission.file_name || 'Uploaded File'}
+                        </span>
+                        <span className="p-submission-file-hint">Attached file submission</span>
+                      </div>
+                      <a
+                        className="p-btn p-btn-small"
+                        href={`/v1/student/assignments/${a.id}/file`}
+                        target="_blank"
+                        rel="noreferrer"
+                        download
+                      >
+                        <Download size={13} className="inline mr-1" /> Download File
+                      </a>
+                    </div>
+                  ) : (
+                    <div className="p-submission-link-card">
+                      <ExternalLink size={20} className="p-submission-link-icon" />
+                      <div className="p-submission-link-info">
+                        <span className="p-submission-link-label">
+                          {a.submission.kind === 'git' ? 'Git Repository' : 'Project URL'}
+                        </span>
+                        <span className="p-submission-link-url">{a.submission.link}</span>
+                      </div>
+                      <a
+                        className="p-btn p-btn-small"
+                        href={a.submission.link}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <ExternalLink size={13} className="inline mr-1" /> Open Link
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                {a.submission.note && (
+                  <div className="p-submission-note-row">
+                    <strong className="text-xs text-muted block mb-1">Your Note for Trainer:</strong>
+                    <p className="p-submission-note-text">{a.submission.note}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Submit / Edit Form Box */}
+            {submittingId === a.id && (
+              <div className="p-submission-form-container">
+                <SubmitForm
+                  assignment={a}
+                  onDone={() => {
+                    setSubmittingId(null);
+                    list.reload();
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        );
+      })}
     </>
   );
 }

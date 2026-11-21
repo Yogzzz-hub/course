@@ -223,11 +223,55 @@ function Submissions({ assignmentId }: { assignmentId: number }) {
   );
 }
 
+function DeadlineEditor({ assignment, onDone }: { assignment: AssignmentRow; onDone: () => void }) {
+  const [dueAt, setDueAt] = useState(assignment.due_at ? assignment.due_at.slice(0, 16) : '');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<ApiError | null>(null);
+
+  async function save(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      await api(`/trainer/assignments/${assignment.id}`, {
+        method: 'PATCH',
+        body: { due_at: dueAt ? new Date(dueAt).toISOString() : null },
+      });
+      onDone();
+    } catch (err) {
+      setError(err as ApiError);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form onSubmit={save} style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, padding: 12, background: 'var(--surface-sunken)', borderRadius: 10, flexWrap: 'wrap' }}>
+      <label style={{ fontSize: 13, fontWeight: 600 }}>Set Deadline for "{assignment.title}":</label>
+      <input
+        type="datetime-local"
+        className="p-input"
+        value={dueAt}
+        onChange={e => setDueAt(e.target.value)}
+        style={{ width: 'auto', minWidth: 220 }}
+      />
+      <button type="submit" className="p-btn p-btn-small" disabled={busy}>
+        {busy ? 'Saving…' : 'Save Deadline'}
+      </button>
+      <button type="button" className="p-btn p-btn-ghost p-btn-small" onClick={onDone} disabled={busy}>
+        Cancel
+      </button>
+      {error && <span className="p-hint text-red-500">{error.message}</span>}
+    </form>
+  );
+}
+
 function Assignments() {
   const [batchId, setBatchId] = useState('');
   const list = useApi<{ items: AssignmentRow[] }>(batchId ? `/trainer/batches/${batchId}/assignments` : null);
   const [form, setForm] = useState({ title: '', brief: '', due_at: '' });
   const [openId, setOpenId] = useState<number | null>(null);
+  const [editingDeadlineId, setEditingDeadlineId] = useState<number | null>(null);
   const change = useChange(list.reload);
 
   function submit(event: FormEvent) {
@@ -241,9 +285,9 @@ function Assignments() {
 
   return (
     <>
-      <PageHead title="Assignments" text="Publish work for a batch, then review and grade what students submit." />
+      <PageHead title="Assignments" text="Publish work for a batch, fix deadlines, then review and grade what students submit." />
       <Card title="Batch">
-        <BatchPicker value={batchId} onChange={value => { setBatchId(value); setOpenId(null); }} />
+        <BatchPicker value={batchId} onChange={value => { setBatchId(value); setOpenId(null); setEditingDeadlineId(null); }} />
       </Card>
       {batchId && (
         <>
@@ -260,16 +304,31 @@ function Assignments() {
           <Card title="Assignments in this batch">
             <ErrorNotice error={list.error} />
             <Table
-              head={['Title', 'Due', 'Submitted', 'Graded', '']}
+              head={['Title', 'Due Deadline', 'Submitted', 'Graded', 'Actions']}
               rows={(list.data?.items ?? []).map(a => [
                 a.title,
-                fmtDate(a.due_at?.slice(0, 10)),
-                a.submissions,
-                a.graded,
-                <button key="v" type="button" className="p-btn p-btn-ghost p-btn-small" onClick={() => setOpenId(openId === a.id ? null : a.id)}>{openId === a.id ? 'Hide' : 'Review'}</button>,
+                a.due_at ? fmtDateTime(a.due_at) : 'No deadline',
+                `${a.submissions} submissions`,
+                `${a.graded} graded`,
+                <div key="act" style={{ display: 'flex', gap: 6 }}>
+                  <button type="button" className="p-btn p-btn-ghost p-btn-small" onClick={() => setOpenId(openId === a.id ? null : a.id)}>{openId === a.id ? 'Hide' : 'Review'}</button>
+                  <button type="button" className="p-btn p-btn-ghost p-btn-small" onClick={() => setEditingDeadlineId(editingDeadlineId === a.id ? null : a.id)}>{editingDeadlineId === a.id ? 'Close' : 'Fix Deadline'}</button>
+                </div>,
               ])}
               empty="No assignments yet."
             />
+            {editingDeadlineId && (() => {
+              const targetAssn = (list.data?.items ?? []).find(a => a.id === editingDeadlineId);
+              return targetAssn ? (
+                <DeadlineEditor
+                  assignment={targetAssn}
+                  onDone={() => {
+                    setEditingDeadlineId(null);
+                    list.reload();
+                  }}
+                />
+              ) : null;
+            })()}
             {openId && <Submissions assignmentId={openId} />}
           </Card>
         </>
