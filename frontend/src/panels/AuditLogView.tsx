@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Award, BookOpen, CircleAlert, CreditCard, Download, GraduationCap, Layers, Search, Settings2, UserRound, Users, X } from 'lucide-react';
 import { useApi } from './hooks';
+import { useInfiniteList } from './useInfinite';
 import { ErrorNotice, PageHead } from './ui';
 import './audit-log.css';
 
@@ -9,7 +10,6 @@ type Tone = 'ok' | 'bad' | 'info' | 'neutral';
 type Group = 'money' | 'people' | 'learning' | 'certificates' | 'settings';
 
 const IST = 'Asia/Kolkata';
-const PAGE = 40;
 
 /** Plain-English wording for every action the server records. Unknown ones fall back to "<verb> <thing>". */
 const WORDS: Record<string, { text: string; tone: Tone }> = {
@@ -118,7 +118,6 @@ export function AuditLogView({ endpoint, text }: { endpoint: string; text: strin
   const [query, setQuery] = useState('');
   const [group, setGroup] = useState<Group | 'all'>('all');
   const [actor, setActor] = useState('all');
-  const [shown, setShown] = useState(PAGE);
 
   const items = useMemo(() => list.data?.items ?? [], [list.data]);
   const actors = useMemo(() => [...new Set(items.map(item => item.actor))].sort((a, b) => a.localeCompare(b)), [items]);
@@ -133,7 +132,8 @@ export function AuditLogView({ endpoint, text }: { endpoint: string; text: strin
   }, [items, query, group, actor]);
 
   const rows = useMemo(() => fold(filtered), [filtered]);
-  const visible = rows.slice(0, shown);
+  const { count, more, sentinel, loadMore } = useInfiniteList(rows.length, `${query}|${group}|${actor}`);
+  const visible = rows.slice(0, count);
   const days = useMemo(() => {
     const map = new Map<string, Row[]>();
     for (const row of visible) {
@@ -144,8 +144,7 @@ export function AuditLogView({ endpoint, text }: { endpoint: string; text: strin
   }, [visible]);
 
   const filtering = query.trim() !== '' || group !== 'all' || actor !== 'all';
-  const reset = () => { setQuery(''); setGroup('all'); setActor('all'); setShown(PAGE); };
-  const pick = <T,>(setter: (value: T) => void) => (value: T) => { setter(value); setShown(PAGE); };
+  const reset = () => { setQuery(''); setGroup('all'); setActor('all'); };
 
   return (
     <div className="al">
@@ -155,21 +154,21 @@ export function AuditLogView({ endpoint, text }: { endpoint: string; text: strin
       <div className="al-tools">
         <label className="al-search">
           <Search size={17} aria-hidden="true" />
-          <input type="search" value={query} placeholder="Search by person, action or record" aria-label="Search the audit log" onChange={event => pick(setQuery)(event.target.value)} />
+          <input type="search" value={query} placeholder="Search by person, action or record" aria-label="Search the audit log" onChange={event => setQuery(event.target.value)} />
         </label>
-        <select className="al-select" value={actor} aria-label="Filter by person" onChange={event => pick(setActor)(event.target.value)}>
+        <select className="al-select" value={actor} aria-label="Filter by person" onChange={event => setActor(event.target.value)}>
           <option value="all">Everyone</option>
           {actors.map(name => <option key={name} value={name}>{name}</option>)}
         </select>
         <button type="button" className="p-btn p-btn-ghost p-btn-small" onClick={() => download(filtered)} disabled={filtered.length === 0}>
-          <Download size={14} aria-hidden="true" /> Export CSV
+          <Download size={14} aria-hidden="true" /> <span>Export CSV</span>
         </button>
       </div>
 
       <div className="al-chips" role="group" aria-label="Filter by area">
-        <button type="button" className="al-chip" aria-pressed={group === 'all'} onClick={() => pick(setGroup)('all')}>All</button>
+        <button type="button" className="al-chip" aria-pressed={group === 'all'} onClick={() => setGroup('all')}>All</button>
         {GROUPS.map(item => (
-          <button key={item.id} type="button" className="al-chip" aria-pressed={group === item.id} onClick={() => pick(setGroup)(item.id)}>{item.icon}{item.label}</button>
+          <button key={item.id} type="button" className="al-chip" aria-pressed={group === item.id} onClick={() => setGroup(item.id)}>{item.icon}{item.label}</button>
         ))}
       </div>
 
@@ -214,9 +213,9 @@ export function AuditLogView({ endpoint, text }: { endpoint: string; text: strin
         </section>
       ))}
 
-      {rows.length > shown && (
-        <div className="al-more">
-          <button type="button" className="p-btn p-btn-ghost" onClick={() => setShown(value => value + PAGE)}>Show more ({rows.length - shown} left)</button>
+      {more && (
+        <div className="al-more" ref={sentinel}>
+          <button type="button" className="p-btn p-btn-ghost p-btn-small" onClick={loadMore}>Loading more… ({rows.length - count} left)</button>
         </div>
       )}
     </div>

@@ -75,12 +75,41 @@
 .rx-toast .rx-toast-close { padding: 6px; }
 @keyframes rx-toast-in { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
 
+.rx-more { display: flex; justify-content: center; }
+
 @media (max-width: 900px) {
   .rx-card { grid-template-columns: minmax(0, 1fr); }
 }
+@media (max-width: 640px) {
+  .rx { gap: 12px; }
+  /* Filters wrap into a grid; nothing scrolls sideways. */
+  .rx-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .rx-filter { justify-content: space-between; min-height: 38px; padding: 4px 6px 4px 12px; }
+  .rx-search { max-width: none; flex-basis: 100%; }
+  .rx-search input { min-height: 42px; }
+  .rx-list { gap: 10px; }
+  .rx-card { padding: 14px; gap: 12px; border-radius: 18px; }
+  .rx-avatar { width: 40px; height: 40px; font-size: 13px; }
+  .rx-who { gap: 10px; flex-wrap: nowrap; }
+  .rx-id { flex-basis: 0; }
+  .rx-blurb { display: none; }
+  /* Six roles sit in a tidy grid instead of a ragged wrap. */
+  .rx-chips { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .rx-chip { justify-content: center; min-height: 38px; padding: 4px 6px; font-size: 12.5px; gap: 5px; }
+  .rx-chip .rx-check { display: none; }
+  .rx-actions { justify-content: stretch; padding-top: 10px; }
+  .rx-unsaved { width: 100%; }
+  .rx-actions .p-btn { flex: 1; justify-content: center; }
+  .rx-toast { bottom: 12px; }
+}
+@media (max-width: 420px) {
+  .rx-chip > svg:first-child { display: none; }
+}
+@media (max-width: 360px) {
+  .rx-chips { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rx-chip > svg:first-child { display: inline; }
+}
 @media (max-width: 520px) {
   .rx-toast { width: calc(100vw - 24px); border-radius: 20px; flex-wrap: wrap; }
-  .rx-actions { justify-content: stretch; }
-  .rx-unsaved { width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { .rx-toast { animation: none; } .rx-card, .rx-chip, .rx-filter { transition: none; } }
