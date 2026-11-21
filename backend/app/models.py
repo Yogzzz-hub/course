@@ -17,6 +17,7 @@ class User(Base):
     status: Mapped[str] = mapped_column(String(20), default="active")  # active | disabled
     is_dev_account: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    status: Mapped[str] = mapped_column(String(20), default="active")  # active | completed | cancelled
 
 
 class UserRole(Base):
@@ -33,6 +34,7 @@ class AuthSession(Base):
     token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    status: Mapped[str] = mapped_column(String(20), default="active")  # active | completed | cancelled
     expires_at: Mapped[datetime] = mapped_column(DateTime)
 
 
@@ -44,6 +46,7 @@ class Programme(Base):
     duration_weeks: Mapped[int] = mapped_column(Integer, default=0)
     description: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    status: Mapped[str] = mapped_column(String(20), default="active")  # active | completed | cancelled
 
 
 class Batch(Base):
@@ -59,6 +62,7 @@ class Batch(Base):
     capacity: Mapped[int] = mapped_column(Integer)
     created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    status: Mapped[str] = mapped_column(String(20), default="active")  # active | completed | cancelled
 
 
 class BatchTrainer(Base):
@@ -80,6 +84,7 @@ class Enrolment(Base):
     status: Mapped[str] = mapped_column(String(20), default="awaiting_payment")  # awaiting_payment | active | completed | dropped
     enrolled_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    status: Mapped[str] = mapped_column(String(20), default="active")  # active | completed | cancelled
     completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
@@ -134,6 +139,7 @@ class Expense(Base):
     spent_on: Mapped[date] = mapped_column(Date)
     recorded_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    status: Mapped[str] = mapped_column(String(20), default="active")  # active | completed | cancelled
 
 
 class Assignment(Base):
@@ -145,6 +151,7 @@ class Assignment(Base):
     due_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    status: Mapped[str] = mapped_column(String(20), default="active")  # active | completed | cancelled
 
 
 class Submission(Base):
@@ -174,6 +181,7 @@ class Quiz(Base):
     due_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    status: Mapped[str] = mapped_column(String(20), default="active")  # active | completed | cancelled
 
 
 class QuizAttempt(Base):
@@ -198,6 +206,7 @@ class Task(Base):
     due_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    status: Mapped[str] = mapped_column(String(20), default="active")  # active | completed | cancelled
 
 
 class TaskCompletion(Base):
