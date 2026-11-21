@@ -12,6 +12,7 @@ import {
   CalendarCheck,
   ArrowRight,
   BookOpen,
+  Video,
 } from 'lucide-react';
 import { api, ApiError } from '../api';
 import { useApi } from '../hooks';
@@ -471,7 +472,21 @@ function BatchDetail() {
                 fmtDateTime(c.starts_at),
                 fmtDateTime(c.ends_at),
                 <StatusChip key="s" text={c.status} tone={c.status === 'ended' ? 'good' : c.status === 'live' ? 'warn' : 'neutral'} />,
-                c.recording_url ? <a key="r" className="p-link" href={c.recording_url} target="_blank" rel="noreferrer">View recording</a> : '—',
+                c.recording_url ? (
+                  <a
+                    key="r"
+                    className="p-btn p-btn-small"
+                    href={c.recording_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                  >
+                    <Video size={14} />
+                    <span>View recording</span>
+                  </a>
+                ) : (
+                  '—'
+                ),
               ])}
               empty="No classes scheduled."
             />

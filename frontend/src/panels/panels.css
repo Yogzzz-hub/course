@@ -986,10 +986,11 @@ main#main.panel-main {
 }
 
 .p-btn-small {
-  min-height: 36px;
+  min-height: 34px;
   padding: 6px 16px;
   font-size: 13px;
-  border-radius: 10px;
+  border-radius: 999px;
+  gap: 6px;
 }
 
 .p-link {

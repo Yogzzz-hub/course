@@ -1015,9 +1015,21 @@ function Recordings() {
           rows={(list.data?.items ?? []).map(r => [
             `Class ${r.sequence}`,
             fmtDateTime(r.starts_at),
-            <a key="l" className="p-link" href={r.recording_url} target="_blank" rel="noreferrer">
-              View recording
-            </a>,
+            r.recording_url ? (
+              <a
+                key="l"
+                className="p-btn p-btn-small"
+                href={r.recording_url}
+                target="_blank"
+                rel="noreferrer"
+                style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+              >
+                <Video size={14} />
+                <span>View recording</span>
+              </a>
+            ) : (
+              '—'
+            ),
           ])}
           empty="Recordings appear here after each class."
         />
