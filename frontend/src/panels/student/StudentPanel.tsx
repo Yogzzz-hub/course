@@ -172,7 +172,7 @@ function Home({ me }: { me: Me }) {
     activities.push({
       id: 'fee-notice',
       title: `Pending fee balance: ${fmtInr(totalBalance)}`,
-      subtitle: 'Clear balance to issue your certificate',
+      subtitle: 'Clear your balance via the payments tab',
       time: 'Notice',
       icon: Award,
       tone: 'purple',
@@ -213,9 +213,9 @@ function Home({ me }: { me: Me }) {
         <MetricCard
           icon={Award}
           variant={4}
-          label="Certification & Fees"
-          value={totalBalance === 0 ? (enrolments.some(e => e.certificate_id) ? 'Awarded' : 'In Progress') : fmtInr(totalBalance)}
-          trend={totalBalance === 0 ? (enrolments.some(e => e.certificate_id) ? 'Certificate Issued' : 'Course ongoing') : 'Payment pending'}
+          label="Fees & Billing"
+          value={totalBalance === 0 ? 'Fully Paid' : fmtInr(totalBalance)}
+          trend={totalBalance === 0 ? 'All fees cleared' : 'Payment pending'}
           trendPositive={totalBalance === 0}
         />
       </div>
@@ -268,13 +268,9 @@ function Home({ me }: { me: Me }) {
                 </div>
 
                 <div className="p-course-footer">
-                  {e.status === 'awaiting_payment' ? (
+                  {e.fees.balance_inr > 0 ? (
                     <Link className="p-btn" to="/app/payments">
                       Make Payment ({fmtInr(e.fees.balance_inr)})
-                    </Link>
-                  ) : e.certificate_id ? (
-                    <Link className="p-btn" to="/app/certificates">
-                      View Certificate <ArrowRight size={14} className="inline ml-1" />
                     </Link>
                   ) : (
                     <Link className="p-btn p-btn-ghost" to="/app/classes">
