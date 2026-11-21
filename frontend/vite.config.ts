@@ -51,9 +51,23 @@ export default defineConfig(({ mode }) => {
     build: { manifest: true },
     server: {
       port: 5173,
+      fs: {
+        allow: ['..'],
+      },
       watch: { ignored: ['**/.local/**', '**/test-results*/**', '**/playwright-report/**', '**/.build/**', '**/dist/**'] },
       proxy: {
-        '/api/learning': { target: env.VITE_LEARNING_PROXY_TARGET || 'http://127.0.0.1:8787' },
+        '/api/learning': {
+          target: env.VITE_LEARNING_PROXY_TARGET || 'http://127.0.0.1:8787',
+          changeOrigin: true,
+          configure: (proxy) => {
+            proxy.on('error', (err, _req, res) => {
+              if (res && 'writeHead' in res && !res.headersSent) {
+                res.writeHead(503, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ available: false, message: 'Learning service is not running.' }));
+              }
+            });
+          },
+        },
         '/v1': { target: env.VITE_ACADEMY_API_TARGET || 'http://127.0.0.1:8000', changeOrigin: false },
         ...(target ? { '/api': { target, changeOrigin: true } } : {}),
       },
