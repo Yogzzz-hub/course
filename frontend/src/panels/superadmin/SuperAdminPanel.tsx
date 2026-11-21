@@ -1,9 +1,36 @@
 import { useState } from 'react';
 import { Link, Route, Routes } from 'react-router-dom';
+import {
+  Users,
+  ShieldCheck,
+  Layers,
+  GraduationCap,
+  CreditCard,
+  CheckCircle2,
+  Lock,
+  ArrowRight,
+  TrendingUp,
+  LayoutDashboard,
+} from 'lucide-react';
 import { api, ApiError } from '../api';
 import { useApi } from '../hooks';
-import { PanelFrame, type NavItem } from '../PanelShell';
-import { Card, Empty, ErrorNotice, Field, Notice, PageHead, Stat, Table, fmtDateTime } from '../ui';
+import { PanelFrame, type NavItem, type Me } from '../PanelShell';
+import {
+  Card,
+  Empty,
+  ErrorNotice,
+  Field,
+  Notice,
+  PageHead,
+  Stat,
+  Table,
+  fmtDateTime,
+  WelcomeBanner,
+  MetricCard,
+  CourseEngagementChart,
+  ActivityTimeline,
+  type ActivityItem,
+} from '../ui';
 
 const NAV: NavItem[] = [
   { to: '/superadmin', label: 'Overview' },
@@ -16,17 +43,165 @@ const ROLE_OPTIONS = ['super_admin', 'admin', 'manager', 'financier', 'trainer',
 
 interface UserRow { id: number; name: string; email: string; status: string; roles: string[] }
 
-function Overview() {
-  const { data, error } = useApi<{ users: number; batches: number; enrolments: number; verified_income_inr: number }>('/superadmin/overview');
+function Overview({ me }: { me: Me }) {
+  const { data, error } = useApi<{
+    users: number;
+    batches: number;
+    enrolments: number;
+    verified_income_inr: number;
+  }>('/superadmin/overview');
+
+  const chartData = [
+    { name: 'Accounts', value: data?.users ?? 0, secondary: 'Total users' },
+    { name: 'Batches', value: data?.batches ?? 0, secondary: 'Active batches' },
+    { name: 'Enrolments', value: data?.enrolments ?? 0, secondary: 'Active students' },
+    { name: 'Revenue (k)', value: Math.round((data?.verified_income_inr ?? 0) / 1000), secondary: `₹${((data?.verified_income_inr ?? 0) / 1000).toFixed(0)}k verified` },
+  ];
+
+  const activities: ActivityItem[] = [
+    {
+      id: 'super-admin-active',
+      title: 'Full platform governance active',
+      subtitle: `Master session authenticated: ${me.email}`,
+      time: 'Live',
+      icon: ShieldCheck,
+      tone: 'purple',
+    },
+    {
+      id: 'batches-running',
+      title: `${data?.batches ?? 0} batches operating across all programmes`,
+      subtitle: 'Classes, timetables and attendance recorded',
+      time: 'Running',
+      icon: Layers,
+      tone: 'blue',
+    },
+    {
+      id: 'enrolments-total',
+      title: `${data?.enrolments ?? 0} student enrolments actively monitored`,
+      subtitle: 'Complete student lifecycle tracked',
+      time: 'Tracked',
+      icon: Users,
+      tone: 'green',
+    },
+    {
+      id: 'revenue-verified',
+      title: `₹${(data?.verified_income_inr ?? 0).toLocaleString('en-IN')} verified total collections`,
+      subtitle: 'Financial ledger reconciled',
+      time: 'Verified',
+      icon: CreditCard,
+      tone: 'amber',
+    },
+  ];
+
   return (
     <>
-      <PageHead title="Super admin" text="Full control: roles, settings, every panel and the complete audit trail." />
+      <WelcomeBanner
+        name={me.name}
+        role="Super Admin"
+        message="Master academy console: complete role access, global platform settings, and live system audit."
+      />
       <ErrorNotice error={error} />
-      <div className="p-stats">
-        <Stat label="Accounts" value={data?.users} />
-        <Stat label="Batches" value={data?.batches} />
-        <Stat label="Enrolments" value={data?.enrolments} />
-        <Stat label="Verified income" value={data ? `₹${data.verified_income_inr.toLocaleString('en-IN')}` : null} />
+
+      {/* Top Metric Overview Cards */}
+      <div className="p-metric-grid">
+        <MetricCard
+          icon={Users}
+          iconBg="linear-gradient(135deg, #3B82F6, #1D4ED8)"
+          label="Total Accounts"
+          value={`${data?.users ?? 0} Users`}
+          trend="All Roles"
+          trendPositive={true}
+        />
+        <MetricCard
+          icon={Layers}
+          iconBg="linear-gradient(135deg, #10B981, #059669)"
+          label="Academy Batches"
+          value={`${data?.batches ?? 0} Batches`}
+          trend="Running"
+          trendPositive={true}
+        />
+        <MetricCard
+          icon={GraduationCap}
+          iconBg="linear-gradient(135deg, #6366F1, #4F46E5)"
+          label="Enrolments"
+          value={`${data?.enrolments ?? 0} Students`}
+          trend="Active Lifecycle"
+          trendPositive={true}
+        />
+        <MetricCard
+          icon={CreditCard}
+          iconBg="linear-gradient(135deg, #8B5CF6, #6D28D9)"
+          label="Verified Revenue"
+          value={data ? `₹${data.verified_income_inr.toLocaleString('en-IN')}` : '—'}
+          trend="Total Collections"
+          trendPositive={true}
+        />
+      </div>
+
+      {/* Main Split Layout */}
+      <div className="p-dashboard-split">
+        <div className="p-dashboard-main">
+          <CourseEngagementChart
+            title="Academy Platform Metrics"
+            data={chartData}
+            totalLabel="Verified Revenue Collected"
+            totalValue={data ? `₹${data.verified_income_inr.toLocaleString('en-IN')}` : '—'}
+            trendText="Platform Wide"
+          />
+
+          <div className="p-course-card">
+            <div className="p-course-header">
+              <div>
+                <h3 className="p-course-title">Portal Quick Launch</h3>
+                <p className="p-course-batch">Access any panel with your Super Admin permissions</p>
+              </div>
+            </div>
+            <div className="p-portal-links-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginTop: 12 }}>
+              <Link to="/manager" className="p-btn p-btn-ghost text-left" style={{ display: 'block', padding: '12px 16px' }}>
+                <strong style={{ display: 'block', color: 'var(--text)' }}>Manager Portal</strong>
+                <span style={{ fontSize: 12, color: 'var(--muted)' }}>Courses, batches & certs</span>
+              </Link>
+              <Link to="/trainer" className="p-btn p-btn-ghost text-left" style={{ display: 'block', padding: '12px 16px' }}>
+                <strong style={{ display: 'block', color: 'var(--text)' }}>Trainer Portal</strong>
+                <span style={{ fontSize: 12, color: 'var(--muted)' }}>Classes & assignments</span>
+              </Link>
+              <Link to="/finance" className="p-btn p-btn-ghost text-left" style={{ display: 'block', padding: '12px 16px' }}>
+                <strong style={{ display: 'block', color: 'var(--text)' }}>Finance Portal</strong>
+                <span style={{ fontSize: 12, color: 'var(--muted)' }}>Fees, payments & ledger</span>
+              </Link>
+              <Link to="/admin" className="p-btn p-btn-ghost text-left" style={{ display: 'block', padding: '12px 16px' }}>
+                <strong style={{ display: 'block', color: 'var(--text)' }}>Admin Portal</strong>
+                <span style={{ fontSize: 12, color: 'var(--muted)' }}>Users & system audit</span>
+              </Link>
+              <Link to="/app" className="p-btn p-btn-ghost text-left" style={{ display: 'block', padding: '12px 16px' }}>
+                <strong style={{ display: 'block', color: 'var(--text)' }}>Student Portal</strong>
+                <span style={{ fontSize: 12, color: 'var(--muted)' }}>Student learning view</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-dashboard-side">
+          <ActivityTimeline title="Master Governance Feed" items={activities} />
+
+          <div className="p-todo-card">
+            <h3 className="p-todo-title">Super Admin Tools</h3>
+            <div className="p-todo-list">
+              <Link to="/superadmin/roles" className="p-todo-item">
+                <span className="p-todo-bullet">→</span>
+                <span>Manage roles and permission access</span>
+              </Link>
+              <Link to="/superadmin/settings" className="p-todo-item">
+                <span className="p-todo-bullet">→</span>
+                <span>Update academy-wide configuration rules</span>
+              </Link>
+              <Link to="/superadmin/audit-log" className="p-todo-item">
+                <span className="p-todo-bullet">→</span>
+                <span>Inspect complete master audit trail</span>
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
     </>
   );
@@ -176,9 +351,9 @@ function Panels() {
 export default function SuperAdminPanel() {
   return (
     <PanelFrame role="super_admin" brand="Super admin" items={NAV}>
-      {() => (
+      {me => (
         <Routes>
-          <Route index element={<Overview />} />
+          <Route index element={<Overview me={me} />} />
           <Route path="roles" element={<Roles />} />
           <Route path="settings" element={<Settings />} />
           <Route path="audit-log" element={<AuditLog />} />

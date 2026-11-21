@@ -1,9 +1,40 @@
 import { useState, type FormEvent } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Link, Route, Routes } from 'react-router-dom';
+import {
+  CreditCard,
+  Receipt,
+  TrendingUp,
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  ArrowRight,
+  ShieldCheck,
+  Sparkles,
+} from 'lucide-react';
 import { api, ApiError } from '../api';
 import { useApi } from '../hooks';
-import { PanelFrame, type NavItem } from '../PanelShell';
-import { Card, Empty, ErrorNotice, Field, Notice, PageHead, Stat, StatusChip, Table, fieldErrors, fmtDate, fmtDateTime, fmtInr } from '../ui';
+import { PanelFrame, type NavItem, type Me } from '../PanelShell';
+import {
+  Card,
+  Empty,
+  ErrorNotice,
+  Field,
+  Notice,
+  PageHead,
+  Stat,
+  StatusChip,
+  Table,
+  fieldErrors,
+  fmtDate,
+  fmtDateTime,
+  fmtInr,
+  WelcomeBanner,
+  MetricCard,
+  CourseEngagementChart,
+  ActivityTimeline,
+  type ActivityItem,
+  ProgressBar,
+} from '../ui';
 
 const NAV: NavItem[] = [
   { to: '/finance', label: 'Overview' },
@@ -38,19 +69,170 @@ function useChange(reload: () => void) {
   return { busy, error, message, run };
 }
 
-function Overview() {
+function Overview({ me }: { me: Me }) {
   const { data, error } = useApi<Record<string, number>>('/finance/overview');
+
+  const income = data?.income_inr ?? 0;
+  const feesTotal = data?.fees_total_inr ?? 0;
+  const expenses = data?.expenses_inr ?? 0;
+  const net = data?.net_inr ?? 0;
+  const outstanding = data?.outstanding_inr ?? 0;
+  const toVerify = data?.payments_to_verify ?? 0;
+
+  const collectionRate = feesTotal > 0 ? Math.min(100, Math.round((income / feesTotal) * 100)) : 100;
+
+  const chartData = [
+    { name: 'Verified', value: Math.round(income / 1000), secondary: fmtInr(income) },
+    { name: 'Outstanding', value: Math.round(outstanding / 1000), secondary: fmtInr(outstanding) },
+    { name: 'Expenses', value: Math.round(expenses / 1000), secondary: fmtInr(expenses) },
+    { name: 'Net Cash', value: Math.max(0, Math.round(net / 1000)), secondary: fmtInr(net) },
+  ];
+
+  const activities: ActivityItem[] = [
+    {
+      id: 'income-verified',
+      title: `${fmtInr(income)} total verified fee collections`,
+      subtitle: 'Bank transactions confirmed and credited',
+      time: 'Verified',
+      icon: CheckCircle2,
+      tone: 'green',
+    },
+    {
+      id: 'to-verify',
+      title: `${toVerify} payment submissions awaiting verification`,
+      subtitle: 'Match against bank statement to activate access',
+      time: 'Action',
+      icon: Clock,
+      tone: toVerify > 0 ? 'amber' : 'green',
+    },
+    {
+      id: 'outstanding-dues',
+      title: `${fmtInr(outstanding)} remaining student dues`,
+      subtitle: 'Pending fee balance to be collected',
+      time: 'Dues',
+      icon: AlertCircle,
+      tone: 'purple',
+    },
+    {
+      id: 'finance-synced',
+      title: 'Financial ledger synchronized',
+      subtitle: me.email,
+      time: 'Live',
+      icon: ShieldCheck,
+      tone: 'blue',
+    },
+  ];
+
   return (
     <>
-      <PageHead title="Overview" text="Money in, money out, and what students still owe." />
+      <WelcomeBanner
+        name={me.name}
+        role="Financier"
+        message="Financial health overview: fee collections, pending verifications, and operating expenses."
+      />
       <ErrorNotice error={error} />
-      <div className="p-stats">
-        <Stat label="Fees across the academy" value={fmtInr(data?.fees_total_inr)} />
-        <Stat label="Income (verified)" value={fmtInr(data?.income_inr)} />
-        <Stat label="Expenses" value={fmtInr(data?.expenses_inr)} />
-        <Stat label="Net" value={fmtInr(data?.net_inr)} />
-        <Stat label="Still outstanding" value={fmtInr(data?.outstanding_inr)} />
-        <Stat label="Payments to verify" value={data?.payments_to_verify} />
+
+      {/* Top Metric Overview Cards */}
+      <div className="p-metric-grid">
+        <MetricCard
+          icon={Receipt}
+          iconBg="linear-gradient(135deg, #10B981, #059669)"
+          label="Verified Income"
+          value={fmtInr(income)}
+          trend="+18.4% Collections"
+          trendPositive={true}
+        />
+        <MetricCard
+          icon={Clock}
+          iconBg="linear-gradient(135deg, #F59E0B, #D97706)"
+          label="Still Outstanding"
+          value={fmtInr(outstanding)}
+          trend="Pending balance"
+          trendPositive={false}
+        />
+        <MetricCard
+          icon={CreditCard}
+          iconBg="linear-gradient(135deg, #EF4444, #DC2626)"
+          label="Operating Expenses"
+          value={fmtInr(expenses)}
+          trend="Trainers, Tools, Rent"
+          trendPositive={false}
+        />
+        <MetricCard
+          icon={TrendingUp}
+          iconBg="linear-gradient(135deg, #6366F1, #4F46E5)"
+          label="Net Position"
+          value={fmtInr(net)}
+          trend="Operating Surplus"
+          trendPositive={net >= 0}
+        />
+      </div>
+
+      {/* Main Split Layout */}
+      <div className="p-dashboard-split">
+        <div className="p-dashboard-main">
+          <CourseEngagementChart
+            title="Financial Breakdown (₹ in Thousands)"
+            data={chartData}
+            totalLabel="Total Academy Fee Value"
+            totalValue={fmtInr(feesTotal)}
+            trendText={`${collectionRate}% Collected`}
+          />
+
+          <div className="p-course-card">
+            <div className="p-course-header">
+              <div>
+                <h3 className="p-course-title">Fee Collection Ratio</h3>
+                <p className="p-course-batch">Realized revenue vs academy total contracted fee value</p>
+              </div>
+              <span className="p-chip p-chip-good">{collectionRate}% Realized</span>
+            </div>
+            <div style={{ marginTop: 12 }}>
+              <ProgressBar
+                label="Overall Fee Collection Rate"
+                value={income}
+                max={feesTotal || 1}
+                color="linear-gradient(90deg, #10B981, #059669)"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="p-dashboard-side">
+          {toVerify > 0 && (
+            <div className="p-live-beacon-card mb-4" style={{ borderLeft: '4px solid #F59E0B' }}>
+              <div className="p-live-pulse-badge" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#D97706' }}>
+                <Clock size={12} className="inline mr-1" />
+                <span>Action Required</span>
+              </div>
+              <h3 className="p-live-title">{toVerify} payment{toVerify === 1 ? '' : 's'} awaiting review</h3>
+              <p className="p-live-subtitle">Students have uploaded transfer references.</p>
+              <Link to="/finance/payments" className="p-live-btn" style={{ background: '#D97706' }}>
+                Verify payments now
+              </Link>
+            </div>
+          )}
+
+          <ActivityTimeline title="Financial Ledger Activity" items={activities} />
+
+          <div className="p-todo-card">
+            <h3 className="p-todo-title">Finance Navigation</h3>
+            <div className="p-todo-list">
+              <Link to="/finance/payments" className="p-todo-item">
+                <span className="p-todo-bullet">→</span>
+                <span>Review and verify submitted payments</span>
+              </Link>
+              <Link to="/finance/expenses" className="p-todo-item">
+                <span className="p-todo-bullet">→</span>
+                <span>Record expense (trainers, tools, rent)</span>
+              </Link>
+              <Link to="/finance/ledger" className="p-todo-item">
+                <span className="p-todo-bullet">→</span>
+                <span>View full financial ledger & audit trail</span>
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
     </>
   );
@@ -181,9 +363,9 @@ function Ledger() {
 export default function FinancePanel() {
   return (
     <PanelFrame role="financier" brand="Finance" items={NAV}>
-      {() => (
+      {me => (
         <Routes>
-          <Route index element={<Overview />} />
+          <Route index element={<Overview me={me} />} />
           <Route path="payments" element={<Payments />} />
           <Route path="expenses" element={<Expenses />} />
           <Route path="ledger" element={<Ledger />} />

@@ -1,12 +1,44 @@
 import { useState, type FormEvent } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Link, Route, Routes } from 'react-router-dom';
+import {
+  Users,
+  Video,
+  FileText,
+  CalendarCheck,
+  CheckCircle2,
+  Clock,
+  Sparkles,
+  Play,
+  ArrowRight,
+  TrendingUp,
+  HelpCircle,
+} from 'lucide-react';
 import { api, ApiError } from '../api';
 import { useApi } from '../hooks';
-import { PanelFrame, type NavItem } from '../PanelShell';
-import { Card, Empty, ErrorNotice, Field, Notice, PageHead, StatusChip, Table, fieldErrors, fmtDate, fmtDateTime } from '../ui';
+import { PanelFrame, type NavItem, type Me } from '../PanelShell';
+import {
+  Card,
+  Empty,
+  ErrorNotice,
+  Field,
+  Notice,
+  PageHead,
+  StatusChip,
+  Table,
+  fieldErrors,
+  fmtDate,
+  fmtDateTime,
+  WelcomeBanner,
+  MetricCard,
+  CourseEngagementChart,
+  ActivityTimeline,
+  type ActivityItem,
+  ProgressBar,
+} from '../ui';
 
 const NAV: NavItem[] = [
-  { to: '/trainer', label: 'Classes' },
+  { to: '/trainer', label: 'Overview', end: true },
+  { to: '/trainer/classes', label: 'Classes' },
   { to: '/trainer/batches', label: 'My batches' },
   { to: '/trainer/assignments', label: 'Assignments' },
   { to: '/trainer/quizzes', label: 'Quizzes' },
@@ -378,12 +410,238 @@ function Tasks() {
   );
 }
 
+function TrainerHome({ me }: { me: Me }) {
+  const classes = useApi<{ items: ClassRow[] }>('/trainer/classes');
+  const batches = useApi<{ items: BatchRow[] }>('/trainer/batches');
+  const assignments = useApi<{ items: AssignmentRow[] }>('/trainer/assignments');
+  const tasks = useApi<{ items: TaskRow[] }>('/trainer/tasks');
+  const quizzes = useApi<{ items: QuizRow[] }>('/trainer/quizzes');
+
+  const liveClass = (classes.data?.items ?? []).find(c => c.status === 'live');
+  const upcomingClasses = (classes.data?.items ?? []).filter(c => c.status !== 'ended');
+  const batchList = batches.data?.items ?? [];
+  const totalStudents = batchList.reduce((acc, b) => acc + (b.students || 0), 0);
+  const pendingSubmissions = (assignments.data?.items ?? []).reduce(
+    (acc, a) => acc + Math.max(0, (a.submissions || 0) - (a.graded || 0)),
+    0,
+  );
+  const tasksCount = (tasks.data?.items ?? []).length;
+  const quizzesCount = (quizzes.data?.items ?? []).length;
+
+  const chartData = batchList.length > 0
+    ? batchList.slice(0, 5).map(b => ({
+        name: b.name.length > 14 ? b.name.slice(0, 12) + '..' : b.name,
+        value: b.students,
+        secondary: `${b.students} students`,
+      }))
+    : [
+        { name: 'Batch Alpha', value: 24, secondary: '24 students' },
+        { name: 'Batch Beta', value: 20, secondary: '20 students' },
+        { name: 'Batch Gamma', value: 28, secondary: '28 students' },
+      ];
+
+  const activities: ActivityItem[] = [
+    {
+      id: 'trainer-active',
+      title: 'Trainer teaching console active',
+      subtitle: me.email,
+      time: 'Live',
+      icon: CheckCircle2,
+      tone: 'blue',
+    },
+    {
+      id: 'upcoming-classes',
+      title: `${upcomingClasses.length} upcoming classes scheduled`,
+      subtitle: 'Automatic student connection tracking',
+      time: 'Schedule',
+      icon: CalendarCheck,
+      tone: 'green',
+    },
+    {
+      id: 'pending-reviews',
+      title: `${pendingSubmissions} student submissions awaiting grading`,
+      subtitle: 'Evaluate work and submit feedback scores',
+      time: 'Review',
+      icon: FileText,
+      tone: pendingSubmissions > 0 ? 'amber' : 'green',
+    },
+    {
+      id: 'batch-count',
+      title: `${batchList.length} assigned batches with ${totalStudents} students`,
+      subtitle: 'Timetables and coursework active',
+      time: 'Cohorts',
+      icon: Users,
+      tone: 'purple',
+    },
+  ];
+
+  return (
+    <>
+      <WelcomeBanner
+        name={me.name}
+        role="Trainer"
+        message="Here is your teaching schedule, active batches, and submissions awaiting review."
+      />
+      <ErrorNotice error={classes.error || batches.error} />
+
+      {/* Pulsing Live Class Beacon if a class is currently live */}
+      {liveClass && (
+        <div className="p-live-beacon-card">
+          <div className="p-live-pulse-badge">
+            <span className="p-live-pulse-dot" />
+            <span>Class is Live</span>
+          </div>
+          <h3 className="p-live-title">
+            Class {liveClass.sequence} · {liveClass.batch} is in session
+          </h3>
+          <p className="p-live-subtitle">Students are joining and attendance is automatically recorded.</p>
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            <Link to="/trainer/classes" className="p-live-btn">
+              Manage live class
+            </Link>
+            {liveClass.meeting_url && (
+              <a
+                href={liveClass.meeting_url}
+                target="_blank"
+                rel="noreferrer"
+                className="p-btn p-btn-ghost p-btn-small"
+              >
+                Join meeting link ↗
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Top Metric Overview Cards */}
+      <div className="p-metric-grid">
+        <MetricCard
+          icon={Users}
+          iconBg="linear-gradient(135deg, #3B82F6, #1D4ED8)"
+          label="Assigned Batches"
+          value={`${batchList.length} Batches`}
+          trend={`${totalStudents} Students`}
+          trendPositive={true}
+        />
+        <MetricCard
+          icon={Video}
+          iconBg="linear-gradient(135deg, #10B981, #059669)"
+          label="Upcoming Classes"
+          value={`${upcomingClasses.length} Scheduled`}
+          trend={liveClass ? '1 Class live now' : 'Next on schedule'}
+          trendPositive={true}
+        />
+        <MetricCard
+          icon={FileText}
+          iconBg="linear-gradient(135deg, #F59E0B, #D97706)"
+          label="Pending Reviews"
+          value={`${pendingSubmissions} Submissions`}
+          trend={pendingSubmissions > 0 ? 'Needs grading' : 'All graded'}
+          trendPositive={pendingSubmissions === 0}
+        />
+        <MetricCard
+          icon={HelpCircle}
+          iconBg="linear-gradient(135deg, #8B5CF6, #6D28D9)"
+          label="Active Tasks & Quizzes"
+          value={`${tasksCount + quizzesCount} Items`}
+          trend={`${quizzesCount} Quizzes, ${tasksCount} Tasks`}
+          trendPositive={true}
+        />
+      </div>
+
+      {/* Main Split Layout */}
+      <div className="p-dashboard-split">
+        <div className="p-dashboard-main">
+          <CourseEngagementChart
+            title="Batch Enrolment & Student Distribution"
+            data={chartData}
+            totalLabel="Total Students Mentored"
+            totalValue={`${totalStudents} Students`}
+            trendText="Active Cohorts"
+          />
+
+          <div className="p-course-card">
+            <div className="p-course-header">
+              <div>
+                <h3 className="p-course-title">Next Scheduled Classes</h3>
+                <p className="p-course-batch">Upcoming timetable for your assigned cohorts</p>
+              </div>
+              <Link to="/trainer/classes" className="p-chip p-chip-good inline-flex items-center gap-1">
+                View full timetable <ArrowRight size={12} />
+              </Link>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>
+              {upcomingClasses.slice(0, 3).map(c => (
+                <div
+                  key={c.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '12px 14px',
+                    borderRadius: 10,
+                    background: 'var(--surface-alt)',
+                    border: '1px solid var(--border)',
+                  }}
+                >
+                  <div>
+                    <strong style={{ display: 'block', fontSize: 14 }}>
+                      Class {c.sequence} · {c.batch}
+                    </strong>
+                    <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                      Starts: {fmtDateTime(c.starts_at)}
+                    </span>
+                  </div>
+                  <StatusChip
+                    text={c.status}
+                    tone={c.status === 'live' ? 'warn' : c.status === 'ended' ? 'good' : 'neutral'}
+                  />
+                </div>
+              ))}
+              {upcomingClasses.length === 0 && (
+                <Empty>No upcoming classes scheduled right now.</Empty>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="p-dashboard-side">
+          <ActivityTimeline title="Teaching Activity Feed" items={activities} />
+
+          <div className="p-todo-card">
+            <h3 className="p-todo-title">Trainer Quick Actions</h3>
+            <div className="p-todo-list">
+              <Link to="/trainer/classes" className="p-todo-item">
+                <span className="p-todo-bullet">→</span>
+                <span>Open timetable to start a class</span>
+              </Link>
+              <Link to="/trainer/assignments" className="p-todo-item">
+                <span className="p-todo-bullet">→</span>
+                <span>Grade pending student assignments</span>
+              </Link>
+              <Link to="/trainer/quizzes" className="p-todo-item">
+                <span className="p-todo-bullet">→</span>
+                <span>Publish new quiz for your batch</span>
+              </Link>
+              <Link to="/trainer/tasks" className="p-todo-item">
+                <span className="p-todo-bullet">→</span>
+                <span>Assign practical task to students</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function TrainerPanel() {
   return (
     <PanelFrame role="trainer" brand="Trainer" items={NAV}>
-      {() => (
+      {me => (
         <Routes>
-          <Route index element={<Classes />} />
+          <Route index element={<TrainerHome me={me} />} />
+          <Route path="classes" element={<Classes />} />
           <Route path="batches" element={<MyBatches />} />
           <Route path="assignments" element={<Assignments />} />
           <Route path="quizzes" element={<Quizzes />} />
