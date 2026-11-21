@@ -517,7 +517,7 @@ function TrainerHome({ me }: { me: Me }) {
       <div className="p-metric-grid">
         <MetricCard
           icon={Users}
-          iconBg="linear-gradient(135deg, #3B82F6, #1D4ED8)"
+          variant={1}
           label="Assigned Batches"
           value={`${batchList.length} Batches`}
           trend={`${totalStudents} Students`}
@@ -525,7 +525,7 @@ function TrainerHome({ me }: { me: Me }) {
         />
         <MetricCard
           icon={Video}
-          iconBg="linear-gradient(135deg, #10B981, #059669)"
+          variant={2}
           label="Upcoming Classes"
           value={`${upcomingClasses.length} Scheduled`}
           trend={liveClass ? '1 Class live now' : 'Next on schedule'}
@@ -533,7 +533,7 @@ function TrainerHome({ me }: { me: Me }) {
         />
         <MetricCard
           icon={FileText}
-          iconBg="linear-gradient(135deg, #F59E0B, #D97706)"
+          variant={3}
           label="Pending Reviews"
           value={`${pendingSubmissions} Submissions`}
           trend={pendingSubmissions > 0 ? 'Needs grading' : 'All graded'}
@@ -541,7 +541,7 @@ function TrainerHome({ me }: { me: Me }) {
         />
         <MetricCard
           icon={HelpCircle}
-          iconBg="linear-gradient(135deg, #8B5CF6, #6D28D9)"
+          variant={4}
           label="Active Tasks & Quizzes"
           value={`${tasksCount + quizzesCount} Items`}
           trend={`${quizzesCount} Quizzes, ${tasksCount} Tasks`}

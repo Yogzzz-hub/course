@@ -106,7 +106,7 @@ function Overview({ me }: { me: Me }) {
       <div className="p-metric-grid">
         <MetricCard
           icon={Users}
-          iconBg="linear-gradient(135deg, #3B82F6, #1D4ED8)"
+          variant={1}
           label="Total Accounts"
           value={`${data?.users ?? 0} Users`}
           trend="All Roles"
@@ -114,7 +114,7 @@ function Overview({ me }: { me: Me }) {
         />
         <MetricCard
           icon={Layers}
-          iconBg="linear-gradient(135deg, #10B981, #059669)"
+          variant={2}
           label="Academy Batches"
           value={`${data?.batches ?? 0} Batches`}
           trend="Running"
@@ -122,7 +122,7 @@ function Overview({ me }: { me: Me }) {
         />
         <MetricCard
           icon={GraduationCap}
-          iconBg="linear-gradient(135deg, #6366F1, #4F46E5)"
+          variant={3}
           label="Enrolments"
           value={`${data?.enrolments ?? 0} Students`}
           trend="Active Lifecycle"
@@ -130,7 +130,7 @@ function Overview({ me }: { me: Me }) {
         />
         <MetricCard
           icon={CreditCard}
-          iconBg="linear-gradient(135deg, #8B5CF6, #6D28D9)"
+          variant={4}
           label="Verified Revenue"
           value={data ? `₹${data.verified_income_inr.toLocaleString('en-IN')}` : '—'}
           trend="Total Collections"

@@ -127,7 +127,7 @@ function Overview({ me }: { me: Me }) {
       <div className="p-metric-grid">
         <MetricCard
           icon={Users}
-          iconBg="linear-gradient(135deg, #3B82F6, #1D4ED8)"
+          variant={1}
           label="Total Users"
           value={`${totalUsers} Accounts`}
           trend="All Roles"
@@ -135,7 +135,7 @@ function Overview({ me }: { me: Me }) {
         />
         <MetricCard
           icon={Layers}
-          iconBg="linear-gradient(135deg, #10B981, #059669)"
+          variant={2}
           label="Active Batches"
           value={`${batches} Batches`}
           trend="In Operation"
@@ -143,7 +143,7 @@ function Overview({ me }: { me: Me }) {
         />
         <MetricCard
           icon={GraduationCap}
-          iconBg="linear-gradient(135deg, #6366F1, #4F46E5)"
+          variant={3}
           label="Active Enrolments"
           value={`${activeEnrolments} Students`}
           trend="In Training"
@@ -151,7 +151,7 @@ function Overview({ me }: { me: Me }) {
         />
         <MetricCard
           icon={ShieldCheck}
-          iconBg="linear-gradient(135deg, #8B5CF6, #6D28D9)"
+          variant={4}
           label="Staff & Faculty"
           value={`${staffUsers} Staff`}
           trend="Faculty & Ops"

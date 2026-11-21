@@ -147,7 +147,7 @@ function Overview({ me }: { me: Me }) {
       <div className="p-metric-grid">
         <MetricCard
           icon={Users}
-          iconBg="linear-gradient(135deg, #3B82F6, #1D4ED8)"
+          variant={1}
           label="Total Students"
           value={totalStudents ? `${totalStudents} Enrolled` : '0 Enrolled'}
           trend="+12% Growth"
@@ -155,7 +155,7 @@ function Overview({ me }: { me: Me }) {
         />
         <MetricCard
           icon={Layers}
-          iconBg="linear-gradient(135deg, #10B981, #059669)"
+          variant={2}
           label="Active Batches"
           value={`${runningBatches} Batches`}
           trend="In Session"
@@ -163,7 +163,7 @@ function Overview({ me }: { me: Me }) {
         />
         <MetricCard
           icon={Clock}
-          iconBg="linear-gradient(135deg, #F59E0B, #D97706)"
+          variant={3}
           label="Pending Payments"
           value={`${awaitingPayment} Students`}
           trend={awaitingPayment > 0 ? 'Awaiting verification' : 'Up to date'}
@@ -171,7 +171,7 @@ function Overview({ me }: { me: Me }) {
         />
         <MetricCard
           icon={Award}
-          iconBg="linear-gradient(135deg, #8B5CF6, #6D28D9)"
+          variant={4}
           label="Certificates Issued"
           value={`${certificatesIssued} Certified`}
           trend="Graduates"

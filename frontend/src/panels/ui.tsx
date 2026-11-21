@@ -97,7 +97,7 @@ export function WelcomeBanner({
       </div>
       <div className="p-welcome-right">
         <div className="p-welcome-badge">
-          <Sparkles size={14} className="text-amber-500 animate-spin-slow" />
+          <Sparkles size={14} className="animate-spin-slow" />
           <span>Active Term</span>
         </div>
       </div>
@@ -105,16 +105,18 @@ export function WelcomeBanner({
   );
 }
 
-/** Modern KPI Overview Card with colorful rounded icon square on left */
+/** Modern KPI Overview Card whose colors adapt 100% to the active theme */
 export function MetricCard({
   icon: Icon,
-  iconBg = 'linear-gradient(135deg, #3B82F6, #1D4ED8)',
+  variant = 1,
+  iconBg,
   label,
   value,
   trend,
   trendPositive = true,
 }: {
   icon: LucideIcon;
+  variant?: 1 | 2 | 3 | 4;
   iconBg?: string;
   label: string;
   value: ReactNode;
@@ -123,8 +125,11 @@ export function MetricCard({
 }) {
   return (
     <div className="p-metric-card">
-      <div className="p-metric-icon-box" style={{ background: iconBg }}>
-        <Icon size={22} className="text-white" />
+      <div
+        className={`p-metric-icon-box p-metric-icon-box--${variant}`}
+        style={iconBg ? { background: iconBg } : undefined}
+      >
+        <Icon size={22} />
       </div>
       <div className="p-metric-content">
         <span className="p-metric-label">{label}</span>
@@ -273,7 +278,7 @@ export function ActivityTimeline({
       <div className="p-activity-head">
         <h2 className="p-activity-title">{title}</h2>
         <div className="p-ai-summary-pill">
-          <Sparkles size={12} className="text-cyan-500" />
+          <Sparkles size={12} />
           <span>Live feed</span>
         </div>
       </div>

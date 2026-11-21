@@ -136,7 +136,7 @@ function Overview({ me }: { me: Me }) {
       <div className="p-metric-grid">
         <MetricCard
           icon={Receipt}
-          iconBg="linear-gradient(135deg, #10B981, #059669)"
+          variant={1}
           label="Verified Income"
           value={fmtInr(income)}
           trend="+18.4% Collections"
@@ -144,7 +144,7 @@ function Overview({ me }: { me: Me }) {
         />
         <MetricCard
           icon={Clock}
-          iconBg="linear-gradient(135deg, #F59E0B, #D97706)"
+          variant={2}
           label="Still Outstanding"
           value={fmtInr(outstanding)}
           trend="Pending balance"
@@ -152,7 +152,7 @@ function Overview({ me }: { me: Me }) {
         />
         <MetricCard
           icon={CreditCard}
-          iconBg="linear-gradient(135deg, #EF4444, #DC2626)"
+          variant={3}
           label="Operating Expenses"
           value={fmtInr(expenses)}
           trend="Trainers, Tools, Rent"
@@ -160,7 +160,7 @@ function Overview({ me }: { me: Me }) {
         />
         <MetricCard
           icon={TrendingUp}
-          iconBg="linear-gradient(135deg, #6366F1, #4F46E5)"
+          variant={4}
           label="Net Position"
           value={fmtInr(net)}
           trend="Operating Surplus"
@@ -192,7 +192,6 @@ function Overview({ me }: { me: Me }) {
                 label="Overall Fee Collection Rate"
                 value={income}
                 max={feesTotal || 1}
-                color="linear-gradient(90deg, #10B981, #059669)"
               />
             </div>
           </div>
@@ -200,14 +199,14 @@ function Overview({ me }: { me: Me }) {
 
         <div className="p-dashboard-side">
           {toVerify > 0 && (
-            <div className="p-live-beacon-card mb-4" style={{ borderLeft: '4px solid #F59E0B' }}>
-              <div className="p-live-pulse-badge" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#D97706' }}>
+            <div className="p-live-beacon-card mb-4">
+              <div className="p-live-pulse-badge">
                 <Clock size={12} className="inline mr-1" />
                 <span>Action Required</span>
               </div>
               <h3 className="p-live-title">{toVerify} payment{toVerify === 1 ? '' : 's'} awaiting review</h3>
               <p className="p-live-subtitle">Students have uploaded transfer references.</p>
-              <Link to="/finance/payments" className="p-live-btn" style={{ background: '#D97706' }}>
+              <Link to="/finance/payments" className="p-live-btn">
                 Verify payments now
               </Link>
             </div>

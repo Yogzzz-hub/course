@@ -180,11 +180,11 @@ function Home({ me }: { me: Me }) {
       <WelcomeBanner name={me.name} role="Student" />
       <ErrorNotice error={overview.error} />
 
-      {/* Top Metric Overview Cards (Image 3 KPIs) */}
+      {/* Top Metric Overview Cards (Derived 100% from active Theme) */}
       <div className="p-metric-grid">
         <MetricCard
           icon={BookOpen}
-          iconBg="linear-gradient(135deg, #3B82F6, #1D4ED8)"
+          variant={1}
           label="Active Courses"
           value={enrolments.length ? `${enrolments.length} Enrolled` : '0 Enrolled'}
           trend="Current term"
@@ -192,7 +192,7 @@ function Home({ me }: { me: Me }) {
         />
         <MetricCard
           icon={CalendarCheck}
-          iconBg="linear-gradient(135deg, #10B981, #059669)"
+          variant={2}
           label="Overall Attendance"
           value={`${overallAttendance}%`}
           trend={overallAttendance >= 75 ? '+4.2% On Track' : 'Needs attention'}
@@ -200,7 +200,7 @@ function Home({ me }: { me: Me }) {
         />
         <MetricCard
           icon={FileText}
-          iconBg="linear-gradient(135deg, #F59E0B, #D97706)"
+          variant={3}
           label="Pending Tasks"
           value={`${toSubmit + toTick} Tasks`}
           trend={toSubmit > 0 ? `${toSubmit} assignments` : 'All completed'}
@@ -208,7 +208,7 @@ function Home({ me }: { me: Me }) {
         />
         <MetricCard
           icon={Award}
-          iconBg="linear-gradient(135deg, #8B5CF6, #6D28D9)"
+          variant={4}
           label="Certification & Fees"
           value={totalBalance === 0 ? 'Clear' : fmtInr(totalBalance)}
           trend={totalBalance === 0 ? 'Certificate eligible' : 'Payment pending'}
