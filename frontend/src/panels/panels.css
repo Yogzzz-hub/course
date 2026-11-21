@@ -19,6 +19,9 @@
 
 main#main.panel-main {
   padding-top: 0;
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 .p-main {
@@ -26,8 +29,8 @@ main#main.panel-main {
   grid-template-columns: minmax(0, 1fr);
   align-content: start;
   gap: 24px;
-  padding: 32px clamp(20px, 3.5vw, 48px) 80px;
-  max-width: 1240px;
+  padding: 24px clamp(18px, 2.5vw, 44px) 60px;
+  max-width: 100%;
   width: 100%;
   box-sizing: border-box;
   min-width: 0;

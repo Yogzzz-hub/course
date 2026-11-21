@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, Route, Routes } from 'react-router-dom';
 import {
-  Users,
+  Users as UsersIcon,
   ShieldCheck,
   Layers,
   GraduationCap,
@@ -85,7 +85,7 @@ function Overview({ me }: { me: Me }) {
       title: `${totalUsers} total user accounts registered in database`,
       subtitle: 'Multi-role RBAC enabled with secure session auth',
       time: 'Live',
-      icon: Users,
+      icon: UsersIcon,
       tone: 'blue',
     },
     {
@@ -126,7 +126,7 @@ function Overview({ me }: { me: Me }) {
       {/* Top Metric Overview Cards */}
       <div className="p-metric-grid">
         <MetricCard
-          icon={Users}
+          icon={UsersIcon}
           variant={1}
           label="Total Users"
           value={`${totalUsers} Accounts`}

@@ -17,7 +17,6 @@ import {
   BookmarkCheck,
   Receipt,
   Settings,
-  Search,
   PanelLeftClose,
   PanelLeftOpen,
   Sparkles,
@@ -89,7 +88,6 @@ export function PanelShell({ brand, items, me, children }: { brand: string; item
       return false;
     }
   });
-  const [search, setSearch] = useState('');
   const [themePickerOpen, setThemePickerOpen] = useState(false);
   const [currentTheme, setCurrentTheme] = useState(() => document.documentElement.dataset.theme || 'theme-1');
   const [navStyle, setNavStyle] = useState<'brand' | 'light'>(() => {
@@ -140,9 +138,7 @@ export function PanelShell({ brand, items, me, children }: { brand: string; item
     navigate('/login');
   }
 
-  const filteredItems = items.filter(item =>
-    item.label.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredItems = items;
 
   const activeThemeMeta = themes.find(t => t.id === currentTheme) || themes[0];
   const userInitials = me.name
@@ -180,32 +176,6 @@ export function PanelShell({ brand, items, me, children }: { brand: string; item
             {collapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
           </button>
         </div>
-
-        {/* Quick Search Bar (Image 2 search style) */}
-        {!collapsed && (
-          <div className="p-side-search-wrap">
-            <div className="p-side-search">
-              <Search size={15} className="p-search-icon" />
-              <input
-                type="text"
-                placeholder="Search..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="p-search-input"
-              />
-              {search && (
-                <button
-                  type="button"
-                  className="p-search-clear"
-                  onClick={() => setSearch('')}
-                  aria-label="Clear search"
-                >
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Navigation list with Lucide icons */}
         <nav className="p-nav" aria-label={`${brand} sections`}>

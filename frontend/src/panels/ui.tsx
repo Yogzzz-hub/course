@@ -183,8 +183,11 @@ export function CourseEngagementChart({
               data={data}
               margin={{ top: 20, right: 10, left: -20, bottom: 20 }}
               onMouseMove={state => {
-                if (state.activeTooltipIndex !== undefined) {
-                  setHoverIndex(state.activeTooltipIndex);
+                if (state && state.activeTooltipIndex !== undefined) {
+                  const idx = typeof state.activeTooltipIndex === 'number' ? state.activeTooltipIndex : Number(state.activeTooltipIndex);
+                  if (!Number.isNaN(idx)) {
+                    setHoverIndex(idx);
+                  }
                 }
               }}
               onMouseLeave={() => setHoverIndex(null)}
