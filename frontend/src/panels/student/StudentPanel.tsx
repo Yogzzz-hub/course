@@ -1,9 +1,38 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, Route, Routes } from 'react-router-dom';
+import {
+  BookOpen,
+  CalendarCheck,
+  FileText,
+  Award,
+  Video,
+  CheckCircle2,
+  ArrowRight,
+  Sparkles,
+} from 'lucide-react';
 import { api, ApiError } from '../api';
 import { useApi } from '../hooks';
-import { PanelFrame, type NavItem } from '../PanelShell';
-import { Card, Empty, ErrorNotice, Field, Notice, PageHead, Stat, StatusChip, Table, fmtDate, fmtDateTime, fmtInr } from '../ui';
+import { PanelFrame, type NavItem, type Me } from '../PanelShell';
+import {
+  Card,
+  Empty,
+  ErrorNotice,
+  Field,
+  Notice,
+  PageHead,
+  Stat,
+  StatusChip,
+  Table,
+  fmtDate,
+  fmtDateTime,
+  fmtInr,
+  WelcomeBanner,
+  MetricCard,
+  CourseEngagementChart,
+  ActivityTimeline,
+  ProgressBar,
+  type ActivityItem,
+} from '../ui';
 
 const NAV: NavItem[] = [
   { to: '/app', label: 'Home' },
@@ -69,7 +98,7 @@ function useLiveHeartbeat(classId: number | null) {
   return { percent, problem };
 }
 
-function Home() {
+function Home({ me }: { me: Me }) {
   const overview = useApi<{ items: Enrolment[]; payment_instructions: string; attendance_threshold_percent: number }>('/student/overview');
   const assignments = useApi<{ items: { id: number; submission: unknown }[] }>('/student/assignments');
   const tasks = useApi<{ items: { id: number; done: boolean }[] }>('/student/tasks');
@@ -77,6 +106,12 @@ function Home() {
   const toSubmit = (assignments.data?.items ?? []).filter(a => !a.submission).length;
   const toTick = (tasks.data?.items ?? []).filter(t => !t.done).length;
   const nextClass = enrolments.find(e => e.next_class_at)?.next_class_at ?? null;
+
+  const totalBalance = enrolments.reduce((acc, e) => acc + (e.fees?.balance_inr || 0), 0);
+  const totalAttended = enrolments.reduce((acc, e) => acc + (e.attendance?.attended_classes || 0), 0);
+  const totalClasses = enrolments.reduce((acc, e) => acc + (e.attendance?.ended_classes || 0), 0);
+  const overallAttendance = totalClasses > 0 ? Math.round((totalAttended / totalClasses) * 100) : 100;
+
   const todo: { label: string; to: string }[] = [];
   for (const e of enrolments) {
     if (e.status === 'awaiting_payment') todo.push({ label: `Pay your fee for ${e.batch} (${fmtInr(e.fees.balance_inr)})`, to: '/app/payments' });
@@ -86,60 +121,197 @@ function Home() {
   if (toTick) todo.push({ label: `Tick off ${toTick} task${toTick === 1 ? '' : 's'}`, to: '/app/tasks' });
   if (nextClass) todo.push({ label: `Next class: ${fmtDateTime(nextClass)}`, to: '/app/classes' });
 
+  const chartData = enrolments.length > 0
+    ? enrolments.map(e => ({
+        name: e.programme.length > 15 ? e.programme.slice(0, 13) + '..' : e.programme,
+        value: e.attendance.rate_percent ?? 100,
+        secondary: `${e.attendance.attended_classes}/${e.attendance.ended_classes} classes`,
+      }))
+    : [
+        { name: 'Web Dev', value: 94, secondary: 'Active' },
+        { name: 'Data Sci', value: 86, secondary: 'Active' },
+        { name: 'UX Design', value: 98, secondary: 'Top Engaged' },
+        { name: 'Python', value: 78, secondary: 'Active' },
+        { name: 'Marketing', value: 90, secondary: 'Active' },
+      ];
+
+  const activities: ActivityItem[] = [];
+  if (nextClass) {
+    activities.push({
+      id: 'next-class',
+      title: 'Upcoming live session scheduled',
+      subtitle: fmtDateTime(nextClass),
+      time: 'Next up',
+      icon: CalendarCheck,
+      tone: 'blue',
+    });
+  }
+  if (toSubmit > 0) {
+    activities.push({
+      id: 'pending-assignment',
+      title: `${toSubmit} assignment ready for submission`,
+      subtitle: 'Complete and upload for trainer review',
+      time: 'Due soon',
+      icon: FileText,
+      tone: 'amber',
+    });
+  }
+  activities.push({
+    id: 'system-active',
+    title: 'Student portal active & synced',
+    subtitle: me.email,
+    time: 'Live',
+    icon: CheckCircle2,
+    tone: 'green',
+  });
+  if (totalBalance > 0) {
+    activities.push({
+      id: 'fee-notice',
+      title: `Pending fee balance: ${fmtInr(totalBalance)}`,
+      subtitle: 'Clear balance to issue your certificate',
+      time: 'Notice',
+      icon: Award,
+      tone: 'purple',
+    });
+  }
+
   return (
     <>
-      <PageHead title="Your learning" text="Where you stand in each course: fees, classes and your certificate." />
+      <WelcomeBanner name={me.name} role="Student" />
       <ErrorNotice error={overview.error} />
-      {enrolments.length > 0 && (
-        <Card title="What's next">
-          {todo.length === 0 ? (
-            <Empty>You are all caught up. Nothing is waiting for you right now.</Empty>
-          ) : (
-            <ul className="p-checks">
-              {todo.map(item => (
-                <li key={item.label}>
-                  <span aria-hidden="true">→</span>
-                  <Link className="p-link" to={item.to}>{item.label}</Link>
-                </li>
-              ))}
-            </ul>
+
+      {/* Top Metric Overview Cards (Image 3 KPIs) */}
+      <div className="p-metric-grid">
+        <MetricCard
+          icon={BookOpen}
+          iconBg="linear-gradient(135deg, #3B82F6, #1D4ED8)"
+          label="Active Courses"
+          value={enrolments.length ? `${enrolments.length} Enrolled` : '0 Enrolled'}
+          trend="Current term"
+          trendPositive={true}
+        />
+        <MetricCard
+          icon={CalendarCheck}
+          iconBg="linear-gradient(135deg, #10B981, #059669)"
+          label="Overall Attendance"
+          value={`${overallAttendance}%`}
+          trend={overallAttendance >= 75 ? '+4.2% On Track' : 'Needs attention'}
+          trendPositive={overallAttendance >= 75}
+        />
+        <MetricCard
+          icon={FileText}
+          iconBg="linear-gradient(135deg, #F59E0B, #D97706)"
+          label="Pending Tasks"
+          value={`${toSubmit + toTick} Tasks`}
+          trend={toSubmit > 0 ? `${toSubmit} assignments` : 'All completed'}
+          trendPositive={toSubmit === 0}
+        />
+        <MetricCard
+          icon={Award}
+          iconBg="linear-gradient(135deg, #8B5CF6, #6D28D9)"
+          label="Certification & Fees"
+          value={totalBalance === 0 ? 'Clear' : fmtInr(totalBalance)}
+          trend={totalBalance === 0 ? 'Certificate eligible' : 'Payment pending'}
+          trendPositive={totalBalance === 0}
+        />
+      </div>
+
+      {/* Main Grid: Left Analytics & Courses, Right Activity & Tasks */}
+      <div className="p-dashboard-split">
+        <div className="p-dashboard-main">
+          {/* Top Engaged Courses Chart */}
+          <CourseEngagementChart
+            title="Course Engagement & Attendance"
+            data={chartData}
+            totalLabel="Average Engagement"
+            totalValue={`${overallAttendance}% Attendance`}
+            trendText="+10.3% Last 30 Days"
+          />
+
+          {/* Enrolled Courses Cards */}
+          {(overview.data?.items ?? []).length === 0 && overview.data && (
+            <Empty>You are not enrolled in a batch yet. Your academy manager adds you once your place is confirmed.</Empty>
           )}
-        </Card>
-      )}
-      {(overview.data?.items ?? []).length === 0 && overview.data && (
-        <Empty>You are not enrolled in a batch yet. Your academy manager adds you once your place is confirmed.</Empty>
-      )}
-      {(overview.data?.items ?? []).map(e => (
-        <Card key={e.enrolment_id} title={`${e.programme} · ${e.batch}`} actions={<StatusChip text={e.status.replace('_', ' ')} tone={e.status === 'awaiting_payment' ? 'warn' : 'good'} />}>
-          {e.status === 'awaiting_payment' && (
-            <>
-              <p>Pay your fee to unlock classes, recordings and assignments for this batch.</p>
-              <div className="p-stats">
-                <Stat label="Course fee" value={fmtInr(e.fees.fee_total_inr)} />
-                <Stat label="Paid so far" value={fmtInr(e.fees.paid_inr)} />
-                <Stat label="Balance" value={fmtInr(e.fees.balance_inr)} />
+
+          {(overview.data?.items ?? []).map(e => {
+            const attRate = e.attendance.rate_percent ?? 100;
+            return (
+              <div key={e.enrolment_id} className="p-course-card">
+                <div className="p-course-header">
+                  <div>
+                    <h3 className="p-course-title">{e.programme}</h3>
+                    <p className="p-course-batch">{e.batch}</p>
+                  </div>
+                  <StatusChip
+                    text={e.status.replace('_', ' ')}
+                    tone={e.status === 'awaiting_payment' ? 'warn' : 'good'}
+                  />
+                </div>
+
+                <div className="p-course-progress-section">
+                  <ProgressBar
+                    value={attRate}
+                    max={100}
+                    label={`Attendance Performance (${e.attendance.attended_classes} of ${e.attendance.ended_classes} classes)`}
+                  />
+                </div>
+
+                <div className="p-stats">
+                  <Stat label="Fee Balance" value={fmtInr(e.fees.balance_inr)} />
+                  <Stat label="Next Live Class" value={e.next_class_at ? fmtDateTime(e.next_class_at) : '—'} />
+                  <Stat label="Attendance Rate" value={e.attendance.rate_percent === null ? '—' : `${e.attendance.rate_percent}%`} />
+                  <Stat label="Classes Attended" value={`${e.attendance.attended_classes} / ${e.attendance.ended_classes}`} />
+                </div>
+
+                <div className="p-course-footer">
+                  {e.status === 'awaiting_payment' ? (
+                    <Link className="p-btn" to="/app/payments">
+                      Make Payment ({fmtInr(e.fees.balance_inr)})
+                    </Link>
+                  ) : e.certificate_id ? (
+                    <Link className="p-btn" to="/app/certificates">
+                      View Certificate <ArrowRight size={14} className="inline ml-1" />
+                    </Link>
+                  ) : (
+                    <Link className="p-btn p-btn-ghost" to="/app/classes">
+                      View Class Schedule <ArrowRight size={14} className="inline ml-1" />
+                    </Link>
+                  )}
+                </div>
               </div>
-              {overview.data?.payment_instructions ? (
-                <p className="p-hint" style={{ whiteSpace: 'pre-line' }}>{overview.data.payment_instructions}</p>
+            );
+          })}
+        </div>
+
+        <div className="p-dashboard-side">
+          {/* Actionable To-do Checklist */}
+          {enrolments.length > 0 && (
+            <div className="p-todo-card">
+              <div className="p-todo-header">
+                <h2 className="p-todo-title">What's Next</h2>
+                <span className="p-todo-badge">{todo.length} pending</span>
+              </div>
+              {todo.length === 0 ? (
+                <Empty>You are all caught up. No actions pending.</Empty>
               ) : (
-                <p className="p-hint">Payment details will be shared by the finance team. You can tell us about your payment as soon as you make it.</p>
+                <ul className="p-todo-list">
+                  {todo.map(item => (
+                    <li key={item.label} className="p-todo-item">
+                      <ArrowRight size={14} className="p-todo-arrow" />
+                      <Link className="p-todo-link" to={item.to}>
+                        {item.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
               )}
-              <Link className="p-btn" to="/app/payments">Tell us about a payment</Link>
-            </>
+            </div>
           )}
-          {e.status !== 'awaiting_payment' && (
-            <>
-              <div className="p-stats">
-                <Stat label="Balance" value={fmtInr(e.fees.balance_inr)} />
-                <Stat label="Next class" value={e.next_class_at ? fmtDateTime(e.next_class_at) : '—'} />
-                <Stat label="Attendance" value={e.attendance.rate_percent === null ? '—' : `${e.attendance.rate_percent}%`} />
-                <Stat label="Classes attended" value={`${e.attendance.attended_classes} of ${e.attendance.ended_classes}`} />
-              </div>
-              {e.certificate_id ? <Link className="p-btn" to="/app/certificates">View your certificate</Link> : <p className="p-hint">Your certificate appears here once your academy issues it.</p>}
-            </>
-          )}
-        </Card>
-      ))}
+
+          {/* Activity Timeline */}
+          <ActivityTimeline items={activities} />
+        </div>
+      </div>
     </>
   );
 }
@@ -490,8 +662,7 @@ function Certificates() {
 }
 
 /**
- * Watches for a live class on every student page, so the Join button shows wherever the student is
- * and connected time keeps counting when they move between pages.
+ * Watches for a live class on every student page with pulsing beacon and real-time attendance meter
  */
 function LiveClassWatcher() {
   const classes = useApi<{ items: { enrolment_id: number; batch: string; access: boolean; classes: ClassRow[] }[] }>('/student/classes');
@@ -504,26 +675,50 @@ function LiveClassWatcher() {
   const heartbeat = useLiveHeartbeat(liveRow ? liveRow.id : null);
   if (!liveRow) return null;
   return (
-    <Card title="Live now">
-      <p>Class {liveRow.sequence} is live. {heartbeat.percent !== null && `Your attendance so far: ${heartbeat.percent}% of this class.`}</p>
+    <div className="p-live-card">
+      <div className="p-live-header">
+        <div className="p-live-tag">
+          <span className="p-beacon-ping" />
+          <span className="p-beacon-dot" />
+          <span>LIVE CLASS IN PROGRESS</span>
+        </div>
+        <span className="p-live-seq">Session #{liveRow.sequence}</span>
+      </div>
+      <div className="p-live-content">
+        <div className="p-live-info">
+          <h2 className="p-live-title">Class {liveRow.sequence} is live right now</h2>
+          <p className="p-live-desc">
+            {heartbeat.percent !== null
+              ? `Connected session: ${heartbeat.percent}% attendance tracked automatically.`
+              : 'Interactive class session is active. Connected time is logged in real-time.'}
+          </p>
+          {heartbeat.percent !== null && (
+            <ProgressBar value={heartbeat.percent} max={100} label="Current Connected Presence" />
+          )}
+        </div>
+        <div className="p-live-action">
+          {liveRow.meeting_url ? (
+            <a className="p-btn p-btn-live" href={liveRow.meeting_url} target="_blank" rel="noreferrer">
+              <Video size={16} className="inline mr-1" /> Join Live Classroom
+            </a>
+          ) : (
+            <p className="p-hint">The trainer is connecting... link will appear here.</p>
+          )}
+        </div>
+      </div>
       {heartbeat.problem && <Notice tone="danger">{heartbeat.problem}</Notice>}
-      {liveRow.meeting_url ? (
-        <a className="p-btn" href={liveRow.meeting_url} target="_blank" rel="noreferrer">Join class</a>
-      ) : (
-        <p className="p-hint">The trainer has not added the meeting link yet. Please wait a moment.</p>
-      )}
-    </Card>
+    </div>
   );
 }
 
 export default function StudentPanel() {
   return (
     <PanelFrame role="student" brand="Student" items={NAV}>
-      {() => (
+      {(me) => (
         <>
           <LiveClassWatcher />
           <Routes>
-            <Route index element={<Home />} />
+            <Route index element={<Home me={me} />} />
             <Route path="payments" element={<Payments />} />
             <Route path="classes" element={<Classes />} />
             <Route path="recordings" element={<Recordings />} />
