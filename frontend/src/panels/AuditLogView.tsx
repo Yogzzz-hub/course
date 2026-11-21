@@ -113,7 +113,13 @@ function download(entries: Entry[]) {
 }
 
 /** Shared audit log for the admin and super admin panels: search, filters, day-by-day timeline, CSV export. */
-export function AuditLogView({ endpoint, text }: { endpoint: string; text: string }) {
+export function AuditLogView({
+  endpoint = '/admin/audit-log?limit=300',
+  text = 'Who changed what, and when. Nothing here can be edited.',
+}: {
+  endpoint?: string;
+  text?: string;
+}) {
   const list = useApi<{ items: Entry[] }>(endpoint);
   const [query, setQuery] = useState('');
   const [group, setGroup] = useState<Group | 'all'>('all');
