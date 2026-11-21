@@ -9,6 +9,13 @@ import {
   CheckCircle2,
   ArrowRight,
   Sparkles,
+  PlayCircle,
+  Eye,
+  EyeOff,
+  XCircle,
+  Clock,
+  AlertTriangle,
+  Calendar,
 } from 'lucide-react';
 import { api, ApiError } from '../api';
 import { useApi } from '../hooks';
@@ -586,22 +593,73 @@ function Tasks() {
   );
 }
 
-interface QuizRowData { id: number; title: string; due_at: string | null; questions: { q: string; options: string[] }[]; attempt: { score: number; total: number } | null }
+interface QuizQuestion {
+  q: string;
+  options: string[];
+  answer_index?: number;
+  user_answer?: number | null;
+}
+
+interface QuizRowData {
+  id: number;
+  title: string;
+  batch_name?: string;
+  due_at: string | null;
+  questions: QuizQuestion[];
+  attempt: {
+    score: number;
+    total: number;
+    submitted_at?: string | null;
+    answers?: number[];
+  } | null;
+}
 
 function QuizCard({ quiz, onDone }: { quiz: QuizRowData; onDone: () => void }) {
   const [answers, setAnswers] = useState<(number | null)[]>(() => quiz.questions.map(() => null));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
-  const [result, setResult] = useState<{ score: number; total: number } | null>(null);
-  const attempt = quiz.attempt ?? result;
+  const [isTaking, setIsTaking] = useState(false);
+  const [showSolutions, setShowSolutions] = useState(false);
+  const [solutions, setSolutions] = useState<{
+    score: number;
+    total: number;
+    submitted_at?: string | null;
+    answers?: number[];
+    questions: QuizQuestion[];
+  } | null>(null);
+  const [loadingSolutions, setLoadingSolutions] = useState(false);
+
+  const attempt = quiz.attempt || solutions;
+  const isMissed = !attempt && Boolean(quiz.due_at && new Date(quiz.due_at).getTime() < Date.now());
+  const isUpcoming = !attempt && !isMissed;
+
+  const answeredCount = answers.filter(a => a !== null).length;
+  const allAnswered = answeredCount === quiz.questions.length && quiz.questions.length > 0;
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (!allAnswered) return;
     setBusy(true);
     setError(null);
     try {
-      const response = await api<{ score: number; total: number }>(`/student/quizzes/${quiz.id}/attempt`, { body: { answers: answers.map(a => a ?? 0) } });
-      setResult(response);
+      await api<{ score: number; total: number }>(`/student/quizzes/${quiz.id}/attempt`, {
+        body: { answers: answers.map(a => a ?? 0) },
+      });
+      // Fetch full solutions right away so the student can review
+      try {
+        const sol = await api<{
+          score: number;
+          total: number;
+          submitted_at?: string | null;
+          answers?: number[];
+          questions: QuizQuestion[];
+        }>(`/student/quizzes/${quiz.id}/solutions`);
+        setSolutions(sol);
+        setShowSolutions(true);
+      } catch {
+        // Fallback
+      }
+      setIsTaking(false);
       onDone();
     } catch (caught) {
       setError(caught as ApiError);
@@ -610,41 +668,335 @@ function QuizCard({ quiz, onDone }: { quiz: QuizRowData; onDone: () => void }) {
     }
   }
 
+  async function toggleSolutions() {
+    if (showSolutions) {
+      setShowSolutions(false);
+      return;
+    }
+    // Check if questions already have answer_index
+    const hasAnswers = quiz.questions.some(q => q.answer_index !== undefined);
+    if (hasAnswers) {
+      setShowSolutions(true);
+      return;
+    }
+    // Fetch solutions from endpoint
+    setLoadingSolutions(true);
+    try {
+      const sol = await api<{
+        score: number;
+        total: number;
+        submitted_at?: string | null;
+        answers?: number[];
+        questions: QuizQuestion[];
+      }>(`/student/quizzes/${quiz.id}/solutions`);
+      setSolutions(sol);
+      setShowSolutions(true);
+    } catch (caught) {
+      setError(caught as ApiError);
+    } finally {
+      setLoadingSolutions(false);
+    }
+  }
+
+  const questionsToReview = solutions?.questions || quiz.questions;
+  const scorePercent = attempt && attempt.total > 0 ? Math.round((attempt.score / attempt.total) * 100) : 0;
+
   return (
-    <Card title={quiz.title} actions={attempt ? <StatusChip text={`Score ${attempt.score} / ${attempt.total}`} tone="good" /> : <StatusChip text="Open" tone="warn" />}>
-      {quiz.due_at && <p className="p-muted">Due {fmtDateTime(quiz.due_at)}</p>}
-      {attempt ? (
-        <p>You scored {attempt.score} out of {attempt.total}. Your trainer can see your attempt.</p>
-      ) : (
-        <form onSubmit={submit}>
-          <ErrorNotice error={error} />
-          {quiz.questions.map((question, qIndex) => (
-            <fieldset key={qIndex} className="p-card" style={{ margin: '10px 0', padding: 12 }}>
-              <legend><strong>{qIndex + 1}. {question.q}</strong></legend>
-              {question.options.map((option, oIndex) => (
-                <label key={oIndex} className="p-row" style={{ margin: '4px 0' }}>
-                  <input type="radio" name={`q-${quiz.id}-${qIndex}`} checked={answers[qIndex] === oIndex} onChange={() => setAnswers(current => current.map((v, i) => (i === qIndex ? oIndex : v)))} />
-                  {option}
-                </label>
-              ))}
-            </fieldset>
-          ))}
-          <button className="p-btn" type="submit" disabled={busy || answers.some(a => a === null)}>{busy ? 'Submitting…' : 'Submit answers'}</button>
-          <p className="p-hint">You can submit once, so check your answers first.</p>
-        </form>
+    <div className={`p-quiz-card ${attempt ? 'p-quiz-card--completed' : isMissed ? 'p-quiz-card--missed' : 'p-quiz-card--upcoming'}`}>
+      <div className="p-quiz-header">
+        <div className="p-quiz-title-group">
+          <div className="p-quiz-meta-row">
+            {quiz.batch_name && <span className="p-quiz-batch-badge">{quiz.batch_name}</span>}
+            <span className="p-quiz-qcount-badge">{quiz.questions.length} Questions</span>
+          </div>
+          <h2 className="p-quiz-title">{quiz.title}</h2>
+          <div className="p-quiz-due-row">
+            <Clock size={13} className="inline opacity-70" />
+            {attempt ? (
+              <span>Completed {attempt.submitted_at ? fmtDateTime(attempt.submitted_at) : ''}</span>
+            ) : isMissed ? (
+              <span className="p-quiz-missed-text">Deadline passed {quiz.due_at ? fmtDateTime(quiz.due_at) : ''}</span>
+            ) : (
+              <span>Due {quiz.due_at ? fmtDateTime(quiz.due_at) : 'Open submission'}</span>
+            )}
+          </div>
+        </div>
+
+        <div className="p-quiz-status-box">
+          {attempt ? (
+            <StatusChip
+              text={`Score ${attempt.score} / ${attempt.total}`}
+              tone={scorePercent >= 75 ? 'good' : scorePercent >= 50 ? 'warn' : 'bad'}
+            />
+          ) : isMissed ? (
+            <StatusChip text="Missed" tone="bad" />
+          ) : (
+            <StatusChip text="Upcoming" tone="warn" />
+          )}
+        </div>
+      </div>
+
+      {/* When Completed: View Score Banner & Detailed Answers Toggle */}
+      {attempt && (
+        <div className="p-quiz-completed-body">
+          <div className="p-quiz-score-summary">
+            <div className="p-quiz-score-pill">
+              <CheckCircle2 size={18} className="p-quiz-check-icon" />
+              <span>
+                You scored <strong>{attempt.score}</strong> out of <strong>{attempt.total}</strong> ({scorePercent}%). Your trainer can see your attempt.
+              </span>
+            </div>
+            <button
+              type="button"
+              className="p-btn p-btn-ghost p-btn-small"
+              onClick={toggleSolutions}
+              disabled={loadingSolutions}
+            >
+              {loadingSolutions ? (
+                'Loading answers…'
+              ) : showSolutions ? (
+                <>
+                  <EyeOff size={14} className="mr-1 inline" /> Hide Solutions
+                </>
+              ) : (
+                <>
+                  <Eye size={14} className="mr-1 inline" /> View Score & Correct Answers
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Detailed Question Review */}
+          {showSolutions && (
+            <div className="p-quiz-solutions-pane">
+              <div className="p-quiz-solutions-head-row">
+                <h3 className="p-quiz-solutions-heading">Question-by-Question Review</h3>
+                <span className="p-quiz-solutions-score-tag">
+                  Score: {attempt.score} / {attempt.total} ({scorePercent}%)
+                </span>
+              </div>
+              <div className="p-quiz-solutions-list">
+                {questionsToReview.map((q, qIndex) => {
+                  const isCorrect = q.user_answer !== undefined && q.user_answer !== null && q.user_answer === q.answer_index;
+                  return (
+                    <div
+                      key={qIndex}
+                      className={`p-quiz-sol-card ${isCorrect ? 'p-quiz-sol-card--correct' : 'p-quiz-sol-card--wrong'}`}
+                    >
+                      <div className="p-quiz-sol-header">
+                        <span className="p-quiz-sol-num">Question {qIndex + 1}</span>
+                        <span className={`p-quiz-sol-tag ${isCorrect ? 'p-quiz-sol-tag--good' : 'p-quiz-sol-tag--bad'}`}>
+                          {isCorrect ? '✓ Correct (+1)' : '✗ Incorrect (0)'}
+                        </span>
+                      </div>
+                      <p className="p-quiz-sol-text">{q.q}</p>
+                      <div className="p-quiz-sol-options">
+                        {q.options.map((opt, oIndex) => {
+                          const isCorrectChoice = oIndex === q.answer_index;
+                          const isUserChoice = oIndex === q.user_answer;
+                          let choiceClass = 'p-quiz-sol-opt';
+                          if (isCorrectChoice) choiceClass += ' p-quiz-sol-opt--correct';
+                          if (isUserChoice && !isCorrectChoice) choiceClass += ' p-quiz-sol-opt--wrong';
+
+                          return (
+                            <div key={oIndex} className={choiceClass}>
+                              <span className="p-quiz-sol-letter">{String.fromCharCode(65 + oIndex)}</span>
+                              <span className="p-quiz-sol-opt-text">{opt}</span>
+                              {isCorrectChoice && <span className="p-quiz-ans-badge p-quiz-ans-badge--correct">Correct Answer</span>}
+                              {isUserChoice && !isCorrectChoice && <span className="p-quiz-ans-badge p-quiz-ans-badge--wrong">Your Answer</span>}
+                              {isUserChoice && isCorrectChoice && <span className="p-quiz-ans-badge p-quiz-ans-badge--user">Your Answer</span>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
       )}
-    </Card>
+
+      {/* When Upcoming: Take Quiz Interface */}
+      {isUpcoming && (
+        <div className="p-quiz-upcoming-body">
+          <ErrorNotice error={error} />
+          {!isTaking ? (
+            <div className="p-quiz-preview-bar">
+              <p className="p-quiz-preview-desc">
+                Short multiple-choice check from your trainer. You can submit once, so verify your answers before submitting.
+              </p>
+              <button
+                type="button"
+                className="p-btn p-btn-small"
+                onClick={() => setIsTaking(true)}
+              >
+                <PlayCircle size={15} className="mr-1 inline" /> Take Quiz
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={submit} className="p-quiz-taking-form">
+              <div className="p-quiz-progress-head">
+                <span className="font-semibold text-sm">
+                  {answeredCount} of {quiz.questions.length} questions answered
+                </span>
+                <span className="text-xs text-muted">
+                  {allAnswered ? 'All answered! Ready to submit.' : 'Please select an option for each question.'}
+                </span>
+              </div>
+              <ProgressBar value={answeredCount} max={quiz.questions.length} />
+
+              <div className="p-quiz-questions-stack">
+                {quiz.questions.map((question, qIndex) => (
+                  <fieldset key={qIndex} className="p-quiz-q-box">
+                    <legend className="p-quiz-q-legend">
+                      <strong>Question {qIndex + 1}.</strong> {question.q}
+                    </legend>
+                    <div className="p-quiz-radio-list">
+                      {question.options.map((option, oIndex) => {
+                        const isSelected = answers[qIndex] === oIndex;
+                        return (
+                          <label
+                            key={oIndex}
+                            className={`p-quiz-radio-card ${isSelected ? 'p-quiz-radio-card--selected' : ''}`}
+                          >
+                            <input
+                              type="radio"
+                              name={`quiz-${quiz.id}-q-${qIndex}`}
+                              checked={isSelected}
+                              onChange={() =>
+                                setAnswers(curr =>
+                                  curr.map((val, idx) => (idx === qIndex ? oIndex : val))
+                                )
+                              }
+                            />
+                            <span className="p-quiz-radio-letter">{String.fromCharCode(65 + oIndex)}</span>
+                            <span className="p-quiz-radio-text">{option}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </fieldset>
+                ))}
+              </div>
+
+              <div className="p-quiz-form-actions">
+                <button
+                  type="submit"
+                  className="p-btn"
+                  disabled={busy || !allAnswered}
+                >
+                  {busy ? 'Submitting…' : 'Submit Answers'}
+                </button>
+                <button
+                  type="button"
+                  className="p-btn p-btn-ghost"
+                  onClick={() => setIsTaking(false)}
+                  disabled={busy}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      )}
+
+      {/* When Missed: Notice */}
+      {isMissed && (
+        <div className="p-quiz-missed-body">
+          <Notice tone="danger">
+            The deadline for this quiz closed on {quiz.due_at ? fmtDateTime(quiz.due_at) : 'the scheduled date'}. Please contact your trainer if you need an evaluation unlock.
+          </Notice>
+        </div>
+      )}
+    </div>
   );
 }
 
 function Quizzes() {
   const list = useApi<{ items: QuizRowData[] }>('/student/quizzes');
+  const [filter, setFilter] = useState<'all' | 'upcoming' | 'completed' | 'missed'>('all');
+
+  const items = list.data?.items ?? [];
+
+  function getStatus(q: QuizRowData): 'completed' | 'upcoming' | 'missed' {
+    if (q.attempt) return 'completed';
+    if (q.due_at && new Date(q.due_at).getTime() < Date.now()) return 'missed';
+    return 'upcoming';
+  }
+
+  const allCount = items.length;
+  const upcomingCount = items.filter(q => getStatus(q) === 'upcoming').length;
+  const completedCount = items.filter(q => getStatus(q) === 'completed').length;
+  const missedCount = items.filter(q => getStatus(q) === 'missed').length;
+
+  const filteredItems = items.filter(q => {
+    if (filter === 'all') return true;
+    return getStatus(q) === filter;
+  });
+
   return (
     <>
-      <PageHead title="Quizzes" text="Short multiple-choice checks from your trainer. You can submit each quiz once." />
+      <div className="p-quiz-page-head">
+        <h1 className="p-quiz-page-title">Quizzes & Knowledge Checks</h1>
+        <p className="p-quiz-page-desc">
+          Short multiple-choice checks from your trainer. Filter by upcoming, completed, or missed, and review solutions after submission.
+        </p>
+
+        {/* Status Filter Tabs Bar */}
+        <div className="p-tabs-bar" role="tablist" aria-label="Quiz status filters">
+          <button
+            type="button"
+            className={`p-tab-btn ${filter === 'all' ? 'p-tab-btn--active' : ''}`}
+            onClick={() => setFilter('all')}
+          >
+            All <span className="p-tab-count">{allCount}</span>
+          </button>
+          <button
+            type="button"
+            className={`p-tab-btn ${filter === 'upcoming' ? 'p-tab-btn--active' : ''}`}
+            onClick={() => setFilter('upcoming')}
+          >
+            Upcoming <span className="p-tab-count">{upcomingCount}</span>
+          </button>
+          <button
+            type="button"
+            className={`p-tab-btn ${filter === 'completed' ? 'p-tab-btn--active' : ''}`}
+            onClick={() => setFilter('completed')}
+          >
+            Completed <span className="p-tab-count">{completedCount}</span>
+          </button>
+          <button
+            type="button"
+            className={`p-tab-btn ${filter === 'missed' ? 'p-tab-btn--active' : ''}`}
+            onClick={() => setFilter('missed')}
+          >
+            Missed <span className="p-tab-count">{missedCount}</span>
+          </button>
+        </div>
+      </div>
+
       <ErrorNotice error={list.error} />
-      {(list.data?.items ?? []).length === 0 && list.data && <Empty>No quizzes yet.</Empty>}
-      {(list.data?.items ?? []).map(q => <QuizCard key={q.id} quiz={q} onDone={list.reload} />)}
+
+      {filteredItems.length === 0 && list.data && (
+        <Empty>
+          {filter === 'all'
+            ? 'No quizzes yet.'
+            : filter === 'upcoming'
+            ? 'No upcoming quizzes. You are all caught up!'
+            : filter === 'completed'
+            ? 'No completed quizzes yet. Complete an upcoming quiz to view your score and solutions here.'
+            : 'No missed quizzes. You have stayed on top of all deadlines!'}
+        </Empty>
+      )}
+
+      <div className="p-quiz-list">
+        {filteredItems.map(q => (
+          <QuizCard key={q.id} quiz={q} onDone={list.reload} />
+        ))}
+      </div>
     </>
   );
 }

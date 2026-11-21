@@ -368,14 +368,40 @@ def quizzes(user: User = STUDENT, db: Session = Depends(get_db)):
     items = []
     for quiz in db.scalars(select(Quiz).where(Quiz.batch_id.in_(batch_ids)).order_by(Quiz.created_at.desc())).all():
         attempt = db.scalar(select(QuizAttempt).where(QuizAttempt.quiz_id == quiz.id, QuizAttempt.user_id == user.id))
+        batch = db.get(Batch, quiz.batch_id)
+        
+        # When attempted, expose the correct answers and student's selections so they can review solutions!
+        if attempt:
+            questions_payload = [
+                {
+                    "q": q["q"],
+                    "options": q["options"],
+                    "answer_index": q.get("answer_index", 0),
+                    "user_answer": attempt.answers[i] if attempt.answers and i < len(attempt.answers) else None,
+                }
+                for i, q in enumerate(quiz.questions)
+            ]
+        else:
+            # Before submission, do not leak the answer key
+            questions_payload = [{"q": q["q"], "options": q["options"]} for q in quiz.questions]
+
         items.append(
             {
                 "id": quiz.id,
                 "title": quiz.title,
+                "batch_name": batch.name if batch else "",
                 "due_at": quiz.due_at.isoformat() + "Z" if quiz.due_at else None,
-                # Questions are sent without answers; the answer key never leaves the server.
-                "questions": [{"q": q["q"], "options": q["options"]} for q in quiz.questions],
-                "attempt": {"score": attempt.score, "total": attempt.total} if attempt else None,
+                "questions": questions_payload,
+                "attempt": (
+                    {
+                        "score": attempt.score,
+                        "total": attempt.total,
+                        "submitted_at": attempt.submitted_at.isoformat() + "Z" if attempt.submitted_at else None,
+                        "answers": attempt.answers,
+                    }
+                    if attempt
+                    else None
+                ),
             }
         )
     return {"items": items}
@@ -395,6 +421,31 @@ def attempt_quiz(quiz_id: int, body: AttemptIn, user: User = STUDENT, db: Sessio
     db.add(attempt)
     db.commit()
     return {"score": score, "total": len(quiz.questions)}
+
+
+@router.get("/quizzes/{quiz_id}/solutions")
+def quiz_solutions(quiz_id: int, user: User = STUDENT, db: Session = Depends(get_db)):
+    quiz = db.get(Quiz, quiz_id)
+    if quiz is None or quiz.batch_id not in active_batch_ids(db, user):
+        raise ApiError(404, "NOT_FOUND", "That quiz could not be found.")
+    attempt = db.scalar(select(QuizAttempt).where(QuizAttempt.quiz_id == quiz.id, QuizAttempt.user_id == user.id))
+    if attempt is None:
+        raise ApiError(403, "FORBIDDEN", "You must complete the quiz before viewing the solutions.")
+    return {
+        "score": attempt.score,
+        "total": attempt.total,
+        "submitted_at": attempt.submitted_at.isoformat() + "Z" if attempt.submitted_at else None,
+        "answers": attempt.answers,
+        "questions": [
+            {
+                "q": q["q"],
+                "options": q["options"],
+                "answer_index": q.get("answer_index", 0),
+                "user_answer": attempt.answers[i] if i < len(attempt.answers) else None,
+            }
+            for i, q in enumerate(quiz.questions)
+        ],
+    }
 
 
 @router.get("/certificates")
