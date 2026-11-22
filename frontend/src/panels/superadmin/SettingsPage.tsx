@@ -130,6 +130,17 @@ export function SettingsPage() {
     return () => window.clearTimeout(timer);
   }, [saved]);
 
+  // Lock scrolling on the main panel container so the settings dashboard remains static
+  useEffect(() => {
+    const main = document.querySelector('.p-main');
+    if (main) {
+      main.classList.add('p-main--static');
+      return () => {
+        main.classList.remove('p-main--static');
+      };
+    }
+  }, []);
+
   function change<K extends keyof Settings>(key: K, value: Settings[K]) {
     setSaved(false);
     setDraft(old => {
@@ -166,24 +177,6 @@ export function SettingsPage() {
 
   return (
     <div className="st">
-      <div className="st-top">
-        <PageHead title="Settings" text="Rules that apply across the academy." />
-        {saved && !dirty && <p className="st-toast" role="status">Settings saved.</p>}
-        {dirty && (
-          <div className="st-bar" role="region" aria-label="Unsaved changes">
-            <div className="st-bar-text">
-              <strong>Unsaved changes</strong>
-              <span title={changes.join(' · ')}>{changes.join(' · ')}</span>
-            </div>
-            <button type="button" className="p-btn p-btn-ghost p-btn-small" onClick={() => { setDraft({}); setError(null); }} disabled={busy}>
-              <RotateCcw size={14} aria-hidden="true" /> Discard
-            </button>
-            <button type="button" className="p-btn p-btn-small" onClick={save} disabled={busy || Object.keys(problems).length > 0}>
-              <Save size={14} aria-hidden="true" /> {busy ? 'Saving…' : 'Save settings'}
-            </button>
-          </div>
-        )}
-      </div>
       <ErrorNotice error={error} />
 
       <div className="st-grid">
@@ -273,6 +266,33 @@ export function SettingsPage() {
             </div>
           </div>
         </Section>
+      </div>
+
+      <div className="st-dock" aria-live="polite">
+        {!dirty && !saved && (
+          <div className="st-status-dock">
+            <span className="st-status-item">
+              <ShieldCheck size={14} className="st-status-icon" aria-hidden="true" />
+              <span>Platform rules & payment instructions are synchronized and active</span>
+            </span>
+            <span className="st-status-sub">Changes apply across all roles instantly upon save</span>
+          </div>
+        )}
+        {saved && !dirty && <p className="st-toast" role="status">Settings saved.</p>}
+        {dirty && (
+          <div className="st-bar" role="region" aria-label="Unsaved changes">
+            <div className="st-bar-text">
+              <strong>Unsaved changes</strong>
+              <span title={changes.join(' · ')}>{changes.join(' · ')}</span>
+            </div>
+            <button type="button" className="p-btn p-btn-ghost p-btn-small" onClick={() => { setDraft({}); setError(null); }} disabled={busy}>
+              <RotateCcw size={14} aria-hidden="true" /> Discard
+            </button>
+            <button type="button" className="p-btn p-btn-small" onClick={save} disabled={busy || Object.keys(problems).length > 0}>
+              <Save size={14} aria-hidden="true" /> {busy ? 'Saving…' : 'Save settings'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

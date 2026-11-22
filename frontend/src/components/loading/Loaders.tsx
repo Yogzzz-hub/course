@@ -4,6 +4,7 @@ import { LogoMark } from '../LogoMark';
 import { academy } from '../../config/academy';
 import { DetectiveRibbon } from './DetectiveRibbon';
 import { useLoadingState } from './loadingStore';
+import { PanelSkeleton, type SkeletonKind } from './PanelSkeletons';
 import './loading.css';
 
 const STAFF_PATH = /^\/(trainer|manager|finance|admin|superadmin)(\/|$)/;
@@ -81,30 +82,18 @@ export function NavigationLoader() {
  * Placeholder laid over a panel's content area while a screen waits for data it has never shown.
  * It hides the half-built screen, so "nothing here yet" is never shown while data is still on its way.
  */
-export function PanelLoader() {
+export function PanelLoader({ kind = 'table' }: { kind?: SkeletonKind }) {
   const staff = useStaffLook();
   const { line, slow } = useSearchText();
   return (
     <div className="ld-panel" role="status" aria-live="polite" aria-busy="true">
-      <div className="ld-skel" aria-hidden="true">
-        <b className="ld-skel-title" />
-        <div className="ld-skel-stats"><b /><b /><b /></div>
-        <b className="ld-skel-card" />
-        <b className="ld-skel-card ld-skel-card-short" />
-      </div>
+      <div aria-hidden="true"><PanelSkeleton kind={kind} /></div>
       <div className="ld-panel-mascot">
         <DetectiveRibbon staff={staff} slow={slow} className="dr-mini" />
         <p>{slow ? 'Still searching… check your connection.' : line}</p>
       </div>
     </div>
   );
-}
-
-/** Thin bar across the top of the screen while any panel request is running. */
-export function TopLoadingBar() {
-  const { total, pages } = useLoadingState();
-  if (total === 0 && pages === 0) return null;
-  return <div className="ld-top" role="progressbar" aria-label="Loading" aria-busy="true"><i /></div>;
 }
 
 /** Tiny magnifying glass for buttons that are busy. */

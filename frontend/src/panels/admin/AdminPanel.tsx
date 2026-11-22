@@ -9,6 +9,11 @@ import {
   Lock,
   ArrowRight,
   TrendingUp,
+  CreditCard,
+  Search,
+  ExternalLink,
+  RefreshCw,
+  Eye,
 } from 'lucide-react';
 import { api, ApiError } from '../api';
 import { useApi } from '../hooks';
@@ -37,6 +42,7 @@ import {
 
 const NAV: NavItem[] = [
   { to: '/admin/overview', label: 'Overview' },
+  { to: '/admin/portals', label: 'Portals & Switchboard' },
   { to: '/admin/users', label: 'Users' },
   { to: '/admin/audit-log', label: 'Audit log' },
 ];
@@ -202,6 +208,10 @@ function Overview({ me }: { me: Me }) {
           <div className="p-todo-card">
             <h3 className="p-todo-title">Quick Administration</h3>
             <div className="p-todo-list">
+              <Link to="/admin/portals" className="p-todo-item">
+                <span className="p-todo-bullet">→</span>
+                <span>Open portals & switch into student/faculty logins</span>
+              </Link>
               <Link to="/admin/users" className="p-todo-item">
                 <span className="p-todo-bullet">→</span>
                 <span>Create new staff or student account</span>
@@ -311,6 +321,329 @@ function Users() {
   );
 }
 
+interface PortalCardMeta {
+  role: string;
+  name: string;
+  badge: string;
+  description: string;
+  icon: typeof GraduationCap;
+  color: string;
+  homeUrl: string;
+}
+
+const SWITCHBOARD_PORTALS: PortalCardMeta[] = [
+  {
+    role: 'student',
+    name: 'Student Portal',
+    badge: 'Learning Hub',
+    description: 'Classes, timetable, fees, submitted assignments & quiz scores',
+    icon: GraduationCap,
+    color: '#7c3aed',
+    homeUrl: '/app',
+  },
+  {
+    role: 'trainer',
+    name: 'Trainer Portal',
+    badge: 'Faculty',
+    description: 'Live classes, assignments grading, student quizzes & attendance',
+    icon: UsersIcon,
+    color: '#0891b2',
+    homeUrl: '/trainer',
+  },
+  {
+    role: 'manager',
+    name: 'Manager Portal',
+    badge: 'Operations',
+    description: 'Programmes, batches scheduling, student enrolments & certificates',
+    icon: Layers,
+    color: '#4f46e5',
+    homeUrl: '/manager',
+  },
+  {
+    role: 'financier',
+    name: 'Finance Portal',
+    badge: 'Accounts',
+    description: 'Fee payment verifications, operational expenses & financial ledger',
+    icon: CreditCard,
+    color: '#059669',
+    homeUrl: '/finance',
+  },
+];
+
+function PortalsSwitchboard({ me }: { me: Me }) {
+  const [activeRole, setActiveRole] = useState<string>('student');
+  const [search, setSearch] = useState<string>('');
+  const [activeOnly, setActiveOnly] = useState<boolean>(true);
+  const [switchingId, setSwitchingId] = useState<number | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const overview = useApi<{ users_by_role: Record<string, number> }>('/admin/overview');
+  const usersPath = `/admin/users?role=${activeRole}${search ? `&q=${encodeURIComponent(search)}` : ''}`;
+  const usersReq = useApi<{ items: UserRow[] }>(usersPath);
+
+  const selectedPortal = SWITCHBOARD_PORTALS.find(p => p.role === activeRole) || SWITCHBOARD_PORTALS[0];
+
+  const filteredUsers = (usersReq.data?.items ?? []).filter(u => {
+    if (activeOnly && u.status !== 'active') return false;
+    return true;
+  });
+
+  async function loginAs(user: UserRow, newTab = false) {
+    setErrorMsg(null);
+    setSwitchingId(user.id);
+    try {
+      const res = await api<{ ok: boolean; redirect: string }>('/admin/impersonate', {
+        method: 'POST',
+        body: { user_id: user.id },
+      });
+      if (newTab) {
+        window.open(res.redirect, '_blank');
+        setSwitchingId(null);
+      } else {
+        window.location.href = res.redirect;
+      }
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'Failed to switch into this user account.');
+      setSwitchingId(null);
+    }
+  }
+
+  return (
+    <>
+      <PageHead
+        title="Portals & Switchboard"
+        text="Access any academy portal with available logins. Select a portal to view its registered accounts and switch into their view with one click."
+      />
+
+      {errorMsg && (
+        <Notice tone="danger">
+          {errorMsg}
+        </Notice>
+      )}
+
+      {/* Switchboard Guidance Note */}
+      <Card>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+          <div
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 12,
+              background: 'rgba(245, 158, 11, 0.15)',
+              color: '#d97706',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <ShieldCheck size={20} />
+          </div>
+          <div>
+            <strong style={{ fontSize: 14, color: 'var(--text)', display: 'block', marginBottom: 3 }}>
+              Safe Masquerade Mode Active
+            </strong>
+            <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0, lineHeight: 1.5 }}>
+              Admins can safely switch into any student, trainer, manager, or financier account to troubleshoot, review views, or assist users directly. A floating top banner stays pinned so you can return to Admin at any time. (Super Admin is strictly protected and cannot be accessed via switchboard.)
+            </p>
+          </div>
+        </div>
+      </Card>
+
+      {/* 4 Portal Switch Cards */}
+      <div className="p-switchboard-grid">
+        {SWITCHBOARD_PORTALS.map(portal => {
+          const Icon = portal.icon;
+          const isSelected = activeRole === portal.role;
+          const count = overview.data?.users_by_role?.[portal.role] ?? 0;
+
+          return (
+            <div
+              key={portal.role}
+              role="button"
+              tabIndex={0}
+              className={`p-switchboard-card ${isSelected ? 'p-switchboard-card--active' : ''}`}
+              onClick={() => {
+                setActiveRole(portal.role);
+                setSearch('');
+              }}
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  setActiveRole(portal.role);
+                  setSearch('');
+                }
+              }}
+            >
+              <div className="p-switchboard-card-top">
+                <div
+                  className="p-switchboard-icon-box"
+                  style={{ background: `${portal.color}18`, color: portal.color }}
+                >
+                  <Icon size={24} />
+                </div>
+                <span className="p-switchboard-badge">
+                  {count} {count === 1 ? 'login' : 'logins'}
+                </span>
+              </div>
+              <div className="p-switchboard-card-info">
+                <h3 className="p-switchboard-card-title">{portal.name}</h3>
+                <p className="p-switchboard-card-desc">{portal.description}</p>
+              </div>
+              <div className="p-switchboard-card-action">
+                <span>{isSelected ? '✓ Viewing accounts' : 'View available logins'}</span>
+                <ArrowRight size={13} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Accounts List for Selected Portal */}
+      <div className="p-switchboard-users-section">
+        <div className="p-switchboard-users-header">
+          <div>
+            <h3 className="p-switchboard-users-title">
+              <selectedPortal.icon size={20} style={{ color: selectedPortal.color }} />
+              Available Logins for {selectedPortal.name}
+            </h3>
+            <span style={{ fontSize: 13, color: 'var(--muted)' }}>
+              Choose any registered account below to log in and inspect their portal view.
+            </span>
+          </div>
+
+          <div className="p-switchboard-filter-bar">
+            <div className="p-switchboard-search-input">
+              <input
+                className="p-input"
+                style={{ width: '100%', minWidth: 240 }}
+                placeholder={`Search ${selectedPortal.name.toLowerCase()} by name/email…`}
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                aria-label={`Search ${selectedPortal.name}`}
+              />
+            </div>
+
+            <label className="p-row" style={{ gap: 6, fontSize: 13, cursor: 'pointer', userSelect: 'none' }}>
+              <input
+                type="checkbox"
+                checked={activeOnly}
+                onChange={e => setActiveOnly(e.target.checked)}
+              />
+              <span>Active only</span>
+            </label>
+
+            <button
+              type="button"
+              className="p-btn p-btn-ghost p-btn-small"
+              onClick={() => usersReq.reload()}
+              title="Refresh users list"
+            >
+              <RefreshCw size={13} style={{ marginRight: 4 }} /> Refresh
+            </button>
+          </div>
+        </div>
+
+        <ErrorNotice error={usersReq.error} />
+
+        {usersReq.loading && (
+          <div style={{ padding: '36px 0', textAlign: 'center', color: 'var(--muted)' }}>
+            Loading available {selectedPortal.name.toLowerCase()} logins…
+          </div>
+        )}
+
+        {!usersReq.loading && filteredUsers.length === 0 && (
+          <Empty>
+            {search
+              ? `No ${selectedPortal.name.toLowerCase()} accounts match "${search}".`
+              : `No accounts found with the role "${selectedPortal.role}".`}
+          </Empty>
+        )}
+
+        {!usersReq.loading && filteredUsers.length > 0 && (
+          <Table
+            empty="No accounts match."
+            head={['User Account', 'Email & Contact', 'Assigned Roles', 'Status', 'Switch Session']}
+            rows={filteredUsers.map(u => {
+              const initials = u.name
+                .split(' ')
+                .map(n => n[0])
+                .join('')
+                .slice(0, 2)
+                .toUpperCase() || 'U';
+              const isBusy = switchingId === u.id;
+              const isDisabled = u.status !== 'active';
+
+              return [
+                <div key="acc" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div className="p-switchboard-user-avatar">
+                    {initials}
+                  </div>
+                  <div>
+                    <strong style={{ display: 'block', fontSize: 14, color: 'var(--text)' }}>
+                      {u.name}
+                    </strong>
+                    <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                      ID #{u.id}
+                    </span>
+                  </div>
+                </div>,
+                <div key="contact">
+                  <span style={{ display: 'block', fontSize: 13, color: 'var(--text)' }}>{u.email}</span>
+                  {u.phone && <span style={{ fontSize: 11.5, color: 'var(--muted)' }}>{u.phone}</span>}
+                </div>,
+                <div key="roles" style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                  {u.roles.map(r => (
+                    <span
+                      key={r}
+                      style={{
+                        fontSize: 11,
+                        padding: '2px 7px',
+                        borderRadius: 6,
+                        background: r === activeRole ? `${selectedPortal.color}22` : 'var(--surface-alt)',
+                        color: r === activeRole ? selectedPortal.color : 'var(--muted)',
+                        fontWeight: r === activeRole ? 700 : 500,
+                        border: '1px solid var(--border)',
+                      }}
+                    >
+                      {r}
+                    </span>
+                  ))}
+                </div>,
+                <StatusChip key="status" text={u.status} tone={u.status === 'active' ? 'good' : 'bad'} />,
+                <div key="actions" className="p-switchboard-actions">
+                  <button
+                    type="button"
+                    className="p-btn p-btn-small"
+                    disabled={isBusy || isDisabled}
+                    onClick={() => loginAs(u, false)}
+                    title={`Log in as ${u.name} and view ${selectedPortal.name}`}
+                  >
+                    {isBusy ? 'Switching…' : (
+                      <>
+                        <Eye size={13} style={{ marginRight: 5 }} />
+                        Log in as {u.name.split(' ')[0]}
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    className="p-btn p-btn-ghost p-btn-small"
+                    disabled={isBusy || isDisabled}
+                    onClick={() => loginAs(u, true)}
+                    title="Open session in a new browser tab"
+                  >
+                    <ExternalLink size={13} />
+                  </button>
+                </div>,
+              ];
+            })}
+          />
+        )}
+      </div>
+    </>
+  );
+}
+
 function AuditLog() {
   return <AuditLogView endpoint="/admin/audit-log?limit=300" text="Who changed what, and when. Nothing here can be edited." />;
 }
@@ -322,6 +655,7 @@ export default function AdminPanel() {
         <Routes>
           <Route index element={<Overview me={me} />} />
           <Route path="overview" element={<Overview me={me} />} />
+          <Route path="portals" element={<PortalsSwitchboard me={me} />} />
           <Route path="users" element={<Users />} />
           <Route path="audit-log" element={<AuditLog />} />
           <Route path="*" element={<Empty>This page does not exist.</Empty>} />

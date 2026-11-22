@@ -4,7 +4,7 @@ import { api, ApiError } from '../api';
 import { useApi } from '../hooks';
 import { useInfiniteList } from '../useInfinite';
 import { roleLabel } from '../PanelShell';
-import { Empty, ErrorNotice, PageHead, StatusChip } from '../ui';
+import { Empty, ErrorNotice, PageHead, Pager, StatusChip } from '../ui';
 import './roles-access.css';
 
 interface UserRow { id: number; name: string; email: string; status: string; roles: string[] }
@@ -62,8 +62,8 @@ export function RolesAccess() {
     });
   }, [users, query, filter]);
 
-  const { count, more, sentinel, loadMore } = useInfiniteList(visible.length, `${query}|${filter}`);
-  const shown = visible.slice(0, count);
+  const { start, end, more, sentinel, loadMore, paged, page, pages, setPage } = useInfiniteList(visible.length, `${query}|${filter}`, 20, 5);
+  const shown = visible.slice(start, end);
 
   // The confirmation dialog follows the pending change.
   useEffect(() => {
@@ -256,9 +256,9 @@ export function RolesAccess() {
         })}
       </ul>
 
-      {more && (
+      {paged ? <Pager page={page} pages={pages} onChange={setPage} /> : more && (
         <div className="rx-more" ref={sentinel}>
-          <button type="button" className="p-btn p-btn-ghost p-btn-small" onClick={loadMore}>Loading more… ({visible.length - count} left)</button>
+          <button type="button" className="p-btn p-btn-ghost p-btn-small" onClick={loadMore}>Loading more… ({visible.length - end} left)</button>
         </div>
       )}
 

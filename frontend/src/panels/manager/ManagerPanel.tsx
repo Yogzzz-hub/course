@@ -38,6 +38,10 @@ import {
   type ActivityItem,
   ProgressBar,
   CurvedSelect,
+  DateRangeFilter,
+  defaultDateRange,
+  matchesDateRange,
+  type DateRange,
 } from '../ui';
 
 const NAV: NavItem[] = [
@@ -582,12 +586,15 @@ interface EligibilityRow {
 }
 
 function Certificates() {
+  const [dateRange, setDateRange] = useState<DateRange>(defaultDateRange);
   const list = useApi<{ items: EligibilityRow[] }>('/manager/certificates/eligibility');
   const issued = useApi<{ items: { id: number; number: string; name: string; batch: string; issued_at: string; revoked: boolean }[] }>('/manager/certificates');
   const change = useChange(() => {
     list.reload();
     issued.reload();
   });
+
+  const filteredIssued = (issued.data?.items ?? []).filter(c => matchesDateRange(c.issued_at, dateRange));
 
   return (
     <>
@@ -622,9 +629,13 @@ function Certificates() {
         )}
       </Card>
       <Card title="Issued certificates">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 14 }}>
+          <DateRangeFilter value={dateRange} onChange={setDateRange} label="Filter by issue date" />
+          <span style={{ fontSize: 13, color: 'var(--muted)' }}>{filteredIssued.length} certificates</span>
+        </div>
         <Table
           head={['Number', 'Student', 'Batch', 'Issued', 'Status', '']}
-          rows={(issued.data?.items ?? []).map(c => [
+          rows={filteredIssued.map(c => [
             c.number,
             c.name,
             c.batch,
@@ -632,7 +643,7 @@ function Certificates() {
             <StatusChip key="s" text={c.revoked ? 'Revoked' : 'Valid'} tone={c.revoked ? 'bad' : 'good'} />,
             c.revoked ? '' : <button key="r" type="button" className="p-btn p-btn-ghost p-btn-small" onClick={() => change.run(() => api(`/manager/certificates/${c.id}/revoke`, { method: 'POST' }), 'Certificate revoked.')}>Revoke</button>,
           ])}
-          empty="No certificates issued yet."
+          empty={dateRange.preset !== 'all' ? "No certificates match this date filter." : "No certificates issued yet."}
         />
       </Card>
     </>

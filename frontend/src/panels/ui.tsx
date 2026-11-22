@@ -317,8 +317,17 @@ export function CurvedSelect({
         setOpen(false);
       }
     }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setOpen(false);
+      }
+    }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   const selected = options.find(o => o.value === value);
@@ -334,7 +343,7 @@ export function CurvedSelect({
       >
         <span className="p-curved-select-label">
           {selected ? (
-            <span className="flex items-center gap-2">
+            <span className="p-curved-select-opt-content">
               {selected.icon && <selected.icon size={16} className="text-[var(--accent)]" />}
               <span>{selected.label}</span>
             </span>
@@ -361,7 +370,7 @@ export function CurvedSelect({
                   setOpen(false);
                 }}
               >
-                <div className="flex items-center gap-2">
+                <div className="p-curved-select-opt-content">
                   {opt.icon && <opt.icon size={16} />}
                   <span>{opt.label}</span>
                 </div>
@@ -369,6 +378,175 @@ export function CurvedSelect({
               </button>
             );
           })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export type DatePreset = 'all' | 'today' | 'yesterday' | 'last7' | 'last30' | 'this_month' | 'custom';
+
+export interface DateRange {
+  preset: DatePreset;
+  from: string; // YYYY-MM-DD
+  to: string;   // YYYY-MM-DD
+}
+
+export function defaultDateRange(): DateRange {
+  return { preset: 'all', from: '', to: '' };
+}
+
+function toIsoDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+export function calculateDatePreset(preset: DatePreset): { from: string; to: string } {
+  const now = new Date();
+  const todayStr = toIsoDate(now);
+
+  if (preset === 'today') {
+    return { from: todayStr, to: todayStr };
+  }
+  if (preset === 'yesterday') {
+    const yest = new Date(now);
+    yest.setDate(yest.getDate() - 1);
+    const yestStr = toIsoDate(yest);
+    return { from: yestStr, to: yestStr };
+  }
+  if (preset === 'last7') {
+    const d7 = new Date(now);
+    d7.setDate(d7.getDate() - 6);
+    return { from: toIsoDate(d7), to: todayStr };
+  }
+  if (preset === 'last30') {
+    const d30 = new Date(now);
+    d30.setDate(d30.getDate() - 29);
+    return { from: toIsoDate(d30), to: todayStr };
+  }
+  if (preset === 'this_month') {
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    return { from: toIsoDate(firstDay), to: todayStr };
+  }
+  return { from: '', to: '' };
+}
+
+export function matchesDateRange(itemDate: string | undefined | null, range: DateRange): boolean {
+  if (!range || range.preset === 'all' || (!range.from && !range.to)) {
+    return true;
+  }
+  if (!itemDate) return false;
+  const target = itemDate.trim().slice(0, 10);
+  if (range.from && target < range.from) return false;
+  if (range.to && target > range.to) return false;
+  return true;
+}
+
+/**
+ * Modern, theme-aware date range filter with presets and custom date pickers
+ */
+export function DateRangeFilter({
+  value,
+  onChange,
+  label = 'All Dates',
+}: {
+  value: DateRange;
+  onChange: (range: DateRange) => void;
+  label?: string;
+}) {
+  const [showCustom, setShowCustom] = useState(value.preset === 'custom');
+
+  const presetOptions = [
+    { value: 'all', label: 'All Dates', icon: Calendar },
+    { value: 'today', label: 'Today', icon: Clock },
+    { value: 'yesterday', label: 'Yesterday', icon: Clock },
+    { value: 'last7', label: 'Last 7 Days', icon: Calendar },
+    { value: 'last30', label: 'Last 30 Days', icon: Calendar },
+    { value: 'this_month', label: 'This Month', icon: Calendar },
+    { value: 'custom', label: 'Custom Range…', icon: Sparkles },
+  ];
+
+  function handlePresetChange(newPreset: string) {
+    const preset = newPreset as DatePreset;
+    if (preset === 'custom') {
+      setShowCustom(true);
+      onChange({ ...value, preset: 'custom' });
+    } else {
+      setShowCustom(false);
+      const { from, to } = calculateDatePreset(preset);
+      onChange({ preset, from, to });
+    }
+  }
+
+  const isFiltered = value.preset !== 'all' || Boolean(value.from || value.to);
+
+  return (
+    <div className="p-date-filter-wrap">
+      <div className="p-date-filter-controls">
+        <div className="p-date-filter-select">
+          <CurvedSelect
+            value={value.preset}
+            onChange={handlePresetChange}
+            options={presetOptions}
+            placeholder={label}
+          />
+        </div>
+
+        {(showCustom || value.preset === 'custom') && (
+          <div className="p-date-custom-range">
+            <label className="p-date-input-group">
+              <span className="p-date-input-label">From</span>
+              <input
+                type="date"
+                className="p-date-picker-input"
+                value={value.from}
+                onChange={e => onChange({ ...value, preset: 'custom', from: e.target.value })}
+                aria-label="From date"
+              />
+            </label>
+            <span className="p-date-sep">to</span>
+            <label className="p-date-input-group">
+              <span className="p-date-input-label">To</span>
+              <input
+                type="date"
+                className="p-date-picker-input"
+                value={value.to}
+                onChange={e => onChange({ ...value, preset: 'custom', to: e.target.value })}
+                aria-label="To date"
+              />
+            </label>
+          </div>
+        )}
+
+        {isFiltered && (
+          <button
+            type="button"
+            className="p-date-filter-clear-btn"
+            onClick={() => {
+              setShowCustom(false);
+              onChange(defaultDateRange());
+            }}
+            title="Reset date filter"
+            aria-label="Reset date filter"
+          >
+            <X size={12} />
+            <span>Reset</span>
+          </button>
+        )}
+      </div>
+
+      {isFiltered && (value.from || value.to) && (
+        <div className="p-date-filter-active-pill" title="Active date filter range">
+          <span className="p-date-filter-active-dot" />
+          <span>
+            {value.from && value.to
+              ? `${value.from} → ${value.to}`
+              : value.from
+              ? `From ${value.from}`
+              : `Until ${value.to}`}
+          </span>
         </div>
       )}
     </div>
@@ -393,6 +571,10 @@ export function ActivityTimeline({
   items: ActivityItem[];
 }) {
   const [filter, setFilter] = useState<'All' | 'Classes' | 'Tasks'>('All');
+  const phone = useIsPhone();
+  const [expanded, setExpanded] = useState(false);
+  const limited = phone && !expanded && items.length > 4;
+  const visibleItems = limited ? items.slice(0, 4) : items;
 
   return (
     <div className="p-activity-card">
@@ -421,7 +603,7 @@ export function ActivityTimeline({
         {items.length === 0 ? (
           <div className="p-activity-empty">No recent activity recorded yet.</div>
         ) : (
-          items.map(item => {
+          visibleItems.map(item => {
             const Icon = item.icon ?? CheckCircle2;
             return (
               <div key={item.id} className="p-activity-item">
@@ -439,6 +621,11 @@ export function ActivityTimeline({
               </div>
             );
           })
+        )}
+        {phone && items.length > 4 && (
+          <button type="button" className="p-more p-more-wide" aria-expanded={expanded} onClick={() => setExpanded(value => !value)}>
+            {expanded ? 'Show fewer' : `Show all ${items.length}`}
+          </button>
         )}
       </div>
     </div>
@@ -516,9 +703,47 @@ export function Stat({ label, value }: { label: string; value: ReactNode }) {
   );
 }
 
-export function Table({ head, rows, empty }: { head: string[]; rows: ReactNode[][]; empty: string }) {
-  if (rows.length === 0) return <Empty>{empty}</Empty>;
+/** True on phones. Pages use this to switch to short, paged lists instead of long scrolling. */
+export function useIsPhone(): boolean {
+  const query = '(max-width: 640px)';
+  const [phone, setPhone] = useState(() => typeof window !== 'undefined' && window.matchMedia(query).matches);
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    const update = () => setPhone(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
+  return phone;
+}
+
+/** Previous / page x of y / Next. Renders nothing when there is only one page. */
+export function Pager({ page, pages, onChange }: { page: number; pages: number; onChange: (page: number) => void }) {
+  if (pages <= 1) return null;
   return (
+    <nav className="p-pager" aria-label="Pages">
+      <button type="button" className="p-btn p-btn-ghost p-btn-small" onClick={() => onChange(page - 1)} disabled={page <= 0}>Previous</button>
+      <span className="p-pager-count">Page {page + 1} of {pages}</span>
+      <button type="button" className="p-btn p-btn-small" onClick={() => onChange(page + 1)} disabled={page >= pages - 1}>Next</button>
+    </nav>
+  );
+}
+
+const PHONE_PAGE = 8;
+const PHONE_VISIBLE_FIELDS = 3;
+
+export function Table({ head, rows, empty = 'Nothing here yet.' }: { head: string[]; rows: ReactNode[][]; empty?: string }) {
+  const phone = useIsPhone();
+  const [page, setPage] = useState(0);
+  const [open, setOpen] = useState<Record<number, boolean>>({});
+  if (rows.length === 0) return <Empty>{empty}</Empty>;
+  const pages = phone ? Math.ceil(rows.length / PHONE_PAGE) : 1;
+  const current = Math.min(page, pages - 1);
+  const offset = phone ? current * PHONE_PAGE : 0;
+  const shown = phone ? rows.slice(offset, offset + PHONE_PAGE) : rows;
+  const hasExtra = head.length > PHONE_VISIBLE_FIELDS;
+  return (
+    <>
     <div className="p-table-wrap">
       <table className="p-table">
         <thead>
@@ -531,18 +756,35 @@ export function Table({ head, rows, empty }: { head: string[]; rows: ReactNode[]
           </tr>
         </thead>
         <tbody>
-          {rows.map((cells, rowIndex) => (
-            <tr key={rowIndex}>
-              {cells.map((cell, cellIndex) => (
-                <td key={cellIndex} data-label={head[cellIndex]}>
-                  {cell}
-                </td>
-              ))}
-            </tr>
-          ))}
+          {shown.map((cells, index) => {
+            const rowIndex = offset + index;
+            const expanded = Boolean(open[rowIndex]);
+            return (
+              <tr key={rowIndex} className={phone && expanded ? 'p-row-open' : undefined}>
+                {cells.map((cell, cellIndex) => (
+                  <td
+                    key={cellIndex}
+                    data-label={head[cellIndex]}
+                    className={phone && hasExtra && cellIndex >= PHONE_VISIBLE_FIELDS ? 'p-cell-extra' : undefined}
+                  >
+                    {cell}
+                  </td>
+                ))}
+                {phone && hasExtra && (
+                  <td className="p-more-cell">
+                    <button type="button" className="p-more" aria-expanded={expanded} onClick={() => setOpen(state => ({ ...state, [rowIndex]: !expanded }))}>
+                      {expanded ? 'Hide details' : 'More details'}
+                    </button>
+                  </td>
+                )}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
+    <Pager page={current} pages={pages} onChange={setPage} />
+    </>
   );
 }
 

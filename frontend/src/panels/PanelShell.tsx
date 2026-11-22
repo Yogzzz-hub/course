@@ -22,7 +22,9 @@ import {
   Sparkles,
   Palette,
   X,
+  Menu,
   ChevronRight,
+  ArrowRight,
   BookOpen,
 } from 'lucide-react';
 import { LogoMark } from '../components/LogoMark';
@@ -31,14 +33,23 @@ import { useApi } from './hooks';
 import { themes } from '../components/ThemeSwitcher';
 import { Loading, ErrorNotice, Notice } from './ui';
 import { PageLoader, PanelLoader } from '../components/loading/Loaders';
+import { skeletonKindFor } from '../components/loading/PanelSkeletons';
 import { useLoadingState } from '../components/loading/loadingStore';
 import './panels.css';
+import './phone.css';
+
+export interface ImpersonatedBy {
+  id: number;
+  name: string;
+  email: string;
+}
 
 export interface Me {
   id: number;
   name: string;
   email: string;
   roles: string[];
+  impersonated_by?: ImpersonatedBy | null;
 }
 
 export interface NavItem {
@@ -81,18 +92,50 @@ function getNavIcon(label: string, to: string) {
   return BookOpen;
 }
 
+/** True while the screen is phone or tablet width, where the side menu becomes a drawer. */
+function useNarrow(): boolean {
+  const query = '(max-width: 900px)';
+  const [narrow, setNarrow] = useState(() => typeof window !== 'undefined' && window.matchMedia(query).matches);
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    const update = () => setNarrow(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
+  return narrow;
+}
+
 /** Modern shell matching the sleek Ottertag dock layout across the 4 color themes */
 export function PanelShell({ brand, items, me, children }: { brand: string; items: NavItem[]; me: Me; children: ReactNode }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { initial } = useLoadingState();
-  const [collapsed, setCollapsed] = useState(() => {
+  const loadingKind = skeletonKindFor(location.pathname);
+  const [collapsedPref, setCollapsed] = useState(() => {
     try {
       return localStorage.getItem('academy-sidebar-collapsed') === 'true';
     } catch {
       return false;
     }
   });
+  const narrow = useNarrow();
+  // The icon-only sidebar is a desktop choice; the phone drawer always shows full labels.
+  const collapsed = collapsedPref && !narrow;
+  const [menuOpen, setMenuOpen] = useState(false);
+  const drawerOpen = menuOpen && narrow;
   const [themePickerOpen, setThemePickerOpen] = useState(false);
+
+  // Close the drawer after choosing a page, and with Escape. Lock page scroll while it is open.
+  useEffect(() => { setMenuOpen(false); }, [location.pathname]);
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') setMenuOpen(false); };
+    document.addEventListener('keydown', onKey);
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = previous; };
+  }, [drawerOpen]);
   const [currentTheme, setCurrentTheme] = useState(() => document.documentElement.dataset.theme || 'theme-1');
   const [navStyle, setNavStyle] = useState<'brand' | 'light'>(() => {
     try {
@@ -153,10 +196,36 @@ export function PanelShell({ brand, items, me, children }: { brand: string; item
     .toUpperCase() || 'AA';
 
   const primaryRole = me.roles[0] || 'student';
+  const currentItem = [...items]
+    .sort((a, b) => b.to.length - a.to.length)
+    .find(item => location.pathname === item.to || location.pathname.startsWith(item.to + '/')) ?? items[0];
 
   return (
     <div className={`panel-root ${collapsed ? 'panel-root--collapsed' : ''}`}>
-      <aside className={`p-side ${collapsed ? 'p-side--collapsed' : ''}`} aria-label={`${brand} navigation`}>
+      {/* Phone / tablet top bar: menu button, brand and current page. Hidden on desktop. */}
+      <header className="p-topbar">
+        <button
+          type="button"
+          className="p-topbar-menu"
+          onClick={() => setMenuOpen(open => !open)}
+          aria-label={drawerOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={drawerOpen}
+          aria-controls="panel-drawer"
+        >
+          <Menu size={20} />
+        </button>
+        <Link to="/" className="p-topbar-brand" aria-label="Aintrix Academy home">
+          <LogoMark size={22} surface="dark" />
+          <span>Aintrix</span>
+        </Link>
+        <span className="p-topbar-page">{currentItem?.label}</span>
+      </header>
+      <div className={`p-scrim ${drawerOpen ? 'p-scrim--open' : ''}`} onClick={() => setMenuOpen(false)} aria-hidden="true" />
+      <aside
+        id="panel-drawer"
+        className={`p-side ${collapsed ? 'p-side--collapsed' : ''} ${drawerOpen ? 'p-side--open' : ''}`}
+        aria-label={`${brand} navigation`}
+      >
         {/* Brand / Logo Header */}
         <div className="p-side-header">
           <Link to="/" className="p-side-brand-link" title="Aintrix Academy Home">
@@ -170,6 +239,9 @@ export function PanelShell({ brand, items, me, children }: { brand: string; item
               )}
             </div>
           </Link>
+          <button type="button" className="p-drawer-close" onClick={() => setMenuOpen(false)} aria-label="Close menu">
+            <X size={18} />
+          </button>
           <button
             type="button"
             className="p-side-collapse-btn"
@@ -322,9 +394,33 @@ export function PanelShell({ brand, items, me, children }: { brand: string; item
         </div>
       </aside>
 
+      {me.impersonated_by && (
+        <aside className="p-impersonate-banner" role="status" aria-label="Active impersonation session">
+          <div className="p-impersonate-banner-content">
+            <span className="p-impersonate-pulse" />
+            <span className="p-impersonate-text">
+              Viewing as <strong>{me.name}</strong> ({roleLabel(primaryRole)})
+            </span>
+            <span className="p-impersonate-badge">Admin: {me.impersonated_by.name}</span>
+          </div>
+          <button
+            type="button"
+            className="p-impersonate-exit-btn"
+            onClick={async () => {
+              try {
+                await api('/auth/exit-impersonation', { method: 'POST' });
+              } catch {}
+              window.location.href = '/admin/portals';
+            }}
+          >
+            Return to Admin <ArrowRight size={13} style={{ marginLeft: 5 }} />
+          </button>
+        </aside>
+      )}
+
       <div className="p-main" tabIndex={-1} aria-busy={initial > 0}>
         {children}
-        {initial > 0 && <PanelLoader />}
+        {initial > 0 && <PanelLoader kind={loadingKind} />}
       </div>
     </div>
   );

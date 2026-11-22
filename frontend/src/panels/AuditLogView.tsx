@@ -2,7 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { Award, BookOpen, CircleAlert, CreditCard, Download, GraduationCap, Layers, Search, Settings2, UserRound, Users, X } from 'lucide-react';
 import { useApi } from './hooks';
 import { useInfiniteList } from './useInfinite';
-import { ErrorNotice, PageHead } from './ui';
+import { ErrorNotice, PageHead, Pager, CurvedSelect, DateRangeFilter, defaultDateRange, matchesDateRange, type DateRange } from './ui';
 import './audit-log.css';
 
 interface Entry { at: string; actor: string; action: string; entity: string; entity_id: string }
@@ -124,22 +124,28 @@ export function AuditLogView({
   const [query, setQuery] = useState('');
   const [group, setGroup] = useState<Group | 'all'>('all');
   const [actor, setActor] = useState('all');
+  const [dateRange, setDateRange] = useState<DateRange>(defaultDateRange);
 
   const items = useMemo(() => list.data?.items ?? [], [list.data]);
   const actors = useMemo(() => [...new Set(items.map(item => item.actor))].sort((a, b) => a.localeCompare(b)), [items]);
+  const actorOptions = useMemo(() => [
+    { value: 'all', label: 'Everyone', icon: Users },
+    ...actors.map(name => ({ value: name, label: name, icon: UserRound })),
+  ], [actors]);
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return items.filter(item => {
+      if (!matchesDateRange(item.at, dateRange)) return false;
       if (group !== 'all' && groupOf(item.entity) !== group) return false;
       if (actor !== 'all' && item.actor !== actor) return false;
       if (!needle) return true;
       return `${item.actor} ${describe(item).text} ${item.action} ${item.entity} ${item.entity_id}`.toLowerCase().includes(needle);
     });
-  }, [items, query, group, actor]);
+  }, [items, query, group, actor, dateRange]);
 
   const rows = useMemo(() => fold(filtered), [filtered]);
-  const { count, more, sentinel, loadMore } = useInfiniteList(rows.length, `${query}|${group}|${actor}`);
-  const visible = rows.slice(0, count);
+  const { start, end, more, sentinel, loadMore, paged, page, pages, setPage } = useInfiniteList(rows.length, `${query}|${group}|${actor}|${dateRange.preset}|${dateRange.from}|${dateRange.to}`);
+  const visible = rows.slice(start, end);
   const days = useMemo(() => {
     const map = new Map<string, Row[]>();
     for (const row of visible) {
@@ -149,8 +155,8 @@ export function AuditLogView({
     return [...map.entries()];
   }, [visible]);
 
-  const filtering = query.trim() !== '' || group !== 'all' || actor !== 'all';
-  const reset = () => { setQuery(''); setGroup('all'); setActor('all'); };
+  const filtering = query.trim() !== '' || group !== 'all' || actor !== 'all' || dateRange.preset !== 'all';
+  const reset = () => { setQuery(''); setGroup('all'); setActor('all'); setDateRange(defaultDateRange()); };
 
   return (
     <div className="al">
@@ -162,10 +168,15 @@ export function AuditLogView({
           <Search size={17} aria-hidden="true" />
           <input type="search" value={query} placeholder="Search by person, action or record" aria-label="Search the audit log" onChange={event => setQuery(event.target.value)} />
         </label>
-        <select className="al-select" value={actor} aria-label="Filter by person" onChange={event => setActor(event.target.value)}>
-          <option value="all">Everyone</option>
-          {actors.map(name => <option key={name} value={name}>{name}</option>)}
-        </select>
+        <div className="al-select-wrap">
+          <CurvedSelect
+            value={actor}
+            onChange={setActor}
+            options={actorOptions}
+            placeholder="Everyone"
+          />
+        </div>
+        <DateRangeFilter value={dateRange} onChange={setDateRange} label="Filter by date" />
         <button type="button" className="p-btn p-btn-ghost p-btn-small" onClick={() => download(filtered)} disabled={filtered.length === 0}>
           <Download size={14} aria-hidden="true" /> <span>Export CSV</span>
         </button>
@@ -219,9 +230,9 @@ export function AuditLogView({
         </section>
       ))}
 
-      {more && (
+      {paged ? <Pager page={page} pages={pages} onChange={setPage} /> : more && (
         <div className="al-more" ref={sentinel}>
-          <button type="button" className="p-btn p-btn-ghost p-btn-small" onClick={loadMore}>Loading more… ({rows.length - count} left)</button>
+          <button type="button" className="p-btn p-btn-ghost p-btn-small" onClick={loadMore}>Loading more… ({rows.length - end} left)</button>
         </div>
       )}
     </div>

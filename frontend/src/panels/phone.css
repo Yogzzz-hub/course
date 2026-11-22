@@ -1,0 +1,218 @@
+/*
+ * Phone and tablet layout for every panel (student, trainer, manager, finance, admin, super admin).
+ * Kept in its own file, loaded after panels.css. Nothing here changes the desktop look except the
+ * table wrapping rule at the bottom, which removes sideways scrolling.
+ */
+
+/* ---- Tables become cards (up to 900px): no sideways scrolling, each row is one card ------------ */
+@media (max-width: 900px) {
+  .p-table-wrap { overflow: visible; border: 0; border-radius: 0; background: transparent; }
+  .p-table, .p-table tbody, .p-table tr, .p-table td { display: block; width: 100%; box-sizing: border-box; }
+  .p-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .p-table tbody tr {
+    margin-bottom: 8px;
+    padding: 4px 12px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+  }
+  .p-table tbody tr:last-child { margin-bottom: 0; }
+  .p-table td,
+  .p-table tbody td,
+  .p-table tbody td:last-child {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    min-width: 0;
+    text-align: right !important;
+    overflow-wrap: anywhere;
+    border-bottom: 1px solid var(--border);
+    background: transparent;
+  }
+  .p-table tbody tr:last-child td { border-bottom: 1px solid var(--border); }
+  .p-table tbody tr td:last-child { border-bottom: 0; }
+  .p-table tbody tr:hover td { background: transparent; }
+  .p-table td::before {
+    content: attr(data-label);
+    flex: 0 0 34%;
+    max-width: 40%;
+    text-align: left;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .p-table td:empty { display: none; }
+}
+
+/* ---- Phone (up to 640px): compact bento, short pages ------------------------------------------- */
+@media (max-width: 640px) {
+  /* Dashboard tiles two across, shorter charts */
+  .p-metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .p-metric-card { flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px; border-radius: 16px; min-height: 0; }
+  .p-metric-icon-box { width: 34px; height: 34px; min-width: 34px; border-radius: 10px; }
+  .p-metric-icon-box svg { width: 17px; height: 17px; }
+  .p-metric-label { font-size: 12px; }
+  .p-metric-val { font-size: 20px; line-height: 1.15; }
+  .p-metric-trend { font-size: 11px; }
+  .p-chart-body > div { height: 180px !important; }
+
+  /* Table cards: first cell is the title, details fold away */
+  .p-table tbody tr { padding: 2px 12px; margin-bottom: 8px; }
+  .p-table td, .p-table tbody td, .p-table tbody td:last-child { padding: 5px 0; font-size: 13.5px; line-height: 1.35; }
+  .p-table td::before { font-size: 10.5px; flex-basis: 30%; }
+  .p-table tbody tr td:first-child { display: block; text-align: left !important; font-weight: 700; padding: 9px 0 6px; }
+  .p-table tbody tr td:first-child::before { content: none; }
+  .p-table tbody tr td:nth-last-child(2) { border-bottom: 1px solid var(--border); }
+  .p-table td.p-more-cell { padding: 4px 0 8px; border-bottom: 0 !important; }
+  .p-table .p-more { min-height: 30px; font-size: 12.5px; }
+  .p-pager { margin-top: 6px; }
+
+  /* Roles and access cards stay short */
+  .rx-card { padding: 12px; gap: 10px; }
+  .rx-id { min-width: 0; flex: 1 1 0; }
+  .rx-name { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .rx-email { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rx-filters { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .rx-filters > * { min-width: 0; padding-inline: 6px; }
+}
+
+/* ---- Desktop tables: wrap long cells instead of scrolling sideways ------------------------------ */
+@media (min-width: 901px) {
+  .p-table-wrap { overflow-x: hidden; }
+  .p-table th, .p-table thead th, .p-table thead th:last-child { white-space: normal; overflow-wrap: anywhere; padding-inline: 12px; }
+  .p-table td, .p-table tbody td, .p-table tbody td:last-child { overflow-wrap: anywhere; min-width: 0; padding-inline: 12px; }
+}
+
+
+/* ---- Menu: top bar and a drawer that slides in from the left (up to 900px) --------------------- */
+.p-topbar, .p-scrim, .p-drawer-close { display: none; }
+
+@media (max-width: 900px) {
+  .panel-root,
+  .panel-root--collapsed {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+  .p-topbar {
+    grid-row: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 54px;
+    padding: 6px 12px;
+    box-sizing: border-box;
+    background: linear-gradient(180deg, var(--side-bg, #521528), var(--side-surface, #421020));
+    color: #fff;
+    position: relative;
+    z-index: 30;
+    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.14);
+  }
+  .p-topbar-menu,
+  .p-drawer-close {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 auto;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    cursor: pointer;
+  }
+  .p-topbar-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #fff;
+    text-decoration: none;
+    font: 700 15px/1 var(--font-display);
+  }
+  .p-topbar-page {
+    margin-left: auto;
+    min-width: 0;
+    max-width: 46%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font: 600 13px/1.2 var(--font-body);
+    color: rgba(255, 255, 255, 0.78);
+  }
+  .p-main { grid-row: 2; }
+
+  .p-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    background: rgba(18, 8, 13, 0.52);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.22s ease, visibility 0s linear 0.22s;
+  }
+  .p-scrim--open { opacity: 1; visibility: visible; transition: opacity 0.22s ease, visibility 0s; }
+
+  .p-side,
+  .panel-root--collapsed .p-side {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 100;
+    width: min(84vw, 320px);
+    min-width: 0;
+    max-width: none;
+    height: 100dvh;
+    max-height: 100dvh;
+    padding: 16px 14px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border-right: 1px solid var(--side-border, rgba(255, 255, 255, 0.15));
+    border-bottom: 0;
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.3);
+    transform: translateX(-103%);
+    visibility: hidden;
+    transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0.26s;
+  }
+  .p-side.p-side--open {
+    transform: none;
+    visibility: visible;
+    transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s;
+  }
+  .p-side-collapse-btn { display: none !important; }
+  .p-side .p-drawer-close { display: grid; }
+  .p-side-portal-bar { display: flex; }
+
+  /* Sections are a plain list down the drawer: nothing scrolls sideways. */
+  .p-nav {
+    flex-direction: column;
+    align-items: stretch;
+    flex: 1 1 auto;
+    gap: 4px;
+    overflow: visible;
+    padding-right: 0;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .p-nav-item { width: 100%; min-height: 46px; flex: 0 0 auto; }
+  .p-side-foot { display: flex; flex-direction: column; gap: 10px; margin-top: auto; padding-top: 12px; width: 100%; }
+  .p-side-foot .theme-options { flex-wrap: wrap; overflow: visible; }
+  .p-theme-popover { position: static; width: 100%; margin-top: 8px; box-shadow: none; }
+
+  .p-impersonate-banner { top: auto; bottom: 12px; width: calc(100% - 24px); max-width: none; flex-wrap: wrap; gap: 8px; }
+}
+
+@media (max-width: 900px) and (prefers-reduced-motion: reduce) {
+  .p-side, .p-side.p-side--open, .p-scrim, .p-scrim--open { transition: none; }
+}

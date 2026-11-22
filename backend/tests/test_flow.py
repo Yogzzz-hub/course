@@ -162,3 +162,36 @@ def test_super_admin_guards_and_settings():
     admin = client_as("admin")
     denied = write(admin, "post", "/v1/admin/users", json={"name": "Someone", "email": "x@example.com", "roles": ["super_admin"]})
     assert denied.status_code == 403
+
+
+def test_admin_impersonate_and_exit():
+    admin = client_as("admin")
+    student = client_as("student")
+    student_id = student.get("/v1/me").json()["id"]
+
+    # Admin impersonates student
+    res = write(admin, "post", "/v1/admin/impersonate", json={"user_id": student_id})
+    assert res.status_code == 200
+    assert res.json()["ok"] is True
+    assert res.json()["redirect"] == "/app"
+
+    # Current session is now the student, with impersonated_by metadata
+    me = admin.get("/v1/me").json()
+    assert me["id"] == student_id
+    assert me["impersonated_by"] is not None
+    assert me["impersonated_by"]["email"] == "dev-admin@local.test"
+
+    # Student cannot switch into super admin
+    sa_id = client_as("super_admin").get("/v1/me").json()["id"]
+    sa_denied = write(admin, "post", "/v1/admin/impersonate", json={"user_id": sa_id})
+    assert sa_denied.status_code in (403, 401)  # student cannot call admin endpoint
+
+    # Exit impersonation returns back to admin
+    exit_res = write(admin, "post", "/v1/auth/exit-impersonation")
+    assert exit_res.status_code == 200
+    assert exit_res.json()["ok"] is True
+
+    # Current session is back to admin
+    reverted_me = admin.get("/v1/me").json()
+    assert "admin" in reverted_me["roles"]
+    assert reverted_me["impersonated_by"] is None
