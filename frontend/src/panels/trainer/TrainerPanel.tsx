@@ -598,29 +598,40 @@ function TrainerHome({ me }: { me: Me }) {
 
       {/* Pulsing Live Class Beacon if a class is currently live */}
       {liveClass && (
-        <div className="p-live-beacon-card">
-          <div className="p-live-pulse-badge">
-            <span className="p-live-pulse-dot" />
-            <span>Class is Live</span>
+        <div className="p-live-card" style={{ marginBottom: 24 }}>
+          <div className="p-live-header">
+            <div className="p-live-tag">
+              <span className="p-beacon-ping" />
+              <span className="p-beacon-dot" />
+              <span>LIVE CLASS IN PROGRESS</span>
+            </div>
+            <span className="p-live-seq">Class #{liveClass.sequence}</span>
           </div>
-          <h3 className="p-live-title">
-            Class {liveClass.sequence} · {liveClass.batch} is in session
-          </h3>
-          <p className="p-live-subtitle">Students are joining and attendance is automatically recorded.</p>
-          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-            <Link to="/trainer/classes" className="p-live-btn">
-              Manage live class
-            </Link>
-            {liveClass.meeting_url && (
-              <a
-                href={liveClass.meeting_url}
-                target="_blank"
-                rel="noreferrer"
-                className="p-btn p-btn-ghost p-btn-small"
-              >
-                Join meeting link ↗
-              </a>
-            )}
+          <div className="p-live-content">
+            <div className="p-live-info">
+              <h2 className="p-live-title">
+                Class {liveClass.sequence} · {liveClass.batch} is in session
+              </h2>
+              <p className="p-live-desc">
+                Students are joining and attendance is automatically recorded.
+              </p>
+            </div>
+            <div className="p-live-action" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+              <Link to="/trainer/classes" className="p-btn p-btn-live">
+                Manage live class
+              </Link>
+              {liveClass.meeting_url && (
+                <a
+                  href={liveClass.meeting_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="p-btn p-btn-ghost p-btn-small"
+                  style={{ textDecoration: 'none' }}
+                >
+                  Join meeting link ↗
+                </a>
+              )}
+            </div>
           </div>
         </div>
       )}
