@@ -1774,7 +1774,6 @@ function Certificates() {
             </div>
 
             <div className="p-cert-lock-banner">
-              <div className="p-cert-lock-icon">🔒</div>
               <div className="p-cert-lock-text">
                 <strong>Certificate Locked: Available only after completing the course fully</strong>
                 <p>
