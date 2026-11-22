@@ -35,6 +35,7 @@ import { PageLoader, PanelLoader } from '../components/loading/Loaders';
 import { skeletonKindFor } from '../components/loading/PanelSkeletons';
 import { useLoadingState } from '../components/loading/loadingStore';
 import './panels.css';
+import './phone.css';
 
 export interface ImpersonatedBy {
   id: number;
