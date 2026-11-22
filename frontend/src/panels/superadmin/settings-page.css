@@ -630,3 +630,28 @@
   .st-bar, .st-toast { animation: none; opacity: 1; }
   .st-switch, .st-switch i { transition: none; }
 }
+
+
+/* ---- Desktop: cards hug their content, so there is no empty space inside them (bento kept) ------ */
+@media (min-width: 901px) {
+  .p-main:has(> .st), .p-main.p-main--static {
+    overflow-y: auto !important;
+    height: 100% !important;
+    max-height: none !important;
+    padding: 24px clamp(16px, 2vw, 32px) 24px !important;
+  }
+  .st { height: auto; max-height: none; flex: 0 0 auto; overflow: visible; }
+  .st-grid { grid-template-rows: auto; grid-auto-rows: auto; height: auto; flex: 0 0 auto; align-items: stretch; }
+  .st-card { overflow: visible; gap: 12px; padding: 16px 18px; }
+  .st-body { flex: 0 0 auto; min-height: 0; overflow: visible; justify-content: flex-start; gap: 12px; }
+  .st-attendance .st-body { justify-content: center; flex: 1 1 auto; }
+  .st-att { height: auto; }
+  .st-certificates .st-body,
+  .st-name .st-body { height: auto; justify-content: flex-start; flex: 1 1 auto; }
+  .st-name .st-body { gap: 10px; }
+  .st-brand { margin-top: auto; }
+  .st-payment .st-body { height: auto; flex: 1 1 auto; }
+  .st-pay { height: auto; }
+  .st-pay-edit { height: auto; }
+  .st-pay-edit .st-textarea { flex: none; height: 110px; min-height: 110px; }
+}
