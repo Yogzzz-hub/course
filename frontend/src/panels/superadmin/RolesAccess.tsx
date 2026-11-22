@@ -62,7 +62,7 @@ export function RolesAccess() {
     });
   }, [users, query, filter]);
 
-  const { start, end, more, sentinel, loadMore, paged, page, pages, setPage } = useInfiniteList(visible.length, `${query}|${filter}`);
+  const { start, end, more, sentinel, loadMore, paged, page, pages, setPage } = useInfiniteList(visible.length, `${query}|${filter}`, 20, 5);
   const shown = visible.slice(start, end);
 
   // The confirmation dialog follows the pending change.

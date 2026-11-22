@@ -4002,6 +4002,114 @@ input[type="file"]::file-selector-button:hover {
   gap: 8px;
 }
 
+/* ---- Date Range Filter Component ---- */
+.p-date-filter-wrap {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.p-date-filter-controls {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.p-date-filter-select {
+  min-width: 175px;
+}
+
+.p-date-custom-range {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1.5px solid var(--border-strong);
+  border-radius: 14px;
+  padding: 4px 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  animation: p-select-pop 0.16s ease-out;
+}
+
+.p-date-input-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.p-date-input-label {
+  user-select: none;
+}
+
+.p-date-picker-input {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font: 600 13px var(--font-body);
+  padding: 5px 2px;
+  cursor: pointer;
+}
+
+.p-date-picker-input:focus-visible {
+  outline: 2px solid var(--accent);
+  border-radius: 6px;
+}
+
+.p-date-sep {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+  user-select: none;
+}
+
+.p-date-filter-clear-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface-alt);
+  color: var(--muted);
+  border-radius: 12px;
+  padding: 6px 10px;
+  min-height: 40px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.p-date-filter-clear-btn:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.p-date-filter-active-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  color: var(--accent);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.p-date-filter-active-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
 /* ---- Phone layout (up to 640px): compact bento, short pages, no long scrolling -------------- */
 @media (max-width: 640px) {
   .p-main { padding: 16px 14px 40px; gap: 12px; }
@@ -4027,4 +4135,25 @@ input[type="file"]::file-selector-button:hover {
   .p-more.p-more-wide { display: block; width: 100%; margin-top: 6px; }
   .p-pager { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; }
   .p-pager-count { font-size: 13px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+}
+
+/* ---- Phone / tablet shell (up to 900px): menu on top, page below, never side by side --------- */
+@media (max-width: 900px) {
+  .panel-root,
+  .panel-root--collapsed {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    max-height: none;
+  }
+  .p-side,
+  .panel-root--collapsed .p-side {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    max-height: none;
+    align-items: stretch;
+    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.12);
+  }
+  .p-main { min-width: 0; width: 100%; }
 }

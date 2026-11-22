@@ -35,6 +35,10 @@ import {
   type ActivityItem,
   ProgressBar,
   CurvedSelect,
+  DateRangeFilter,
+  defaultDateRange,
+  matchesDateRange,
+  type DateRange,
 } from '../ui';
 
 const NAV: NavItem[] = [
@@ -202,12 +206,20 @@ function SubmissionGrader({ row, onSaved }: { row: SubmissionRow; onSaved: () =>
 
 function Submissions({ assignmentId }: { assignmentId: number }) {
   const list = useApi<{ items: SubmissionRow[] }>(`/trainer/assignments/${assignmentId}/submissions`);
+  const [dateRange, setDateRange] = useState<DateRange>(defaultDateRange);
+
+  const filteredSubmissions = (list.data?.items ?? []).filter(s => matchesDateRange(s.submitted_at, dateRange));
+
   return (
     <>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
+        <DateRangeFilter value={dateRange} onChange={setDateRange} label="Filter submissions by date" />
+        <span style={{ fontSize: 13, color: 'var(--muted)' }}>{filteredSubmissions.length} submissions</span>
+      </div>
       <ErrorNotice error={list.error} />
       <Table
         head={['Student', 'Submitted', 'Work', 'Grade']}
-        rows={(list.data?.items ?? []).map(s => [
+        rows={filteredSubmissions.map(s => [
           <div key="n"><strong>{s.name}</strong><div className="p-muted">{s.email}</div></div>,
           fmtDateTime(s.submitted_at),
           <div key="w">
@@ -220,7 +232,7 @@ function Submissions({ assignmentId }: { assignmentId: number }) {
           </div>,
           <SubmissionGrader key={`g-${s.id}-${s.score ?? 'none'}`} row={s} onSaved={list.reload} />,
         ])}
-        empty="Nothing submitted yet."
+        empty={dateRange.preset !== 'all' ? "No submissions match this date filter." : "Nothing submitted yet."}
       />
     </>
   );

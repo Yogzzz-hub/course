@@ -51,6 +51,10 @@ import {
   ProgressBar,
   FileUploadZone,
   CurvedSelect,
+  DateRangeFilter,
+  defaultDateRange,
+  matchesDateRange,
+  type DateRange,
   type ActivityItem,
 } from '../ui';
 
@@ -384,6 +388,7 @@ function Payments() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
   const [successNotice, setSuccessNotice] = useState<string>('');
+  const [dateRange, setDateRange] = useState<DateRange>(defaultDateRange);
 
   function openPayModal(enrolment: Enrolment) {
     setPayTarget(enrolment);
@@ -606,10 +611,16 @@ function Payments() {
 
       {/* Paid Fees & Transaction History Section */}
       <Card title="Paid Fees & Transaction History">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 14 }}>
+          <DateRangeFilter value={dateRange} onChange={setDateRange} label="Filter payments by date" />
+          <div style={{ fontSize: 13, color: 'var(--muted)' }}>
+            <span>{(history.data?.items ?? []).filter(p => matchesDateRange(p.paid_on, dateRange)).length} transactions</span>
+          </div>
+        </div>
         <ErrorNotice error={history.error} />
         <Table
           head={['Date', 'Course', 'Amount Paid', 'Method', 'Reference Code', 'Status']}
-          rows={(history.data?.items ?? []).map(p => [
+          rows={(history.data?.items ?? []).filter(p => matchesDateRange(p.paid_on, dateRange)).map(p => [
             fmtDate(p.paid_on),
             p.programme || 'Course Tuition',
             fmtInr(p.amount_inr),
@@ -621,7 +632,7 @@ function Payments() {
               tone={p.status === 'verified' ? 'good' : p.status === 'rejected' ? 'bad' : 'warn'}
             />,
           ])}
-          empty="No payment transactions recorded yet."
+          empty={dateRange.preset !== 'all' ? "No transactions match this date filter." : "No payment transactions recorded yet."}
         />
       </Card>
 

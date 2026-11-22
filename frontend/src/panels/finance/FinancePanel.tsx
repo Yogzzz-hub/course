@@ -35,6 +35,10 @@ import {
   type ActivityItem,
   ProgressBar,
   CurvedSelect,
+  DateRangeFilter,
+  defaultDateRange,
+  matchesDateRange,
+  type DateRange,
 } from '../ui';
 
 const NAV: NavItem[] = [
@@ -240,33 +244,49 @@ function Overview({ me }: { me: Me }) {
 
 function Payments() {
   const [status, setStatus] = useState('submitted');
+  const [dateRange, setDateRange] = useState<DateRange>(defaultDateRange);
   const list = useApi<{ items: PaymentRow[] }>(`/finance/payments?status=${status}`);
   const change = useChange(list.reload);
   const [notes, setNotes] = useState<Record<number, string>>({});
+
+  const filteredPayments = (list.data?.items ?? []).filter(p => matchesDateRange(p.paid_on, dateRange));
+  const totalAmount = filteredPayments.reduce((sum, p) => sum + p.amount_inr, 0);
 
   return (
     <>
       <PageHead title="Payments" text="Check each payment against your bank statement, then verify it. Verified payments count towards the student's fees." />
       <Card>
-        <div className="p-row" style={{ marginBottom: 12 }}>
-          <CurvedSelect
-            value={status}
-            onChange={setStatus}
-            options={[
-              { value: 'submitted', label: 'To verify' },
-              { value: 'verified', label: 'Verified' },
-              { value: 'rejected', label: 'Rejected' },
-              { value: 'all', label: 'All' },
-            ]}
-            placeholder="Filter by status"
-          />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+            <div style={{ minWidth: 150 }}>
+              <CurvedSelect
+                value={status}
+                onChange={setStatus}
+                options={[
+                  { value: 'submitted', label: 'To verify' },
+                  { value: 'verified', label: 'Verified' },
+                  { value: 'rejected', label: 'Rejected' },
+                  { value: 'all', label: 'All' },
+                ]}
+                placeholder="Filter by status"
+              />
+            </div>
+            <DateRangeFilter value={dateRange} onChange={setDateRange} label="Filter by payment date" />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--muted)' }}>
+            <span>{filteredPayments.length} payments</span>
+            <span>•</span>
+            <strong style={{ color: 'var(--text)' }}>Total: {fmtInr(totalAmount)}</strong>
+          </div>
         </div>
+
         <ErrorNotice error={list.error} />
         <ErrorNotice error={change.error} />
         {change.message && <Notice tone="success">{change.message}</Notice>}
         <Table
           head={['Student', 'Batch', 'Amount', 'Method & reference', 'Paid on', 'Balance', 'Status', 'Decision']}
-          rows={(list.data?.items ?? []).map(p => [
+          rows={filteredPayments.map(p => [
             <div key="n"><strong>{p.name}</strong><div className="p-muted">{p.email}</div></div>,
             p.batch,
             fmtInr(p.amount_inr),
@@ -284,7 +304,7 @@ function Payments() {
               p.note || '—'
             ),
           ])}
-          empty="Nothing here right now."
+          empty={dateRange.preset !== 'all' ? "No payments match this date filter." : "Nothing here right now."}
         />
       </Card>
     </>
@@ -293,10 +313,14 @@ function Payments() {
 
 function Expenses() {
   const list = useApi<{ items: { id: number; category: string; description: string; amount_inr: number; spent_on: string }[] }>('/finance/expenses');
+  const [dateRange, setDateRange] = useState<DateRange>(defaultDateRange);
   const [form, setForm] = useState({ category: '', description: '', amount_inr: '', spent_on: '' });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
   const [message, setMessage] = useState('');
+
+  const filteredExpenses = (list.data?.items ?? []).filter(e => matchesDateRange(e.spent_on, dateRange));
+  const totalSpent = filteredExpenses.reduce((sum, e) => sum + e.amount_inr, 0);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -331,11 +355,19 @@ function Expenses() {
         </form>
       </Card>
       <Card title="Expenses">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 14 }}>
+          <DateRangeFilter value={dateRange} onChange={setDateRange} label="Filter by expense date" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--muted)' }}>
+            <span>{filteredExpenses.length} records</span>
+            <span>•</span>
+            <strong style={{ color: 'var(--text)' }}>Total: {fmtInr(totalSpent)}</strong>
+          </div>
+        </div>
         <ErrorNotice error={list.error} />
         <Table
           head={['Date', 'Category', 'Note', 'Amount']}
-          rows={(list.data?.items ?? []).map(e => [fmtDate(e.spent_on), e.category, e.description || '—', fmtInr(e.amount_inr)])}
-          empty="No expenses recorded yet."
+          rows={filteredExpenses.map(e => [fmtDate(e.spent_on), e.category, e.description || '—', fmtInr(e.amount_inr)])}
+          empty={dateRange.preset !== 'all' ? "No expenses match this date filter." : "No expenses recorded yet."}
         />
       </Card>
     </>
@@ -344,21 +376,54 @@ function Expenses() {
 
 function Ledger() {
   const list = useApi<{ items: { date: string; kind: string; description: string; amount_inr: number; balance_inr: number }[] }>('/finance/ledger');
+  const [dateRange, setDateRange] = useState<DateRange>(defaultDateRange);
+  const [kindFilter, setKindFilter] = useState<string>('all');
+
+  const filteredLedger = (list.data?.items ?? []).filter(r => {
+    if (kindFilter !== 'all' && r.kind !== kindFilter) return false;
+    return matchesDateRange(r.date, dateRange);
+  });
+  const inflow = filteredLedger.filter(r => r.kind === 'income').reduce((s, r) => s + r.amount_inr, 0);
+  const outflow = filteredLedger.filter(r => r.kind === 'outflow').reduce((s, r) => s + r.amount_inr, 0);
+
   return (
     <>
       <PageHead title="Ledger" text="Every income and outflow in date order, with the running balance." />
       <Card>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+            <div style={{ minWidth: 150 }}>
+              <CurvedSelect
+                value={kindFilter}
+                onChange={setKindFilter}
+                options={[
+                  { value: 'all', label: 'All Transactions' },
+                  { value: 'income', label: 'Income Only' },
+                  { value: 'outflow', label: 'Outflow Only' },
+                ]}
+                placeholder="All types"
+              />
+            </div>
+            <DateRangeFilter value={dateRange} onChange={setDateRange} label="Filter transactions by date" />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5 }}>
+            <span className="p-chip p-chip-good">In: {fmtInr(inflow)}</span>
+            <span className="p-chip p-chip-warn">Out: {fmtInr(outflow)}</span>
+            <span className="p-chip" style={{ fontWeight: 700 }}>Net: {fmtInr(inflow - outflow)}</span>
+          </div>
+        </div>
+
         <ErrorNotice error={list.error} />
         <Table
           head={['Date', 'Type', 'Description', 'Amount', 'Balance']}
-          rows={(list.data?.items ?? []).map(r => [
+          rows={filteredLedger.map(r => [
             fmtDate(r.date),
             <StatusChip key="t" text={r.kind === 'income' ? 'In' : 'Out'} tone={r.kind === 'income' ? 'good' : 'warn'} />,
             r.description,
             fmtInr(r.amount_inr),
             fmtInr(r.balance_inr),
           ])}
-          empty="No income or expenses yet."
+          empty={dateRange.preset !== 'all' || kindFilter !== 'all' ? "No transactions match these filters." : "No income or expenses yet."}
         />
       </Card>
     </>

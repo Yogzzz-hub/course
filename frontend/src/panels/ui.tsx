@@ -384,6 +384,175 @@ export function CurvedSelect({
   );
 }
 
+export type DatePreset = 'all' | 'today' | 'yesterday' | 'last7' | 'last30' | 'this_month' | 'custom';
+
+export interface DateRange {
+  preset: DatePreset;
+  from: string; // YYYY-MM-DD
+  to: string;   // YYYY-MM-DD
+}
+
+export function defaultDateRange(): DateRange {
+  return { preset: 'all', from: '', to: '' };
+}
+
+function toIsoDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+export function calculateDatePreset(preset: DatePreset): { from: string; to: string } {
+  const now = new Date();
+  const todayStr = toIsoDate(now);
+
+  if (preset === 'today') {
+    return { from: todayStr, to: todayStr };
+  }
+  if (preset === 'yesterday') {
+    const yest = new Date(now);
+    yest.setDate(yest.getDate() - 1);
+    const yestStr = toIsoDate(yest);
+    return { from: yestStr, to: yestStr };
+  }
+  if (preset === 'last7') {
+    const d7 = new Date(now);
+    d7.setDate(d7.getDate() - 6);
+    return { from: toIsoDate(d7), to: todayStr };
+  }
+  if (preset === 'last30') {
+    const d30 = new Date(now);
+    d30.setDate(d30.getDate() - 29);
+    return { from: toIsoDate(d30), to: todayStr };
+  }
+  if (preset === 'this_month') {
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    return { from: toIsoDate(firstDay), to: todayStr };
+  }
+  return { from: '', to: '' };
+}
+
+export function matchesDateRange(itemDate: string | undefined | null, range: DateRange): boolean {
+  if (!range || range.preset === 'all' || (!range.from && !range.to)) {
+    return true;
+  }
+  if (!itemDate) return false;
+  const target = itemDate.trim().slice(0, 10);
+  if (range.from && target < range.from) return false;
+  if (range.to && target > range.to) return false;
+  return true;
+}
+
+/**
+ * Modern, theme-aware date range filter with presets and custom date pickers
+ */
+export function DateRangeFilter({
+  value,
+  onChange,
+  label = 'All Dates',
+}: {
+  value: DateRange;
+  onChange: (range: DateRange) => void;
+  label?: string;
+}) {
+  const [showCustom, setShowCustom] = useState(value.preset === 'custom');
+
+  const presetOptions = [
+    { value: 'all', label: 'All Dates', icon: Calendar },
+    { value: 'today', label: 'Today', icon: Clock },
+    { value: 'yesterday', label: 'Yesterday', icon: Clock },
+    { value: 'last7', label: 'Last 7 Days', icon: Calendar },
+    { value: 'last30', label: 'Last 30 Days', icon: Calendar },
+    { value: 'this_month', label: 'This Month', icon: Calendar },
+    { value: 'custom', label: 'Custom Range…', icon: Sparkles },
+  ];
+
+  function handlePresetChange(newPreset: string) {
+    const preset = newPreset as DatePreset;
+    if (preset === 'custom') {
+      setShowCustom(true);
+      onChange({ ...value, preset: 'custom' });
+    } else {
+      setShowCustom(false);
+      const { from, to } = calculateDatePreset(preset);
+      onChange({ preset, from, to });
+    }
+  }
+
+  const isFiltered = value.preset !== 'all' || Boolean(value.from || value.to);
+
+  return (
+    <div className="p-date-filter-wrap">
+      <div className="p-date-filter-controls">
+        <div className="p-date-filter-select">
+          <CurvedSelect
+            value={value.preset}
+            onChange={handlePresetChange}
+            options={presetOptions}
+            placeholder={label}
+          />
+        </div>
+
+        {(showCustom || value.preset === 'custom') && (
+          <div className="p-date-custom-range">
+            <label className="p-date-input-group">
+              <span className="p-date-input-label">From</span>
+              <input
+                type="date"
+                className="p-date-picker-input"
+                value={value.from}
+                onChange={e => onChange({ ...value, preset: 'custom', from: e.target.value })}
+                aria-label="From date"
+              />
+            </label>
+            <span className="p-date-sep">to</span>
+            <label className="p-date-input-group">
+              <span className="p-date-input-label">To</span>
+              <input
+                type="date"
+                className="p-date-picker-input"
+                value={value.to}
+                onChange={e => onChange({ ...value, preset: 'custom', to: e.target.value })}
+                aria-label="To date"
+              />
+            </label>
+          </div>
+        )}
+
+        {isFiltered && (
+          <button
+            type="button"
+            className="p-date-filter-clear-btn"
+            onClick={() => {
+              setShowCustom(false);
+              onChange(defaultDateRange());
+            }}
+            title="Reset date filter"
+            aria-label="Reset date filter"
+          >
+            <X size={12} />
+            <span>Reset</span>
+          </button>
+        )}
+      </div>
+
+      {isFiltered && (value.from || value.to) && (
+        <div className="p-date-filter-active-pill" title="Active date filter range">
+          <span className="p-date-filter-active-dot" />
+          <span>
+            {value.from && value.to
+              ? `${value.from} → ${value.to}`
+              : value.from
+              ? `From ${value.from}`
+              : `Until ${value.to}`}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export interface ActivityItem {
   id: string | number;
   title: string;
