@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import FileResponse
@@ -20,6 +20,7 @@ from ..models import (
     Submission,
     Task,
     TaskCompletion,
+    TrainerLeave,
     User,
 )
 from ..services import audit, class_attendance, threshold_percent
@@ -158,6 +159,13 @@ def my_classes(user: User = TRAINER, db: Session = Depends(get_db)):
     return {"items": items}
 
 
+class TrainerLeaveIn(BaseModel):
+    batch_id: int | None = None
+    class_id: int | None = None
+    date: date
+    reason: str = Field(min_length=3, max_length=1000)
+
+
 @router.post("/classes/{class_id}/start")
 def start_class(class_id: int, user: User = TRAINER, db: Session = Depends(get_db)):
     cls = assert_class_access(db, user, class_id)
@@ -165,11 +173,59 @@ def start_class(class_id: int, user: User = TRAINER, db: Session = Depends(get_d
         raise ApiError(409, "CLASS_ENDED", "This class has already ended.")
     if cls.status == "live":
         return {"ok": True}
+    now = utcnow()
+    seconds_until_start = (cls.starts_at - now).total_seconds()
+    if seconds_until_start > 600:
+        minutes_left = int((seconds_until_start + 59) // 60)
+        raise ApiError(400, "TOO_EARLY", f"Classes can only be started 10 minutes prior to scheduled start time ({minutes_left} minutes remaining).")
     cls.status = "live"
-    cls.started_at = utcnow()
+    cls.started_at = now
     audit(db, user.id, "class.start", "class", cls.id)
     db.commit()
     return {"ok": True}
+
+
+@router.get("/leaves")
+def my_leaves(user: User = TRAINER, db: Session = Depends(get_db)):
+    rows = db.scalars(
+        select(TrainerLeave).where(TrainerLeave.trainer_id == user.id).order_by(TrainerLeave.created_at.desc())
+    ).all()
+    items = []
+    for l in rows:
+        batch = db.get(Batch, l.batch_id) if l.batch_id else None
+        cls = db.get(ClassSession, l.class_id) if l.class_id else None
+        items.append(
+            {
+                "id": l.id,
+                "batch_id": l.batch_id,
+                "batch": batch.name if batch else "General / All Batches",
+                "class_id": l.class_id,
+                "class_sequence": cls.sequence if cls else None,
+                "date": l.date.isoformat(),
+                "reason": l.reason,
+                "status": l.status,
+                "created_at": l.created_at.isoformat() + "Z",
+                "decided_at": l.decided_at.isoformat() + "Z" if l.decided_at else None,
+            }
+        )
+    return {"items": items}
+
+
+@router.post("/leaves")
+def request_leave(body: TrainerLeaveIn, user: User = TRAINER, db: Session = Depends(get_db)):
+    leave = TrainerLeave(
+        trainer_id=user.id,
+        batch_id=body.batch_id,
+        class_id=body.class_id,
+        date=body.date,
+        reason=body.reason.strip(),
+        status="pending",
+    )
+    db.add(leave)
+    db.flush()
+    audit(db, user.id, "trainer.leave_request", "trainer_leave", leave.id, {"date": str(body.date), "reason": body.reason})
+    db.commit()
+    return {"ok": True, "id": leave.id}
 
 
 @router.post("/classes/{class_id}/end")
@@ -302,13 +358,21 @@ def list_submissions(assignment_id: int, user: User = TRAINER, db: Session = Dep
 
 
 @router.get("/submissions/{submission_id}/file")
-def download_submission(submission_id: int, user: User = TRAINER, db: Session = Depends(get_db)):
+def download_submission(submission_id: int, inline: bool = False, user: User = TRAINER, db: Session = Depends(get_db)):
     sub = db.get(Submission, submission_id)
     if sub is None or not sub.file_path:
         raise ApiError(404, "NOT_FOUND", "There is no file for this submission.")
     assignment = db.get(Assignment, sub.assignment_id)
     assert_batch_access(db, user, assignment.batch_id)
-    return FileResponse(sub.file_path, filename=sub.file_name)
+    import mimetypes
+    media_type, _ = mimetypes.guess_type(sub.file_name)
+    disp = "inline" if inline else "attachment"
+    return FileResponse(
+        sub.file_path,
+        media_type=media_type or "application/octet-stream",
+        content_disposition_type=disp,
+        filename=sub.file_name,
+    )
 
 
 @router.patch("/submissions/{submission_id}")

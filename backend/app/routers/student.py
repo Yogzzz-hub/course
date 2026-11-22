@@ -405,15 +405,20 @@ def recordings(user: User = STUDENT, db: Session = Depends(get_db)):
         return {"items": []}
     rows = db.scalars(
         select(ClassSession).where(
-            ClassSession.batch_id.in_(batch_ids), ClassSession.status == "ended", ClassSession.recording_url != ""
+            ClassSession.batch_id.in_(batch_ids), ClassSession.recording_url != ""
         ).order_by(ClassSession.starts_at.desc())
     ).all()
-    return {
-        "items": [
-            {"id": c.id, "sequence": c.sequence, "starts_at": c.starts_at.isoformat() + "Z", "recording_url": c.recording_url}
-            for c in rows
-        ]
-    }
+    items = []
+    for c in rows:
+        batch = db.get(Batch, c.batch_id)
+        items.append({
+            "id": c.id,
+            "batch": batch.name if batch else "",
+            "sequence": c.sequence,
+            "starts_at": c.starts_at.isoformat() + "Z",
+            "recording_url": c.recording_url,
+        })
+    return {"items": items}
 
 
 @router.get("/assignments")
@@ -473,19 +478,24 @@ async def submit_assignment(
     link_value = ""
     if kind == "file":
         if file is None or not file.filename:
-            raise ApiError(422, "VALIDATION", "Attach a file to submit.", {"file": "Attach a file."})
-        suffix = Path(file.filename).suffix.lower()
-        if suffix not in ALLOWED_UPLOADS:
-            raise ApiError(422, "VALIDATION", "That file type is not allowed.", {"file": "Upload a PDF, ZIP, DOCX, text, code, notebook or image file."})
-        content = await file.read(MAX_UPLOAD_BYTES + 1)
-        if len(content) > MAX_UPLOAD_BYTES:
-            raise ApiError(422, "VALIDATION", "The file is larger than 10 MB.", {"file": "Keep the file under 10 MB."})
-        target_dir = Path(get_settings().upload_dir) / "assignments" / str(assignment.id)
-        target_dir.mkdir(parents=True, exist_ok=True)
-        stored = target_dir / f"{user.id}-{uuid.uuid4().hex}{suffix}"
-        stored.write_bytes(content)
-        file_name = Path(file.filename).name
-        file_path = str(stored)
+            if existing and existing.kind == "file" and existing.file_path:
+                file_name = existing.file_name
+                file_path = existing.file_path
+            else:
+                raise ApiError(422, "VALIDATION", "Attach a file to submit.", {"file": "Attach a file."})
+        else:
+            suffix = Path(file.filename).suffix.lower()
+            if suffix not in ALLOWED_UPLOADS:
+                raise ApiError(422, "VALIDATION", "That file type is not allowed.", {"file": "Upload a PDF, ZIP, DOCX, text, code, notebook or image file."})
+            content = await file.read(MAX_UPLOAD_BYTES + 1)
+            if len(content) > MAX_UPLOAD_BYTES:
+                raise ApiError(422, "VALIDATION", "The file is larger than 10 MB.", {"file": "Keep the file under 10 MB."})
+            target_dir = Path(get_settings().upload_dir) / "assignments" / str(assignment.id)
+            target_dir.mkdir(parents=True, exist_ok=True)
+            stored = target_dir / f"{user.id}-{uuid.uuid4().hex}{suffix}"
+            stored.write_bytes(content)
+            file_name = Path(file.filename).name
+            file_path = str(stored)
     else:
         value = link.strip()
         if not value.startswith(("https://", "http://")):
@@ -508,11 +518,19 @@ async def submit_assignment(
 
 
 @router.get("/assignments/{assignment_id}/file")
-def download_my_submission_file(assignment_id: int, user: User = STUDENT, db: Session = Depends(get_db)):
+def download_my_submission_file(assignment_id: int, inline: bool = False, user: User = STUDENT, db: Session = Depends(get_db)):
     sub = db.scalar(select(Submission).where(Submission.assignment_id == assignment_id, Submission.user_id == user.id))
     if sub is None or not sub.file_path or not Path(sub.file_path).exists():
         raise ApiError(404, "NOT_FOUND", "No submitted file found.")
-    return FileResponse(sub.file_path, filename=sub.file_name or "submission")
+    import mimetypes
+    media_type, _ = mimetypes.guess_type(sub.file_name)
+    disp = "inline" if inline else "attachment"
+    return FileResponse(
+        sub.file_path,
+        media_type=media_type or "application/octet-stream",
+        content_disposition_type=disp,
+        filename=sub.file_name or "submission",
+    )
 
 
 @router.get("/tasks")
@@ -668,6 +686,7 @@ def certificates(user: User = STUDENT, db: Session = Depends(get_db)):
                 }
             )
         else:
+            checks_res = certificate_checks(db, enrolment)
             att = attendance_summary(db, user.id, enrolment.batch_id, threshold)
             fee = fee_summary(db, enrolment)
             in_progress.append(
@@ -682,6 +701,8 @@ def certificates(user: User = STUDENT, db: Session = Depends(get_db)):
                     "fee_balance_inr": fee["balance_inr"],
                     "fees_cleared": fee["balance_inr"] == 0,
                     "status": "In Progress",
+                    "coursework": checks_res.get("coursework"),
+                    "checks": checks_res.get("checks"),
                 }
             )
     return {"items": items, "in_progress": in_progress}

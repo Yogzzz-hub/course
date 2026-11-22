@@ -957,7 +957,7 @@ function Classes() {
             <Notice tone="info">Your timetable opens once your first fee payment is confirmed.</Notice>
           ) : (
             <Table
-              head={['#', 'Starts', 'Status', 'Your attendance', 'Meeting']}
+              head={['#', 'Starts', 'Status', 'Your attendance', 'Action']}
               rows={b.classes.map(c => [
                 c.sequence,
                 fmtDateTime(c.starts_at),
@@ -966,14 +966,26 @@ function Classes() {
                 c.status === 'live' && c.meeting_url ? (
                   <a
                     key="m"
-                    className="p-btn p-btn-small"
+                    className="p-btn p-btn-small p-btn-live"
                     href={c.meeting_url}
                     target="_blank"
                     rel="noreferrer"
                     style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
                   >
                     <Video size={14} />
-                    <span>Join</span>
+                    <span>Join Live</span>
+                  </a>
+                ) : c.recording_url ? (
+                  <a
+                    key="rec"
+                    className="p-btn p-btn-small p-btn-ghost"
+                    href={c.recording_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                  >
+                    <Video size={14} />
+                    <span>Recording</span>
                   </a>
                 ) : (
                   '—'
@@ -989,14 +1001,15 @@ function Classes() {
 }
 
 function Recordings() {
-  const list = useApi<{ items: { id: number; sequence: number; starts_at: string; recording_url: string }[] }>('/student/recordings');
+  const list = useApi<{ items: { id: number; batch?: string; sequence: number; starts_at: string; recording_url: string }[] }>('/student/recordings');
   return (
     <>
       <Card>
         <ErrorNotice error={list.error} />
         <Table
-          head={['Class', 'Date', 'Recording']}
+          head={['Batch', 'Class', 'Date', 'Recording']}
           rows={(list.data?.items ?? []).map(r => [
+            r.batch || '—',
             `Class ${r.sequence}`,
             fmtDateTime(r.starts_at),
             r.recording_url ? (
@@ -1058,9 +1071,9 @@ interface AssignmentRowData {
 }
 
 function SubmitForm({ assignment, onDone }: { assignment: AssignmentRowData; onDone: () => void }) {
-  const [kind, setKind] = useState('url');
-  const [link, setLink] = useState('');
-  const [note, setNote] = useState('');
+  const [kind, setKind] = useState(assignment.submission?.kind || 'url');
+  const [link, setLink] = useState(assignment.submission?.link || '');
+  const [note, setNote] = useState(assignment.submission?.note || '');
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
@@ -1103,7 +1116,11 @@ function SubmitForm({ assignment, onDone }: { assignment: AssignmentRowData; onD
         />
       </Field>
       {kind === 'file' ? (
-        <Field label="Assignment File" error={error?.fields?.file}>
+        <Field
+          label="Assignment File"
+          hint={assignment.submission?.file_name ? `Current file: ${assignment.submission.file_name}. Upload a new file only if you wish to replace it.` : undefined}
+          error={error?.fields?.file}
+        >
           <FileUploadZone
             file={file}
             onChange={setFile}
@@ -1116,7 +1133,11 @@ function SubmitForm({ assignment, onDone }: { assignment: AssignmentRowData; onD
         </Field>
       )}
       <Field label="Note for your trainer (optional)"><input className="p-input" value={note} onChange={e => setNote(e.target.value)} /></Field>
-      <div className="span-2"><button className="p-btn" type="submit" disabled={busy}>{busy ? 'Submitting…' : assignment.submission ? 'Replace my submission' : 'Submit'}</button></div>
+      <div className="span-2">
+        <button className="p-btn" type="submit" disabled={busy}>
+          {busy ? 'Submitting…' : assignment.submission ? 'Update My Submission' : 'Submit'}
+        </button>
+      </div>
     </form>
   );
 }
@@ -1235,9 +1256,22 @@ function Assignments() {
               <div className="p-submission-details-pane">
                 <div className="p-submission-details-head">
                   <span className="p-submission-details-title">Your Submitted Work</span>
-                  <span className="p-submission-time">
-                    Submitted on {fmtDateTime(a.submission.submitted_at)}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span className="p-submission-time">
+                      Submitted on {fmtDateTime(a.submission.submitted_at)}
+                    </span>
+                    {!isGraded && (
+                      <button
+                        type="button"
+                        className="p-btn p-btn-small p-btn-ghost"
+                        onClick={() => setSubmittingId(submittingId === a.id ? null : a.id)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                      >
+                        <Edit3 size={13} />
+                        <span>{submittingId === a.id ? 'Close Edit' : 'Edit Submission'}</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="p-submission-content-row">
@@ -1250,15 +1284,34 @@ function Assignments() {
                         </span>
                         <span className="p-submission-file-hint">Attached file submission</span>
                       </div>
-                      <a
-                        className="p-btn p-btn-small"
-                        href={`/v1/student/assignments/${a.id}/file`}
-                        target="_blank"
-                        rel="noreferrer"
-                        download
-                      >
-                        <Download size={13} className="inline mr-1" /> Download File
-                      </a>
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        <a
+                          className="p-btn p-btn-small p-btn-ghost"
+                          href={`/v1/student/assignments/${a.id}/file?inline=true`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <Eye size={13} className="inline mr-1" /> Preview File
+                        </a>
+                        <a
+                          className="p-btn p-btn-small"
+                          href={`/v1/student/assignments/${a.id}/file`}
+                          target="_blank"
+                          rel="noreferrer"
+                          download
+                        >
+                          <Download size={13} className="inline mr-1" /> Download File
+                        </a>
+                        {!isGraded && (
+                          <button
+                            type="button"
+                            className="p-btn p-btn-small p-btn-ghost"
+                            onClick={() => setSubmittingId(submittingId === a.id ? null : a.id)}
+                          >
+                            <Edit3 size={13} className="inline mr-1" /> Change
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ) : (
                     <div className="p-submission-link-card">
@@ -1269,14 +1322,25 @@ function Assignments() {
                         </span>
                         <span className="p-submission-link-url">{a.submission.link}</span>
                       </div>
-                      <a
-                        className="p-btn p-btn-small"
-                        href={a.submission.link}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <ExternalLink size={13} className="inline mr-1" /> Open Link
-                      </a>
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        <a
+                          className="p-btn p-btn-small"
+                          href={a.submission.link}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <ExternalLink size={13} className="inline mr-1" /> Open Link
+                        </a>
+                        {!isGraded && (
+                          <button
+                            type="button"
+                            className="p-btn p-btn-small p-btn-ghost"
+                            onClick={() => setSubmittingId(submittingId === a.id ? null : a.id)}
+                          >
+                            <Edit3 size={13} className="inline mr-1" /> Change Link
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1723,6 +1787,17 @@ interface InProgressCourse {
   fee_balance_inr: number;
   fees_cleared: boolean;
   status: string;
+  coursework?: {
+    min_assignments: number;
+    student_assignments: number;
+    batch_assignments: number;
+    assignments_met: boolean;
+    min_quizzes: number;
+    student_quizzes: number;
+    batch_quizzes: number;
+    quizzes_met: boolean;
+  };
+  checks?: Record<string, boolean>;
 }
 
 function Certificates() {
@@ -1772,11 +1847,13 @@ function Certificates() {
             </div>
 
             <div className="p-cert-lock-banner">
-              <div className="p-cert-lock-icon">🔒</div>
               <div className="p-cert-lock-text">
                 <strong>Certificate Locked: Available only after completing the course fully</strong>
                 <p>
-                  Your certificate of completion will be unlocked and available here once all <strong>{p.classes_total}</strong> scheduled classes are concluded.
+                  Your certificate of completion will be unlocked and available here once all <strong>{p.classes_total}</strong> scheduled classes are concluded
+                  {p.coursework && (p.coursework.min_assignments > 0 || p.coursework.min_quizzes > 0) ? (
+                    <> and all required coursework ({p.coursework.min_assignments > 0 ? `${p.coursework.min_assignments} assignment${p.coursework.min_assignments > 1 ? 's' : ''}` : ''}{p.coursework.min_assignments > 0 && p.coursework.min_quizzes > 0 ? ' & ' : ''}{p.coursework.min_quizzes > 0 ? `${p.coursework.min_quizzes} quiz${p.coursework.min_quizzes > 1 ? 'zes' : ''}` : ''}) is submitted.</>
+                  ) : '.'}
                 </p>
               </div>
             </div>
@@ -1799,7 +1876,34 @@ function Certificates() {
                 label="Fee Clearance"
                 value={p.fees_cleared ? 'Cleared in full' : fmtInr(p.fee_balance_inr)}
               />
-              <Stat label="Certification Status" value="Locked (Pending classes)" />
+              {p.coursework && p.coursework.min_assignments > 0 && (
+                <Stat
+                  label="Required Assignments"
+                  value={`${p.coursework.student_assignments} / ${p.coursework.min_assignments} (${p.coursework.assignments_met ? 'Met' : 'Pending'})`}
+                />
+              )}
+              {p.coursework && p.coursework.min_quizzes > 0 && (
+                <Stat
+                  label="Required Quizzes"
+                  value={`${p.coursework.student_quizzes} / ${p.coursework.min_quizzes} (${p.coursework.quizzes_met ? 'Met' : 'Pending'})`}
+                />
+              )}
+              <Stat
+                label="Certification Status"
+                value={
+                  p.checks?.eligible
+                    ? 'Eligible (Awaiting Issuance)'
+                    : !p.checks?.all_classes_ended
+                    ? 'Locked (Classes pending)'
+                    : !p.coursework?.assignments_met
+                    ? 'Locked (Assignments pending)'
+                    : !p.coursework?.quizzes_met
+                    ? 'Locked (Quizzes pending)'
+                    : !p.fees_cleared
+                    ? 'Locked (Fees pending)'
+                    : 'Locked (Criteria pending)'
+                }
+              />
             </div>
 
             <div className="p-course-footer">
