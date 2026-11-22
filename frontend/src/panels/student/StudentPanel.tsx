@@ -1776,6 +1776,17 @@ interface InProgressCourse {
   fee_balance_inr: number;
   fees_cleared: boolean;
   status: string;
+  coursework?: {
+    min_assignments: number;
+    student_assignments: number;
+    batch_assignments: number;
+    assignments_met: boolean;
+    min_quizzes: number;
+    student_quizzes: number;
+    batch_quizzes: number;
+    quizzes_met: boolean;
+  };
+  checks?: Record<string, boolean>;
 }
 
 function Certificates() {
@@ -1828,7 +1839,10 @@ function Certificates() {
               <div className="p-cert-lock-text">
                 <strong>Certificate Locked: Available only after completing the course fully</strong>
                 <p>
-                  Your certificate of completion will be unlocked and available here once all <strong>{p.classes_total}</strong> scheduled classes are concluded.
+                  Your certificate of completion will be unlocked and available here once all <strong>{p.classes_total}</strong> scheduled classes are concluded
+                  {p.coursework && (p.coursework.min_assignments > 0 || p.coursework.min_quizzes > 0) ? (
+                    <> and all required coursework ({p.coursework.min_assignments > 0 ? `${p.coursework.min_assignments} assignment${p.coursework.min_assignments > 1 ? 's' : ''}` : ''}{p.coursework.min_assignments > 0 && p.coursework.min_quizzes > 0 ? ' & ' : ''}{p.coursework.min_quizzes > 0 ? `${p.coursework.min_quizzes} quiz${p.coursework.min_quizzes > 1 ? 'zes' : ''}` : ''}) is submitted.</>
+                  ) : '.'}
                 </p>
               </div>
             </div>
@@ -1851,7 +1865,34 @@ function Certificates() {
                 label="Fee Clearance"
                 value={p.fees_cleared ? 'Cleared in full' : fmtInr(p.fee_balance_inr)}
               />
-              <Stat label="Certification Status" value="Locked (Pending classes)" />
+              {p.coursework && p.coursework.min_assignments > 0 && (
+                <Stat
+                  label="Required Assignments"
+                  value={`${p.coursework.student_assignments} / ${p.coursework.min_assignments} (${p.coursework.assignments_met ? 'Met' : 'Pending'})`}
+                />
+              )}
+              {p.coursework && p.coursework.min_quizzes > 0 && (
+                <Stat
+                  label="Required Quizzes"
+                  value={`${p.coursework.student_quizzes} / ${p.coursework.min_quizzes} (${p.coursework.quizzes_met ? 'Met' : 'Pending'})`}
+                />
+              )}
+              <Stat
+                label="Certification Status"
+                value={
+                  p.checks?.eligible
+                    ? 'Eligible (Awaiting Issuance)'
+                    : !p.checks?.all_classes_ended
+                    ? 'Locked (Classes pending)'
+                    : !p.coursework?.assignments_met
+                    ? 'Locked (Assignments pending)'
+                    : !p.coursework?.quizzes_met
+                    ? 'Locked (Quizzes pending)'
+                    : !p.fees_cleared
+                    ? 'Locked (Fees pending)'
+                    : 'Locked (Criteria pending)'
+                }
+              />
             </div>
 
             <div className="p-course-footer">

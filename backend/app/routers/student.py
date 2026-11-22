@@ -686,6 +686,7 @@ def certificates(user: User = STUDENT, db: Session = Depends(get_db)):
                 }
             )
         else:
+            checks_res = certificate_checks(db, enrolment)
             att = attendance_summary(db, user.id, enrolment.batch_id, threshold)
             fee = fee_summary(db, enrolment)
             in_progress.append(
@@ -700,6 +701,8 @@ def certificates(user: User = STUDENT, db: Session = Depends(get_db)):
                     "fee_balance_inr": fee["balance_inr"],
                     "fees_cleared": fee["balance_inr"] == 0,
                     "status": "In Progress",
+                    "coursework": checks_res.get("coursework"),
+                    "checks": checks_res.get("checks"),
                 }
             )
     return {"items": items, "in_progress": in_progress}

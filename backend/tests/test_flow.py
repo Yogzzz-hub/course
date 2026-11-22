@@ -219,3 +219,43 @@ def test_leaves_reschedule_recording():
         })
         assert rec.status_code == 200
 
+
+def test_course_requirements_for_certificates():
+    manager = client_as("manager")
+    student = client_as("student")
+
+    # Manager creates a new programme with assignment and quiz requirements
+    prog = write(manager, "post", "/v1/manager/programmes", json={
+        "name": "Cloud Native Architecture",
+        "fee_inr": 25000,
+        "duration_weeks": 8,
+        "min_assignments": 2,
+        "min_quizzes": 1,
+    }).json()
+    assert prog["min_assignments"] == 2
+    assert prog["min_quizzes"] == 1
+
+    # Update requirements via PATCH endpoint
+    patch_req = write(manager, "patch", f"/v1/manager/programmes/{prog['id']}/requirements", json={
+        "min_assignments": 3,
+        "min_quizzes": 2,
+    })
+    assert patch_req.status_code == 200
+    assert patch_req.json()["min_assignments"] == 3
+    assert patch_req.json()["min_quizzes"] == 2
+
+    # Verify programmes list returns requirements
+    progs = manager.get("/v1/manager/programmes").json()["items"]
+    target_prog = [p for p in progs if p["id"] == prog["id"]][0]
+    assert target_prog["min_assignments"] == 3
+    assert target_prog["min_quizzes"] == 2
+
+    # Check tasks overview includes programme requirements
+    coursework = manager.get("/v1/manager/tasks-overview").json()["items"]
+    assert isinstance(coursework, list)
+    for b in coursework:
+        if b.get("programme_id") == prog["id"]:
+            assert b["min_assignments"] == 3
+            assert b["min_quizzes"] == 2
+
+

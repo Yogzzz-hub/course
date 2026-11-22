@@ -51,7 +51,15 @@ const NAV: NavItem[] = [
 ];
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-interface Programme { id: number; name: string; fee_inr: number; duration_weeks: number; description: string }
+interface Programme {
+  id: number;
+  name: string;
+  fee_inr: number;
+  duration_weeks: number;
+  description: string;
+  min_assignments?: number;
+  min_quizzes?: number;
+}
 interface BatchRow { id: number; name: string; programme: string; start_date: string; days: string; start_time: string; capacity: number; seats_taken: number; trainers: number; last_class_date: string | null; status: string }
 interface Staff { id: number; name: string; email: string }
 
@@ -255,39 +263,204 @@ function Programmes() {
   const [fee, setFee] = useState('');
   const [weeks, setWeeks] = useState('');
   const [description, setDescription] = useState('');
+  const [minAssignments, setMinAssignments] = useState('0');
+  const [minQuizzes, setMinQuizzes] = useState('0');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editAssignments, setEditAssignments] = useState('0');
+  const [editQuizzes, setEditQuizzes] = useState('0');
   const change = useChange(list.reload);
 
   function submit(event: FormEvent) {
     event.preventDefault();
     change.run(
-      () => api('/manager/programmes', { body: { name, fee_inr: Number(fee), duration_weeks: Number(weeks || 0), description } }),
-      'Programme added.',
+      () =>
+        api('/manager/programmes', {
+          body: {
+            name,
+            fee_inr: Number(fee),
+            duration_weeks: Number(weeks || 0),
+            description,
+            min_assignments: Number(minAssignments || 0),
+            min_quizzes: Number(minQuizzes || 0),
+          },
+        }),
+      'Programme added with certificate coursework requirements.'
     ).then(() => {
-      setName(''); setFee(''); setWeeks(''); setDescription('');
+      setName('');
+      setFee('');
+      setWeeks('');
+      setDescription('');
+      setMinAssignments('0');
+      setMinQuizzes('0');
+    });
+  }
+
+  function saveRequirements(programmeId: number) {
+    change.run(
+      () =>
+        api(`/manager/programmes/${programmeId}/requirements`, {
+          method: 'PATCH',
+          body: {
+            min_assignments: Number(editAssignments || 0),
+            min_quizzes: Number(editQuizzes || 0),
+          },
+        }),
+      'Course certificate coursework criteria updated.'
+    ).then(() => {
+      setEditingId(null);
     });
   }
 
   return (
     <>
-      <PageHead title="Programmes" text="The courses you sell. The fee here is the default for every batch of that programme." />
+      <PageHead
+        title="Programmes"
+        text="The courses you sell. Set required quizzes and assignments for each course that students must complete to earn their certificates."
+      />
       <Card title="Add a programme">
         <form onSubmit={submit} className="p-form-grid">
-          <Field label="Programme name" error={fieldErrors(change.error).name}><input className="p-input" required value={name} onChange={e => setName(e.target.value)} /></Field>
-          <Field label="Fee (₹)" error={fieldErrors(change.error).fee_inr}><input className="p-input" type="number" min={0} required value={fee} onChange={e => setFee(e.target.value)} /></Field>
-          <Field label="Duration (weeks)"><input className="p-input" type="number" min={0} value={weeks} onChange={e => setWeeks(e.target.value)} /></Field>
-          <Field label="Description" hint="Shown to students on their fee page."><textarea className="p-textarea" rows={2} value={description} onChange={e => setDescription(e.target.value)} /></Field>
-          <div className="span-2"><button className="p-btn" type="submit" disabled={change.busy}>Add programme</button></div>
+          <Field label="Programme name" error={fieldErrors(change.error).name}>
+            <input className="p-input" required value={name} onChange={e => setName(e.target.value)} />
+          </Field>
+          <Field label="Fee (₹)" error={fieldErrors(change.error).fee_inr}>
+            <input className="p-input" type="number" min={0} required value={fee} onChange={e => setFee(e.target.value)} />
+          </Field>
+          <Field label="Duration (weeks)">
+            <input className="p-input" type="number" min={0} value={weeks} onChange={e => setWeeks(e.target.value)} />
+          </Field>
+          <Field
+            label="Min Quizzes for Certificate"
+            hint="Students must attempt at least this many quizzes to earn a certificate."
+          >
+            <input
+              className="p-input"
+              type="number"
+              min={0}
+              value={minQuizzes}
+              onChange={e => setMinQuizzes(e.target.value)}
+              placeholder="0 (no minimum)"
+            />
+          </Field>
+          <Field
+            label="Min Assignments for Certificate"
+            hint="Students must submit at least this many assignments to earn a certificate."
+          >
+            <input
+              className="p-input"
+              type="number"
+              min={0}
+              value={minAssignments}
+              onChange={e => setMinAssignments(e.target.value)}
+              placeholder="0 (no minimum)"
+            />
+          </Field>
+          <Field label="Description" hint="Shown to students on their fee page.">
+            <textarea className="p-textarea" rows={2} value={description} onChange={e => setDescription(e.target.value)} />
+          </Field>
+          <div className="span-2">
+            <button className="p-btn" type="submit" disabled={change.busy}>
+              Add programme
+            </button>
+          </div>
         </form>
         <ErrorNotice error={change.error} />
         {change.message && <Notice tone="success">{change.message}</Notice>}
       </Card>
+
       <Card title="All programmes">
         <ErrorNotice error={list.error} />
         <Table
-          head={['Programme', 'Fee', 'Duration']}
-          rows={(list.data?.items ?? []).map(p => [p.name, fmtInr(p.fee_inr), p.duration_weeks ? `${p.duration_weeks} weeks` : '—'])}
+          head={['Programme', 'Fee', 'Duration', 'Certificate Criteria', 'Action']}
+          rows={(list.data?.items ?? []).map(p => [
+            p.name,
+            fmtInr(p.fee_inr),
+            p.duration_weeks ? `${p.duration_weeks} weeks` : '—',
+            <div key="req">
+              <strong style={{ color: 'var(--accent)' }}>{p.min_assignments || 0}</strong> assignments ·{' '}
+              <strong style={{ color: 'var(--accent)' }}>{p.min_quizzes || 0}</strong> quizzes required
+            </div>,
+            <button
+              key="act"
+              type="button"
+              className="p-btn p-btn-ghost p-btn-small"
+              onClick={() => {
+                if (editingId === p.id) {
+                  setEditingId(null);
+                } else {
+                  setEditingId(p.id);
+                  setEditAssignments(String(p.min_assignments || 0));
+                  setEditQuizzes(String(p.min_quizzes || 0));
+                }
+              }}
+            >
+              {editingId === p.id ? 'Close' : 'Set Criteria'}
+            </button>,
+          ])}
           empty="No programmes yet. Add the first one above."
         />
+
+        {editingId && (() => {
+          const prog = (list.data?.items ?? []).find(p => p.id === editingId);
+          if (!prog) return null;
+          return (
+            <div
+              style={{
+                marginTop: 20,
+                padding: 18,
+                borderRadius: 14,
+                background: 'var(--surface-alt)',
+                border: '1.5px solid var(--border-strong)',
+              }}
+            >
+              <h4 style={{ margin: '0 0 12px 0', fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>
+                Set Certification Coursework Criteria for: {prog.name}
+              </h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 14, alignItems: 'flex-end' }}>
+                <Field
+                  label="Required Quizzes"
+                  hint="Minimum quizzes that must be completed"
+                >
+                  <input
+                    className="p-input"
+                    type="number"
+                    min={0}
+                    value={editQuizzes}
+                    onChange={e => setEditQuizzes(e.target.value)}
+                  />
+                </Field>
+                <Field
+                  label="Required Assignments"
+                  hint="Minimum assignments that must be submitted"
+                >
+                  <input
+                    className="p-input"
+                    type="number"
+                    min={0}
+                    value={editAssignments}
+                    onChange={e => setEditAssignments(e.target.value)}
+                  />
+                </Field>
+                <div style={{ display: 'flex', gap: 8, paddingBottom: 4 }}>
+                  <button
+                    type="button"
+                    className="p-btn p-btn-small"
+                    disabled={change.busy}
+                    onClick={() => saveRequirements(prog.id)}
+                  >
+                    Save Criteria
+                  </button>
+                  <button
+                    type="button"
+                    className="p-btn p-btn-ghost p-btn-small"
+                    onClick={() => setEditingId(null)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </Card>
     </>
   );
@@ -707,6 +880,16 @@ interface EligibilityRow {
   batch: string;
   status: string;
   checks: Record<string, boolean>;
+  coursework?: {
+    min_assignments: number;
+    student_assignments: number;
+    batch_assignments: number;
+    assignments_met: boolean;
+    min_quizzes: number;
+    student_quizzes: number;
+    batch_quizzes: number;
+    quizzes_met: boolean;
+  };
   attendance_rate: number | null;
   balance_inr: number;
   certificate_id: number | null;
@@ -739,6 +922,14 @@ function Certificates() {
                 <li>{row.checks.all_classes_ended ? '✓' : '○'} All classes finished</li>
                 <li>{row.checks.attendance_ok ? '✓' : '○'} Attendance {row.attendance_rate === null ? '—' : `${row.attendance_rate}%`} meets the rule</li>
                 <li>{row.checks.fees_cleared ? '✓' : '○'} Fees cleared{row.balance_inr > 0 ? ` (balance ${fmtInr(row.balance_inr)})` : ''}</li>
+                {row.coursework && (row.coursework.min_assignments > 0 || row.coursework.min_quizzes > 0) && (
+                  <li>
+                    {row.checks.assignments_met && row.checks.quizzes_met ? '✓' : '○'} Coursework criteria:
+                    {row.coursework.min_assignments > 0 && ` ${row.coursework.student_assignments}/${row.coursework.min_assignments} assignments`}
+                    {row.coursework.min_assignments > 0 && row.coursework.min_quizzes > 0 && ' ·'}
+                    {row.coursework.min_quizzes > 0 && ` ${row.coursework.student_quizzes}/${row.coursework.min_quizzes} quizzes`}
+                  </li>
+                )}
               </ul>,
               row.certificate_id ? (
                 <StatusChip key="s" text="Issued" tone="good" />
@@ -771,15 +962,208 @@ function Certificates() {
 }
 
 function TasksOverview() {
-  const list = useApi<{ items: { batch_id: number; batch: string; assignments: number; submissions: number; graded: number; quizzes: number; quiz_attempts: number }[] }>('/manager/tasks-overview');
+  const programmes = useApi<{ items: Programme[] }>('/manager/programmes');
+  const list = useApi<{
+    items: {
+      batch_id: number;
+      batch: string;
+      programme_id: number | null;
+      programme: string;
+      assignments: number;
+      submissions: number;
+      graded: number;
+      quizzes: number;
+      quiz_attempts: number;
+      tasks: number;
+      min_assignments: number;
+      min_quizzes: number;
+      assignments_met: boolean;
+      quizzes_met: boolean;
+      requirements_met: boolean;
+    }[];
+  }>('/manager/tasks-overview');
+
+  const change = useChange(() => {
+    list.reload();
+    programmes.reload();
+  });
+
+  const [editingProgId, setEditingProgId] = useState<number | null>(null);
+  const [reqAssignments, setReqAssignments] = useState('0');
+  const [reqQuizzes, setReqQuizzes] = useState('0');
+
+  function saveReq(progId: number) {
+    change.run(
+      () =>
+        api(`/manager/programmes/${progId}/requirements`, {
+          method: 'PATCH',
+          body: {
+            min_assignments: Number(reqAssignments || 0),
+            min_quizzes: Number(reqQuizzes || 0),
+          },
+        }),
+      'Course certification requirements saved.'
+    ).then(() => {
+      setEditingProgId(null);
+    });
+  }
+
   return (
     <>
-      <PageHead title="Assignments & quizzes overview" text="Monitor batch progress across submissions, grading, and quizzes." />
-      <Card>
+      <PageHead
+        title="Tasks, assignments & course certificate criteria"
+        text="Configure per-course quiz and assignment requirements. Students only receive completion certificates once their cohort meets these coursework thresholds."
+      />
+
+      <ErrorNotice error={change.error} />
+      {change.message && <Notice tone="success">{change.message}</Notice>}
+
+      {/* Per-Course Quizzes & Assignments Certificate Criteria */}
+      <Card title="Course Certification Criteria (Required Quizzes & Assignments per Course)">
+        <ErrorNotice error={programmes.error} />
+        <Table
+          head={['Course / Programme', 'Quizzes Required for Certificate', 'Assignments Required for Certificate', 'Action']}
+          rows={(programmes.data?.items ?? []).map(p => [
+            <strong key="pn">{p.name}</strong>,
+            <div key="q">
+              <strong style={{ color: 'var(--accent)', fontSize: 15 }}>{p.min_quizzes || 0}</strong>{' '}
+              <span className="p-muted">quizzes</span>
+            </div>,
+            <div key="a">
+              <strong style={{ color: 'var(--accent)', fontSize: 15 }}>{p.min_assignments || 0}</strong>{' '}
+              <span className="p-muted">assignments</span>
+            </div>,
+            <button
+              key="btn"
+              type="button"
+              className="p-btn p-btn-ghost p-btn-small"
+              onClick={() => {
+                if (editingProgId === p.id) {
+                  setEditingProgId(null);
+                } else {
+                  setEditingProgId(p.id);
+                  setReqAssignments(String(p.min_assignments || 0));
+                  setReqQuizzes(String(p.min_quizzes || 0));
+                }
+              }}
+            >
+              {editingProgId === p.id ? 'Close' : 'Set Criteria'}
+            </button>,
+          ])}
+          empty="No courses configured yet."
+        />
+
+        {editingProgId && (() => {
+          const prog = (programmes.data?.items ?? []).find(p => p.id === editingProgId);
+          if (!prog) return null;
+          return (
+            <div
+              style={{
+                marginTop: 20,
+                padding: 20,
+                borderRadius: 16,
+                background: 'var(--surface-alt)',
+                border: '1.5px solid var(--border-strong)',
+              }}
+            >
+              <h4 style={{ margin: '0 0 14px 0', fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
+                Set Certification Criteria for: {prog.name}
+              </h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 16, alignItems: 'flex-end' }}>
+                <Field
+                  label="Min Quizzes Required"
+                  hint="How many quizzes must be in this course before students can get certificates"
+                >
+                  <input
+                    className="p-input"
+                    type="number"
+                    min={0}
+                    value={reqQuizzes}
+                    onChange={e => setReqQuizzes(e.target.value)}
+                  />
+                </Field>
+                <Field
+                  label="Min Assignments Required"
+                  hint="How many assignments must be in this course before students can get certificates"
+                >
+                  <input
+                    className="p-input"
+                    type="number"
+                    min={0}
+                    value={reqAssignments}
+                    onChange={e => setReqAssignments(e.target.value)}
+                  />
+                </Field>
+                <div style={{ display: 'flex', gap: 8, paddingBottom: 4 }}>
+                  <button
+                    type="button"
+                    className="p-btn p-btn-small"
+                    disabled={change.busy}
+                    onClick={() => saveReq(prog.id)}
+                  >
+                    Save Requirements
+                  </button>
+                  <button
+                    type="button"
+                    className="p-btn p-btn-ghost p-btn-small"
+                    onClick={() => setEditingProgId(null)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+      </Card>
+
+      {/* Batch Coursework & Certificate Readiness Table */}
+      <Card title="Batch Coursework Progress & Certificate Readiness">
         <ErrorNotice error={list.error} />
         <Table
-          head={['Batch', 'Assignments', 'Submitted', 'Graded', 'Quizzes', 'Quiz attempts']}
-          rows={(list.data?.items ?? []).map(r => [r.batch, r.assignments, r.submissions, r.graded, r.quizzes, r.quiz_attempts])}
+          head={[
+            'Batch',
+            'Course',
+            'Assignments',
+            'Submitted & Graded',
+            'Quizzes',
+            'Quiz Attempts',
+            'Certificate Readiness',
+          ]}
+          rows={(list.data?.items ?? []).map(r => [
+            <strong key="b">{r.batch}</strong>,
+            r.programme || '—',
+            <div key="as">
+              <strong>{r.assignments}</strong>
+              <span className="p-muted text-xs block">
+                {r.min_assignments > 0 ? `(min ${r.min_assignments} required)` : 'No min set'}
+              </span>
+            </div>,
+            <div key="sg">
+              {r.submissions} submitted · {r.graded} graded
+            </div>,
+            <div key="qz">
+              <strong>{r.quizzes}</strong>
+              <span className="p-muted text-xs block">
+                {r.min_quizzes > 0 ? `(min ${r.min_quizzes} required)` : 'No min set'}
+              </span>
+            </div>,
+            r.quiz_attempts,
+            <StatusChip
+              key="cr"
+              text={
+                r.requirements_met
+                  ? 'Criteria Met'
+                  : `Needs ${[
+                      !r.assignments_met ? `${r.min_assignments - r.assignments} more assignments` : '',
+                      !r.quizzes_met ? `${r.min_quizzes - r.quizzes} more quizzes` : '',
+                    ]
+                      .filter(Boolean)
+                      .join(', ')}`
+              }
+              tone={r.requirements_met ? 'good' : 'warn'}
+            />,
+          ])}
           empty="No batches yet."
         />
       </Card>

@@ -43,6 +43,8 @@ class Programme(Base):
     fee_inr: Mapped[int] = mapped_column(Integer)
     duration_weeks: Mapped[int] = mapped_column(Integer, default=0)
     description: Mapped[str] = mapped_column(Text, default="")
+    min_assignments: Mapped[int] = mapped_column(Integer, default=0)
+    min_quizzes: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
