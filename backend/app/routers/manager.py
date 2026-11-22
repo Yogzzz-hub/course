@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, timedelta
 from typing import Literal
 
 from fastapi import APIRouter, Depends
@@ -20,6 +20,7 @@ from ..models import (
     QuizAttempt,
     Submission,
     Task,
+    TrainerLeave,
     User,
     UserRole,
 )
@@ -465,3 +466,109 @@ def batch_attendance(batch_id: int, _: User = MANAGER, db: Session = Depends(get
         summary = attendance_summary(db, enrolment.user_id, batch.id, threshold)
         rows.append({"name": student.name if student else "", "email": student.email if student else "", **summary})
     return {"threshold_percent": threshold, "items": rows}
+
+
+class ClassRescheduleIn(BaseModel):
+    starts_at: datetime
+    ends_at: datetime | None = None
+    duration_minutes: int | None = None
+
+
+@router.patch("/classes/{class_id}/reschedule")
+def reschedule_class(class_id: int, body: ClassRescheduleIn, user: User = MANAGER, db: Session = Depends(get_db)):
+    cls = db.get(ClassSession, class_id)
+    if cls is None:
+        raise ApiError(404, "NOT_FOUND", "Class not found.")
+
+    old_starts = cls.starts_at
+    cls.starts_at = body.starts_at
+    if body.ends_at:
+        cls.ends_at = body.ends_at
+    elif body.duration_minutes:
+        cls.ends_at = body.starts_at + timedelta(minutes=body.duration_minutes)
+    else:
+        # Keep original duration if possible
+        duration = (cls.ends_at - old_starts) if (cls.ends_at and old_starts and cls.ends_at > old_starts) else timedelta(minutes=90)
+        cls.ends_at = body.starts_at + duration
+
+    audit(
+        db,
+        user.id,
+        "class.reschedule",
+        "class",
+        cls.id,
+        {"old_starts_at": old_starts.isoformat(), "new_starts_at": cls.starts_at.isoformat(), "new_ends_at": cls.ends_at.isoformat()},
+    )
+    db.commit()
+    return {"ok": True}
+
+
+class ClassRecordingIn(BaseModel):
+    recording_url: str = Field(min_length=0, max_length=500)
+
+
+@router.patch("/classes/{class_id}/recording")
+def update_class_recording(class_id: int, body: ClassRecordingIn, user: User = MANAGER, db: Session = Depends(get_db)):
+    cls = db.get(ClassSession, class_id)
+    if cls is None:
+        raise ApiError(404, "NOT_FOUND", "Class not found.")
+    cls.recording_url = body.recording_url.strip()
+    audit(db, user.id, "class.recording", "class", cls.id, {"recording_url": cls.recording_url})
+    db.commit()
+    return {"ok": True}
+
+
+@router.get("/leaves")
+def list_trainer_leaves(_: User = MANAGER, db: Session = Depends(get_db)):
+    rows = db.scalars(select(TrainerLeave).order_by(TrainerLeave.created_at.desc())).all()
+    items = []
+    for l in rows:
+        trainer = db.get(User, l.trainer_id)
+        batch = db.get(Batch, l.batch_id) if l.batch_id else None
+        cls = db.get(ClassSession, l.class_id) if l.class_id else None
+        items.append(
+            {
+                "id": l.id,
+                "trainer_id": l.trainer_id,
+                "trainer_name": trainer.name if trainer else "Unknown",
+                "trainer_email": trainer.email if trainer else "",
+                "batch_id": l.batch_id,
+                "batch_name": batch.name if batch else "General / All Batches",
+                "class_id": l.class_id,
+                "class_sequence": cls.sequence if cls else None,
+                "class_starts_at": cls.starts_at.isoformat() + "Z" if cls else None,
+                "date": l.date.isoformat(),
+                "reason": l.reason,
+                "status": l.status,
+                "created_at": l.created_at.isoformat() + "Z",
+                "decided_at": l.decided_at.isoformat() + "Z" if l.decided_at else None,
+            }
+        )
+    return {"items": items}
+
+
+@router.post("/leaves/{leave_id}/approve")
+def approve_leave(leave_id: int, user: User = MANAGER, db: Session = Depends(get_db)):
+    leave = db.get(TrainerLeave, leave_id)
+    if not leave:
+        raise ApiError(404, "NOT_FOUND", "Leave request not found.")
+    leave.status = "approved"
+    leave.decided_by = user.id
+    leave.decided_at = utcnow()
+    audit(db, user.id, "trainer.leave_approve", "trainer_leave", leave.id)
+    db.commit()
+    return {"ok": True}
+
+
+@router.post("/leaves/{leave_id}/reject")
+def reject_leave(leave_id: int, user: User = MANAGER, db: Session = Depends(get_db)):
+    leave = db.get(TrainerLeave, leave_id)
+    if not leave:
+        raise ApiError(404, "NOT_FOUND", "Leave request not found.")
+    leave.status = "rejected"
+    leave.decided_by = user.id
+    leave.decided_at = utcnow()
+    audit(db, user.id, "trainer.leave_reject", "trainer_leave", leave.id)
+    db.commit()
+    return {"ok": True}
+

@@ -405,15 +405,20 @@ def recordings(user: User = STUDENT, db: Session = Depends(get_db)):
         return {"items": []}
     rows = db.scalars(
         select(ClassSession).where(
-            ClassSession.batch_id.in_(batch_ids), ClassSession.status == "ended", ClassSession.recording_url != ""
+            ClassSession.batch_id.in_(batch_ids), ClassSession.recording_url != ""
         ).order_by(ClassSession.starts_at.desc())
     ).all()
-    return {
-        "items": [
-            {"id": c.id, "sequence": c.sequence, "starts_at": c.starts_at.isoformat() + "Z", "recording_url": c.recording_url}
-            for c in rows
-        ]
-    }
+    items = []
+    for c in rows:
+        batch = db.get(Batch, c.batch_id)
+        items.append({
+            "id": c.id,
+            "batch": batch.name if batch else "",
+            "sequence": c.sequence,
+            "starts_at": c.starts_at.isoformat() + "Z",
+            "recording_url": c.recording_url,
+        })
+    return {"items": items}
 
 
 @router.get("/assignments")

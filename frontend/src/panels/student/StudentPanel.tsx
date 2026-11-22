@@ -946,7 +946,7 @@ function Classes() {
             <Notice tone="info">Your timetable opens once your first fee payment is confirmed.</Notice>
           ) : (
             <Table
-              head={['#', 'Starts', 'Status', 'Your attendance', 'Meeting']}
+              head={['#', 'Starts', 'Status', 'Your attendance', 'Action']}
               rows={b.classes.map(c => [
                 c.sequence,
                 fmtDateTime(c.starts_at),
@@ -955,14 +955,26 @@ function Classes() {
                 c.status === 'live' && c.meeting_url ? (
                   <a
                     key="m"
-                    className="p-btn p-btn-small"
+                    className="p-btn p-btn-small p-btn-live"
                     href={c.meeting_url}
                     target="_blank"
                     rel="noreferrer"
                     style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
                   >
                     <Video size={14} />
-                    <span>Join</span>
+                    <span>Join Live</span>
+                  </a>
+                ) : c.recording_url ? (
+                  <a
+                    key="rec"
+                    className="p-btn p-btn-small p-btn-ghost"
+                    href={c.recording_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                  >
+                    <Video size={14} />
+                    <span>Recording</span>
                   </a>
                 ) : (
                   '—'
@@ -978,14 +990,15 @@ function Classes() {
 }
 
 function Recordings() {
-  const list = useApi<{ items: { id: number; sequence: number; starts_at: string; recording_url: string }[] }>('/student/recordings');
+  const list = useApi<{ items: { id: number; batch?: string; sequence: number; starts_at: string; recording_url: string }[] }>('/student/recordings');
   return (
     <>
       <Card>
         <ErrorNotice error={list.error} />
         <Table
-          head={['Class', 'Date', 'Recording']}
+          head={['Batch', 'Class', 'Date', 'Recording']}
           rows={(list.data?.items ?? []).map(r => [
+            r.batch || '—',
             `Class ${r.sequence}`,
             fmtDateTime(r.starts_at),
             r.recording_url ? (

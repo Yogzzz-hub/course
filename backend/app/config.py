@@ -21,6 +21,7 @@ class Settings:
     upload_dir: str
     session_hours: int
     attendance_default_percent: int
+    google_meet_api_key: str = ""
 
 
 def _env(name: str, default: str) -> str:
@@ -50,4 +51,5 @@ def get_settings() -> Settings:
         upload_dir=_env("UPLOAD_DIR", "./data/uploads"),
         session_hours=int(_env("SESSION_HOURS", "12")),
         attendance_default_percent=int(_env("ATTENDANCE_THRESHOLD_PERCENT", "60")),
+        google_meet_api_key=_env("GOOGLE_MEET_API_KEY", ""),
     )

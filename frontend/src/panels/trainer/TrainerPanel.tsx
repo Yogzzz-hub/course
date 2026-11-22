@@ -43,7 +43,7 @@ const NAV: NavItem[] = [
   { to: '/trainer/batches', label: 'My batches' },
   { to: '/trainer/assignments', label: 'Assignments' },
   { to: '/trainer/quizzes', label: 'Quizzes' },
-  { to: '/trainer/tasks', label: 'Tasks' },
+  { to: '/trainer/leaves', label: 'Leaves' },
 ];
 
 interface ClassRow { id: number; batch_id: number; batch: string; sequence: number; starts_at: string; ends_at: string; status: string; meeting_url: string; recording_url: string }
@@ -51,7 +51,6 @@ interface BatchRow { id: number; name: string; programme: string; days: string; 
 interface AssignmentRow { id: number; title: string; brief: string; due_at: string | null; submissions: number; graded: number }
 interface SubmissionRow { id: number; name: string; email: string; kind: string; link: string; file_name: string; has_file: boolean; note: string; submitted_at: string; score: number | null; feedback: string }
 interface QuizRow { id: number; title: string; questions: number; attempts: number }
-interface TaskRow { id: number; title: string; detail: string; due_at: string | null; for: string; done: number }
 
 /** Runs one change, shows the outcome, then reloads. */
 function useChange(reload: () => void) {
@@ -110,21 +109,46 @@ function Classes() {
       <Card title="Your timetable">
         <Table
           head={['Batch', '#', 'Starts', 'Status', 'Actions']}
-          rows={(classes.data?.items ?? []).map(c => [
-            c.batch,
-            c.sequence,
-            fmtDateTime(c.starts_at),
-            <StatusChip key="s" text={c.status} tone={c.status === 'live' ? 'warn' : c.status === 'ended' ? 'good' : 'neutral'} />,
-            <div key="a" className="p-row">
-              {c.status !== 'ended' && c.status !== 'live' && (
-                <button type="button" className="p-btn p-btn-small" disabled={change.busy} onClick={() => change.run(() => api(`/trainer/classes/${c.id}/start`, { method: 'POST' }), 'Class started. Students can now join.')}>Start</button>
-              )}
-              {c.status === 'live' && (
-                <button type="button" className="p-btn p-btn-small p-btn-danger" disabled={change.busy} onClick={() => change.run(() => api(`/trainer/classes/${c.id}/end`, { method: 'POST' }), 'Class ended.')}>End class</button>
-              )}
-              <button type="button" className="p-btn p-btn-ghost p-btn-small" onClick={() => choose(c)}>Details</button>
-            </div>,
-          ])}
+          rows={(classes.data?.items ?? []).map(c => {
+            const nowMs = Date.now();
+            const startMs = new Date(c.starts_at).getTime();
+            const diffMinutes = Math.round((startMs - nowMs) / 60000);
+            const canStart = diffMinutes <= 10;
+            return [
+              c.batch,
+              c.sequence,
+              fmtDateTime(c.starts_at),
+              <StatusChip key="s" text={c.status} tone={c.status === 'live' ? 'warn' : c.status === 'ended' ? 'good' : 'neutral'} />,
+              <div key="a" className="p-row">
+                {c.status !== 'ended' && c.status !== 'live' && (
+                  canStart ? (
+                    <button
+                      type="button"
+                      className="p-btn p-btn-small"
+                      disabled={change.busy}
+                      onClick={() => change.run(() => api(`/trainer/classes/${c.id}/start`, { method: 'POST' }), 'Class started. Students can now join.')}
+                    >
+                      Start
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="p-btn p-btn-small"
+                      disabled
+                      title={`Classes can only be started 10 minutes prior to scheduled time (${diffMinutes}m remaining)`}
+                      style={{ opacity: 0.55, cursor: 'not-allowed' }}
+                    >
+                      Start ({diffMinutes > 0 ? `${diffMinutes}m` : 'Soon'})
+                    </button>
+                  )
+                )}
+                {c.status === 'live' && (
+                  <button type="button" className="p-btn p-btn-small p-btn-danger" disabled={change.busy} onClick={() => change.run(() => api(`/trainer/classes/${c.id}/end`, { method: 'POST' }), 'Class ended.')}>End class</button>
+                )}
+                <button type="button" className="p-btn p-btn-ghost p-btn-small" onClick={() => choose(c)}>Details</button>
+              </div>,
+            ];
+          })}
           empty="No classes on your timetable yet. The manager schedules batches and assigns you to them."
         />
       </Card>
@@ -140,7 +164,24 @@ function Classes() {
               }}
             >
               <Field label="Meeting link" hint="Students see this link while the class is live.">
-                <input className="p-input" type="url" value={links.meeting_url} onChange={e => setLinks({ ...links, meeting_url: e.target.value })} />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    className="p-input"
+                    type="url"
+                    placeholder="https://meet.google.com/..."
+                    value={links.meeting_url}
+                    onChange={e => setLinks({ ...links, meeting_url: e.target.value })}
+                  />
+                  <button
+                    type="button"
+                    className="p-btn p-btn-ghost p-btn-small"
+                    style={{ whiteSpace: 'nowrap' }}
+                    onClick={() => window.open('https://meet.google.com/new', '_blank')}
+                    title="Launch a new Google Meet space in a new tab"
+                  >
+                    + New Google Meet
+                  </button>
+                </div>
               </Field>
               <Field label="Recording link" hint="Added after the class so students can watch it later.">
                 <input className="p-input" type="url" value={links.recording_url} onChange={e => setLinks({ ...links, recording_url: e.target.value })} />
@@ -425,58 +466,10 @@ function Quizzes() {
   );
 }
 
-function Tasks() {
-  const [batchId, setBatchId] = useState('');
-  const list = useApi<{ items: TaskRow[] }>(batchId ? `/trainer/batches/${batchId}/tasks` : null);
-  const [form, setForm] = useState({ title: '', detail: '', due_at: '' });
-  const change = useChange(list.reload);
-
-  function submit(event: FormEvent) {
-    event.preventDefault();
-    change.run(
-      () => api(`/trainer/batches/${batchId}/tasks`, { body: { title: form.title, detail: form.detail, due_at: form.due_at ? new Date(form.due_at).toISOString() : null } }),
-      'Task sent to the batch.',
-    );
-    setForm({ title: '', detail: '', due_at: '' });
-  }
-
-  return (
-    <>
-      <PageHead title="Tasks" text="Practical tasks for the whole batch. Students tick them off when done." />
-      <Card title="Batch">
-        <BatchPicker value={batchId} onChange={setBatchId} />
-      </Card>
-      {batchId && (
-        <>
-          <Card title="New task">
-            <ErrorNotice error={change.error} />
-            {change.message && <Notice tone="success">{change.message}</Notice>}
-            <form onSubmit={submit} className="p-form-grid">
-              <Field label="Task"><input className="p-input" required value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></Field>
-              <Field label="Due date (optional)"><input className="p-input" type="datetime-local" value={form.due_at} onChange={e => setForm({ ...form, due_at: e.target.value })} /></Field>
-              <Field label="Details"><textarea className="p-textarea" rows={3} value={form.detail} onChange={e => setForm({ ...form, detail: e.target.value })} /></Field>
-              <div className="span-2"><button className="p-btn" type="submit" disabled={change.busy || !form.title}>Send task</button></div>
-            </form>
-          </Card>
-          <Card title="Tasks in this batch">
-            <ErrorNotice error={list.error} />
-            <Table
-              head={['Task', 'For', 'Due', 'Done by']}
-              rows={(list.data?.items ?? []).map(t => [t.title, t.for, fmtDate(t.due_at?.slice(0, 10)), t.done])}
-              empty="No tasks yet."
-            />
-          </Card>
-        </>
-      )}
-    </>
-  );
-}
-
 function TrainerHome({ me }: { me: Me }) {
   const classes = useApi<{ items: ClassRow[] }>('/trainer/classes');
   const batches = useApi<{ items: BatchRow[] }>('/trainer/batches');
   const assignments = useApi<{ items: AssignmentRow[] }>('/trainer/assignments');
-  const tasks = useApi<{ items: TaskRow[] }>('/trainer/tasks');
   const quizzes = useApi<{ items: QuizRow[] }>('/trainer/quizzes');
 
   const liveClass = (classes.data?.items ?? []).find(c => c.status === 'live');
@@ -487,7 +480,6 @@ function TrainerHome({ me }: { me: Me }) {
     (acc, a) => acc + Math.max(0, (a.submissions || 0) - (a.graded || 0)),
     0,
   );
-  const tasksCount = (tasks.data?.items ?? []).length;
   const quizzesCount = (quizzes.data?.items ?? []).length;
 
   const chartData = batchList.length > 0
@@ -604,9 +596,9 @@ function TrainerHome({ me }: { me: Me }) {
         <MetricCard
           icon={HelpCircle}
           variant={4}
-          label="Active Tasks & Quizzes"
-          value={`${tasksCount + quizzesCount} Items`}
-          trend={`${quizzesCount} Quizzes, ${tasksCount} Tasks`}
+          label="Active Quizzes"
+          value={`${quizzesCount} Quizzes`}
+          trend="Published for your cohorts"
           trendPositive={true}
         />
       </div>
@@ -685,14 +677,128 @@ function TrainerHome({ me }: { me: Me }) {
                 <span className="p-todo-bullet">→</span>
                 <span>Publish new quiz for your batch</span>
               </Link>
-              <Link to="/trainer/tasks" className="p-todo-item">
+              <Link to="/trainer/leaves" className="p-todo-item">
                 <span className="p-todo-bullet">→</span>
-                <span>Assign practical task to students</span>
+                <span>Submit leave request to manager</span>
               </Link>
             </div>
           </div>
         </div>
       </div>
+    </>
+  );
+}
+
+interface LeaveRow {
+  id: number;
+  batch_id: number | null;
+  batch: string;
+  class_id: number | null;
+  class_sequence: number | null;
+  date: string;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  decided_at: string | null;
+}
+
+function Leaves() {
+  const leaves = useApi<{ items: LeaveRow[] }>('/trainer/leaves');
+  const batches = useApi<{ items: BatchRow[] }>('/trainer/batches');
+  const change = useChange(leaves.reload);
+
+  const [batchId, setBatchId] = useState('');
+  const [date, setDate] = useState('');
+  const [reason, setReason] = useState('');
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    change.run(
+      () =>
+        api('/trainer/leaves', {
+          body: {
+            batch_id: batchId ? Number(batchId) : null,
+            date,
+            reason,
+          },
+        }),
+      'Leave request submitted to academy manager.',
+    ).then(() => {
+      setBatchId('');
+      setDate('');
+      setReason('');
+    });
+  }
+
+  return (
+    <>
+      <PageHead
+        title="Leave Requests"
+        text="Submit a leave request to the academy manager. The manager reviews your request and can reschedule affected classes."
+      />
+      <ErrorNotice error={leaves.error} />
+      <ErrorNotice error={change.error} />
+      {change.message && <Notice tone="success">{change.message}</Notice>}
+
+      <Card title="Request Leave">
+        <form onSubmit={submit} className="p-form-grid">
+          <Field label="Batch (optional)" hint="Select batch if requesting leave for a specific scheduled batch">
+            <CurvedSelect
+              value={batchId}
+              onChange={setBatchId}
+              options={[
+                { value: '', label: 'All batches / General leave' },
+                ...(batches.data?.items ?? []).map(b => ({ value: String(b.id), label: b.name })),
+              ]}
+              placeholder="Select batch (optional)"
+            />
+          </Field>
+          <Field label="Leave Date">
+            <input
+              type="date"
+              className="p-input"
+              required
+              value={date}
+              onChange={e => setDate(e.target.value)}
+            />
+          </Field>
+          <div className="span-2">
+            <Field label="Reason for Leave" hint="Explain why you are requesting leave so the manager can approve and adjust timings">
+              <textarea
+                className="p-textarea"
+                rows={3}
+                required
+                placeholder="e.g., Unwell / personal emergency. Please reschedule the session."
+                value={reason}
+                onChange={e => setReason(e.target.value)}
+              />
+            </Field>
+          </div>
+          <div className="span-2">
+            <button className="p-btn" type="submit" disabled={change.busy || !date || !reason}>
+              {change.busy ? 'Submitting…' : 'Submit Leave Request'}
+            </button>
+          </div>
+        </form>
+      </Card>
+
+      <Card title="My Leave History & Status">
+        <Table
+          head={['Date', 'Batch', 'Reason', 'Status', 'Requested On']}
+          rows={(leaves.data?.items ?? []).map(l => [
+            fmtDate(l.date),
+            l.batch,
+            l.reason,
+            <StatusChip
+              key="s"
+              text={l.status.toUpperCase()}
+              tone={l.status === 'approved' ? 'good' : l.status === 'rejected' ? 'bad' : 'warn'}
+            />,
+            fmtDateTime(l.created_at),
+          ])}
+          empty="No leave requests submitted yet."
+        />
+      </Card>
     </>
   );
 }
@@ -707,7 +813,7 @@ export default function TrainerPanel() {
           <Route path="batches" element={<MyBatches />} />
           <Route path="assignments" element={<Assignments />} />
           <Route path="quizzes" element={<Quizzes />} />
-          <Route path="tasks" element={<Tasks />} />
+          <Route path="leaves" element={<Leaves />} />
           <Route path="*" element={<Empty>This page does not exist.</Empty>} />
         </Routes>
       )}
