@@ -2,7 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { Award, BookOpen, CircleAlert, CreditCard, Download, GraduationCap, Layers, Search, Settings2, UserRound, Users, X } from 'lucide-react';
 import { useApi } from './hooks';
 import { useInfiniteList } from './useInfinite';
-import { ErrorNotice, PageHead, Pager } from './ui';
+import { ErrorNotice, PageHead, Pager, CurvedSelect } from './ui';
 import './audit-log.css';
 
 interface Entry { at: string; actor: string; action: string; entity: string; entity_id: string }
@@ -127,6 +127,10 @@ export function AuditLogView({
 
   const items = useMemo(() => list.data?.items ?? [], [list.data]);
   const actors = useMemo(() => [...new Set(items.map(item => item.actor))].sort((a, b) => a.localeCompare(b)), [items]);
+  const actorOptions = useMemo(() => [
+    { value: 'all', label: 'Everyone', icon: Users },
+    ...actors.map(name => ({ value: name, label: name, icon: UserRound })),
+  ], [actors]);
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return items.filter(item => {
@@ -162,10 +166,14 @@ export function AuditLogView({
           <Search size={17} aria-hidden="true" />
           <input type="search" value={query} placeholder="Search by person, action or record" aria-label="Search the audit log" onChange={event => setQuery(event.target.value)} />
         </label>
-        <select className="al-select" value={actor} aria-label="Filter by person" onChange={event => setActor(event.target.value)}>
-          <option value="all">Everyone</option>
-          {actors.map(name => <option key={name} value={name}>{name}</option>)}
-        </select>
+        <div className="al-select-wrap">
+          <CurvedSelect
+            value={actor}
+            onChange={setActor}
+            options={actorOptions}
+            placeholder="Everyone"
+          />
+        </div>
         <button type="button" className="p-btn p-btn-ghost p-btn-small" onClick={() => download(filtered)} disabled={filtered.length === 0}>
           <Download size={14} aria-hidden="true" /> <span>Export CSV</span>
         </button>

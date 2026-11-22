@@ -317,8 +317,17 @@ export function CurvedSelect({
         setOpen(false);
       }
     }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setOpen(false);
+      }
+    }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   const selected = options.find(o => o.value === value);
@@ -334,7 +343,7 @@ export function CurvedSelect({
       >
         <span className="p-curved-select-label">
           {selected ? (
-            <span className="flex items-center gap-2">
+            <span className="p-curved-select-opt-content">
               {selected.icon && <selected.icon size={16} className="text-[var(--accent)]" />}
               <span>{selected.label}</span>
             </span>
@@ -361,7 +370,7 @@ export function CurvedSelect({
                   setOpen(false);
                 }}
               >
-                <div className="flex items-center gap-2">
+                <div className="p-curved-select-opt-content">
                   {opt.icon && <opt.icon size={16} />}
                   <span>{opt.label}</span>
                 </div>
