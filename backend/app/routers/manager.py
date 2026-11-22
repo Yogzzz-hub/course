@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, timedelta
 from typing import Literal
 
 from fastapi import APIRouter, Depends
@@ -20,6 +20,7 @@ from ..models import (
     QuizAttempt,
     Submission,
     Task,
+    TrainerLeave,
     User,
     UserRole,
 )
@@ -48,6 +49,13 @@ class ProgrammeIn(BaseModel):
     fee_inr: int = Field(ge=0, le=10_000_000)
     duration_weeks: int = Field(default=0, ge=0, le=200)
     description: str = Field(default="", max_length=4000)
+    min_assignments: int = Field(default=0, ge=0, le=100)
+    min_quizzes: int = Field(default=0, ge=0, le=100)
+
+
+class ProgrammeRequirementsIn(BaseModel):
+    min_assignments: int = Field(default=0, ge=0, le=100)
+    min_quizzes: int = Field(default=0, ge=0, le=100)
 
 
 class BatchIn(BaseModel):
@@ -108,17 +116,74 @@ def overview(_: User = MANAGER, db: Session = Depends(get_db)):
 @router.get("/programmes")
 def list_programmes(_: User = MANAGER, db: Session = Depends(get_db)):
     rows = db.scalars(select(Programme).order_by(Programme.name)).all()
-    return {"items": [{"id": p.id, "name": p.name, "fee_inr": p.fee_inr, "duration_weeks": p.duration_weeks, "description": p.description} for p in rows]}
+    return {
+        "items": [
+            {
+                "id": p.id,
+                "name": p.name,
+                "fee_inr": p.fee_inr,
+                "duration_weeks": p.duration_weeks,
+                "description": p.description,
+                "min_assignments": getattr(p, "min_assignments", 0) or 0,
+                "min_quizzes": getattr(p, "min_quizzes", 0) or 0,
+            }
+            for p in rows
+        ]
+    }
 
 
 @router.post("/programmes")
 def create_programme(body: ProgrammeIn, user: User = MANAGER, db: Session = Depends(get_db)):
-    programme = Programme(name=body.name.strip(), fee_inr=body.fee_inr, duration_weeks=body.duration_weeks, description=body.description)
+    programme = Programme(
+        name=body.name.strip(),
+        fee_inr=body.fee_inr,
+        duration_weeks=body.duration_weeks,
+        description=body.description,
+        min_assignments=body.min_assignments,
+        min_quizzes=body.min_quizzes,
+    )
     db.add(programme)
     db.flush()
     audit(db, user.id, "programme.create", "programme", programme.id, {"name": programme.name})
     db.commit()
-    return {"id": programme.id}
+    return {
+        "id": programme.id,
+        "name": programme.name,
+        "fee_inr": programme.fee_inr,
+        "duration_weeks": programme.duration_weeks,
+        "description": programme.description,
+        "min_assignments": programme.min_assignments,
+        "min_quizzes": programme.min_quizzes,
+    }
+
+
+@router.patch("/programmes/{programme_id}/requirements")
+def update_programme_requirements(
+    programme_id: int,
+    body: ProgrammeRequirementsIn,
+    user: User = MANAGER,
+    db: Session = Depends(get_db),
+):
+    programme = db.get(Programme, programme_id)
+    if programme is None:
+        raise ApiError(404, "NOT_FOUND", "That programme could not be found.")
+    programme.min_assignments = body.min_assignments
+    programme.min_quizzes = body.min_quizzes
+    audit(
+        db,
+        user.id,
+        "programme.requirements.update",
+        "programme",
+        programme.id,
+        {"min_assignments": body.min_assignments, "min_quizzes": body.min_quizzes},
+    )
+    db.commit()
+    return {
+        "id": programme.id,
+        "name": programme.name,
+        "min_assignments": programme.min_assignments,
+        "min_quizzes": programme.min_quizzes,
+    }
 
 
 @router.get("/batches")
@@ -356,6 +421,7 @@ def eligibility(batch_id: int | None = None, _: User = MANAGER, db: Session = De
                 "batch": batch.name if batch else "",
                 "status": enrolment.status,
                 "checks": result["checks"],
+                "coursework": result.get("coursework"),
                 "attendance_rate": result["attendance"]["rate_percent"],
                 "balance_inr": result["fees"]["balance_inr"],
                 "certificate_id": result["certificate_id"],
@@ -428,6 +494,10 @@ def list_certificates(_: User = MANAGER, db: Session = Depends(get_db)):
 def tasks_overview(_: User = MANAGER, db: Session = Depends(get_db)):
     items = []
     for batch in db.scalars(select(Batch).order_by(Batch.start_date.desc())).all():
+        programme = db.get(Programme, batch.programme_id)
+        min_assignments = getattr(programme, "min_assignments", 0) or 0
+        min_quizzes = getattr(programme, "min_quizzes", 0) or 0
+
         assignments = db.scalars(select(Assignment.id).where(Assignment.batch_id == batch.id)).all()
         submitted = db.scalar(
             select(func.count(Submission.id)).where(Submission.assignment_id.in_(assignments))
@@ -440,16 +510,29 @@ def tasks_overview(_: User = MANAGER, db: Session = Depends(get_db)):
         quizzes = db.scalars(select(Quiz.id).where(Quiz.batch_id == batch.id)).all()
         attempts = db.scalar(select(func.count(QuizAttempt.id)).where(QuizAttempt.quiz_id.in_(quizzes))) if quizzes else 0
         tasks = db.scalar(select(func.count(Task.id)).where(Task.batch_id == batch.id)) or 0
+
+        assignments_count = len(assignments)
+        quizzes_count = len(quizzes)
+        assignments_met = assignments_count >= min_assignments if min_assignments > 0 else True
+        quizzes_met = quizzes_count >= min_quizzes if min_quizzes > 0 else True
+
         items.append(
             {
                 "batch_id": batch.id,
                 "batch": batch.name,
-                "assignments": len(assignments),
+                "programme_id": programme.id if programme else None,
+                "programme": programme.name if programme else "",
+                "assignments": assignments_count,
                 "submissions": submitted or 0,
                 "graded": graded or 0,
-                "quizzes": len(quizzes),
+                "quizzes": quizzes_count,
                 "quiz_attempts": attempts or 0,
                 "tasks": tasks,
+                "min_assignments": min_assignments,
+                "min_quizzes": min_quizzes,
+                "assignments_met": assignments_met,
+                "quizzes_met": quizzes_met,
+                "requirements_met": assignments_met and quizzes_met,
             }
         )
     return {"items": items}
@@ -465,3 +548,109 @@ def batch_attendance(batch_id: int, _: User = MANAGER, db: Session = Depends(get
         summary = attendance_summary(db, enrolment.user_id, batch.id, threshold)
         rows.append({"name": student.name if student else "", "email": student.email if student else "", **summary})
     return {"threshold_percent": threshold, "items": rows}
+
+
+class ClassRescheduleIn(BaseModel):
+    starts_at: datetime
+    ends_at: datetime | None = None
+    duration_minutes: int | None = None
+
+
+@router.patch("/classes/{class_id}/reschedule")
+def reschedule_class(class_id: int, body: ClassRescheduleIn, user: User = MANAGER, db: Session = Depends(get_db)):
+    cls = db.get(ClassSession, class_id)
+    if cls is None:
+        raise ApiError(404, "NOT_FOUND", "Class not found.")
+
+    old_starts = cls.starts_at
+    cls.starts_at = body.starts_at
+    if body.ends_at:
+        cls.ends_at = body.ends_at
+    elif body.duration_minutes:
+        cls.ends_at = body.starts_at + timedelta(minutes=body.duration_minutes)
+    else:
+        # Keep original duration if possible
+        duration = (cls.ends_at - old_starts) if (cls.ends_at and old_starts and cls.ends_at > old_starts) else timedelta(minutes=90)
+        cls.ends_at = body.starts_at + duration
+
+    audit(
+        db,
+        user.id,
+        "class.reschedule",
+        "class",
+        cls.id,
+        {"old_starts_at": old_starts.isoformat(), "new_starts_at": cls.starts_at.isoformat(), "new_ends_at": cls.ends_at.isoformat()},
+    )
+    db.commit()
+    return {"ok": True}
+
+
+class ClassRecordingIn(BaseModel):
+    recording_url: str = Field(min_length=0, max_length=500)
+
+
+@router.patch("/classes/{class_id}/recording")
+def update_class_recording(class_id: int, body: ClassRecordingIn, user: User = MANAGER, db: Session = Depends(get_db)):
+    cls = db.get(ClassSession, class_id)
+    if cls is None:
+        raise ApiError(404, "NOT_FOUND", "Class not found.")
+    cls.recording_url = body.recording_url.strip()
+    audit(db, user.id, "class.recording", "class", cls.id, {"recording_url": cls.recording_url})
+    db.commit()
+    return {"ok": True}
+
+
+@router.get("/leaves")
+def list_trainer_leaves(_: User = MANAGER, db: Session = Depends(get_db)):
+    rows = db.scalars(select(TrainerLeave).order_by(TrainerLeave.created_at.desc())).all()
+    items = []
+    for l in rows:
+        trainer = db.get(User, l.trainer_id)
+        batch = db.get(Batch, l.batch_id) if l.batch_id else None
+        cls = db.get(ClassSession, l.class_id) if l.class_id else None
+        items.append(
+            {
+                "id": l.id,
+                "trainer_id": l.trainer_id,
+                "trainer_name": trainer.name if trainer else "Unknown",
+                "trainer_email": trainer.email if trainer else "",
+                "batch_id": l.batch_id,
+                "batch_name": batch.name if batch else "General / All Batches",
+                "class_id": l.class_id,
+                "class_sequence": cls.sequence if cls else None,
+                "class_starts_at": cls.starts_at.isoformat() + "Z" if cls else None,
+                "date": l.date.isoformat(),
+                "reason": l.reason,
+                "status": l.status,
+                "created_at": l.created_at.isoformat() + "Z",
+                "decided_at": l.decided_at.isoformat() + "Z" if l.decided_at else None,
+            }
+        )
+    return {"items": items}
+
+
+@router.post("/leaves/{leave_id}/approve")
+def approve_leave(leave_id: int, user: User = MANAGER, db: Session = Depends(get_db)):
+    leave = db.get(TrainerLeave, leave_id)
+    if not leave:
+        raise ApiError(404, "NOT_FOUND", "Leave request not found.")
+    leave.status = "approved"
+    leave.decided_by = user.id
+    leave.decided_at = utcnow()
+    audit(db, user.id, "trainer.leave_approve", "trainer_leave", leave.id)
+    db.commit()
+    return {"ok": True}
+
+
+@router.post("/leaves/{leave_id}/reject")
+def reject_leave(leave_id: int, user: User = MANAGER, db: Session = Depends(get_db)):
+    leave = db.get(TrainerLeave, leave_id)
+    if not leave:
+        raise ApiError(404, "NOT_FOUND", "Leave request not found.")
+    leave.status = "rejected"
+    leave.decided_by = user.id
+    leave.decided_at = utcnow()
+    audit(db, user.id, "trainer.leave_reject", "trainer_leave", leave.id)
+    db.commit()
+    return {"ok": True}
+

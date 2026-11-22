@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from .config import get_settings
 from .errors import ApiError
 from .models import (
+    Assignment,
     AuditLog,
     Batch,
     Certificate,
@@ -14,7 +15,11 @@ from .models import (
     Enrolment,
     Payment,
     Presence,
+    Programme,
+    Quiz,
+    QuizAttempt,
     Setting,
+    Submission,
 )
 from .timeutil import WEEKDAY_NAMES, ist_to_utc, utcnow
 
@@ -157,10 +162,57 @@ def certificate_checks(db: Session, enrolment: Enrolment) -> dict:
     issued = db.scalar(
         select(Certificate).where(Certificate.enrolment_id == enrolment.id, Certificate.revoked.is_(False))
     )
+
+    batch = db.get(Batch, enrolment.batch_id)
+    programme = db.get(Programme, batch.programme_id) if batch else None
+    min_assignments = getattr(programme, "min_assignments", 0) or 0
+    min_quizzes = getattr(programme, "min_quizzes", 0) or 0
+
+    batch_assignments = (
+        db.scalar(
+            select(func.count(Assignment.id)).where(Assignment.batch_id == enrolment.batch_id)
+        )
+        or 0
+    )
+    student_assignments = (
+        db.scalar(
+            select(func.count(Submission.id)).where(
+                Submission.assignment_id.in_(
+                    select(Assignment.id).where(Assignment.batch_id == enrolment.batch_id)
+                ),
+                Submission.user_id == enrolment.user_id,
+            )
+        )
+        or 0
+    )
+
+    batch_quizzes = (
+        db.scalar(
+            select(func.count(Quiz.id)).where(Quiz.batch_id == enrolment.batch_id)
+        )
+        or 0
+    )
+    student_quizzes = (
+        db.scalar(
+            select(func.count(QuizAttempt.id)).where(
+                QuizAttempt.quiz_id.in_(
+                    select(Quiz.id).where(Quiz.batch_id == enrolment.batch_id)
+                ),
+                QuizAttempt.user_id == enrolment.user_id,
+            )
+        )
+        or 0
+    )
+
+    assignments_met = (student_assignments >= min_assignments and batch_assignments >= min_assignments) if min_assignments > 0 else True
+    quizzes_met = (student_quizzes >= min_quizzes and batch_quizzes >= min_quizzes) if min_quizzes > 0 else True
+
     checks = {
         "all_classes_ended": total > 0 and ended == total,
         "attendance_ok": attendance["rate_percent"] is not None and attendance["rate_percent"] >= threshold,
         "fees_cleared": fees["balance_inr"] == 0 if fees_must_clear(db) else True,
+        "assignments_met": assignments_met,
+        "quizzes_met": quizzes_met,
         "not_already_issued": issued is None,
     }
     checks["eligible"] = all(checks.values())
@@ -172,6 +224,16 @@ def certificate_checks(db: Session, enrolment: Enrolment) -> dict:
         "classes_total": total,
         "classes_ended": ended,
         "certificate_id": issued.id if issued else None,
+        "coursework": {
+            "min_assignments": min_assignments,
+            "student_assignments": student_assignments,
+            "batch_assignments": batch_assignments,
+            "assignments_met": assignments_met,
+            "min_quizzes": min_quizzes,
+            "student_quizzes": student_quizzes,
+            "batch_quizzes": batch_quizzes,
+            "quizzes_met": quizzes_met,
+        },
     }
 
 

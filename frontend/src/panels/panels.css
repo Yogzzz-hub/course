@@ -1243,6 +1243,10 @@ input[type="file"]::file-selector-button:hover {
   border: 1px solid var(--border);
 }
 
+.p-table-wrap + .p-table-wrap {
+  margin-top: 24px;
+}
+
 .p-table {
   width: 100%;
   border-collapse: collapse;
@@ -1559,9 +1563,9 @@ input[type="file"]::file-selector-button:hover {
 /* Dashboard Split Grid (Main + Side) */
 .p-dashboard-split {
   display: grid;
-  grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
-  align-items: start;
+  align-items: stretch;
   animation: pFadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) backwards 0.12s;
 }
 
@@ -1570,6 +1574,7 @@ input[type="file"]::file-selector-button:hover {
   flex-direction: column;
   gap: 20px;
   min-width: 0;
+  height: 100%;
 }
 
 .p-dashboard-side {
@@ -1577,6 +1582,7 @@ input[type="file"]::file-selector-button:hover {
   flex-direction: column;
   gap: 20px;
   min-width: 0;
+  height: 100%;
 }
 
 /* Chart Card (Matching Image 3 Top Engaged Courses) */
@@ -1587,6 +1593,11 @@ input[type="file"]::file-selector-button:hover {
   padding: 24px 26px 20px;
   box-shadow: var(--card-shadow);
   transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
 }
 
 .p-chart-card:hover {
@@ -1821,7 +1832,89 @@ input[type="file"]::file-selector-button:hover {
 .p-chart-body {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 16px;
+  flex: 1;
+}
+
+.p-text-breakdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 0;
+  min-height: 200px;
+  justify-content: center;
+}
+
+.p-text-metric-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--surface-alt);
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.p-text-metric-row:hover {
+  background: color-mix(in srgb, var(--accent) 4%, var(--surface-alt));
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+}
+
+.p-text-metric-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.p-text-metric-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.p-text-metric-sub {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.p-text-metric-val-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 0 auto;
+}
+
+.p-text-metric-bar-bg {
+  width: 90px;
+  height: 6px;
+  background: color-mix(in srgb, var(--border) 80%, transparent);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.p-text-metric-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.p-text-metric-value {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent);
+  min-width: 38px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .p-custom-tooltip {
@@ -1855,7 +1948,7 @@ input[type="file"]::file-selector-button:hover {
   justify-content: space-between;
   padding-top: 14px;
   border-top: 1px solid var(--border);
-  margin-top: 4px;
+  margin-top: auto;
 }
 
 .p-chart-summary {
@@ -1897,6 +1990,9 @@ input[type="file"]::file-selector-button:hover {
   border-radius: 22px;
   padding: 22px 24px;
   box-shadow: var(--card-shadow);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .p-activity-head {
@@ -2330,6 +2426,67 @@ input[type="file"]::file-selector-button:hover {
 }
 
 .p-btn-live:hover {
+  background: var(--btn-primary-hover, color-mix(in srgb, var(--accent) 80%, black)) !important;
+  transform: translateY(-2px);
+}
+
+/* Beacon alert card styling for action-required cards */
+.p-live-beacon-card {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 8%, var(--surface)), var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--border));
+  border-left: 5px solid var(--accent);
+  border-radius: 20px;
+  padding: 20px 24px;
+  box-shadow: 0 8px 24px -4px color-mix(in srgb, var(--accent) 14%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.p-live-pulse-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+.p-live-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+  animation: pPing 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.p-live-subtitle {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.p-live-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 12px;
+  background: var(--accent) !important;
+  color: #ffffff !important;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.p-live-btn:hover {
   background: var(--btn-primary-hover, color-mix(in srgb, var(--accent) 80%, black)) !important;
   transform: translateY(-2px);
 }

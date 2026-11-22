@@ -10,6 +10,7 @@ os.environ.update(
     COOKIE_SECURE="false",
 )
 
+from sqlalchemy import select
 from fastapi.testclient import TestClient  # noqa: E402
 
 from app.db import SessionLocal, init_db  # noqa: E402
@@ -66,6 +67,15 @@ def test_full_flow():
 
     # Before payment the student cannot join a class.
     cls_id = classes[0]["id"]
+    # Trying to start a scheduled future class (> 10m away) is refused
+    early = write(trainer, "post", f"/v1/trainer/classes/{cls_id}/start")
+    assert early.status_code == 400
+    assert early.json()["error"]["code"] == "TOO_EARLY"
+
+    # Manager reschedules class to now so it is within 10 minutes of start
+    from app.timeutil import utcnow
+    assert write(manager, "patch", f"/v1/manager/classes/{cls_id}/reschedule", json={"starts_at": utcnow().isoformat() + "Z"}).status_code == 200
+
     trainer_start = write(trainer, "post", f"/v1/trainer/classes/{cls_id}/start")
     assert trainer_start.status_code == 200
     assert write(student, "post", f"/v1/student/classes/{cls_id}/presence").status_code == 403
@@ -99,6 +109,7 @@ def test_full_flow():
         db.commit()
 
     for c in classes:
+        write(manager, "patch", f"/v1/manager/classes/{c['id']}/reschedule", json={"starts_at": utcnow().isoformat() + "Z"})
         assert write(trainer, "post", f"/v1/trainer/classes/{c['id']}/start").status_code == 200
         assert write(trainer, "post", f"/v1/trainer/classes/{c['id']}/end").status_code == 200
     ended = trainer.get("/v1/trainer/classes").json()["items"]
@@ -195,3 +206,88 @@ def test_admin_impersonate_and_exit():
     reverted_me = admin.get("/v1/me").json()
     assert "admin" in reverted_me["roles"]
     assert reverted_me["impersonated_by"] is None
+
+
+def test_leaves_reschedule_recording():
+    manager = client_as("manager")
+    trainer = client_as("trainer")
+
+    # Trainer submits leave request
+    leave_req = write(trainer, "post", "/v1/trainer/leaves", json={
+        "date": "2027-02-15",
+        "reason": "Personal medical leave. Please reschedule.",
+    })
+    assert leave_req.status_code == 200
+    leave_id = leave_req.json()["id"]
+
+    # Trainer sees their leave
+    my_leaves = trainer.get("/v1/trainer/leaves").json()["items"]
+    assert any(l["id"] == leave_id and l["status"] == "pending" for l in my_leaves)
+
+    # Manager sees leave request
+    manager_leaves = manager.get("/v1/manager/leaves").json()["items"]
+    assert any(l["id"] == leave_id and l["status"] == "pending" for l in manager_leaves)
+
+    # Manager approves leave
+    assert write(manager, "post", f"/v1/manager/leaves/{leave_id}/approve").status_code == 200
+    updated_leave = [l for l in manager.get("/v1/manager/leaves").json()["items"] if l["id"] == leave_id][0]
+    assert updated_leave["status"] == "approved"
+
+    # Manager reschedules a class
+    # Get a class session from the database
+    with SessionLocal() as db:
+        cls = db.scalar(select(ClassSession))
+        cls_id = cls.id if cls else None
+
+    if cls_id:
+        resched = write(manager, "patch", f"/v1/manager/classes/{cls_id}/reschedule", json={
+            "starts_at": "2027-02-16T18:00:00Z",
+            "duration_minutes": 60,
+        })
+        assert resched.status_code == 200
+
+        # Manager updates class recording
+        rec = write(manager, "patch", f"/v1/manager/classes/{cls_id}/recording", json={
+            "recording_url": "https://meet.google.com/recording/xyz-123",
+        })
+        assert rec.status_code == 200
+
+
+def test_course_requirements_for_certificates():
+    manager = client_as("manager")
+    student = client_as("student")
+
+    # Manager creates a new programme with assignment and quiz requirements
+    prog = write(manager, "post", "/v1/manager/programmes", json={
+        "name": "Cloud Native Architecture",
+        "fee_inr": 25000,
+        "duration_weeks": 8,
+        "min_assignments": 2,
+        "min_quizzes": 1,
+    }).json()
+    assert prog["min_assignments"] == 2
+    assert prog["min_quizzes"] == 1
+
+    # Update requirements via PATCH endpoint
+    patch_req = write(manager, "patch", f"/v1/manager/programmes/{prog['id']}/requirements", json={
+        "min_assignments": 3,
+        "min_quizzes": 2,
+    })
+    assert patch_req.status_code == 200
+    assert patch_req.json()["min_assignments"] == 3
+    assert patch_req.json()["min_quizzes"] == 2
+
+    # Verify programmes list returns requirements
+    progs = manager.get("/v1/manager/programmes").json()["items"]
+    target_prog = [p for p in progs if p["id"] == prog["id"]][0]
+    assert target_prog["min_assignments"] == 3
+    assert target_prog["min_quizzes"] == 2
+
+    # Check tasks overview includes programme requirements
+    coursework = manager.get("/v1/manager/tasks-overview").json()["items"]
+    assert isinstance(coursework, list)
+    for b in coursework:
+        if b.get("programme_id") == prog["id"]:
+            assert b["min_assignments"] == 3
+            assert b["min_quizzes"] == 2
+

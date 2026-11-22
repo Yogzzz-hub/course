@@ -44,3 +44,14 @@ def init_db() -> None:
     from . import models  # noqa: F401  (registers the tables)
 
     Base.metadata.create_all(engine)
+
+    from sqlalchemy import text
+    with engine.begin() as conn:
+        try:
+            conn.execute(text("ALTER TABLE programmes ADD COLUMN min_assignments INTEGER DEFAULT 0;"))
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE programmes ADD COLUMN min_quizzes INTEGER DEFAULT 0;"))
+        except Exception:
+            pass
