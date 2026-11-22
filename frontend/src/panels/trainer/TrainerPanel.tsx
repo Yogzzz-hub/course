@@ -12,6 +12,9 @@ import {
   ArrowRight,
   TrendingUp,
   HelpCircle,
+  Eye,
+  Download,
+  ExternalLink,
 } from 'lucide-react';
 import { api, ApiError } from '../api';
 import { useApi } from '../hooks';
@@ -247,17 +250,72 @@ function Submissions({ assignmentId }: { assignmentId: number }) {
     <>
       <ErrorNotice error={list.error} />
       <Table
-        head={['Student', 'Submitted', 'Work', 'Grade']}
+        head={['Student', 'Submitted', 'Work', 'Preview / Open', 'Grade']}
         rows={(list.data?.items ?? []).map(s => [
           <div key="n"><strong>{s.name}</strong><div className="p-muted">{s.email}</div></div>,
           fmtDateTime(s.submitted_at),
           <div key="w">
             {s.kind === 'file' && s.has_file ? (
-              <a className="p-link" href={`/v1/trainer/submissions/${s.id}/file`}>{s.file_name}</a>
+              <a
+                className="p-link"
+                href={`/v1/trainer/submissions/${s.id}/file?inline=true`}
+                target="_blank"
+                rel="noreferrer"
+                title="Click to preview file"
+              >
+                {s.file_name}
+              </a>
             ) : (
-              <a className="p-link" href={s.link} target="_blank" rel="noreferrer">{s.link}</a>
+              <a
+                className="p-link"
+                href={s.link}
+                target="_blank"
+                rel="noreferrer"
+                title="Click to open link"
+              >
+                {s.link}
+              </a>
             )}
-            {s.note && <div className="p-muted">{s.note}</div>}
+            {s.note && <div className="p-muted text-xs" style={{ marginTop: 2 }}>Note: {s.note}</div>}
+          </div>,
+          <div key="prev" className="p-row" style={{ gap: 6 }}>
+            {s.kind === 'file' && s.has_file ? (
+              <>
+                <a
+                  className="p-btn p-btn-small"
+                  href={`/v1/trainer/submissions/${s.id}/file?inline=true`}
+                  target="_blank"
+                  rel="noreferrer"
+                  title="Preview student file in new tab"
+                  style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                >
+                  <Eye size={13} />
+                  <span>Preview</span>
+                </a>
+                <a
+                  className="p-btn p-btn-ghost p-btn-small"
+                  href={`/v1/trainer/submissions/${s.id}/file`}
+                  target="_blank"
+                  rel="noreferrer"
+                  download
+                  title="Download file"
+                >
+                  <Download size={13} />
+                </a>
+              </>
+            ) : (
+              <a
+                className="p-btn p-btn-small"
+                href={s.link}
+                target="_blank"
+                rel="noreferrer"
+                title="Open student link"
+                style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+              >
+                <ExternalLink size={13} />
+                <span>Open Link</span>
+              </a>
+            )}
           </div>,
           <SubmissionGrader key={`g-${s.id}-${s.score ?? 'none'}`} row={s} onSaved={list.reload} />,
         ])}

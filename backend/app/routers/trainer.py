@@ -358,13 +358,21 @@ def list_submissions(assignment_id: int, user: User = TRAINER, db: Session = Dep
 
 
 @router.get("/submissions/{submission_id}/file")
-def download_submission(submission_id: int, user: User = TRAINER, db: Session = Depends(get_db)):
+def download_submission(submission_id: int, inline: bool = False, user: User = TRAINER, db: Session = Depends(get_db)):
     sub = db.get(Submission, submission_id)
     if sub is None or not sub.file_path:
         raise ApiError(404, "NOT_FOUND", "There is no file for this submission.")
     assignment = db.get(Assignment, sub.assignment_id)
     assert_batch_access(db, user, assignment.batch_id)
-    return FileResponse(sub.file_path, filename=sub.file_name)
+    import mimetypes
+    media_type, _ = mimetypes.guess_type(sub.file_name)
+    disp = "inline" if inline else "attachment"
+    return FileResponse(
+        sub.file_path,
+        media_type=media_type or "application/octet-stream",
+        content_disposition_type=disp,
+        filename=sub.file_name,
+    )
 
 
 @router.patch("/submissions/{submission_id}")

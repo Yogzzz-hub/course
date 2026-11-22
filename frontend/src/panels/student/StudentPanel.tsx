@@ -1060,9 +1060,9 @@ interface AssignmentRowData {
 }
 
 function SubmitForm({ assignment, onDone }: { assignment: AssignmentRowData; onDone: () => void }) {
-  const [kind, setKind] = useState('url');
-  const [link, setLink] = useState('');
-  const [note, setNote] = useState('');
+  const [kind, setKind] = useState(assignment.submission?.kind || 'url');
+  const [link, setLink] = useState(assignment.submission?.link || '');
+  const [note, setNote] = useState(assignment.submission?.note || '');
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
@@ -1105,7 +1105,11 @@ function SubmitForm({ assignment, onDone }: { assignment: AssignmentRowData; onD
         />
       </Field>
       {kind === 'file' ? (
-        <Field label="Assignment File" error={error?.fields?.file}>
+        <Field
+          label="Assignment File"
+          hint={assignment.submission?.file_name ? `Current file: ${assignment.submission.file_name}. Upload a new file only if you wish to replace it.` : undefined}
+          error={error?.fields?.file}
+        >
           <FileUploadZone
             file={file}
             onChange={setFile}
@@ -1118,7 +1122,11 @@ function SubmitForm({ assignment, onDone }: { assignment: AssignmentRowData; onD
         </Field>
       )}
       <Field label="Note for your trainer (optional)"><input className="p-input" value={note} onChange={e => setNote(e.target.value)} /></Field>
-      <div className="span-2"><button className="p-btn" type="submit" disabled={busy}>{busy ? 'Submitting…' : assignment.submission ? 'Replace my submission' : 'Submit'}</button></div>
+      <div className="span-2">
+        <button className="p-btn" type="submit" disabled={busy}>
+          {busy ? 'Submitting…' : assignment.submission ? 'Update My Submission' : 'Submit'}
+        </button>
+      </div>
     </form>
   );
 }
@@ -1237,9 +1245,22 @@ function Assignments() {
               <div className="p-submission-details-pane">
                 <div className="p-submission-details-head">
                   <span className="p-submission-details-title">Your Submitted Work</span>
-                  <span className="p-submission-time">
-                    Submitted on {fmtDateTime(a.submission.submitted_at)}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span className="p-submission-time">
+                      Submitted on {fmtDateTime(a.submission.submitted_at)}
+                    </span>
+                    {!isGraded && (
+                      <button
+                        type="button"
+                        className="p-btn p-btn-small p-btn-ghost"
+                        onClick={() => setSubmittingId(submittingId === a.id ? null : a.id)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                      >
+                        <Edit3 size={13} />
+                        <span>{submittingId === a.id ? 'Close Edit' : 'Edit Submission'}</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="p-submission-content-row">
@@ -1252,15 +1273,34 @@ function Assignments() {
                         </span>
                         <span className="p-submission-file-hint">Attached file submission</span>
                       </div>
-                      <a
-                        className="p-btn p-btn-small"
-                        href={`/v1/student/assignments/${a.id}/file`}
-                        target="_blank"
-                        rel="noreferrer"
-                        download
-                      >
-                        <Download size={13} className="inline mr-1" /> Download File
-                      </a>
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        <a
+                          className="p-btn p-btn-small p-btn-ghost"
+                          href={`/v1/student/assignments/${a.id}/file?inline=true`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <Eye size={13} className="inline mr-1" /> Preview File
+                        </a>
+                        <a
+                          className="p-btn p-btn-small"
+                          href={`/v1/student/assignments/${a.id}/file`}
+                          target="_blank"
+                          rel="noreferrer"
+                          download
+                        >
+                          <Download size={13} className="inline mr-1" /> Download File
+                        </a>
+                        {!isGraded && (
+                          <button
+                            type="button"
+                            className="p-btn p-btn-small p-btn-ghost"
+                            onClick={() => setSubmittingId(submittingId === a.id ? null : a.id)}
+                          >
+                            <Edit3 size={13} className="inline mr-1" /> Change
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ) : (
                     <div className="p-submission-link-card">
@@ -1271,14 +1311,25 @@ function Assignments() {
                         </span>
                         <span className="p-submission-link-url">{a.submission.link}</span>
                       </div>
-                      <a
-                        className="p-btn p-btn-small"
-                        href={a.submission.link}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <ExternalLink size={13} className="inline mr-1" /> Open Link
-                      </a>
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        <a
+                          className="p-btn p-btn-small"
+                          href={a.submission.link}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <ExternalLink size={13} className="inline mr-1" /> Open Link
+                        </a>
+                        {!isGraded && (
+                          <button
+                            type="button"
+                            className="p-btn p-btn-small p-btn-ghost"
+                            onClick={() => setSubmittingId(submittingId === a.id ? null : a.id)}
+                          >
+                            <Edit3 size={13} className="inline mr-1" /> Change Link
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
