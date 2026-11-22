@@ -1243,6 +1243,10 @@ input[type="file"]::file-selector-button:hover {
   border: 1px solid var(--border);
 }
 
+.p-table-wrap + .p-table-wrap {
+  margin-top: 24px;
+}
+
 .p-table {
   width: 100%;
   border-collapse: collapse;

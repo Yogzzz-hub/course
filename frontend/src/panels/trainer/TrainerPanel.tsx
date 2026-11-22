@@ -431,7 +431,29 @@ function Assignments() {
                 />
               ) : null;
             })()}
-            {openId && <Submissions assignmentId={openId} />}
+            {openId && (
+              <div
+                style={{
+                  marginTop: 32,
+                  paddingTop: 24,
+                  borderTop: '2px dashed var(--border-strong)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
+                    Student Submissions & Grading
+                  </h3>
+                  <button
+                    type="button"
+                    className="p-btn p-btn-ghost p-btn-small"
+                    onClick={() => setOpenId(null)}
+                  >
+                    Close Review ✕
+                  </button>
+                </div>
+                <Submissions assignmentId={openId} />
+              </div>
+            )}
           </Card>
         </>
       )}
@@ -508,14 +530,32 @@ function Quizzes() {
               empty="No quizzes yet."
             />
             {openId && (
-              <>
+              <div
+                style={{
+                  marginTop: 32,
+                  paddingTop: 24,
+                  borderTop: '2px dashed var(--border-strong)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
+                    Student Quiz Attempts
+                  </h3>
+                  <button
+                    type="button"
+                    className="p-btn p-btn-ghost p-btn-small"
+                    onClick={() => setOpenId(null)}
+                  >
+                    Close ✕
+                  </button>
+                </div>
                 <ErrorNotice error={attempts.error} />
                 <Table
                   head={['Student', 'Score', 'Submitted']}
                   rows={(attempts.data?.items ?? []).map(a => [a.name, `${a.score} / ${a.total}`, fmtDateTime(a.submitted_at)])}
                   empty="No attempts yet."
                 />
-              </>
+              </div>
             )}
           </Card>
         </>
