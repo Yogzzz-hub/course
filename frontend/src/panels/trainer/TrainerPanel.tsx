@@ -712,18 +712,32 @@ function TrainerHome({ me }: { me: Me }) {
         />
       </div>
 
-      {/* Main Split Layout */}
+      {/* Row 1: Analytics & Teaching Activity Feed (Aligned equally 50/50) */}
       <div className="p-dashboard-split">
-        <div className="p-dashboard-main">
-          <CourseEngagementChart
-            title="Batch Enrolment & Student Distribution"
-            data={chartData}
-            totalLabel="Total Students Mentored"
-            totalValue={`${totalStudents} Students`}
-            trendText="Active Cohorts"
-          />
+        <CourseEngagementChart
+          title="Batch Enrolment & Student Distribution"
+          data={chartData}
+          totalLabel="Total Students Mentored"
+          totalValue={`${totalStudents} Students`}
+          trendText="Active Cohorts"
+        />
+        <ActivityTimeline title="Teaching Activity Feed" items={activities} />
+      </div>
 
-          <div className="p-course-card">
+      {/* Row 2: Next Scheduled Classes & Quick Actions (Aligned equally 50/50 and equal height) */}
+      <div className="p-dashboard-split" style={{ marginTop: 24, alignItems: 'stretch' }}>
+        <div
+          className="p-course-card"
+          style={{
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            boxSizing: 'border-box',
+            margin: 0,
+          }}
+        >
+          <div>
             <div className="p-course-header">
               <div>
                 <h3 className="p-course-title">Next Scheduled Classes</h3>
@@ -768,26 +782,104 @@ function TrainerHome({ me }: { me: Me }) {
           </div>
         </div>
 
-        <div className="p-dashboard-side">
-          <ActivityTimeline title="Teaching Activity Feed" items={activities} />
-
-          <div className="p-todo-card">
-            <h3 className="p-todo-title">Trainer Quick Actions</h3>
-            <div className="p-todo-list">
-              <Link to="/trainer/classes" className="p-todo-item">
-                <span className="p-todo-bullet">→</span>
+        <div
+          className="p-todo-card"
+          style={{
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            boxSizing: 'border-box',
+            margin: 0,
+          }}
+        >
+          <div>
+            <h3 className="p-todo-title" style={{ marginBottom: 14 }}>
+              Trainer Quick Actions
+            </h3>
+            <div className="p-todo-list" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <Link
+                to="/trainer/classes"
+                className="p-todo-item"
+                style={{
+                  padding: '12px 16px',
+                  borderRadius: 12,
+                  background: 'var(--surface-alt)',
+                  border: '1px solid var(--border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  textDecoration: 'none',
+                  color: 'var(--text)',
+                  fontWeight: 600,
+                }}
+              >
+                <span className="p-todo-bullet" style={{ color: 'var(--accent)' }}>
+                  →
+                </span>
                 <span>Open timetable to start a class</span>
               </Link>
-              <Link to="/trainer/assignments" className="p-todo-item">
-                <span className="p-todo-bullet">→</span>
+              <Link
+                to="/trainer/assignments"
+                className="p-todo-item"
+                style={{
+                  padding: '12px 16px',
+                  borderRadius: 12,
+                  background: 'var(--surface-alt)',
+                  border: '1px solid var(--border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  textDecoration: 'none',
+                  color: 'var(--text)',
+                  fontWeight: 600,
+                }}
+              >
+                <span className="p-todo-bullet" style={{ color: 'var(--accent)' }}>
+                  →
+                </span>
                 <span>Grade pending student assignments</span>
               </Link>
-              <Link to="/trainer/quizzes" className="p-todo-item">
-                <span className="p-todo-bullet">→</span>
+              <Link
+                to="/trainer/quizzes"
+                className="p-todo-item"
+                style={{
+                  padding: '12px 16px',
+                  borderRadius: 12,
+                  background: 'var(--surface-alt)',
+                  border: '1px solid var(--border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  textDecoration: 'none',
+                  color: 'var(--text)',
+                  fontWeight: 600,
+                }}
+              >
+                <span className="p-todo-bullet" style={{ color: 'var(--accent)' }}>
+                  →
+                </span>
                 <span>Publish new quiz for your batch</span>
               </Link>
-              <Link to="/trainer/leaves" className="p-todo-item">
-                <span className="p-todo-bullet">→</span>
+              <Link
+                to="/trainer/leaves"
+                className="p-todo-item"
+                style={{
+                  padding: '12px 16px',
+                  borderRadius: 12,
+                  background: 'var(--surface-alt)',
+                  border: '1px solid var(--border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  textDecoration: 'none',
+                  color: 'var(--text)',
+                  fontWeight: 600,
+                }}
+              >
+                <span className="p-todo-bullet" style={{ color: 'var(--accent)' }}>
+                  →
+                </span>
                 <span>Submit leave request to manager</span>
               </Link>
             </div>
