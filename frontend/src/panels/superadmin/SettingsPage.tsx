@@ -177,12 +177,6 @@ export function SettingsPage() {
 
   return (
     <div className="st">
-      <div className="st-top">
-        <div className="st-title-wrap">
-          <h1 className="st-title">Platform Settings</h1>
-          <p className="st-subtitle">Global academy rules, verification thresholds, and payment instructions.</p>
-        </div>
-      </div>
       <ErrorNotice error={error} />
 
       <div className="st-grid">

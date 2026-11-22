@@ -27,33 +27,6 @@
   overflow: hidden;
 }
 
-/* Header */
-.st-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 6px 16px;
-  flex-shrink: 0;
-}
-.st-title-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.st-title {
-  margin: 0;
-  font: 700 18px/1.2 var(--font-display);
-  color: var(--text);
-  letter-spacing: -0.01em;
-}
-.st-subtitle {
-  margin: 0;
-  font-size: 12.5px;
-  line-height: 1.4;
-  color: var(--muted);
-}
-
 /* Bento Grid */
 .st-grid {
   display: grid;
