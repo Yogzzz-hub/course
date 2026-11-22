@@ -1791,7 +1791,88 @@ input[type="file"]::file-selector-button:hover {
 .p-chart-body {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 16px;
+}
+
+.p-text-breakdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 0;
+  min-height: 200px;
+  justify-content: center;
+}
+
+.p-text-metric-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--surface-alt);
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.p-text-metric-row:hover {
+  background: color-mix(in srgb, var(--accent) 4%, var(--surface-alt));
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+}
+
+.p-text-metric-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.p-text-metric-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.p-text-metric-sub {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.p-text-metric-val-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 0 auto;
+}
+
+.p-text-metric-bar-bg {
+  width: 90px;
+  height: 6px;
+  background: color-mix(in srgb, var(--border) 80%, transparent);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.p-text-metric-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.p-text-metric-value {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent);
+  min-width: 38px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .p-custom-tooltip {

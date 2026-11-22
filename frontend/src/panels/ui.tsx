@@ -13,16 +13,6 @@ import {
   Check,
   type LucideIcon,
 } from 'lucide-react';
-import {
-  AreaChart,
-  Area,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
 import { ApiError } from './api';
 
 const IST = 'Asia/Kolkata';
@@ -154,7 +144,7 @@ export function MetricCard({
   );
 }
 
-/** Animated Course / Engagement Bar Chart matching Lurni design */
+/** Textual Course & Metric Engagement Card replacing graph visuals with clean readable textual data */
 export function CourseEngagementChart({
   title = 'Top Engaged Courses',
   data,
@@ -183,6 +173,7 @@ export function CourseEngagementChart({
   }, []);
 
   const RANGES = ['This Week', 'This Month', 'All Time'];
+  const maxVal = Math.max(...data.map(d => d.value), 1);
 
   return (
     <div className="p-chart-card">
@@ -219,62 +210,36 @@ export function CourseEngagementChart({
       </div>
 
       <div className="p-chart-body">
-        <div style={{ width: '100%', height: 260 }}>
-          <ResponsiveContainer>
-            <AreaChart
-              data={data}
-              margin={{ top: 20, right: 15, left: -20, bottom: 20 }}
-            >
-              <defs>
-                <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--accent, #681C35)" stopOpacity={0.35} />
-                  <stop offset="95%" stopColor="var(--accent, #681C35)" stopOpacity={0.0} />
-                </linearGradient>
-              </defs>
-              <XAxis
-                dataKey="name"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: 'var(--muted)', fontSize: 12, fontWeight: 500 }}
-                dy={8}
-              />
-              <YAxis
-                domain={[0, 100]}
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: 'var(--muted)', fontSize: 11 }}
-                allowDecimals={false}
-              />
-              <Tooltip
-                content={({ active, payload }) => {
-                  if (active && payload && payload.length) {
-                    const item = payload[0].payload;
-                    return (
-                      <div className="p-custom-tooltip">
-                        <div className="p-tooltip-title">{item.name}</div>
-                        <div className="p-tooltip-val">
-                          Metric: <strong>{item.value}</strong>
-                          {item.secondary && <span> ({item.secondary})</span>}
-                        </div>
-                      </div>
-                    );
-                  }
-                  return null;
-                }}
-              />
-              <Area
-                type="monotone"
-                dataKey="value"
-                stroke="var(--accent, #681C35)"
-                strokeWidth={3}
-                fillOpacity={1}
-                fill="url(#chartGradient)"
-                activeDot={{ r: 6, fill: 'var(--accent, #681C35)', stroke: '#ffffff', strokeWidth: 2 }}
-                dot={{ r: 4, fill: '#ffffff', stroke: 'var(--accent, #681C35)', strokeWidth: 2 }}
-                isAnimationActive={true}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+        {/* Textual Data breakdown rows replacing graphic curve */}
+        <div className="p-text-breakdown-list">
+          {data.length === 0 ? (
+            <div className="p-muted" style={{ padding: '24px 0', textAlign: 'center' }}>
+              No data records available for this period.
+            </div>
+          ) : (
+            data.map((item, idx) => {
+              const pct = Math.min(Math.round((item.value / maxVal) * 100), 100);
+              return (
+                <div key={item.name + idx} className="p-text-metric-row">
+                  <div className="p-text-metric-main">
+                    <span className="p-text-metric-name">{item.name}</span>
+                    {item.secondary && (
+                      <span className="p-text-metric-sub">{item.secondary}</span>
+                    )}
+                  </div>
+                  <div className="p-text-metric-val-wrap">
+                    <div className="p-text-metric-bar-bg" aria-hidden="true">
+                      <div
+                        className="p-text-metric-bar-fill"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <span className="p-text-metric-value">{item.value}</span>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
 
         <div className="p-chart-footer">
