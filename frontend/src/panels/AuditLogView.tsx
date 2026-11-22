@@ -2,7 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { Award, BookOpen, CircleAlert, CreditCard, Download, GraduationCap, Layers, Search, Settings2, UserRound, Users, X } from 'lucide-react';
 import { useApi } from './hooks';
 import { useInfiniteList } from './useInfinite';
-import { ErrorNotice, PageHead } from './ui';
+import { ErrorNotice, PageHead, Pager } from './ui';
 import './audit-log.css';
 
 interface Entry { at: string; actor: string; action: string; entity: string; entity_id: string }
@@ -138,8 +138,8 @@ export function AuditLogView({
   }, [items, query, group, actor]);
 
   const rows = useMemo(() => fold(filtered), [filtered]);
-  const { count, more, sentinel, loadMore } = useInfiniteList(rows.length, `${query}|${group}|${actor}`);
-  const visible = rows.slice(0, count);
+  const { start, end, more, sentinel, loadMore, paged, page, pages, setPage } = useInfiniteList(rows.length, `${query}|${group}|${actor}`);
+  const visible = rows.slice(start, end);
   const days = useMemo(() => {
     const map = new Map<string, Row[]>();
     for (const row of visible) {
@@ -219,9 +219,9 @@ export function AuditLogView({
         </section>
       ))}
 
-      {more && (
+      {paged ? <Pager page={page} pages={pages} onChange={setPage} /> : more && (
         <div className="al-more" ref={sentinel}>
-          <button type="button" className="p-btn p-btn-ghost p-btn-small" onClick={loadMore}>Loading more… ({rows.length - count} left)</button>
+          <button type="button" className="p-btn p-btn-ghost p-btn-small" onClick={loadMore}>Loading more… ({rows.length - end} left)</button>
         </div>
       )}
     </div>

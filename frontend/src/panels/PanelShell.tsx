@@ -23,6 +23,7 @@ import {
   Palette,
   X,
   ChevronRight,
+  ArrowRight,
   BookOpen,
 } from 'lucide-react';
 import { LogoMark } from '../components/LogoMark';
@@ -31,14 +32,22 @@ import { useApi } from './hooks';
 import { themes } from '../components/ThemeSwitcher';
 import { Loading, ErrorNotice, Notice } from './ui';
 import { PageLoader, PanelLoader } from '../components/loading/Loaders';
+import { skeletonKindFor } from '../components/loading/PanelSkeletons';
 import { useLoadingState } from '../components/loading/loadingStore';
 import './panels.css';
+
+export interface ImpersonatedBy {
+  id: number;
+  name: string;
+  email: string;
+}
 
 export interface Me {
   id: number;
   name: string;
   email: string;
   roles: string[];
+  impersonated_by?: ImpersonatedBy | null;
 }
 
 export interface NavItem {
@@ -84,7 +93,9 @@ function getNavIcon(label: string, to: string) {
 /** Modern shell matching the sleek Ottertag dock layout across the 4 color themes */
 export function PanelShell({ brand, items, me, children }: { brand: string; items: NavItem[]; me: Me; children: ReactNode }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { initial } = useLoadingState();
+  const loadingKind = skeletonKindFor(location.pathname);
   const [collapsed, setCollapsed] = useState(() => {
     try {
       return localStorage.getItem('academy-sidebar-collapsed') === 'true';
@@ -322,9 +333,33 @@ export function PanelShell({ brand, items, me, children }: { brand: string; item
         </div>
       </aside>
 
+      {me.impersonated_by && (
+        <aside className="p-impersonate-banner" role="status" aria-label="Active impersonation session">
+          <div className="p-impersonate-banner-content">
+            <span className="p-impersonate-pulse" />
+            <span className="p-impersonate-text">
+              Viewing as <strong>{me.name}</strong> ({roleLabel(primaryRole)})
+            </span>
+            <span className="p-impersonate-badge">Admin: {me.impersonated_by.name}</span>
+          </div>
+          <button
+            type="button"
+            className="p-impersonate-exit-btn"
+            onClick={async () => {
+              try {
+                await api('/auth/exit-impersonation', { method: 'POST' });
+              } catch {}
+              window.location.href = '/admin/portals';
+            }}
+          >
+            Return to Admin <ArrowRight size={13} style={{ marginLeft: 5 }} />
+          </button>
+        </aside>
+      )}
+
       <div className="p-main" tabIndex={-1} aria-busy={initial > 0}>
         {children}
-        {initial > 0 && <PanelLoader />}
+        {initial > 0 && <PanelLoader kind={loadingKind} />}
       </div>
     </div>
   );

@@ -168,21 +168,6 @@ export function SettingsPage() {
     <div className="st">
       <div className="st-top">
         <PageHead title="Settings" text="Rules that apply across the academy." />
-        {saved && !dirty && <p className="st-toast" role="status">Settings saved.</p>}
-        {dirty && (
-          <div className="st-bar" role="region" aria-label="Unsaved changes">
-            <div className="st-bar-text">
-              <strong>Unsaved changes</strong>
-              <span title={changes.join(' · ')}>{changes.join(' · ')}</span>
-            </div>
-            <button type="button" className="p-btn p-btn-ghost p-btn-small" onClick={() => { setDraft({}); setError(null); }} disabled={busy}>
-              <RotateCcw size={14} aria-hidden="true" /> Discard
-            </button>
-            <button type="button" className="p-btn p-btn-small" onClick={save} disabled={busy || Object.keys(problems).length > 0}>
-              <Save size={14} aria-hidden="true" /> {busy ? 'Saving…' : 'Save settings'}
-            </button>
-          </div>
-        )}
       </div>
       <ErrorNotice error={error} />
 
@@ -273,6 +258,24 @@ export function SettingsPage() {
             </div>
           </div>
         </Section>
+      </div>
+
+      <div className="st-dock" aria-live="polite">
+        {saved && !dirty && <p className="st-toast" role="status">Settings saved.</p>}
+        {dirty && (
+          <div className="st-bar" role="region" aria-label="Unsaved changes">
+            <div className="st-bar-text">
+              <strong>Unsaved changes</strong>
+              <span title={changes.join(' · ')}>{changes.join(' · ')}</span>
+            </div>
+            <button type="button" className="p-btn p-btn-ghost p-btn-small" onClick={() => { setDraft({}); setError(null); }} disabled={busy}>
+              <RotateCcw size={14} aria-hidden="true" /> Discard
+            </button>
+            <button type="button" className="p-btn p-btn-small" onClick={save} disabled={busy || Object.keys(problems).length > 0}>
+              <Save size={14} aria-hidden="true" /> {busy ? 'Saving…' : 'Save settings'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

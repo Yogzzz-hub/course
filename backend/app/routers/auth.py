@@ -10,9 +10,12 @@ from ..deps import CSRF_COOKIE, ROLES, SESSION_COOKIE, current_user, get_db, rol
 from ..errors import ApiError
 from ..models import AuthSession, User, UserRole
 from ..security import hash_password, new_token, temporary_password, token_digest, verify_password
+from ..services import audit
 from ..timeutil import utcnow
 
 router = APIRouter(prefix="/v1", tags=["auth"])
+
+IMPERSONATOR_COOKIE = "academy_impersonator"
 
 ROLE_HOME = {
     "super_admin": "/superadmin",
@@ -65,6 +68,28 @@ def start_session(response: Response, db: Session, user: User) -> None:
     )
 
 
+def get_impersonator(request: Request, db: Session) -> dict | None:
+    cookie = request.cookies.get(IMPERSONATOR_COOKIE)
+    if not cookie or "." not in cookie:
+        return None
+    try:
+        admin_id_str, sig = cookie.split(".", 1)
+        admin_id = int(admin_id_str)
+        settings = get_settings()
+        expected = token_digest(f"{admin_id}:{settings.session_secret}")
+        if sig != expected:
+            return None
+        admin = db.get(User, admin_id)
+        if admin is None or admin.status != "active":
+            return None
+        roles = roles_for(db, admin.id)
+        if not roles.intersection({"admin", "super_admin"}):
+            return None
+        return {"id": admin.id, "name": admin.name, "email": admin.email}
+    except Exception:
+        return None
+
+
 @router.post("/auth/login")
 def login(body: LoginIn, response: Response, db: Session = Depends(get_db)):
     user = db.scalar(select(User).where(User.email == body.email.strip().lower()))
@@ -82,17 +107,33 @@ def logout(request: Request, response: Response, db: Session = Depends(get_db)):
         db.commit()
     response.delete_cookie(SESSION_COOKIE, path="/")
     response.delete_cookie(CSRF_COOKIE, path="/")
+    response.delete_cookie(IMPERSONATOR_COOKIE, path="/")
     return {"ok": True}
 
 
 @router.get("/me")
-def me(user: User = Depends(current_user), db: Session = Depends(get_db)):
+def me(request: Request, user: User = Depends(current_user), db: Session = Depends(get_db)):
     return {
         "id": user.id,
         "name": user.name,
         "email": user.email,
         "roles": sorted(roles_for(db, user.id)),
+        "impersonated_by": get_impersonator(request, db),
     }
+
+
+@router.post("/auth/exit-impersonation")
+def exit_impersonation(request: Request, response: Response, db: Session = Depends(get_db)):
+    impersonator = get_impersonator(request, db)
+    if not impersonator:
+        raise ApiError(400, "BAD_REQUEST", "No active impersonation session found.")
+    admin = db.get(User, impersonator["id"])
+    if admin is None or admin.status != "active":
+        raise ApiError(401, "UNAUTHORISED", "Admin account is no longer active.")
+    audit(db, admin.id, "admin.exit_impersonation", "user", admin.id, {"admin_id": admin.id})
+    start_session(response, db, admin)
+    response.delete_cookie(IMPERSONATOR_COOKIE, path="/")
+    return {"ok": True, "redirect": "/admin/portals"}
 
 
 @router.post("/dev/login-as")

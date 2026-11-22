@@ -1,6 +1,6 @@
 from typing import Literal
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -8,9 +8,10 @@ from sqlalchemy.orm import Session
 from ..deps import ROLES, get_db, require_roles, roles_for
 from ..errors import ApiError
 from ..models import AuditLog, Batch, Enrolment, Payment, User, UserRole
-from ..security import hash_password, temporary_password
+from ..security import hash_password, temporary_password, token_digest
 from ..services import audit, get_setting, set_setting, threshold_percent, fees_must_clear
 from ..config import get_settings
+from .auth import IMPERSONATOR_COOKIE, home_for, start_session
 
 router = APIRouter(prefix="/v1", tags=["admin"])
 ADMIN = Depends(require_roles("admin"))
@@ -111,6 +112,50 @@ def set_user_status(user_id: int, body: UserStatusIn, actor: User = ADMIN, db: S
     audit(db, actor.id, "user.status", "user", target.id, {"status": body.status})
     db.commit()
     return {"ok": True}
+
+
+class ImpersonateIn(BaseModel):
+    user_id: int
+
+
+@router.post("/admin/impersonate")
+def admin_impersonate(body: ImpersonateIn, response: Response, actor: User = ADMIN, db: Session = Depends(get_db)):
+    target = db.get(User, body.user_id)
+    if target is None:
+        raise ApiError(404, "NOT_FOUND", "That user could not be found.")
+    if target.status != "active":
+        raise ApiError(400, "INACTIVE_USER", "Cannot switch into an inactive or disabled account.")
+    target_roles = roles_for(db, target.id)
+    if "super_admin" in target_roles:
+        raise ApiError(403, "FORBIDDEN", "Admins cannot switch into a Super Admin account.")
+
+    settings = get_settings()
+    sig = token_digest(f"{actor.id}:{settings.session_secret}")
+    cookie_val = f"{actor.id}.{sig}"
+    response.set_cookie(
+        IMPERSONATOR_COOKIE,
+        cookie_val,
+        max_age=settings.session_hours * 3600,
+        httponly=True,
+        secure=settings.cookie_secure,
+        samesite="lax",
+        path="/",
+    )
+
+    audit(db, actor.id, "admin.impersonate", "user", target.id, {
+        "admin_id": actor.id,
+        "admin_email": actor.email,
+        "target_id": target.id,
+        "target_email": target.email,
+        "target_roles": sorted(target_roles),
+    })
+
+    start_session(response, db, target)
+    return {
+        "ok": True,
+        "redirect": home_for(target_roles),
+        "user": user_row(db, target),
+    }
 
 
 @router.get("/admin/audit-log")

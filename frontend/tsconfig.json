@@ -9,5 +9,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "server", "functions", "api", "tests", "utils", "vite.config.ts", "playwright.config.ts"]
+  "include": ["src", "server", "functions", "api", "utils", "vite.config.ts", "playwright.config.ts"]
 }

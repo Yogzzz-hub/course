@@ -393,6 +393,10 @@ export function ActivityTimeline({
   items: ActivityItem[];
 }) {
   const [filter, setFilter] = useState<'All' | 'Classes' | 'Tasks'>('All');
+  const phone = useIsPhone();
+  const [expanded, setExpanded] = useState(false);
+  const limited = phone && !expanded && items.length > 4;
+  const visibleItems = limited ? items.slice(0, 4) : items;
 
   return (
     <div className="p-activity-card">
@@ -421,7 +425,7 @@ export function ActivityTimeline({
         {items.length === 0 ? (
           <div className="p-activity-empty">No recent activity recorded yet.</div>
         ) : (
-          items.map(item => {
+          visibleItems.map(item => {
             const Icon = item.icon ?? CheckCircle2;
             return (
               <div key={item.id} className="p-activity-item">
@@ -439,6 +443,11 @@ export function ActivityTimeline({
               </div>
             );
           })
+        )}
+        {phone && items.length > 4 && (
+          <button type="button" className="p-more p-more-wide" aria-expanded={expanded} onClick={() => setExpanded(value => !value)}>
+            {expanded ? 'Show fewer' : `Show all ${items.length}`}
+          </button>
         )}
       </div>
     </div>
@@ -516,9 +525,47 @@ export function Stat({ label, value }: { label: string; value: ReactNode }) {
   );
 }
 
-export function Table({ head, rows, empty }: { head: string[]; rows: ReactNode[][]; empty: string }) {
-  if (rows.length === 0) return <Empty>{empty}</Empty>;
+/** True on phones. Pages use this to switch to short, paged lists instead of long scrolling. */
+export function useIsPhone(): boolean {
+  const query = '(max-width: 640px)';
+  const [phone, setPhone] = useState(() => typeof window !== 'undefined' && window.matchMedia(query).matches);
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    const update = () => setPhone(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
+  return phone;
+}
+
+/** Previous / page x of y / Next. Renders nothing when there is only one page. */
+export function Pager({ page, pages, onChange }: { page: number; pages: number; onChange: (page: number) => void }) {
+  if (pages <= 1) return null;
   return (
+    <nav className="p-pager" aria-label="Pages">
+      <button type="button" className="p-btn p-btn-ghost p-btn-small" onClick={() => onChange(page - 1)} disabled={page <= 0}>Previous</button>
+      <span className="p-pager-count">Page {page + 1} of {pages}</span>
+      <button type="button" className="p-btn p-btn-small" onClick={() => onChange(page + 1)} disabled={page >= pages - 1}>Next</button>
+    </nav>
+  );
+}
+
+const PHONE_PAGE = 8;
+const PHONE_VISIBLE_FIELDS = 3;
+
+export function Table({ head, rows, empty = 'Nothing here yet.' }: { head: string[]; rows: ReactNode[][]; empty?: string }) {
+  const phone = useIsPhone();
+  const [page, setPage] = useState(0);
+  const [open, setOpen] = useState<Record<number, boolean>>({});
+  if (rows.length === 0) return <Empty>{empty}</Empty>;
+  const pages = phone ? Math.ceil(rows.length / PHONE_PAGE) : 1;
+  const current = Math.min(page, pages - 1);
+  const offset = phone ? current * PHONE_PAGE : 0;
+  const shown = phone ? rows.slice(offset, offset + PHONE_PAGE) : rows;
+  const hasExtra = head.length > PHONE_VISIBLE_FIELDS;
+  return (
+    <>
     <div className="p-table-wrap">
       <table className="p-table">
         <thead>
@@ -531,18 +578,35 @@ export function Table({ head, rows, empty }: { head: string[]; rows: ReactNode[]
           </tr>
         </thead>
         <tbody>
-          {rows.map((cells, rowIndex) => (
-            <tr key={rowIndex}>
-              {cells.map((cell, cellIndex) => (
-                <td key={cellIndex} data-label={head[cellIndex]}>
-                  {cell}
-                </td>
-              ))}
-            </tr>
-          ))}
+          {shown.map((cells, index) => {
+            const rowIndex = offset + index;
+            const expanded = Boolean(open[rowIndex]);
+            return (
+              <tr key={rowIndex} className={phone && expanded ? 'p-row-open' : undefined}>
+                {cells.map((cell, cellIndex) => (
+                  <td
+                    key={cellIndex}
+                    data-label={head[cellIndex]}
+                    className={phone && hasExtra && cellIndex >= PHONE_VISIBLE_FIELDS ? 'p-cell-extra' : undefined}
+                  >
+                    {cell}
+                  </td>
+                ))}
+                {phone && hasExtra && (
+                  <td className="p-more-cell">
+                    <button type="button" className="p-more" aria-expanded={expanded} onClick={() => setOpen(state => ({ ...state, [rowIndex]: !expanded }))}>
+                      {expanded ? 'Hide details' : 'More details'}
+                    </button>
+                  </td>
+                )}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
+    <Pager page={current} pages={pages} onChange={setPage} />
+    </>
   );
 }
 

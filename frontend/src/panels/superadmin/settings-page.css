@@ -72,17 +72,19 @@
 .st-preview-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; line-height: 1.6; color: var(--text); }
 .st-preview-empty { margin: 0; font-size: 14px; font-style: italic; color: var(--muted); }
 
-/* Save bar and toast sit in the top row, so the page never grows. */
-.st-bar { flex: 0 1 560px; display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 18px; border-radius: 999px; background: var(--ink); color: #fff; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25); animation: st-in 0.3s cubic-bezier(0.22, 1, 0.36, 1); min-width: 0; }
+/* Save bar: a full-width tile at the bottom of the bento grid. Its slot is always reserved, so nothing jumps. */
+.st-dock { min-height: 64px; display: flex; align-items: flex-end; }
+.st-bar { width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 22px; border-radius: 22px; background: var(--ink); color: #fff; box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22); animation: st-up 0.38s cubic-bezier(0.22, 1, 0.36, 1) both; min-width: 0; }
 .st-bar-text { display: grid; gap: 1px; margin-right: auto; min-width: 0; }
-.st-bar-text strong { font-size: 13px; }
+.st-bar-text strong { font-size: 14px; }
 .st-bar-text span { font-size: 12px; opacity: 0.75; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.st-bar .p-btn { border-radius: 999px; flex-shrink: 0; }
+.st-bar .p-btn { border-radius: 14px; flex-shrink: 0; }
 .st-bar .p-btn-ghost { color: #fff; border-color: rgba(255, 255, 255, 0.35); }
 .st-bar .p-btn-ghost:hover { background: rgba(255, 255, 255, 0.12); }
 .st-bar .p-btn:not(.p-btn-ghost) { background: var(--accent-soft); color: var(--ink); }
 .st-bar .p-btn:not(.p-btn-ghost):hover { background: color-mix(in srgb, var(--accent-soft) 80%, #fff); }
-.st-toast { margin: 0; padding: 12px 22px; border-radius: 999px; background: #1F5B3E; color: #fff; font-weight: 700; font-size: 14px; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2); animation: st-in 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
+.st-toast { margin: 0; width: 100%; box-sizing: border-box; padding: 18px 22px; border-radius: 22px; background: #1F5B3E; color: #fff; font-weight: 700; font-size: 14px; text-align: center; animation: st-up 0.38s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes st-up { from { opacity: 0; transform: translateY(100%); } to { opacity: 1; transform: translateY(0); } }
 @keyframes st-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
 @media (max-width: 1000px) {
@@ -108,9 +110,19 @@
   .st-top { min-height: 0; }
   .st-number { min-width: 116px; }
   .st-number input { font-size: 38px; }
-  .st-bar { flex-basis: 100%; border-radius: 22px; flex-wrap: wrap; padding: 12px 12px 12px 16px; }
+  .st-bar { flex-wrap: wrap; padding: 12px 12px 12px 16px; }
+  .st-bar .p-btn { flex: 1; justify-content: center; }
 }
-@media (prefers-reduced-motion: reduce) { .st-bar, .st-toast { animation: none; } .st-switch, .st-switch i { transition: none; } }
+
+/* Desktop: the page fills the screen height exactly. The header and save bar keep their size, and the bento grid takes the rest, so there is no empty band and no scrolling. */
+@media (min-width: 901px) and (min-height: 840px) {
+  /* Settings only: even 24px above and below, so the bento sits in the screen with no leftover band. */
+  .p-main:has(> .st) { padding-bottom: 24px; }
+  .st { height: calc(100dvh - 56px); min-height: 0; grid-template-rows: auto minmax(0, 1fr) auto; }
+  .st-grid { grid-template-rows: minmax(300px, 1fr) minmax(280px, 1fr); height: 100%; min-height: 0; }
+  .st-card { min-height: 0; overflow: hidden; }
+}
+@media (prefers-reduced-motion: reduce) { .st-bar, .st-toast { animation: none; opacity: 1; } .st-switch, .st-switch i { transition: none; } }
 
 .st-name .st-body { align-content: space-between; }
 .st-brand { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 14px; background: var(--accent-tint); min-width: 0; }

@@ -41,7 +41,6 @@ const NAV: NavItem[] = [
   { to: '/superadmin/roles', label: 'Roles & access' },
   { to: '/superadmin/settings', label: 'Settings' },
   { to: '/superadmin/audit-log', label: 'Audit log' },
-  { to: '/superadmin/panels', label: 'Open any panel' },
 ];
 const ROLE_OPTIONS = ['super_admin', 'admin', 'manager', 'financier', 'trainer', 'student'];
 
@@ -156,30 +155,22 @@ function Overview({ me }: { me: Me }) {
           <div className="p-course-card">
             <div className="p-course-header">
               <div>
-                <h3 className="p-course-title">Portal Quick Launch</h3>
-                <p className="p-course-batch">Access any panel with your Super Admin permissions</p>
+                <h3 className="p-course-title">Master Governance Controls</h3>
+                <p className="p-course-batch">Platform oversight, policy management and system audits</p>
               </div>
             </div>
-            <div className="p-portal-links-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginTop: 12 }}>
-              <Link to="/manager" className="p-btn p-btn-ghost text-left" style={{ display: 'block', padding: '12px 16px' }}>
-                <strong style={{ display: 'block', color: 'var(--text)' }}>Manager Portal</strong>
-                <span style={{ fontSize: 12, color: 'var(--muted)' }}>Courses, batches & certs</span>
+            <div className="p-portal-links-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12, marginTop: 12 }}>
+              <Link to="/superadmin/roles" className="p-btn p-btn-ghost text-left" style={{ display: 'block', padding: '14px 16px' }}>
+                <strong style={{ display: 'block', color: 'var(--text)' }}>Roles & Access</strong>
+                <span style={{ fontSize: 12, color: 'var(--muted)' }}>Grant & review administrative roles</span>
               </Link>
-              <Link to="/trainer" className="p-btn p-btn-ghost text-left" style={{ display: 'block', padding: '12px 16px' }}>
-                <strong style={{ display: 'block', color: 'var(--text)' }}>Trainer Portal</strong>
-                <span style={{ fontSize: 12, color: 'var(--muted)' }}>Classes & assignments</span>
+              <Link to="/superadmin/settings" className="p-btn p-btn-ghost text-left" style={{ display: 'block', padding: '14px 16px' }}>
+                <strong style={{ display: 'block', color: 'var(--text)' }}>Academy Settings</strong>
+                <span style={{ fontSize: 12, color: 'var(--muted)' }}>Attendance threshold & payment policies</span>
               </Link>
-              <Link to="/finance" className="p-btn p-btn-ghost text-left" style={{ display: 'block', padding: '12px 16px' }}>
-                <strong style={{ display: 'block', color: 'var(--text)' }}>Finance Portal</strong>
-                <span style={{ fontSize: 12, color: 'var(--muted)' }}>Fees, payments & ledger</span>
-              </Link>
-              <Link to="/admin" className="p-btn p-btn-ghost text-left" style={{ display: 'block', padding: '12px 16px' }}>
-                <strong style={{ display: 'block', color: 'var(--text)' }}>Admin Portal</strong>
-                <span style={{ fontSize: 12, color: 'var(--muted)' }}>Users & system audit</span>
-              </Link>
-              <Link to="/app" className="p-btn p-btn-ghost text-left" style={{ display: 'block', padding: '12px 16px' }}>
-                <strong style={{ display: 'block', color: 'var(--text)' }}>Student Portal</strong>
-                <span style={{ fontSize: 12, color: 'var(--muted)' }}>Student learning view</span>
+              <Link to="/superadmin/audit-log" className="p-btn p-btn-ghost text-left" style={{ display: 'block', padding: '14px 16px' }}>
+                <strong style={{ display: 'block', color: 'var(--text)' }}>Master Audit Log</strong>
+                <span style={{ fontSize: 12, color: 'var(--muted)' }}>Immutable log of platform-wide actions</span>
               </Link>
             </div>
           </div>
@@ -332,68 +323,6 @@ function AuditLog() {
   );
 }
 
-function Panels() {
-  const links = [
-    { to: '/manager', label: 'Manager', icon: Layers, desc: 'Programmes, batches, students & certificates', color: '#4f46e5' },
-    { to: '/trainer', label: 'Trainer', icon: Users, desc: 'Classes, assignments, quizzes & tasks', color: '#0891b2' },
-    { to: '/finance', label: 'Financier', icon: CreditCard, desc: 'Fee verification, expenses & ledger', color: '#059669' },
-    { to: '/admin/overview', label: 'Admin', icon: ShieldCheck, desc: 'User accounts, roles & audit log', color: '#d97706' },
-    { to: '/app', label: 'Student', icon: GraduationCap, desc: 'Student view: classes, fees & grades', color: '#7c3aed' },
-  ];
-  return (
-    <>
-      <PageHead title="Open any panel" text="As super admin you can open every panel to check exactly what each role sees." />
-      <Card>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
-          {links.map(link => (
-            <Link
-              key={link.to}
-              to={link.to}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 10,
-                padding: '24px 16px',
-                borderRadius: 14,
-                background: 'var(--bg)',
-                border: '1px solid var(--border)',
-                textDecoration: 'none',
-                transition: 'all 0.2s ease',
-                cursor: 'pointer',
-              }}
-              className="p-panel-link-card"
-            >
-              <div
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 12,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: `${link.color}18`,
-                  color: link.color,
-                }}
-              >
-                <link.icon size={24} />
-              </div>
-              <strong style={{ fontSize: 15, color: 'var(--text)' }}>{link.label} Portal</strong>
-              <span style={{ fontSize: 12, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.4 }}>{link.desc}</span>
-              <span
-                className="p-btn p-btn-small"
-                style={{ marginTop: 4 }}
-              >
-                Open portal <ArrowRight size={12} style={{ marginLeft: 4 }} />
-              </span>
-            </Link>
-          ))}
-        </div>
-      </Card>
-    </>
-  );
-}
-
 export default function SuperAdminPanel() {
   return (
     <PanelFrame role="super_admin" brand="Super admin" items={NAV}>
@@ -403,7 +332,6 @@ export default function SuperAdminPanel() {
           <Route path="roles" element={<RolesAccess />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="audit-log" element={<AuditLogView endpoint="/superadmin/audit-log?limit=300" text="Every change on the platform, in order." />} />
-          <Route path="panels" element={<Panels />} />
           <Route path="*" element={<Empty>This page does not exist.</Empty>} />
         </Routes>
       )}
