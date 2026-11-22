@@ -240,52 +240,230 @@ function Overview({ me }: { me: Me }) {
 
 function Payments() {
   const [status, setStatus] = useState('submitted');
+  const allList = useApi<{ items: PaymentRow[] }>('/finance/payments?status=all');
   const list = useApi<{ items: PaymentRow[] }>(`/finance/payments?status=${status}`);
-  const change = useChange(list.reload);
+  const change = useChange(() => {
+    list.reload();
+    allList.reload();
+  });
   const [notes, setNotes] = useState<Record<number, string>>({});
+
+  const allItems = allList.data?.items ?? [];
+  const toVerifyCount = allItems.filter(p => p.status === 'submitted').length;
+  const verifiedCount = allItems.filter(p => p.status === 'verified').length;
+  const rejectedCount = allItems.filter(p => p.status === 'rejected').length;
+  const totalCount = allItems.length;
+
+  const currentItems = list.data?.items ?? [];
 
   return (
     <>
-      <PageHead title="Payments" text="Check each payment against your bank statement, then verify it. Verified payments count towards the student's fees." />
+      <PageHead
+        title="Payments"
+        text="Check each payment against your bank statement, then verify it. Verified payments count towards the student's fees."
+      />
+
+      {/* Metric summary strip */}
+      <div className="p-metric-grid" style={{ marginBottom: 20 }}>
+        <MetricCard
+          icon={Clock}
+          variant={toVerifyCount > 0 ? 1 : 2}
+          label="Pending Verification"
+          value={`${toVerifyCount} Submissions`}
+          trend={toVerifyCount > 0 ? 'Requires attention' : 'All clear'}
+          trendPositive={toVerifyCount === 0}
+        />
+        <MetricCard
+          icon={CheckCircle2}
+          variant={2}
+          label="Verified Payments"
+          value={`${verifiedCount} Completed`}
+          trend="Credited to student fees"
+          trendPositive={true}
+        />
+        <MetricCard
+          icon={CreditCard}
+          variant={3}
+          label="Total Payment Records"
+          value={`${totalCount} Total`}
+          trend={rejectedCount > 0 ? `${rejectedCount} rejected` : '0 rejected'}
+          trendPositive={rejectedCount === 0}
+        />
+      </div>
+
       <Card>
-        <div className="p-row" style={{ marginBottom: 12 }}>
-          <CurvedSelect
-            value={status}
-            onChange={setStatus}
-            options={[
-              { value: 'submitted', label: 'To verify' },
-              { value: 'verified', label: 'Verified' },
-              { value: 'rejected', label: 'Rejected' },
-              { value: 'all', label: 'All' },
-            ]}
-            placeholder="Filter by status"
-          />
+        {/* Quick Filter Tabs with Live Badges */}
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 16 }}>
+          {[
+            { id: 'submitted', label: 'To verify', count: toVerifyCount },
+            { id: 'verified', label: 'Verified', count: verifiedCount },
+            { id: 'rejected', label: 'Rejected', count: rejectedCount },
+            { id: 'all', label: 'All Payments', count: totalCount },
+          ].map(tab => {
+            const active = status === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setStatus(tab.id)}
+                style={{
+                  padding: '7px 16px',
+                  borderRadius: 999,
+                  border: active ? '1.5px solid var(--accent)' : '1px solid var(--border-strong)',
+                  background: active ? 'var(--accent)' : 'var(--surface-alt)',
+                  color: active ? '#ffffff' : 'var(--text)',
+                  fontWeight: 600,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <span>{tab.label}</span>
+                <span
+                  style={{
+                    fontSize: 11,
+                    padding: '1px 7px',
+                    borderRadius: 999,
+                    background: active
+                      ? 'rgba(255, 255, 255, 0.28)'
+                      : 'color-mix(in srgb, var(--border) 80%, transparent)',
+                    color: active ? '#ffffff' : 'var(--muted)',
+                    fontWeight: 700,
+                  }}
+                >
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
         </div>
-        <ErrorNotice error={list.error} />
+
+        <ErrorNotice error={list.error || allList.error} />
         <ErrorNotice error={change.error} />
         {change.message && <Notice tone="success">{change.message}</Notice>}
-        <Table
-          head={['Student', 'Batch', 'Amount', 'Method & reference', 'Paid on', 'Balance', 'Status', 'Decision']}
-          rows={(list.data?.items ?? []).map(p => [
-            <div key="n"><strong>{p.name}</strong><div className="p-muted">{p.email}</div></div>,
-            p.batch,
-            fmtInr(p.amount_inr),
-            <div key="m">{p.method} · {p.reference}</div>,
-            fmtDate(p.paid_on),
-            p.balance_inr === null ? '—' : fmtInr(p.balance_inr),
-            <StatusChip key="s" text={p.status} tone={p.status === 'verified' ? 'good' : p.status === 'rejected' ? 'bad' : 'warn'} />,
-            p.status === 'submitted' ? (
-              <div key="d" className="p-cards">
-                <button type="button" className="p-btn p-btn-small" disabled={change.busy} onClick={() => change.run(() => api(`/finance/payments/${p.id}/verify`, { method: 'POST', body: { note: notes[p.id] ?? '' } }), 'Payment verified.')}>Verify</button>
-                <input className="p-input" placeholder="Reason if rejecting" value={notes[p.id] ?? ''} onChange={e => setNotes({ ...notes, [p.id]: e.target.value })} aria-label="Reason for rejecting" />
-                <button type="button" className="p-btn p-btn-ghost p-btn-small" disabled={change.busy || !(notes[p.id] ?? '').trim()} onClick={() => change.run(() => api(`/finance/payments/${p.id}/reject`, { method: 'POST', body: { note: notes[p.id] } }), 'Payment rejected. The student has been told why.')}>Reject</button>
-              </div>
-            ) : (
-              p.note || '—'
-            ),
-          ])}
-          empty="Nothing here right now."
-        />
+
+        {currentItems.length === 0 ? (
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '42px 20px',
+              background: 'var(--surface-alt)',
+              borderRadius: 18,
+              border: '1.5px dashed var(--border-strong)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: '50%',
+                background: 'color-mix(in srgb, var(--accent) 12%, var(--surface))',
+                color: 'var(--accent)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 4,
+              }}
+            >
+              <CheckCircle2 size={24} />
+            </div>
+            <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>
+              {status === 'submitted' ? 'All payments are verified' : 'No payments found'}
+            </h3>
+            <p style={{ margin: 0, fontSize: 13.5, color: 'var(--muted)', maxWidth: 440 }}>
+              {status === 'submitted'
+                ? 'Great job! There are currently no student payments waiting for verification.'
+                : `No payment records match the "${status}" status.`}
+            </p>
+            {verifiedCount > 0 && status !== 'verified' && (
+              <button
+                type="button"
+                className="p-btn p-btn-small"
+                style={{ marginTop: 10 }}
+                onClick={() => setStatus('verified')}
+              >
+                View {verifiedCount} verified payment{verifiedCount === 1 ? '' : 's'} →
+              </button>
+            )}
+          </div>
+        ) : (
+          <Table
+            head={['Student', 'Batch', 'Amount', 'Method & reference', 'Paid on', 'Balance', 'Status', 'Decision']}
+            rows={currentItems.map(p => [
+              <div key="n">
+                <strong>{p.name}</strong>
+                <div className="p-muted">{p.email}</div>
+              </div>,
+              p.batch,
+              fmtInr(p.amount_inr),
+              <div key="m">
+                {p.method} · {p.reference}
+              </div>,
+              fmtDate(p.paid_on),
+              p.balance_inr === null ? '—' : fmtInr(p.balance_inr),
+              <StatusChip
+                key="s"
+                text={p.status}
+                tone={p.status === 'verified' ? 'good' : p.status === 'rejected' ? 'bad' : 'warn'}
+              />,
+              p.status === 'submitted' ? (
+                <div key="d" className="p-cards">
+                  <button
+                    type="button"
+                    className="p-btn p-btn-small"
+                    disabled={change.busy}
+                    onClick={() =>
+                      change.run(
+                        () =>
+                          api(`/finance/payments/${p.id}/verify`, {
+                            method: 'POST',
+                            body: { note: notes[p.id] ?? '' },
+                          }),
+                        'Payment verified.'
+                      )
+                    }
+                  >
+                    Verify
+                  </button>
+                  <input
+                    className="p-input"
+                    placeholder="Reason if rejecting"
+                    value={notes[p.id] ?? ''}
+                    onChange={e => setNotes({ ...notes, [p.id]: e.target.value })}
+                    aria-label="Reason for rejecting"
+                  />
+                  <button
+                    type="button"
+                    className="p-btn p-btn-ghost p-btn-small"
+                    disabled={change.busy || !(notes[p.id] ?? '').trim()}
+                    onClick={() =>
+                      change.run(
+                        () =>
+                          api(`/finance/payments/${p.id}/reject`, {
+                            method: 'POST',
+                            body: { note: notes[p.id] },
+                          }),
+                        'Payment rejected. The student has been told why.'
+                      )
+                    }
+                  >
+                    Reject
+                  </button>
+                </div>
+              ) : (
+                p.note || '—'
+              ),
+            ])}
+            empty="No payments match this filter."
+          />
+        )}
       </Card>
     </>
   );
